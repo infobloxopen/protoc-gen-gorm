@@ -39,7 +39,7 @@ go get -u github.com/golang/protobuf/protoc-gen-go
 
 You can run `make install` or `go install` directly.
 
-Once installed, the `--gorm-out=.` option can be specified in a protoc
+Once installed, the `--gorm_out=.` option can be specified in a protoc
 command to write the files to a given directory. Specifying inside the proto
 file the option `option (orm.package) = "<package-name>";` will generate a
 subdirectory with the given package name.

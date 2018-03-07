@@ -46,9 +46,9 @@ message Tag {
 }
 
 // To be used in the interceptor
-extend google.protobuf.MethodOptions {
-  optional RpcOptions = 52119;
-}
+//extend google.protobuf.MethodOptions {
+//  optional RpcOptions = 52119;
+//}
 
 message RpcOptions {
   optional bool exclude = 1;
