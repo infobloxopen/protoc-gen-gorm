@@ -1,0 +1,89 @@
+syntax = "proto3";
+
+package example;
+import "github.com/infobloxopen/protoc-gen-gorm/orm/orm.proto";
+import "google/protobuf/wrappers.proto";
+import "google/protobuf/empty.proto";
+
+option go_package = "github.com/infobloxopen/protoc-gen-gorm/example";
+//option (orm.package) = "orm";
+
+// test_id_and_stuff is a message that serves as an example
+message test_types {
+  option (orm.opts).ormable = true;
+  string api_only_string = 1 [(orm.field).drop = true];
+  repeated int32 numbers = 2;
+  google.protobuf.StringValue optional_string = 3;
+  enum status{
+    UNKNOWN = 0;
+    GOOD = 1;
+    BAD = 2;
+  }
+  status becomes_int = 4;
+  google.protobuf.Empty nothingness = 5;
+}
+
+message the_uuid_and_ip {
+  option (orm.opts) = {
+    ormable: true,
+    include: [
+      {type: "int32", name: "uuid", tags: [{pkg:"gorm",values:["primary_key"]}]}
+      ]
+    };
+  string ip = 1 [(orm.field) = {tags:[{pkg:"gorm",values:["ip_addr"]}]}];
+  repeated test_types things = 3;
+  test_types a_nested_object = 4;
+}
+
+message something_normal {
+  string something_average = 1;
+}
+
+message something_crazy {
+  option (orm.opts).ormable = true;
+  something_normal a_thing = 1;
+}
+
+message CreateSomethingCrazyResponse {
+  something_crazy craziness = 1;
+}
+message ReadSomethingCrazyResponse {
+  something_crazy craziness = 1;
+}
+message UpdateSomethingCrazyResponse {
+  something_crazy craziness = 1;
+}
+message DeleteSomethingCrazyResponse {
+  something_crazy craziness = 1;
+}
+
+service crazy_service {
+  rpc CreateSomethingCrazy ( something_crazy ) returns ( CreateSomethingCrazyResponse ) {
+    // option (orm.foo) = false;
+  }
+
+  rpc UpdateSomethingCrazy ( something_crazy ) returns ( UpdateSomethingCrazyResponse ) {
+    // option (orm.foo) = false;
+  }
+  rpc ReadSomethingCrazy ( something_crazy ) returns ( ReadSomethingCrazyResponse ) {
+    // option (orm.foo) = false;
+  }
+  rpc DeleteSomethingCrazy ( something_crazy ) returns ( DeleteSomethingCrazyResponse ) {
+  }
+  rpc ListSomethingCrazy ( something_crazy ) returns ( DeleteSomethingCrazyResponse ) {
+  }
+}
+
+service test_service {
+  //option (orm.service).tenancy_model = {"tenant_id", from_context}
+  rpc test_call ( something_crazy ) returns ( something_crazy ) {
+    option (orm.method).exclude = false;
+  }
+  rpc CreateTestTypes ( google.protobuf.StringValue ) returns ( test_types ) {
+
+  }
+  rpc delete_test_types ( google.protobuf.Empty ) returns ( test_types ) {}
+  rpc CreateThree ( something_crazy ) returns ( something_crazy ) {
+
+  }
+}

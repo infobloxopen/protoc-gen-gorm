@@ -30,8 +30,6 @@ message ExtraField {
 
 // Validation rules applied at the field level
 extend google.protobuf.FieldOptions {
-    // Rules specify the validations to be performed on this field. By default,
-    // no validation is performed against a field.
     optional OrmOptions field = 52119;
 }
 
@@ -45,9 +43,17 @@ message Tag {
   repeated string values = 2;
 }
 
-// To be used in the interceptor
+// To be used in (leiu of) the interceptor
+extend google.protobuf.ServiceOptions {
+  optional AutoServiceOptions service = 52119;
+}
+
+message AutoServiceOptions {
+  optional bool autogen = 1;
+}
+
 extend google.protobuf.MethodOptions {
-  optional RpcOptions = 52119;
+  optional RpcOptions method = 52119;
 }
 
 message RpcOptions {

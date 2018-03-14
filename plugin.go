@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"fmt"
+	"os"
 	"path"
 	"strings"
 
@@ -22,7 +23,8 @@ type ormPlugin struct {
 	*generator.Generator
 	generator.PluginImports
 
-	pkgWKT          generator.Single
+	wktPkgName      string
+	emptyPkgName    string
 	pkgParent       generator.Single
 	originalPackage string
 	newPackage      string
@@ -43,8 +45,9 @@ func (p *ormPlugin) Init(g *generator.Generator) {
 }*/
 
 func (p *ormPlugin) Generate(file *generator.FileDescriptor) {
+
 	p.PluginImports = generator.NewPluginImports(p.Generator)
-	p.pkgWKT = p.NewImport("github.com/golang/protobuf/ptypes/wrappers")
+	//p.pkgWKT = p.NewImport("github.com/golang/protobuf/ptypes/wrappers")
 	p.originalPackage = file.PackageName()
 	p.pkgParent = p.NewImport(fmt.Sprintf("%s/%s", path.Dir(*file.Name), p.originalPackage))
 	p.pkgParent.Use()
@@ -87,6 +90,8 @@ func (p *ormPlugin) Generate(file *generator.FileDescriptor) {
 	}
 
 	p.P()
+
+	p.generateDefaultHandlers(file)
 }
 
 const typeMessage = 11
@@ -185,11 +190,14 @@ func (p *ormPlugin) generateMessages(file *generator.FileDescriptor, message *ge
 			//Check for WKTs or fields of nonormable types
 			parts := strings.Split(fieldType, ".")
 			if v, exists := wellKnownTypes[parts[len(parts)-1]]; exists {
-				p.pkgWKT.Use()
+				p.RecordTypeUse(".google.protobuf.StringValue")
+				p.wktPkgName = strings.Trim(parts[0], "*")
 				fieldType = v
 			} else if _, exists := convertibleTypes[strings.Trim(fieldType, "[]*")]; !exists {
 				p.P("// Can't work with type ", fieldType, ", not tagged as ormable")
 				continue
+			} else if parts[len(parts)-1] == "Empty" {
+				p.RecordTypeUse(".google.protobuf.Empty")
 			} else {
 				fieldType = lintName(fieldType)
 			}
@@ -288,7 +296,7 @@ func (p *ormPlugin) generateFieldMap(message *generator.Descriptor, field *descr
 				} else {
 					p.P(`if from.`, fromName, ` != nil {`)
 					p.In()
-					p.P(`to.`, fieldName, ` = append(t.`, fieldName, `, &`, p.pkgWKT.Name(), ".", coreType,
+					p.P(`to.`, fieldName, ` = append(t.`, fieldName, `, &`, p.wktPkgName, ".", coreType,
 						`{Value: *from.`, fromName, `}`)
 					p.Out()
 					p.P(`} else {`)
@@ -352,7 +360,7 @@ func (p *ormPlugin) generateFieldMap(message *generator.Descriptor, field *descr
 			} else {
 				p.P(`if from.`, fromName, ` != nil {`)
 				p.In()
-				p.P(`to.`, fieldName, ` = &`, p.pkgWKT.Name(), ".", coreType, `{Value: *from.`, fromName, `}`)
+				p.P(`to.`, fieldName, ` = &`, p.wktPkgName, ".", coreType, `{Value: *from.`, fromName, `}`)
 				p.Out()
 				p.P(`}`)
 			}
@@ -382,4 +390,220 @@ func (p *ormPlugin) generateFieldMap(message *generator.Descriptor, field *descr
 		p.P(`to.`, fieldName, ` = from.`, fromName)
 	}
 	return nil
+}
+
+func (p *ormPlugin) generateDefaultHandlers(file *generator.FileDescriptor) {
+	for _, service := range file.GetService() {
+		svcName := lintName(generator.CamelCase(service.GetName()))
+
+		p.P(`type `, svcName, `DefaultHandler struct {`)
+		p.In()
+		p.P(`DB gorm.DB`)
+		p.RecordTypeUse(`github.com/jinzhu/gorm`)
+		p.Out()
+		p.P(`}`)
+		for _, method := range service.GetMethod() {
+			methodName := generator.CamelCase(method.GetName())
+			if strings.HasPrefix(methodName, "Create") {
+				p.generateCreateHandler(file, service, method)
+			} else if strings.HasPrefix(methodName, "Read") {
+				p.generateReadHandler(file, service, method)
+			} else if strings.HasPrefix(methodName, "Update") {
+				p.generateUpdateHandler(file, service, method)
+			} else if strings.HasPrefix(methodName, "Delete") {
+				p.generateDeleteHandler(file, service, method)
+			} else if strings.HasPrefix(methodName, "List") {
+				p.generateListHandler(file, service, method)
+			} else {
+				p.P(`// You'll have to create the `, methodName, ` handler function yourself`)
+				p.P()
+			}
+		}
+	}
+}
+
+func (p *ormPlugin) generateDefaultFunctionSignature(inType, outType generator.Object, methodName string) {
+	//p.RecordTypeUse("golang.org/x/net/context")
+	p.P(`// `, methodName, ` ...`)
+	p.P(`func `, methodName, `Handler(ctx context.Context, in *`,
+		inType.PackageName(), ".", generator.CamelCaseSlice(inType.TypeName()),
+		`, db gorm.DB) (`, `*`, outType.PackageName(), ".",
+		generator.CamelCaseSlice(outType.TypeName()), `, error) {`)
+
+}
+
+func (p *ormPlugin) generateDefaultHandler(inType, outType generator.Object, methodName, svcName string) {
+
+	p.P(`// `, methodName, ` ...`)
+	p.P(`func (m *`, svcName, `DefaultHandler) `, methodName, ` (ctx context.Context, in *`,
+		inType.PackageName(), ".", generator.CamelCaseSlice(inType.TypeName()),
+		`, opts ...grpc.CallOption) (*`, outType.PackageName(), ".",
+		generator.CamelCaseSlice(outType.TypeName()), `, error) {`)
+	p.In()
+	p.P(`return `, methodName, `Handler(ctx, in, m.DB)`)
+	p.Out()
+	p.P(`}`)
+}
+
+func (p *ormPlugin) getNames(file *generator.FileDescriptor,
+	service *descriptor.ServiceDescriptorProto, method *descriptor.MethodDescriptorProto) (generator.Object, generator.Object, string, string) {
+
+	inType := p.ObjectNamed(method.GetInputType())
+	p.RecordTypeUse(method.GetInputType())
+	outType := p.ObjectNamed(method.GetOutputType())
+	p.RecordTypeUse(method.GetOutputType())
+	methodName := generator.CamelCase(method.GetName())
+	svcName := lintName(generator.CamelCase(service.GetName()))
+	return inType, outType, methodName, svcName
+}
+
+func validateORMableOutputType(operation string, method *descriptor.MethodDescriptorProto,
+	outputType generator.Object) error {
+
+	typeInMethodName := strings.TrimPrefix(generator.CamelCase(method.GetName()), operation)
+	validOutputType := false
+	outputTypeName := generator.CamelCaseSlice(outputType.TypeName())
+	if outputTypeName == typeInMethodName || strings.TrimSuffix(strings.TrimPrefix(outputTypeName, operation), "Response") == typeInMethodName {
+		validOutputType = true
+	} else if typeMsg, exists := typeNames[outputTypeName]; exists {
+		// Check subfields for an ormable object that matches name with the method
+		for _, field := range typeMsg.Field {
+			rawType := strings.Split(field.GetTypeName(), ".")
+			if generator.CamelCase(rawType[len(rawType)-1]) == typeInMethodName {
+				//_, typeExists := convertibleTypes[generator.CamelCase(rawType[len(rawType)-1])]; typeExists {
+				fmt.Fprintf(os.Stderr, "Match found for type %s in %s\n", generator.CamelCase(rawType[len(rawType)-1]), typeMsg.GetName())
+				validOutputType = true
+				break
+			}
+		}
+	}
+	if !validOutputType {
+		return fmt.Errorf(`I find your choice of output type (%s) in %s disturbing`,
+			generator.CamelCaseSlice(outputType.TypeName()), generator.CamelCase(method.GetName()))
+	}
+	return nil
+}
+
+func checkTypeInMethodName(operation, method string) bool {
+	typeInMethodName := strings.TrimPrefix(method, operation)
+	_, exists := convertibleTypes[typeInMethodName]
+	return exists
+}
+
+func (p *ormPlugin) generateCreateHandler(file *generator.FileDescriptor,
+	service *descriptor.ServiceDescriptorProto, method *descriptor.MethodDescriptorProto) {
+
+	inType, outType, methodName, svcName := p.getNames(file, service, method)
+	p.P(`//`, generator.CamelCaseSlice(outType.TypeName()))
+	if !checkTypeInMethodName("Create", methodName) {
+		p.P(`// Cannot autogen create function `, methodName, `: unrecognized anticipated type `)
+		return
+	}
+	if err := validateORMableOutputType("Create", method, outType); err != nil {
+		p.Fail(err.Error())
+	}
+
+	p.generateDefaultFunctionSignature(inType, outType, methodName)
+	p.In()
+
+	p.P(`out := &`, outType.PackageName(), ".", generator.CamelCaseSlice(outType.TypeName()), `{}`)
+	var pbDestField, pbDestType string
+	if _, exists := convertibleTypes[generator.CamelCaseSlice(outType.TypeName())]; exists {
+		pbDestField = `out`
+		pbDestType = generator.CamelCaseSlice(outType.TypeName())
+	} else if typeMsg, exists := typeNames[generator.CamelCaseSlice(outType.TypeName())]; exists {
+		// Check subfields for an ormable object that matches name with the method
+		for _, field := range typeMsg.Field {
+			rawType := strings.Split(field.GetTypeName(), ".")
+			//p.P(`// `, generator.CamelCase(rawType[len(rawType)-1]))
+
+			if _, typeEx := convertibleTypes[generator.CamelCase(rawType[len(rawType)-1])]; typeEx {
+				pbDestType = generator.CamelCase(rawType[len(rawType)-1])
+				pbDestField = fmt.Sprintf("out.%s", field.GetName())
+			}
+		}
+	}
+	if pbDestField == "" {
+		p.Fail(method.GetName(), ` output type was not ormable, and had no ormable components`)
+	}
+	p.P(`tempORM := ConvertTo`, pbDestType, `(in)`)
+	p.P(`err := db.Create(&tempORM)`)
+	p.P(pbDestField, ` = ConvertFrom`, pbDestType, `(tempORM)`)
+	p.P(`return out, err`)
+	p.Out()
+	p.P(`}`)
+	p.P()
+	p.generateDefaultHandler(inType, outType, methodName, svcName)
+}
+
+func (p *ormPlugin) generateReadHandler(file *generator.FileDescriptor,
+	service *descriptor.ServiceDescriptorProto, method *descriptor.MethodDescriptorProto) {
+
+	inType, outType, methodName, svcName := p.getNames(file, service, method)
+	if checkTypeInMethodName("Read", methodName) {
+		p.P(`// Cannot autogen read function "%s": unrecognized anticipated type `, methodName)
+		return
+	}
+	if err := validateORMableOutputType("Read", method, outType); err != nil {
+		p.Fail(err.Error())
+	}
+	//typeInMethodName := strings.TrimPrefix(strings.TrimPrefix(methodName, "Read"), "read")
+	p.generateDefaultFunctionSignature(inType, outType, methodName)
+	p.In()
+	p.P(`return nil, nil`)
+	p.Out()
+	p.P(`}`)
+	p.generateDefaultHandler(inType, outType, methodName, svcName)
+}
+
+func (p *ormPlugin) generateUpdateHandler(file *generator.FileDescriptor,
+	service *descriptor.ServiceDescriptorProto, method *descriptor.MethodDescriptorProto) {
+
+	inType, outType, methodName, svcName := p.getNames(file, service, method)
+	if checkTypeInMethodName("Update", methodName) {
+		p.P(`// Cannot autogen update function "%s": unrecognized anticipated type `, methodName)
+		return
+	}
+	if err := validateORMableOutputType("Update", method, outType); err != nil {
+		p.Fail(err.Error())
+	}
+	p.generateDefaultFunctionSignature(inType, outType, methodName)
+	p.In()
+	p.P(`return nil, nil`)
+	p.Out()
+	p.P(`}`)
+	p.generateDefaultHandler(inType, outType, methodName, svcName)
+}
+
+func (p *ormPlugin) generateDeleteHandler(file *generator.FileDescriptor,
+	service *descriptor.ServiceDescriptorProto, method *descriptor.MethodDescriptorProto) {
+
+	inType, outType, methodName, svcName := p.getNames(file, service, method)
+	if checkTypeInMethodName("Delete", methodName) {
+		p.P(`// Cannot autogen delete function "%s": unrecognized anticipated type `, methodName)
+		return
+	}
+	p.generateDefaultFunctionSignature(inType, outType, methodName)
+	p.In()
+	p.P(`return nil, nil`)
+	p.Out()
+	p.P(`}`)
+	p.generateDefaultHandler(inType, outType, methodName, svcName)
+}
+
+func (p *ormPlugin) generateListHandler(file *generator.FileDescriptor,
+	service *descriptor.ServiceDescriptorProto, method *descriptor.MethodDescriptorProto) {
+
+	inType, outType, methodName, svcName := p.getNames(file, service, method)
+	typeInMethodName := strings.TrimPrefix(methodName, "List")
+	if _, exists := convertibleTypes[typeInMethodName]; !exists {
+		p.P(`// Cannot autogen list function for unrecognized anticipated type `, typeInMethodName)
+		return
+	}
+	p.generateDefaultFunctionSignature(inType, outType, methodName)
+	p.In()
+	p.P(`return nil, nil`)
+	p.Out()
+	p.P(`}`)
+	p.generateDefaultHandler(inType, outType, methodName, svcName)
 }
