@@ -7,8 +7,12 @@ import "google/protobuf/descriptor.proto";
 // TODO: The option number 52119 lies within the internally reserved extension
 // range. I believe a publicly unique number should be requested.
 
+// Currently no file options
 extend google.protobuf.FileOptions {
-  optional string package = 52119;
+  optional OrmFileOptions file_opts = 52119;
+}
+
+message OrmFileOptions {
 }
 
 // Validation rules applied at the message level
@@ -20,28 +24,25 @@ extend google.protobuf.MessageOptions {
 message OrmMessageOptions {
   required bool ormable = 1;
   repeated ExtraField include = 2;
+  optional string table = 3;
 }
 
 message ExtraField {
   required string type = 1;
   required string name = 2;
-  repeated Tag tags = 3;
+  optional string tags = 3;
 }
 
-// Validation rules applied at the field level
+// Field level specifications
 extend google.protobuf.FieldOptions {
     optional OrmOptions field = 52119;
 }
 
 message OrmOptions {
-  repeated Tag tags = 1;
+  optional string tags = 1;
   optional bool drop = 2;
 }
 
-message Tag {
-  required string pkg = 1;
-  repeated string values = 2;
-}
 
 // To be used in (leiu of) the interceptor
 extend google.protobuf.ServiceOptions {
