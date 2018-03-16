@@ -21,7 +21,7 @@ func main() {
 	for _, x := range gen.Request.ProtoFile {
 		for i := 0; i < len(x.GetDependency()); i++ {
 			// Our files don't actually require this, so it's cleaner to drop it
-			if x.GetDependency()[i] == "github.com/infobloxopen/protoc-gen-gorm/options/orm.proto" {
+			if x.GetDependency()[i] == "github.com/infobloxopen/protoc-gen-gorm/options/gorm.proto" {
 				x.Dependency = append(x.Dependency[:i], x.Dependency[i+1:]...)
 				i--
 			}

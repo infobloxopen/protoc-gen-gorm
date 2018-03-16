@@ -3,7 +3,7 @@
 
 package example
 
-import gorm "github.com/jinzhu/gorm"
+import gorm1 "github.com/jinzhu/gorm"
 import context "golang.org/x/net/context"
 import proto "github.com/gogo/protobuf/proto"
 import fmt "fmt"
@@ -67,7 +67,7 @@ type TypeWithIDORM struct {
 }
 
 func (TypeWithIDORM) TableName() string {
-	return "type_with_id"
+	return "type_with_ids"
 }
 
 // ConvertTypeWithIDToORM takes a pb object and returns an orm object
@@ -114,7 +114,7 @@ type TypeBecomesEmptyORM struct {
 }
 
 func (TypeBecomesEmptyORM) TableName() string {
-	return "type_becomes_empty"
+	return "type_becomes_empties"
 }
 
 // ConvertTypeBecomesEmptyToORM takes a pb object and returns an orm object
@@ -130,7 +130,7 @@ func ConvertTypeBecomesEmptyFromORM(from TypeBecomesEmptyORM) TypeBecomesEmpty {
 }
 
 // DefaultCreateTestTypes executes a basic gorm create call
-func DefaultCreateTestTypes(ctx context.Context, in *TestTypes, db gorm.DB) (*TestTypes, error) {
+func DefaultCreateTestTypes(ctx context.Context, in *TestTypes, db gorm1.DB) (*TestTypes, error) {
 	if in == nil {
 		return nil, fmt.Errorf("Nil argument to DefaultCreateTestTypes")
 	}
@@ -141,7 +141,7 @@ func DefaultCreateTestTypes(ctx context.Context, in *TestTypes, db gorm.DB) (*Te
 }
 
 // DefaultReadTestTypes executes a basic gorm read call
-func DefaultReadTestTypes(ctx context.Context, in *TestTypes, db gorm.DB) (*TestTypes, error) {
+func DefaultReadTestTypes(ctx context.Context, in *TestTypes, db gorm1.DB) (*TestTypes, error) {
 	if in == nil {
 		return nil, fmt.Errorf("Nil argument to DefaultReadTestTypes")
 	}
@@ -153,7 +153,7 @@ func DefaultReadTestTypes(ctx context.Context, in *TestTypes, db gorm.DB) (*Test
 }
 
 // DefaultUpdateTestTypes executes a basic gorm update call
-func DefaultUpdateTestTypes(ctx context.Context, in *TestTypes, db gorm.DB) (*TestTypes, error) {
+func DefaultUpdateTestTypes(ctx context.Context, in *TestTypes, db gorm1.DB) (*TestTypes, error) {
 	if in == nil {
 		return nil, fmt.Errorf("Nil argument to DefaultUpdateTestTypes")
 	}
@@ -164,7 +164,7 @@ func DefaultUpdateTestTypes(ctx context.Context, in *TestTypes, db gorm.DB) (*Te
 }
 
 // DefaultDeleteTestTypes executes a basic gorm delete call
-func DefaultDeleteTestTypes(ctx context.Context, in *TestTypes, db gorm.DB) error {
+func DefaultDeleteTestTypes(ctx context.Context, in *TestTypes, db gorm1.DB) error {
 	if in == nil {
 		return fmt.Errorf("Nil argument to DefaultDeleteTestTypes")
 	}
@@ -174,7 +174,7 @@ func DefaultDeleteTestTypes(ctx context.Context, in *TestTypes, db gorm.DB) erro
 }
 
 // DefaultCreateTypeWithID executes a basic gorm create call
-func DefaultCreateTypeWithID(ctx context.Context, in *TypeWithId, db gorm.DB) (*TypeWithId, error) {
+func DefaultCreateTypeWithID(ctx context.Context, in *TypeWithId, db gorm1.DB) (*TypeWithId, error) {
 	if in == nil {
 		return nil, fmt.Errorf("Nil argument to DefaultCreateTypeWithID")
 	}
@@ -185,7 +185,7 @@ func DefaultCreateTypeWithID(ctx context.Context, in *TypeWithId, db gorm.DB) (*
 }
 
 // DefaultReadTypeWithID executes a basic gorm read call
-func DefaultReadTypeWithID(ctx context.Context, in *TypeWithId, db gorm.DB) (*TypeWithId, error) {
+func DefaultReadTypeWithID(ctx context.Context, in *TypeWithId, db gorm1.DB) (*TypeWithId, error) {
 	if in == nil {
 		return nil, fmt.Errorf("Nil argument to DefaultReadTypeWithID")
 	}
@@ -197,7 +197,7 @@ func DefaultReadTypeWithID(ctx context.Context, in *TypeWithId, db gorm.DB) (*Ty
 }
 
 // DefaultUpdateTypeWithID executes a basic gorm update call
-func DefaultUpdateTypeWithID(ctx context.Context, in *TypeWithId, db gorm.DB) (*TypeWithId, error) {
+func DefaultUpdateTypeWithID(ctx context.Context, in *TypeWithId, db gorm1.DB) (*TypeWithId, error) {
 	if in == nil {
 		return nil, fmt.Errorf("Nil argument to DefaultUpdateTypeWithID")
 	}
@@ -208,7 +208,7 @@ func DefaultUpdateTypeWithID(ctx context.Context, in *TypeWithId, db gorm.DB) (*
 }
 
 // DefaultDeleteTypeWithID executes a basic gorm delete call
-func DefaultDeleteTypeWithID(ctx context.Context, in *TypeWithId, db gorm.DB) error {
+func DefaultDeleteTypeWithID(ctx context.Context, in *TypeWithId, db gorm1.DB) error {
 	if in == nil {
 		return fmt.Errorf("Nil argument to DefaultDeleteTypeWithID")
 	}
@@ -218,7 +218,7 @@ func DefaultDeleteTypeWithID(ctx context.Context, in *TypeWithId, db gorm.DB) er
 }
 
 // DefaultCreateTypeBecomesEmpty executes a basic gorm create call
-func DefaultCreateTypeBecomesEmpty(ctx context.Context, in *TypeBecomesEmpty, db gorm.DB) (*TypeBecomesEmpty, error) {
+func DefaultCreateTypeBecomesEmpty(ctx context.Context, in *TypeBecomesEmpty, db gorm1.DB) (*TypeBecomesEmpty, error) {
 	if in == nil {
 		return nil, fmt.Errorf("Nil argument to DefaultCreateTypeBecomesEmpty")
 	}
@@ -229,7 +229,7 @@ func DefaultCreateTypeBecomesEmpty(ctx context.Context, in *TypeBecomesEmpty, db
 }
 
 // DefaultReadTypeBecomesEmpty executes a basic gorm read call
-func DefaultReadTypeBecomesEmpty(ctx context.Context, in *TypeBecomesEmpty, db gorm.DB) (*TypeBecomesEmpty, error) {
+func DefaultReadTypeBecomesEmpty(ctx context.Context, in *TypeBecomesEmpty, db gorm1.DB) (*TypeBecomesEmpty, error) {
 	if in == nil {
 		return nil, fmt.Errorf("Nil argument to DefaultReadTypeBecomesEmpty")
 	}
@@ -241,7 +241,7 @@ func DefaultReadTypeBecomesEmpty(ctx context.Context, in *TypeBecomesEmpty, db g
 }
 
 // DefaultUpdateTypeBecomesEmpty executes a basic gorm update call
-func DefaultUpdateTypeBecomesEmpty(ctx context.Context, in *TypeBecomesEmpty, db gorm.DB) (*TypeBecomesEmpty, error) {
+func DefaultUpdateTypeBecomesEmpty(ctx context.Context, in *TypeBecomesEmpty, db gorm1.DB) (*TypeBecomesEmpty, error) {
 	if in == nil {
 		return nil, fmt.Errorf("Nil argument to DefaultUpdateTypeBecomesEmpty")
 	}
@@ -252,7 +252,7 @@ func DefaultUpdateTypeBecomesEmpty(ctx context.Context, in *TypeBecomesEmpty, db
 }
 
 // DefaultDeleteTypeBecomesEmpty executes a basic gorm delete call
-func DefaultDeleteTypeBecomesEmpty(ctx context.Context, in *TypeBecomesEmpty, db gorm.DB) error {
+func DefaultDeleteTypeBecomesEmpty(ctx context.Context, in *TypeBecomesEmpty, db gorm1.DB) error {
 	if in == nil {
 		return fmt.Errorf("Nil argument to DefaultDeleteTypeBecomesEmpty")
 	}

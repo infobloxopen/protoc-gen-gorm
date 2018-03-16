@@ -8,6 +8,8 @@ import (
 	"github.com/gogo/protobuf/protoc-gen-gogo/descriptor"
 	"github.com/gogo/protobuf/protoc-gen-gogo/generator"
 	"github.com/infobloxopen/protoc-gen-gorm/options"
+	jgorm "github.com/jinzhu/gorm"
+	"github.com/jinzhu/inflection"
 )
 
 // ORMable types
@@ -19,7 +21,8 @@ var typeNames = make(map[string]generator.Descriptor)
 type ormPlugin struct {
 	*generator.Generator
 	generator.PluginImports
-	wktPkgName string
+	wktPkgName   string
+	gormPkgAlias string
 }
 
 func (p *ormPlugin) Name() string {
@@ -43,8 +46,8 @@ func (p *ormPlugin) Generate(file *generator.FileDescriptor) {
 		unlintedTypeName := generator.CamelCaseSlice(msg.TypeName())
 		typeNames[unlintedTypeName] = *msg
 		if msg.Options != nil {
-			v, err := proto.GetExtension(msg.Options, orm.E_Opts)
-			opts := v.(*orm.OrmMessageOptions)
+			v, err := proto.GetExtension(msg.Options, gorm.E_Opts)
+			opts := v.(*gorm.GormMessageOptions)
 			if err == nil && opts != nil && *opts.Ormable {
 				convertibleTypes[unlintedTypeName] = struct{}{}
 			}
@@ -99,8 +102,8 @@ func (p *ormPlugin) generateMessages(file *generator.FileDescriptor, message *ge
 	p.P(`type `, ccTypeName, ` struct {`)
 	p.In()
 	if message.Options != nil {
-		v, err := proto.GetExtension(message.Options, orm.E_Opts)
-		opts := v.(*orm.OrmMessageOptions)
+		v, err := proto.GetExtension(message.Options, gorm.E_Opts)
+		opts := v.(*gorm.GormMessageOptions)
 		if err == nil && opts != nil {
 			for _, field := range opts.Include {
 				tagString := ""
@@ -117,13 +120,13 @@ func (p *ormPlugin) generateMessages(file *generator.FileDescriptor, message *ge
 		fieldType, _ := p.GoType(message, field)
 		var tagString string
 		if field.Options != nil {
-			v, _ := proto.GetExtension(field.Options, orm.E_Field)
-			if v != nil && v.(*orm.OrmOptions) != nil {
-				if v.(*orm.OrmOptions).Drop != nil && *v.(*orm.OrmOptions).Drop {
+			v, _ := proto.GetExtension(field.Options, gorm.E_Field)
+			if v != nil && v.(*gorm.GormFieldOptions) != nil {
+				if v.(*gorm.GormFieldOptions).Drop != nil && *v.(*gorm.GormFieldOptions).Drop {
 					p.P(`// Skipping field: `, fieldName)
 					continue
 				}
-				tags := v.(*orm.OrmOptions).Tags
+				tags := v.(*gorm.GormFieldOptions).Tags
 				if tags != nil {
 					tagString = fmt.Sprintf("`%s`", *tags)
 				}
@@ -158,11 +161,11 @@ func (p *ormPlugin) generateMessages(file *generator.FileDescriptor, message *ge
 	p.P(`func (`, ccTypeName, `) TableName() string {`)
 	p.In()
 
-	tableName := message.GetName()
+	tableName := inflection.Plural(jgorm.ToDBName(message.GetName()))
 	if message.Options != nil {
-		v, _ := proto.GetExtension(message.Options, orm.E_Opts)
+		v, _ := proto.GetExtension(message.Options, gorm.E_Opts)
 		if v != nil {
-			opts := v.(*orm.OrmMessageOptions)
+			opts := v.(*gorm.GormMessageOptions)
 			if opts != nil && opts.Table != nil {
 				tableName = opts.GetTable()
 			}
@@ -185,9 +188,9 @@ func (p *ormPlugin) generateMapFunctions(message *generator.Descriptor) {
 	p.P(`to := `, ccTypeNameOrm, `{}`)
 	for _, field := range message.Field {
 		if field.Options != nil {
-			v, err := proto.GetExtension(field.Options, orm.E_Field)
-			if err == nil && v.(*orm.OrmOptions) != nil {
-				if v.(*orm.OrmOptions).Drop != nil && *v.(*orm.OrmOptions).Drop {
+			v, err := proto.GetExtension(field.Options, gorm.E_Field)
+			if err == nil && v.(*gorm.GormFieldOptions) != nil {
+				if v.(*gorm.GormFieldOptions).Drop != nil && *v.(*gorm.GormFieldOptions).Drop {
 					p.P(`// Skipping field: `, p.GetOneOfFieldName(message, field))
 					continue
 				}
@@ -208,9 +211,9 @@ func (p *ormPlugin) generateMapFunctions(message *generator.Descriptor) {
 	p.P(`to := `, ccTypeNamePb, `{}`)
 	for _, field := range message.Field {
 		if field.Options != nil {
-			v, err := proto.GetExtension(field.Options, orm.E_Field)
-			if err == nil && v.(*orm.OrmOptions) != nil {
-				if v.(*orm.OrmOptions).Drop != nil && *v.(*orm.OrmOptions).Drop {
+			v, err := proto.GetExtension(field.Options, gorm.E_Field)
+			if err == nil && v.(*gorm.GormFieldOptions) != nil {
+				if v.(*gorm.GormFieldOptions).Drop != nil && *v.(*gorm.GormFieldOptions).Drop {
 					p.P(`// Skipping field: `, p.GetOneOfFieldName(message, field))
 					continue
 				}
@@ -361,11 +364,11 @@ func (p *ormPlugin) generateFieldMap(message *generator.Descriptor, field *descr
 func (p *ormPlugin) generateDefaultHandlers(file *generator.FileDescriptor) {
 	for _, message := range file.Messages() {
 		if message.Options != nil {
-			v, err := proto.GetExtension(message.Options, orm.E_Opts)
+			v, err := proto.GetExtension(message.Options, gorm.E_Opts)
 			if err != nil {
 				continue
 			}
-			if opts := v.(*orm.OrmMessageOptions); opts == nil || !*opts.Ormable {
+			if opts := v.(*gorm.GormMessageOptions); opts == nil || !*opts.Ormable {
 				continue
 			}
 		} else {
@@ -373,6 +376,7 @@ func (p *ormPlugin) generateDefaultHandlers(file *generator.FileDescriptor) {
 		}
 		pkgGORM := p.NewImport("github.com/jinzhu/gorm")
 		pkgGORM.Use()
+		p.gormPkgAlias = pkgGORM.Name()
 		pkgContext := p.NewImport("golang.org/x/net/context")
 		pkgContext.Use()
 		p.generateCreateHandler(file, message)
@@ -388,7 +392,7 @@ func (p *ormPlugin) generateCreateHandler(file *generator.FileDescriptor, messag
 	typeName := lintName(typeNamePb)
 	p.P(`// DefaultCreate`, typeName, ` executes a basic gorm create call`)
 	p.P(`func DefaultCreate`, typeName, `(ctx context.Context, in *`,
-		typeNamePb, `, db gorm.DB) (`, `*`, typeNamePb, `, error) {`)
+		typeNamePb, `, db `, p.gormPkgAlias, `.DB) (`, `*`, typeNamePb, `, error) {`)
 	p.In()
 	p.P(`if in == nil {`)
 	p.In()
@@ -409,7 +413,7 @@ func (p *ormPlugin) generateReadHandler(file *generator.FileDescriptor, message 
 	typeName := lintName(typeNamePb)
 	p.P(`// DefaultRead`, typeName, ` executes a basic gorm read call`)
 	p.P(`func DefaultRead`, typeName, `(ctx context.Context, in *`,
-		typeNamePb, `, db gorm.DB) (`, `*`, typeNamePb, `, error) {`)
+		typeNamePb, `, db `, p.gormPkgAlias, `.DB) (`, `*`, typeNamePb, `, error) {`)
 	p.In()
 	p.P(`if in == nil {`)
 	p.In()
@@ -431,7 +435,7 @@ func (p *ormPlugin) generateUpdateHandler(file *generator.FileDescriptor, messag
 	typeName := lintName(typeNamePb)
 	p.P(`// DefaultUpdate`, typeName, ` executes a basic gorm update call`)
 	p.P(`func DefaultUpdate`, typeName, `(ctx context.Context, in *`,
-		typeNamePb, `, db gorm.DB) (`, `*`, typeNamePb, `, error) {`)
+		typeNamePb, `, db `, p.gormPkgAlias, `.DB) (`, `*`, typeNamePb, `, error) {`)
 	p.In()
 	p.P(`if in == nil {`)
 	p.In()
@@ -452,7 +456,7 @@ func (p *ormPlugin) generateDeleteHandler(file *generator.FileDescriptor, messag
 	typeName := lintName(typeNamePb)
 	p.P(`// DefaultDelete`, typeName, ` executes a basic gorm delete call`)
 	p.P(`func DefaultDelete`, typeName, `(ctx context.Context, in *`,
-		typeNamePb, `, db gorm.DB) error {`)
+		typeNamePb, `, db `, p.gormPkgAlias, `.DB) error {`)
 	p.In()
 	p.P(`if in == nil {`)
 	p.In()

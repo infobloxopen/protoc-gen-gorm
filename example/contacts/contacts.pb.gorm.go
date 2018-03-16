@@ -3,7 +3,7 @@
 
 package contacts
 
-import gorm "github.com/jinzhu/gorm"
+import gorm1 "github.com/jinzhu/gorm"
 import context "golang.org/x/net/context"
 import proto "github.com/gogo/protobuf/proto"
 import fmt "fmt"
@@ -28,7 +28,7 @@ type ContactORM struct {
 }
 
 func (ContactORM) TableName() string {
-	return "Contact"
+	return "contacts"
 }
 
 // ConvertContactToORM takes a pb object and returns an orm object
@@ -54,7 +54,7 @@ func ConvertContactFromORM(from ContactORM) Contact {
 }
 
 // DefaultCreateContact executes a basic gorm create call
-func DefaultCreateContact(ctx context.Context, in *Contact, db gorm.DB) (*Contact, error) {
+func DefaultCreateContact(ctx context.Context, in *Contact, db gorm1.DB) (*Contact, error) {
 	if in == nil {
 		return nil, fmt.Errorf("Nil argument to DefaultCreateContact")
 	}
@@ -65,7 +65,7 @@ func DefaultCreateContact(ctx context.Context, in *Contact, db gorm.DB) (*Contac
 }
 
 // DefaultReadContact executes a basic gorm read call
-func DefaultReadContact(ctx context.Context, in *Contact, db gorm.DB) (*Contact, error) {
+func DefaultReadContact(ctx context.Context, in *Contact, db gorm1.DB) (*Contact, error) {
 	if in == nil {
 		return nil, fmt.Errorf("Nil argument to DefaultReadContact")
 	}
@@ -77,7 +77,7 @@ func DefaultReadContact(ctx context.Context, in *Contact, db gorm.DB) (*Contact,
 }
 
 // DefaultUpdateContact executes a basic gorm update call
-func DefaultUpdateContact(ctx context.Context, in *Contact, db gorm.DB) (*Contact, error) {
+func DefaultUpdateContact(ctx context.Context, in *Contact, db gorm1.DB) (*Contact, error) {
 	if in == nil {
 		return nil, fmt.Errorf("Nil argument to DefaultUpdateContact")
 	}
@@ -88,7 +88,7 @@ func DefaultUpdateContact(ctx context.Context, in *Contact, db gorm.DB) (*Contac
 }
 
 // DefaultDeleteContact executes a basic gorm delete call
-func DefaultDeleteContact(ctx context.Context, in *Contact, db gorm.DB) error {
+func DefaultDeleteContact(ctx context.Context, in *Contact, db gorm1.DB) error {
 	if in == nil {
 		return fmt.Errorf("Nil argument to DefaultDeleteContact")
 	}

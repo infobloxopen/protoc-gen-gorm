@@ -48,7 +48,7 @@ or `go get github.com/infobloxopen/protoc-gen-gorm`.
 
 ### Usage
 
-Once installed, the `--gorm-out=.` or `--gorm-out=${GOPATH}src`
+Once installed, the `--gorm_out=.` or `--gorm_out=${GOPATH}src`
 option can be specified in a protoc command to generate the .pb.gorm.go files.
 
 Any types with the `option (orm.opts).ormable = true` will have the following

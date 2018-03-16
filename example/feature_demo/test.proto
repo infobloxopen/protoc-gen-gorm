@@ -1,7 +1,7 @@
 syntax = "proto3";
 
 package example;
-import "github.com/infobloxopen/protoc-gen-gorm/options/orm.proto";
+import "github.com/infobloxopen/protoc-gen-gorm/options/gorm.proto";
 import "google/protobuf/wrappers.proto";
 import "google/protobuf/empty.proto";
 
@@ -9,8 +9,8 @@ option go_package = "github.com/infobloxopen/protoc-gen-gorm/example/feature_dem
 
 // test_id_and_stuff is a message that serves as an example
 message test_types {
-  option (orm.opts) = {ormable:true, table: "smorgasbord"};
-  string api_only_string = 1 [(orm.field).drop = true];
+  option (gorm.opts) = {ormable:true, table: "smorgasbord"};
+  string api_only_string = 1 [(gorm.field).drop = true];
   repeated int32 numbers = 2;
   google.protobuf.StringValue optional_string = 3;
   enum status{
@@ -23,13 +23,13 @@ message test_types {
 }
 
 message type_with_id {
-  option (orm.opts) = {
+  option (gorm.opts) = {
     ormable: true,
     include: [
       {type: "int32", name: "uuid", tags: "gorm:\"primary_key\""}
       ]
     };
-  string ip = 1 [(orm.field) = {tags: "gorm:\"ip_addr\""}];
+  string ip = 1 [(gorm.field) = {tags: "gorm:\"ip_addr\""}];
   repeated test_types things = 3;
   test_types a_nested_object = 4;
 }
@@ -39,6 +39,6 @@ message api_only_type {
 }
 
 message type_becomes_empty {
-  option (orm.opts).ormable = true;
+  option (gorm.opts).ormable = true;
   api_only_type a_thing = 1;
 }

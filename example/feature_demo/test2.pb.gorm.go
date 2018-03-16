@@ -3,7 +3,7 @@
 
 package example
 
-import gorm "github.com/jinzhu/gorm"
+import gorm1 "github.com/jinzhu/gorm"
 import context "golang.org/x/net/context"
 import proto "github.com/gogo/protobuf/proto"
 import fmt "fmt"
@@ -22,7 +22,7 @@ type IntPointORM struct {
 }
 
 func (IntPointORM) TableName() string {
-	return "int_point"
+	return "int_points"
 }
 
 // ConvertIntPointToORM takes a pb object and returns an orm object
@@ -50,7 +50,7 @@ func ConvertIntPointFromORM(from IntPointORM) IntPoint {
 }
 
 // DefaultCreateIntPoint executes a basic gorm create call
-func DefaultCreateIntPoint(ctx context.Context, in *IntPoint, db gorm.DB) (*IntPoint, error) {
+func DefaultCreateIntPoint(ctx context.Context, in *IntPoint, db gorm1.DB) (*IntPoint, error) {
 	if in == nil {
 		return nil, fmt.Errorf("Nil argument to DefaultCreateIntPoint")
 	}
@@ -61,7 +61,7 @@ func DefaultCreateIntPoint(ctx context.Context, in *IntPoint, db gorm.DB) (*IntP
 }
 
 // DefaultReadIntPoint executes a basic gorm read call
-func DefaultReadIntPoint(ctx context.Context, in *IntPoint, db gorm.DB) (*IntPoint, error) {
+func DefaultReadIntPoint(ctx context.Context, in *IntPoint, db gorm1.DB) (*IntPoint, error) {
 	if in == nil {
 		return nil, fmt.Errorf("Nil argument to DefaultReadIntPoint")
 	}
@@ -73,7 +73,7 @@ func DefaultReadIntPoint(ctx context.Context, in *IntPoint, db gorm.DB) (*IntPoi
 }
 
 // DefaultUpdateIntPoint executes a basic gorm update call
-func DefaultUpdateIntPoint(ctx context.Context, in *IntPoint, db gorm.DB) (*IntPoint, error) {
+func DefaultUpdateIntPoint(ctx context.Context, in *IntPoint, db gorm1.DB) (*IntPoint, error) {
 	if in == nil {
 		return nil, fmt.Errorf("Nil argument to DefaultUpdateIntPoint")
 	}
@@ -84,7 +84,7 @@ func DefaultUpdateIntPoint(ctx context.Context, in *IntPoint, db gorm.DB) (*IntP
 }
 
 // DefaultDeleteIntPoint executes a basic gorm delete call
-func DefaultDeleteIntPoint(ctx context.Context, in *IntPoint, db gorm.DB) error {
+func DefaultDeleteIntPoint(ctx context.Context, in *IntPoint, db gorm1.DB) error {
 	if in == nil {
 		return fmt.Errorf("Nil argument to DefaultDeleteIntPoint")
 	}

@@ -1,13 +1,13 @@
 syntax = "proto3";
 
 package example;
-import "github.com/infobloxopen/protoc-gen-gorm/options/orm.proto";
+import "github.com/infobloxopen/protoc-gen-gorm/options/gorm.proto";
 import "example/feature_demo/test.proto";
 
 option go_package = "github.com/infobloxopen/protoc-gen-gorm/example/feature_demo;example";
 
 message int_point {
-  option (orm.opts).ormable = true;
+  option (gorm.opts).ormable = true;
   int32 x = 1;
   int32 y = 2;
   type_becomes_empty z = 3;

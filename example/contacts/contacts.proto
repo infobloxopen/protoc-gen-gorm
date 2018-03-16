@@ -6,12 +6,12 @@ import "google/protobuf/empty.proto";
 import "google/api/annotations.proto";
 import "github.com/lyft/protoc-gen-validate/validate/validate.proto";
 import "protoc-gen-swagger/options/annotations.proto";
-import "github.com/infobloxopen/protoc-gen-gorm/options/orm.proto";
+import "github.com/infobloxopen/protoc-gen-gorm/options/gorm.proto";
 
 option go_package = "github.com/infobloxopen/protoc-gen-gorm/example/contacts;contacts";
 
 message Contact {
-    option (orm.opts).ormable = true;
+    option (gorm.opts).ormable = true;
     uint64 id = 1;
     string first_name = 2;
     string middle_name = 3;
