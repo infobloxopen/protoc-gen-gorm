@@ -1,5 +1,5 @@
 hash: 5d4fb27f861fb4a53f3cfafc8916cba71c7038b3438b57c24ffa36f028689cb2
-updated: 2018-03-06T17:28:16.140271-08:00
+updated: 2018-03-16T10:16:32.577587-07:00
 imports:
 - name: github.com/gogo/protobuf
   version: d5bc08a2c4c572e9bcff820aa125fe38ac3a3a42
@@ -9,4 +9,18 @@ imports:
   - protoc-gen-gogo/descriptor
   - protoc-gen-gogo/generator
   - protoc-gen-gogo/plugin
+- name: github.com/golang/protobuf
+  version: bbd03ef6da3a115852eaf24c8a1c46aeb39aa175
+  subpackages:
+  - proto
+  - ptypes/empty
+  - ptypes/wrappers
+- name: github.com/jinzhu/gorm
+  version: 52c5c8127cf4aeffde3e0aa9222640832075a90f
+- name: github.com/jinzhu/inflection
+  version: 04140366298a54a039076d798123ffa108fff46c
+- name: golang.org/x/net
+  version: e0c57d8f86c17f0724497efcb3bc617e82834821
+  subpackages:
+  - context
 testImports: []
