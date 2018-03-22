@@ -4,7 +4,7 @@
 package example
 
 import gorm1 "github.com/jinzhu/gorm"
-import context "golang.org/x/net/context"
+import context "context"
 import proto "github.com/gogo/protobuf/proto"
 import fmt "fmt"
 import math "math"
@@ -16,9 +16,9 @@ var _ = math.Inf
 
 // IntPointORM no comment was provided for message type
 type IntPointORM struct {
-	X int32
-	Y int32
-	Z *TypeBecomesEmptyORM
+	ID uint32
+	X  int32
+	Y  int32
 }
 
 func (IntPointORM) TableName() string {
@@ -28,67 +28,88 @@ func (IntPointORM) TableName() string {
 // ConvertIntPointToORM takes a pb object and returns an orm object
 func ConvertIntPointToORM(from IntPoint) IntPointORM {
 	to := IntPointORM{}
+	to.ID = from.Id
 	to.X = from.X
 	to.Y = from.Y
-	if from.Z != nil {
-		tempZ := ConvertTypeBecomesEmptyToORM(*from.Z)
-		to.Z = &tempZ
-	}
 	return to
 }
 
 // ConvertIntPointFromORM takes an orm object and returns a pb object
 func ConvertIntPointFromORM(from IntPointORM) IntPoint {
 	to := IntPoint{}
+	to.Id = from.ID
 	to.X = from.X
 	to.Y = from.Y
-	if from.Z != nil {
-		tempZ := ConvertTypeBecomesEmptyFromORM(*from.Z)
-		to.Z = &tempZ
-	}
 	return to
 }
 
+////////////////////////// CURDL for objects
 // DefaultCreateIntPoint executes a basic gorm create call
-func DefaultCreateIntPoint(ctx context.Context, in *IntPoint, db gorm1.DB) (*IntPoint, error) {
+func DefaultCreateIntPoint(ctx context.Context, in *IntPoint, db *gorm1.DB) (*IntPoint, error) {
 	if in == nil {
 		return nil, fmt.Errorf("Nil argument to DefaultCreateIntPoint")
 	}
 	ormObj := ConvertIntPointToORM(*in)
-	db.Create(&ormObj)
+	if err := db.Create(&ormObj).Error; err != nil {
+		return nil, err
+	}
 	pbResponse := ConvertIntPointFromORM(ormObj)
 	return &pbResponse, nil
 }
 
 // DefaultReadIntPoint executes a basic gorm read call
-func DefaultReadIntPoint(ctx context.Context, in *IntPoint, db gorm1.DB) (*IntPoint, error) {
+func DefaultReadIntPoint(ctx context.Context, in *IntPoint, db *gorm1.DB) (*IntPoint, error) {
 	if in == nil {
 		return nil, fmt.Errorf("Nil argument to DefaultReadIntPoint")
 	}
 	ormParams := ConvertIntPointToORM(*in)
 	ormResponse := IntPointORM{}
-	db.Set("gorm:auto_preload", true).Where(&ormParams).First(&ormResponse)
+	if err := db.Set("gorm:auto_preload", true).Where(&ormParams).First(&ormResponse).Error; err != nil {
+		return nil, err
+	}
 	pbResponse := ConvertIntPointFromORM(ormResponse)
 	return &pbResponse, nil
 }
 
 // DefaultUpdateIntPoint executes a basic gorm update call
-func DefaultUpdateIntPoint(ctx context.Context, in *IntPoint, db gorm1.DB) (*IntPoint, error) {
+func DefaultUpdateIntPoint(ctx context.Context, in *IntPoint, db *gorm1.DB) (*IntPoint, error) {
 	if in == nil {
 		return nil, fmt.Errorf("Nil argument to DefaultUpdateIntPoint")
 	}
 	ormObj := ConvertIntPointToORM(*in)
-	db.Save(&ormObj)
+	if err := db.Save(&ormObj).Error; err != nil {
+		return nil, err
+	}
 	pbResponse := ConvertIntPointFromORM(ormObj)
 	return &pbResponse, nil
 }
 
 // DefaultDeleteIntPoint executes a basic gorm delete call
-func DefaultDeleteIntPoint(ctx context.Context, in *IntPoint, db gorm1.DB) error {
+func DefaultDeleteIntPoint(ctx context.Context, in *IntPoint, db *gorm1.DB) error {
 	if in == nil {
 		return fmt.Errorf("Nil argument to DefaultDeleteIntPoint")
 	}
 	ormObj := ConvertIntPointToORM(*in)
-	db.Where(&ormObj).Delete(&IntPointORM{})
-	return nil
+	err := db.Where(&ormObj).Delete(&IntPointORM{}).Error
+	return err
+}
+
+////////////////////////// Handlers for RPCs
+type PointServiceDefaultHandler struct {
+	DB gorm1.DB
+}
+
+// CreateIntPoint ...
+func (m *PointServiceDefaultHandler) CreateIntPoint(ctx context.Context, in *example.IntPoint, opts ...grpc.CallOption) (*example.IntPoint, error) {
+	return nil, nil
+}
+
+// ReadIntPoint ...
+func (m *PointServiceDefaultHandler) ReadIntPoint(ctx context.Context, in *example.IntPoint, opts ...grpc.CallOption) (*example.IntPoint, error) {
+	return nil, nil
+}
+
+// UpdateIntPoint ...
+func (m *PointServiceDefaultHandler) UpdateIntPoint(ctx context.Context, in *example.IntPoint, opts ...grpc.CallOption) (*example.IntPoint, error) {
+	return nil, nil
 }

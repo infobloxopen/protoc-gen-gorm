@@ -4,7 +4,7 @@
 package example
 
 import gorm1 "github.com/jinzhu/gorm"
-import context "golang.org/x/net/context"
+import context "context"
 import proto "github.com/gogo/protobuf/proto"
 import fmt "fmt"
 import math "math"
@@ -18,8 +18,8 @@ var _ = math.Inf
 
 // TestTypesORM ...  test_id_and_stuff is a message that serves as an example
 type TestTypesORM struct {
-	// Skipping field: ApiOnlyString
-	Numbers        []int32
+	// Skipping field from proto option: ApiOnlyString
+	// A repeated raw type is not supported by gORM
 	OptionalString *string
 	BecomesInt     int32
 	// Empty type has no ORM equivalency
@@ -33,9 +33,6 @@ func (TestTypesORM) TableName() string {
 func ConvertTestTypesToORM(from TestTypes) TestTypesORM {
 	to := TestTypesORM{}
 	// Skipping field: ApiOnlyString
-	for _, v := range from.Numbers {
-		to.Numbers = append(to.Numbers, v)
-	}
 	if from.OptionalString != nil {
 		v := from.OptionalString.Value
 		to.OptionalString = &v
@@ -48,9 +45,6 @@ func ConvertTestTypesToORM(from TestTypes) TestTypesORM {
 func ConvertTestTypesFromORM(from TestTypesORM) TestTypes {
 	to := TestTypes{}
 	// Skipping field: ApiOnlyString
-	for _, v := range from.Numbers {
-		to.Numbers = append(to.Numbers, v)
-	}
 	if from.OptionalString != nil {
 		to.OptionalString = &google_protobuf1.StringValue{Value: *from.OptionalString}
 	}
@@ -60,10 +54,10 @@ func ConvertTestTypesFromORM(from TestTypesORM) TestTypes {
 
 // TypeWithIDORM no comment was provided for message type
 type TypeWithIDORM struct {
-	UUID          int32  `gorm:"primary_key"`
-	IP            string `gorm:"ip_addr"`
-	Things        []*TestTypesORM
-	ANestedObject *TestTypesORM
+	UUID          int32           `gorm:"primary_key"`
+	IP            string          `gorm:"ip_addr"`
+	Things        []*TestTypesORM `gorm:"foreignkey:TypeWithIDID"`
+	ANestedObject *TestTypesORM   `gorm:"foreignkey:TypeWithIDID"`
 }
 
 func (TypeWithIDORM) TableName() string {
@@ -110,7 +104,7 @@ func ConvertTypeWithIDFromORM(from TypeWithIDORM) TypeWithId {
 
 // TypeBecomesEmptyORM no comment was provided for message type
 type TypeBecomesEmptyORM struct {
-	// Can't work with type *ApiOnlyType, not tagged as ormable
+	// Skipping type *ApiOnlyType, not tagged as ormable
 }
 
 func (TypeBecomesEmptyORM) TableName() string {
@@ -129,134 +123,153 @@ func ConvertTypeBecomesEmptyFromORM(from TypeBecomesEmptyORM) TypeBecomesEmpty {
 	return to
 }
 
+////////////////////////// CURDL for objects
 // DefaultCreateTestTypes executes a basic gorm create call
-func DefaultCreateTestTypes(ctx context.Context, in *TestTypes, db gorm1.DB) (*TestTypes, error) {
+func DefaultCreateTestTypes(ctx context.Context, in *TestTypes, db *gorm1.DB) (*TestTypes, error) {
 	if in == nil {
 		return nil, fmt.Errorf("Nil argument to DefaultCreateTestTypes")
 	}
 	ormObj := ConvertTestTypesToORM(*in)
-	db.Create(&ormObj)
+	if err := db.Create(&ormObj).Error; err != nil {
+		return nil, err
+	}
 	pbResponse := ConvertTestTypesFromORM(ormObj)
 	return &pbResponse, nil
 }
 
 // DefaultReadTestTypes executes a basic gorm read call
-func DefaultReadTestTypes(ctx context.Context, in *TestTypes, db gorm1.DB) (*TestTypes, error) {
+func DefaultReadTestTypes(ctx context.Context, in *TestTypes, db *gorm1.DB) (*TestTypes, error) {
 	if in == nil {
 		return nil, fmt.Errorf("Nil argument to DefaultReadTestTypes")
 	}
 	ormParams := ConvertTestTypesToORM(*in)
 	ormResponse := TestTypesORM{}
-	db.Set("gorm:auto_preload", true).Where(&ormParams).First(&ormResponse)
+	if err := db.Set("gorm:auto_preload", true).Where(&ormParams).First(&ormResponse).Error; err != nil {
+		return nil, err
+	}
 	pbResponse := ConvertTestTypesFromORM(ormResponse)
 	return &pbResponse, nil
 }
 
 // DefaultUpdateTestTypes executes a basic gorm update call
-func DefaultUpdateTestTypes(ctx context.Context, in *TestTypes, db gorm1.DB) (*TestTypes, error) {
+func DefaultUpdateTestTypes(ctx context.Context, in *TestTypes, db *gorm1.DB) (*TestTypes, error) {
 	if in == nil {
 		return nil, fmt.Errorf("Nil argument to DefaultUpdateTestTypes")
 	}
 	ormObj := ConvertTestTypesToORM(*in)
-	db.Save(&ormObj)
+	if err := db.Save(&ormObj).Error; err != nil {
+		return nil, err
+	}
 	pbResponse := ConvertTestTypesFromORM(ormObj)
 	return &pbResponse, nil
 }
 
 // DefaultDeleteTestTypes executes a basic gorm delete call
-func DefaultDeleteTestTypes(ctx context.Context, in *TestTypes, db gorm1.DB) error {
+func DefaultDeleteTestTypes(ctx context.Context, in *TestTypes, db *gorm1.DB) error {
 	if in == nil {
 		return fmt.Errorf("Nil argument to DefaultDeleteTestTypes")
 	}
 	ormObj := ConvertTestTypesToORM(*in)
-	db.Where(&ormObj).Delete(&TestTypesORM{})
-	return nil
+	err := db.Where(&ormObj).Delete(&TestTypesORM{}).Error
+	return err
 }
 
 // DefaultCreateTypeWithID executes a basic gorm create call
-func DefaultCreateTypeWithID(ctx context.Context, in *TypeWithId, db gorm1.DB) (*TypeWithId, error) {
+func DefaultCreateTypeWithID(ctx context.Context, in *TypeWithId, db *gorm1.DB) (*TypeWithId, error) {
 	if in == nil {
 		return nil, fmt.Errorf("Nil argument to DefaultCreateTypeWithID")
 	}
 	ormObj := ConvertTypeWithIDToORM(*in)
-	db.Create(&ormObj)
+	if err := db.Create(&ormObj).Error; err != nil {
+		return nil, err
+	}
 	pbResponse := ConvertTypeWithIDFromORM(ormObj)
 	return &pbResponse, nil
 }
 
 // DefaultReadTypeWithID executes a basic gorm read call
-func DefaultReadTypeWithID(ctx context.Context, in *TypeWithId, db gorm1.DB) (*TypeWithId, error) {
+func DefaultReadTypeWithID(ctx context.Context, in *TypeWithId, db *gorm1.DB) (*TypeWithId, error) {
 	if in == nil {
 		return nil, fmt.Errorf("Nil argument to DefaultReadTypeWithID")
 	}
 	ormParams := ConvertTypeWithIDToORM(*in)
 	ormResponse := TypeWithIDORM{}
-	db.Set("gorm:auto_preload", true).Where(&ormParams).First(&ormResponse)
+	if err := db.Set("gorm:auto_preload", true).Where(&ormParams).First(&ormResponse).Error; err != nil {
+		return nil, err
+	}
 	pbResponse := ConvertTypeWithIDFromORM(ormResponse)
 	return &pbResponse, nil
 }
 
 // DefaultUpdateTypeWithID executes a basic gorm update call
-func DefaultUpdateTypeWithID(ctx context.Context, in *TypeWithId, db gorm1.DB) (*TypeWithId, error) {
+func DefaultUpdateTypeWithID(ctx context.Context, in *TypeWithId, db *gorm1.DB) (*TypeWithId, error) {
 	if in == nil {
 		return nil, fmt.Errorf("Nil argument to DefaultUpdateTypeWithID")
 	}
 	ormObj := ConvertTypeWithIDToORM(*in)
-	db.Save(&ormObj)
+	if err := db.Save(&ormObj).Error; err != nil {
+		return nil, err
+	}
 	pbResponse := ConvertTypeWithIDFromORM(ormObj)
 	return &pbResponse, nil
 }
 
 // DefaultDeleteTypeWithID executes a basic gorm delete call
-func DefaultDeleteTypeWithID(ctx context.Context, in *TypeWithId, db gorm1.DB) error {
+func DefaultDeleteTypeWithID(ctx context.Context, in *TypeWithId, db *gorm1.DB) error {
 	if in == nil {
 		return fmt.Errorf("Nil argument to DefaultDeleteTypeWithID")
 	}
 	ormObj := ConvertTypeWithIDToORM(*in)
-	db.Where(&ormObj).Delete(&TypeWithIDORM{})
-	return nil
+	err := db.Where(&ormObj).Delete(&TypeWithIDORM{}).Error
+	return err
 }
 
 // DefaultCreateTypeBecomesEmpty executes a basic gorm create call
-func DefaultCreateTypeBecomesEmpty(ctx context.Context, in *TypeBecomesEmpty, db gorm1.DB) (*TypeBecomesEmpty, error) {
+func DefaultCreateTypeBecomesEmpty(ctx context.Context, in *TypeBecomesEmpty, db *gorm1.DB) (*TypeBecomesEmpty, error) {
 	if in == nil {
 		return nil, fmt.Errorf("Nil argument to DefaultCreateTypeBecomesEmpty")
 	}
 	ormObj := ConvertTypeBecomesEmptyToORM(*in)
-	db.Create(&ormObj)
+	if err := db.Create(&ormObj).Error; err != nil {
+		return nil, err
+	}
 	pbResponse := ConvertTypeBecomesEmptyFromORM(ormObj)
 	return &pbResponse, nil
 }
 
 // DefaultReadTypeBecomesEmpty executes a basic gorm read call
-func DefaultReadTypeBecomesEmpty(ctx context.Context, in *TypeBecomesEmpty, db gorm1.DB) (*TypeBecomesEmpty, error) {
+func DefaultReadTypeBecomesEmpty(ctx context.Context, in *TypeBecomesEmpty, db *gorm1.DB) (*TypeBecomesEmpty, error) {
 	if in == nil {
 		return nil, fmt.Errorf("Nil argument to DefaultReadTypeBecomesEmpty")
 	}
 	ormParams := ConvertTypeBecomesEmptyToORM(*in)
 	ormResponse := TypeBecomesEmptyORM{}
-	db.Set("gorm:auto_preload", true).Where(&ormParams).First(&ormResponse)
+	if err := db.Set("gorm:auto_preload", true).Where(&ormParams).First(&ormResponse).Error; err != nil {
+		return nil, err
+	}
 	pbResponse := ConvertTypeBecomesEmptyFromORM(ormResponse)
 	return &pbResponse, nil
 }
 
 // DefaultUpdateTypeBecomesEmpty executes a basic gorm update call
-func DefaultUpdateTypeBecomesEmpty(ctx context.Context, in *TypeBecomesEmpty, db gorm1.DB) (*TypeBecomesEmpty, error) {
+func DefaultUpdateTypeBecomesEmpty(ctx context.Context, in *TypeBecomesEmpty, db *gorm1.DB) (*TypeBecomesEmpty, error) {
 	if in == nil {
 		return nil, fmt.Errorf("Nil argument to DefaultUpdateTypeBecomesEmpty")
 	}
 	ormObj := ConvertTypeBecomesEmptyToORM(*in)
-	db.Save(&ormObj)
+	if err := db.Save(&ormObj).Error; err != nil {
+		return nil, err
+	}
 	pbResponse := ConvertTypeBecomesEmptyFromORM(ormObj)
 	return &pbResponse, nil
 }
 
 // DefaultDeleteTypeBecomesEmpty executes a basic gorm delete call
-func DefaultDeleteTypeBecomesEmpty(ctx context.Context, in *TypeBecomesEmpty, db gorm1.DB) error {
+func DefaultDeleteTypeBecomesEmpty(ctx context.Context, in *TypeBecomesEmpty, db *gorm1.DB) error {
 	if in == nil {
 		return fmt.Errorf("Nil argument to DefaultDeleteTypeBecomesEmpty")
 	}
 	ormObj := ConvertTypeBecomesEmptyToORM(*in)
-	db.Where(&ormObj).Delete(&TypeBecomesEmptyORM{})
-	return nil
+	err := db.Where(&ormObj).Delete(&TypeBecomesEmptyORM{}).Error
+	return err
 }
