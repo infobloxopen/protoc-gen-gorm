@@ -387,7 +387,7 @@ func (p *ormPlugin) generateDefaultHandlers(file *generator.FileDescriptor) {
 	}
 }
 
-func (p *ormPlugin) GetOption(message *generator.Descriptor) *gorm.GormMessageOptions {
+func (p *ormPlugin) GetMessageOptions(message *generator.Descriptor) *gorm.GormMessageOptions {
 	if message.Options == nil {
 		return nil
 	}
@@ -408,7 +408,7 @@ func (p *ormPlugin) generateCreateHandler(message *generator.Descriptor) {
 	p.P(`return nil, fmt.Errorf("Nil argument to DefaultCreate`, typeName, `")`)
 	p.P(`}`)
 	p.P(`ormObj := Convert`, typeName, `ToORM(*in)`)
-	if opts := p.GetOption(message); opts != nil && opts.GetMultiTenant() {
+	if opts := p.GetMessageOptions(message); opts != nil && opts.GetMultiTenant() {
 		p.P("tenantID, tIDErr := auth.GetTenantID(ctx)")
 		p.P("if tIDErr != nil {")
 		p.P("return nil, tIDErr")
@@ -434,7 +434,7 @@ func (p *ormPlugin) generateReadHandler(message *generator.Descriptor) {
 	p.P(`return nil, fmt.Errorf("Nil argument to DefaultRead`, typeName, `")`)
 	p.P(`}`)
 	p.P(`ormParams := Convert`, typeName, `ToORM(*in)`)
-	if opts := p.GetOption(message); opts != nil && opts.GetMultiTenant() {
+	if opts := p.GetMessageOptions(message); opts != nil && opts.GetMultiTenant() {
 		p.P("tenantID, tIDErr := auth.GetTenantID(ctx)")
 		p.P("if tIDErr != nil {")
 		p.P("return nil, tIDErr")
@@ -463,7 +463,7 @@ func (p *ormPlugin) generateUpdateHandler(message *generator.Descriptor) {
 		}
 	}
 	isMultiTenant := false
-	if opts := p.GetOption(message); opts != nil && opts.GetMultiTenant() {
+	if opts := p.GetMessageOptions(message); opts != nil && opts.GetMultiTenant() {
 		isMultiTenant = true
 	}
 
@@ -506,7 +506,7 @@ func (p *ormPlugin) generateDeleteHandler(message *generator.Descriptor) {
 	p.P(`return fmt.Errorf("Nil argument to DefaultDelete`, typeName, `")`)
 	p.P(`}`)
 	p.P(`ormObj := Convert`, typeName, `ToORM(*in)`)
-	if opts := p.GetOption(message); opts != nil && opts.GetMultiTenant() {
+	if opts := p.GetMessageOptions(message); opts != nil && opts.GetMultiTenant() {
 		p.P("tenantID, tIDErr := auth.GetTenantID(ctx)")
 		p.P("if tIDErr != nil {")
 		p.P("return tIDErr")
