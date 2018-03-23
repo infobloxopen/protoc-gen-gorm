@@ -8,7 +8,13 @@ option go_package = "github.com/infobloxopen/protoc-gen-gorm/example/feature_dem
 
 message int_point {
   option (gorm.opts).ormable = true;
-  int32 x = 1;
-  int32 y = 2;
-  type_becomes_empty z = 3;
+  uint32 id = 1;
+  int32 x = 2;
+  int32 y = 3;
+}
+
+service PointService {
+  rpc CreateIntPoint ( int_point ) returns ( int_point ) {}
+  rpc ReadIntPoint ( int_point ) returns ( int_point ) {}
+  rpc UpdateIntPoint ( int_point ) returns ( int_point ) {}
 }
