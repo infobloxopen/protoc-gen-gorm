@@ -11,7 +11,10 @@ import "github.com/infobloxopen/protoc-gen-gorm/options/gorm.proto";
 option go_package = "github.com/infobloxopen/protoc-gen-gorm/example/contacts;contacts";
 
 message Contact {
-    option (gorm.opts).ormable = true;
+    option (gorm.opts) = {
+      ormable: true,
+      multi_tenant: true
+    };
     uint64 id = 1;
     string first_name = 2;
     string middle_name = 3;

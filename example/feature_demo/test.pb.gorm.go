@@ -102,6 +102,57 @@ func ConvertTypeWithIDFromORM(from TypeWithIDORM) TypeWithId {
 	return to
 }
 
+// MultitenantTypeWithIDORM no comment was provided for message type
+type MultitenantTypeWithIDORM struct {
+	TenantID  string
+	ID        uint64
+	SomeField string
+}
+
+func (MultitenantTypeWithIDORM) TableName() string {
+	return "multitenant_type_with_ids"
+}
+
+// ConvertMultitenantTypeWithIDToORM takes a pb object and returns an orm object
+func ConvertMultitenantTypeWithIDToORM(from MultitenantTypeWithId) MultitenantTypeWithIDORM {
+	to := MultitenantTypeWithIDORM{}
+	to.ID = from.Id
+	to.SomeField = from.SomeField
+	return to
+}
+
+// ConvertMultitenantTypeWithIDFromORM takes an orm object and returns a pb object
+func ConvertMultitenantTypeWithIDFromORM(from MultitenantTypeWithIDORM) MultitenantTypeWithId {
+	to := MultitenantTypeWithId{}
+	to.Id = from.ID
+	to.SomeField = from.SomeField
+	return to
+}
+
+// MultitenantTypeWithoutIDORM no comment was provided for message type
+type MultitenantTypeWithoutIDORM struct {
+	TenantID  string
+	SomeField string
+}
+
+func (MultitenantTypeWithoutIDORM) TableName() string {
+	return "multitenant_type_without_ids"
+}
+
+// ConvertMultitenantTypeWithoutIDToORM takes a pb object and returns an orm object
+func ConvertMultitenantTypeWithoutIDToORM(from MultitenantTypeWithoutId) MultitenantTypeWithoutIDORM {
+	to := MultitenantTypeWithoutIDORM{}
+	to.SomeField = from.SomeField
+	return to
+}
+
+// ConvertMultitenantTypeWithoutIDFromORM takes an orm object and returns a pb object
+func ConvertMultitenantTypeWithoutIDFromORM(from MultitenantTypeWithoutIDORM) MultitenantTypeWithoutId {
+	to := MultitenantTypeWithoutId{}
+	to.SomeField = from.SomeField
+	return to
+}
+
 // TypeBecomesEmptyORM no comment was provided for message type
 type TypeBecomesEmptyORM struct {
 	// Skipping type *ApiOnlyType, not tagged as ormable
@@ -221,6 +272,130 @@ func DefaultDeleteTypeWithID(ctx context.Context, in *TypeWithId, db *gorm1.DB) 
 	}
 	ormObj := ConvertTypeWithIDToORM(*in)
 	err := db.Where(&ormObj).Delete(&TypeWithIDORM{}).Error
+	return err
+}
+
+// DefaultCreateMultitenantTypeWithID executes a basic gorm create call
+func DefaultCreateMultitenantTypeWithID(ctx context.Context, in *MultitenantTypeWithId, db *gorm1.DB) (*MultitenantTypeWithId, error) {
+	if in == nil {
+		return nil, fmt.Errorf("Nil argument to DefaultCreateMultitenantTypeWithID")
+	}
+	ormObj := ConvertMultitenantTypeWithIDToORM(*in)
+	tenantID, tIDErr := auth.GetTenantID(ctx)
+	if tIDErr != nil {
+		return nil, tIDErr
+	}
+	ormObj.TenantID = tenantID
+	if err := db.Create(&ormObj).Error; err != nil {
+		return nil, err
+	}
+	pbResponse := ConvertMultitenantTypeWithIDFromORM(ormObj)
+	return &pbResponse, nil
+}
+
+// DefaultReadMultitenantTypeWithID executes a basic gorm read call
+func DefaultReadMultitenantTypeWithID(ctx context.Context, in *MultitenantTypeWithId, db *gorm1.DB) (*MultitenantTypeWithId, error) {
+	if in == nil {
+		return nil, fmt.Errorf("Nil argument to DefaultReadMultitenantTypeWithID")
+	}
+	ormParams := ConvertMultitenantTypeWithIDToORM(*in)
+	tenantID, tIDErr := auth.GetTenantID(ctx)
+	if tIDErr != nil {
+		return nil, tIDErr
+	}
+	ormParams.TenantID = tenantID
+	ormResponse := MultitenantTypeWithIDORM{}
+	if err := db.Set("gorm:auto_preload", true).Where(&ormParams).First(&ormResponse).Error; err != nil {
+		return nil, err
+	}
+	pbResponse := ConvertMultitenantTypeWithIDFromORM(ormResponse)
+	return &pbResponse, nil
+}
+
+// DefaultUpdateMultitenantTypeWithID executes a basic gorm update call
+func DefaultUpdateMultitenantTypeWithID(ctx context.Context, in *MultitenantTypeWithId, db *gorm1.DB) (*MultitenantTypeWithId, error) {
+	if in == nil {
+		return nil, fmt.Errorf("Nil argument to DefaultUpdateMultitenantTypeWithID")
+	}
+	if exists, err := DefaultReadMultitenantTypeWithID(ctx, &MultitenantTypeWithID{Id: in.GetId()}, db); err != nil {
+		return nil, err
+	} else if exists == nil {
+		return nil, errors.New("MultitenantTypeWithID not found")
+	}
+	ormObj := ConvertMultitenantTypeWithIDToORM(*in)
+	if err := db.Save(&ormObj).Error; err != nil {
+		return nil, err
+	}
+	pbResponse := ConvertMultitenantTypeWithIDFromORM(ormObj)
+	return &pbResponse, nil
+}
+
+// DefaultDeleteMultitenantTypeWithID executes a basic gorm delete call
+func DefaultDeleteMultitenantTypeWithID(ctx context.Context, in *MultitenantTypeWithId, db *gorm1.DB) error {
+	if in == nil {
+		return fmt.Errorf("Nil argument to DefaultDeleteMultitenantTypeWithID")
+	}
+	ormObj := ConvertMultitenantTypeWithIDToORM(*in)
+	tenantID, tIDErr := auth.GetTenantID(ctx)
+	if tIDErr != nil {
+		return tIDErr
+	}
+	ormObj.TenantID = tenantID
+	err := db.Where(&ormObj).Delete(&MultitenantTypeWithIDORM{}).Error
+	return err
+}
+
+// DefaultCreateMultitenantTypeWithoutID executes a basic gorm create call
+func DefaultCreateMultitenantTypeWithoutID(ctx context.Context, in *MultitenantTypeWithoutId, db *gorm1.DB) (*MultitenantTypeWithoutId, error) {
+	if in == nil {
+		return nil, fmt.Errorf("Nil argument to DefaultCreateMultitenantTypeWithoutID")
+	}
+	ormObj := ConvertMultitenantTypeWithoutIDToORM(*in)
+	tenantID, tIDErr := auth.GetTenantID(ctx)
+	if tIDErr != nil {
+		return nil, tIDErr
+	}
+	ormObj.TenantID = tenantID
+	if err := db.Create(&ormObj).Error; err != nil {
+		return nil, err
+	}
+	pbResponse := ConvertMultitenantTypeWithoutIDFromORM(ormObj)
+	return &pbResponse, nil
+}
+
+// DefaultReadMultitenantTypeWithoutID executes a basic gorm read call
+func DefaultReadMultitenantTypeWithoutID(ctx context.Context, in *MultitenantTypeWithoutId, db *gorm1.DB) (*MultitenantTypeWithoutId, error) {
+	if in == nil {
+		return nil, fmt.Errorf("Nil argument to DefaultReadMultitenantTypeWithoutID")
+	}
+	ormParams := ConvertMultitenantTypeWithoutIDToORM(*in)
+	tenantID, tIDErr := auth.GetTenantID(ctx)
+	if tIDErr != nil {
+		return nil, tIDErr
+	}
+	ormParams.TenantID = tenantID
+	ormResponse := MultitenantTypeWithoutIDORM{}
+	if err := db.Set("gorm:auto_preload", true).Where(&ormParams).First(&ormResponse).Error; err != nil {
+		return nil, err
+	}
+	pbResponse := ConvertMultitenantTypeWithoutIDFromORM(ormResponse)
+	return &pbResponse, nil
+}
+
+// Cannot autogen DefaultUpdateMultitenantTypeWithoutID: this is a multi-tenant table without an "id" field in the message.
+
+// DefaultDeleteMultitenantTypeWithoutID executes a basic gorm delete call
+func DefaultDeleteMultitenantTypeWithoutID(ctx context.Context, in *MultitenantTypeWithoutId, db *gorm1.DB) error {
+	if in == nil {
+		return fmt.Errorf("Nil argument to DefaultDeleteMultitenantTypeWithoutID")
+	}
+	ormObj := ConvertMultitenantTypeWithoutIDToORM(*in)
+	tenantID, tIDErr := auth.GetTenantID(ctx)
+	if tIDErr != nil {
+		return tIDErr
+	}
+	ormObj.TenantID = tenantID
+	err := db.Where(&ormObj).Delete(&MultitenantTypeWithoutIDORM{}).Error
 	return err
 }
 

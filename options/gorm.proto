@@ -25,6 +25,7 @@ message GormMessageOptions {
   required bool ormable = 1;
   repeated ExtraField include = 2;
   optional string table = 3;
+  optional bool multi_tenant = 4;
 }
 
 message ExtraField {

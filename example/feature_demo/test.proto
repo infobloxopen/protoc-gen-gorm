@@ -34,6 +34,23 @@ message type_with_id {
   test_types a_nested_object = 4;
 }
 
+message multitenant_type_with_id {
+  option (gorm.opts) = {
+    ormable: true,
+    multi_tenant: true
+  };
+  uint64 id = 1;
+  string some_field = 2;
+}
+
+message multitenant_type_without_id {
+  option (gorm.opts) = {
+    ormable: true,
+    multi_tenant: true
+  };
+  string some_field = 1;
+}
+
 message api_only_type {
   string contents = 1;
 }
