@@ -20,6 +20,7 @@ var _ = math.Inf
 
 // ContactORM no comment was provided for message type
 type ContactORM struct {
+	TenantID     string
 	ID           uint64
 	FirstName    string
 	MiddleName   string
@@ -60,6 +61,11 @@ func DefaultCreateContact(ctx context.Context, in *Contact, db *gorm1.DB) (*Cont
 		return nil, fmt.Errorf("Nil argument to DefaultCreateContact")
 	}
 	ormObj := ConvertContactToORM(*in)
+	tenantID, tIDErr := auth.GetTenantID(ctx)
+	if tIDErr != nil {
+		return nil, tIDErr
+	}
+	ormObj.TenantID = tenantID
 	if err := db.Create(&ormObj).Error; err != nil {
 		return nil, err
 	}
@@ -73,6 +79,11 @@ func DefaultReadContact(ctx context.Context, in *Contact, db *gorm1.DB) (*Contac
 		return nil, fmt.Errorf("Nil argument to DefaultReadContact")
 	}
 	ormParams := ConvertContactToORM(*in)
+	tenantID, tIDErr := auth.GetTenantID(ctx)
+	if tIDErr != nil {
+		return nil, tIDErr
+	}
+	ormParams.TenantID = tenantID
 	ormResponse := ContactORM{}
 	if err := db.Set("gorm:auto_preload", true).Where(&ormParams).First(&ormResponse).Error; err != nil {
 		return nil, err
@@ -85,6 +96,11 @@ func DefaultReadContact(ctx context.Context, in *Contact, db *gorm1.DB) (*Contac
 func DefaultUpdateContact(ctx context.Context, in *Contact, db *gorm1.DB) (*Contact, error) {
 	if in == nil {
 		return nil, fmt.Errorf("Nil argument to DefaultUpdateContact")
+	}
+	if exists, err := DefaultReadContact(ctx, &Contact{Id: in.GetId()}, db); err != nil {
+		return nil, err
+	} else if exists == nil {
+		return nil, errors.New("Contact not found")
 	}
 	ormObj := ConvertContactToORM(*in)
 	if err := db.Save(&ormObj).Error; err != nil {
@@ -100,6 +116,11 @@ func DefaultDeleteContact(ctx context.Context, in *Contact, db *gorm1.DB) error 
 		return fmt.Errorf("Nil argument to DefaultDeleteContact")
 	}
 	ormObj := ConvertContactToORM(*in)
+	tenantID, tIDErr := auth.GetTenantID(ctx)
+	if tIDErr != nil {
+		return tIDErr
+	}
+	ormObj.TenantID = tenantID
 	err := db.Where(&ormObj).Delete(&ContactORM{}).Error
 	return err
 }

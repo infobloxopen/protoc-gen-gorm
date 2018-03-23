@@ -78,7 +78,7 @@ func (p *ormPlugin) Generate(file *generator.FileDescriptor) {
 			continue
 		}
 		// Create the orm object definitions and the converter functions
-		p.generateMessages(file, msg)
+		p.generateMessages(msg)
 		p.generateMapFunctions(msg)
 	}
 
@@ -88,7 +88,7 @@ func (p *ormPlugin) Generate(file *generator.FileDescriptor) {
 	p.P()
 }
 
-func (p *ormPlugin) generateMessages(file *generator.FileDescriptor, message *generator.Descriptor) {
+func (p *ormPlugin) generateMessages(message *generator.Descriptor) {
 	ccTypeNamePb := generator.CamelCaseSlice(message.TypeName())
 	ccTypeName := fmt.Sprintf("%sORM", lintName(ccTypeNamePb))
 
@@ -115,6 +115,9 @@ func (p *ormPlugin) generateMessages(file *generator.FileDescriptor, message *ge
 					tagString = fmt.Sprintf("`%s`", field.GetTags())
 				}
 				p.P(lintName(generator.CamelCase(*field.Name)), ` `, field.Type, ` `, tagString)
+			}
+			if opts.GetMultiTenant() {
+				p.P("TenantID string")
 			}
 		}
 	}
@@ -376,15 +379,26 @@ func (p *ormPlugin) generateDefaultHandlers(file *generator.FileDescriptor) {
 		p.gormPkgAlias = pkgGORM.Name()
 		pkgContext := p.NewImport("context")
 		pkgContext.Use()
-		p.generateCreateHandler(file, message)
-		p.generateReadHandler(file, message)
-		p.generateUpdateHandler(file, message)
-		p.generateDeleteHandler(file, message)
+		p.generateCreateHandler(message)
+		p.generateReadHandler(message)
+		p.generateUpdateHandler(message)
+		p.generateDeleteHandler(message)
 		// p.generateListHandler(file, service, method)
 	}
 }
 
-func (p *ormPlugin) generateCreateHandler(file *generator.FileDescriptor, message *generator.Descriptor) {
+func (p *ormPlugin) GetOption(message *generator.Descriptor) *gorm.GormMessageOptions {
+	if message.Options == nil {
+		return nil
+	}
+	v, err := proto.GetExtension(message.Options, gorm.E_Opts)
+	if err != nil {
+		return nil
+	}
+	return v.(*gorm.GormMessageOptions)
+}
+
+func (p *ormPlugin) generateCreateHandler(message *generator.Descriptor) {
 	typeNamePb := generator.CamelCaseSlice(message.TypeName())
 	typeName := lintName(typeNamePb)
 	p.P(`// DefaultCreate`, typeName, ` executes a basic gorm create call`)
@@ -394,6 +408,13 @@ func (p *ormPlugin) generateCreateHandler(file *generator.FileDescriptor, messag
 	p.P(`return nil, fmt.Errorf("Nil argument to DefaultCreate`, typeName, `")`)
 	p.P(`}`)
 	p.P(`ormObj := Convert`, typeName, `ToORM(*in)`)
+	if opts := p.GetOption(message); opts != nil && opts.GetMultiTenant() {
+		p.P("tenantID, tIDErr := auth.GetTenantID(ctx)")
+		p.P("if tIDErr != nil {")
+		p.P("return nil, tIDErr")
+		p.P("}")
+		p.P("ormObj.TenantID = tenantID")
+	}
 	p.P(`if err := db.Create(&ormObj).Error; err != nil {`)
 	p.P(`return nil, err`)
 	p.P(`}`)
@@ -403,7 +424,7 @@ func (p *ormPlugin) generateCreateHandler(file *generator.FileDescriptor, messag
 	p.P()
 }
 
-func (p *ormPlugin) generateReadHandler(file *generator.FileDescriptor, message *generator.Descriptor) {
+func (p *ormPlugin) generateReadHandler(message *generator.Descriptor) {
 	typeNamePb := generator.CamelCaseSlice(message.TypeName())
 	typeName := lintName(typeNamePb)
 	p.P(`// DefaultRead`, typeName, ` executes a basic gorm read call`)
@@ -413,6 +434,13 @@ func (p *ormPlugin) generateReadHandler(file *generator.FileDescriptor, message 
 	p.P(`return nil, fmt.Errorf("Nil argument to DefaultRead`, typeName, `")`)
 	p.P(`}`)
 	p.P(`ormParams := Convert`, typeName, `ToORM(*in)`)
+	if opts := p.GetOption(message); opts != nil && opts.GetMultiTenant() {
+		p.P("tenantID, tIDErr := auth.GetTenantID(ctx)")
+		p.P("if tIDErr != nil {")
+		p.P("return nil, tIDErr")
+		p.P("}")
+		p.P("ormParams.TenantID = tenantID")
+	}
 	p.P(`ormResponse := `, typeName, `ORM{}`)
 	p.P(`if err := db.Set("gorm:auto_preload", true).Where(&ormParams).First(&ormResponse).Error; err != nil {`)
 	p.P(`return nil, err`)
@@ -423,15 +451,41 @@ func (p *ormPlugin) generateReadHandler(file *generator.FileDescriptor, message 
 	p.P()
 }
 
-func (p *ormPlugin) generateUpdateHandler(file *generator.FileDescriptor, message *generator.Descriptor) {
+func (p *ormPlugin) generateUpdateHandler(message *generator.Descriptor) {
 	typeNamePb := generator.CamelCaseSlice(message.TypeName())
 	typeName := lintName(typeNamePb)
+
+	hasIDField := false
+	for _, field := range message.GetField() {
+		if strings.ToLower(field.GetName()) == "id" {
+			hasIDField = true
+			break
+		}
+	}
+	isMultiTenant := false
+	if opts := p.GetOption(message); opts != nil && opts.GetMultiTenant() {
+		isMultiTenant = true
+	}
+
+	if isMultiTenant && !hasIDField {
+		p.P(fmt.Sprintf("// Cannot autogen DefaultUpdate%s: this is a multi-tenant table without an \"id\" field in the message.\n", typeName))
+		return
+	}
+
 	p.P(`// DefaultUpdate`, typeName, ` executes a basic gorm update call`)
 	p.P(`func DefaultUpdate`, typeName, `(ctx context.Context, in *`,
 		typeNamePb, `, db *`, p.gormPkgAlias, `.DB) (*`, typeNamePb, `, error) {`)
 	p.P(`if in == nil {`)
 	p.P(`return nil, fmt.Errorf("Nil argument to DefaultUpdate`, typeName, `")`)
 	p.P(`}`)
+	if isMultiTenant {
+		p.P(fmt.Sprintf("if exists, err := DefaultRead%s(ctx, &%s{Id: in.GetId()}, db); err != nil {", typeName, typeName))
+		p.P("return nil, err")
+		p.P("} else if exists == nil {")
+		p.P(fmt.Sprintf("return nil, errors.New(\"%s not found\")", typeName))
+		p.P("}")
+	}
+
 	p.P(`ormObj := Convert`, typeName, `ToORM(*in)`)
 	p.P(`if err := db.Save(&ormObj).Error; err != nil {`)
 	p.P(`return nil, err`)
@@ -442,7 +496,7 @@ func (p *ormPlugin) generateUpdateHandler(file *generator.FileDescriptor, messag
 	p.P()
 }
 
-func (p *ormPlugin) generateDeleteHandler(file *generator.FileDescriptor, message *generator.Descriptor) {
+func (p *ormPlugin) generateDeleteHandler(message *generator.Descriptor) {
 	typeNamePb := generator.CamelCaseSlice(message.TypeName())
 	typeName := lintName(typeNamePb)
 	p.P(`// DefaultDelete`, typeName, ` executes a basic gorm delete call`)
@@ -452,6 +506,13 @@ func (p *ormPlugin) generateDeleteHandler(file *generator.FileDescriptor, messag
 	p.P(`return fmt.Errorf("Nil argument to DefaultDelete`, typeName, `")`)
 	p.P(`}`)
 	p.P(`ormObj := Convert`, typeName, `ToORM(*in)`)
+	if opts := p.GetOption(message); opts != nil && opts.GetMultiTenant() {
+		p.P("tenantID, tIDErr := auth.GetTenantID(ctx)")
+		p.P("if tIDErr != nil {")
+		p.P("return tIDErr")
+		p.P("}")
+		p.P("ormObj.TenantID = tenantID")
+	}
 	p.P(`err := db.Where(&ormObj).Delete(&`, typeName, `ORM{}).Error`)
 	p.P(`return err`)
 	p.P(`}`)
