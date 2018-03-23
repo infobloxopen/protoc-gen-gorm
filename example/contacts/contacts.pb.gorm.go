@@ -4,7 +4,7 @@
 package contacts
 
 import gorm1 "github.com/jinzhu/gorm"
-import context "golang.org/x/net/context"
+import context "context"
 import proto "github.com/gogo/protobuf/proto"
 import fmt "fmt"
 import math "math"
@@ -53,46 +53,53 @@ func ConvertContactFromORM(from ContactORM) Contact {
 	return to
 }
 
+////////////////////////// CURDL for objects
 // DefaultCreateContact executes a basic gorm create call
-func DefaultCreateContact(ctx context.Context, in *Contact, db gorm1.DB) (*Contact, error) {
+func DefaultCreateContact(ctx context.Context, in *Contact, db *gorm1.DB) (*Contact, error) {
 	if in == nil {
 		return nil, fmt.Errorf("Nil argument to DefaultCreateContact")
 	}
 	ormObj := ConvertContactToORM(*in)
-	db.Create(&ormObj)
+	if err := db.Create(&ormObj).Error; err != nil {
+		return nil, err
+	}
 	pbResponse := ConvertContactFromORM(ormObj)
 	return &pbResponse, nil
 }
 
 // DefaultReadContact executes a basic gorm read call
-func DefaultReadContact(ctx context.Context, in *Contact, db gorm1.DB) (*Contact, error) {
+func DefaultReadContact(ctx context.Context, in *Contact, db *gorm1.DB) (*Contact, error) {
 	if in == nil {
 		return nil, fmt.Errorf("Nil argument to DefaultReadContact")
 	}
 	ormParams := ConvertContactToORM(*in)
 	ormResponse := ContactORM{}
-	db.Set("gorm:auto_preload", true).Where(&ormParams).First(&ormResponse)
+	if err := db.Set("gorm:auto_preload", true).Where(&ormParams).First(&ormResponse).Error; err != nil {
+		return nil, err
+	}
 	pbResponse := ConvertContactFromORM(ormResponse)
 	return &pbResponse, nil
 }
 
 // DefaultUpdateContact executes a basic gorm update call
-func DefaultUpdateContact(ctx context.Context, in *Contact, db gorm1.DB) (*Contact, error) {
+func DefaultUpdateContact(ctx context.Context, in *Contact, db *gorm1.DB) (*Contact, error) {
 	if in == nil {
 		return nil, fmt.Errorf("Nil argument to DefaultUpdateContact")
 	}
 	ormObj := ConvertContactToORM(*in)
-	db.Save(&ormObj)
+	if err := db.Save(&ormObj).Error; err != nil {
+		return nil, err
+	}
 	pbResponse := ConvertContactFromORM(ormObj)
 	return &pbResponse, nil
 }
 
 // DefaultDeleteContact executes a basic gorm delete call
-func DefaultDeleteContact(ctx context.Context, in *Contact, db gorm1.DB) error {
+func DefaultDeleteContact(ctx context.Context, in *Contact, db *gorm1.DB) error {
 	if in == nil {
 		return fmt.Errorf("Nil argument to DefaultDeleteContact")
 	}
 	ormObj := ConvertContactToORM(*in)
-	db.Where(&ormObj).Delete(&ContactORM{})
-	return nil
+	err := db.Where(&ormObj).Delete(&ContactORM{}).Error
+	return err
 }
