@@ -14,7 +14,7 @@ example: default
 	 --go_out="plugins=grpc:$(SRCPATH)" example/feature_demo/*.proto \
 	  --gorm_out="$(SRCPATH)" example/feature_demo/*.proto
 
-	protoc -I . -I ${GOPATH}src -I ./vendor \
+	protoc -I . -I $(SRCPATH) -I ./vendor \
 		-I=$(SRCPATH)/github.com/google/protobuf/src/ \
     -I=$(SRCPATH)/github.com/grpc-ecosystem/grpc-gateway \
 	 -I $(SRCPATH)/github.com/grpc-ecosystem/grpc-gateway/third_party/googleapis \
