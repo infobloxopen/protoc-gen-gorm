@@ -692,12 +692,12 @@ func (scope *Scope) buildSelectQuery(clause map[string]interface{}) (str string)
 
 	buff := bytes.NewBuffer([]byte{})
 	i := 0
-	for pos, char := range str {
+	for pos := range str {
 		if str[pos] == '?' {
 			buff.WriteString(replacements[i])
 			i++
 		} else {
-			buff.WriteRune(char)
+			buff.WriteByte(str[pos])
 		}
 	}
 

@@ -1,3 +1,0 @@
-package: github.com/infobloxopen/protoc-gen-gorm
-import:
-- package: github.com/gogo/protobuf/
