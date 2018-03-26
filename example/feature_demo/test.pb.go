@@ -39,7 +39,7 @@ func (x TestTypesStatus) String() string {
 }
 func (TestTypesStatus) EnumDescriptor() ([]byte, []int) { return fileDescriptor2, []int{0, 0} }
 
-// test_id_and_stuff is a message that serves as an example
+// test_types is a message that serves as an example
 type TestTypes struct {
 	ApiOnlyString  string                        `protobuf:"bytes,1,opt,name=api_only_string,json=apiOnlyString" json:"api_only_string,omitempty"`
 	Numbers        []int32                       `protobuf:"varint,2,rep,packed,name=numbers" json:"numbers,omitempty"`
