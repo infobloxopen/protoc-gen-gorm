@@ -7,7 +7,7 @@ import "google/protobuf/empty.proto";
 
 option go_package = "github.com/infobloxopen/protoc-gen-gorm/example/feature_demo;example";
 
-// test_id_and_stuff is a message that serves as an example
+// test_types is a message that serves as an example
 message test_types {
   option (gorm.opts) = {ormable:true, table: "smorgasbord"};
   string api_only_string = 1 [(gorm.field).drop = true];
