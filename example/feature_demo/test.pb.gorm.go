@@ -3,21 +3,34 @@
 
 package example
 
-import context "context"
-import errors "errors"
-import gorm "github.com/jinzhu/gorm"
-import ops "github.com/Infoblox-CTO/ngp.api.toolkit/op/gorm"
-import uuid "github.com/satori/go.uuid"
-import gtypes "github.com/infobloxopen/protoc-gen-gorm/types"
-import time "time"
-import ptypes "github.com/golang/protobuf/ptypes"
-import proto "github.com/gogo/protobuf/proto"
-import fmt "fmt"
-import math "math"
-import _ "github.com/infobloxopen/protoc-gen-gorm/types"
-import google_protobuf1 "github.com/golang/protobuf/ptypes/wrappers"
-import google_protobuf2 "github.com/golang/protobuf/ptypes/empty"
-import _ "github.com/golang/protobuf/ptypes/timestamp"
+import (
+	context "context"
+	errors "errors"
+
+	gorm "github.com/jinzhu/gorm"
+
+	"github.com/Infoblox-CTO/ngp.api.toolkit/mw/auth"
+	ops "github.com/Infoblox-CTO/ngp.api.toolkit/op/gorm"
+	uuid "github.com/satori/go.uuid"
+
+	gtypes "github.com/infobloxopen/protoc-gen-gorm/types"
+
+	time "time"
+
+	ptypes "github.com/golang/protobuf/ptypes"
+
+	proto "github.com/gogo/protobuf/proto"
+
+	fmt "fmt"
+
+	math "math"
+
+	_ "github.com/infobloxopen/protoc-gen-gorm/types"
+
+	google_protobuf1 "github.com/golang/protobuf/ptypes/wrappers"
+
+	_ "github.com/golang/protobuf/ptypes/timestamp"
+)
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -285,7 +298,7 @@ func DefaultDeleteTestTypes(ctx context.Context, in *TestTypes, db *gorm.DB) err
 	return err
 }
 
-// DefaultListTestTypes executes a basic gorm find call
+// DefaultListTestTypes executes a gorm list call
 func DefaultListTestTypes(ctx context.Context, db *gorm.DB) ([]*TestTypes, error) {
 	ormResponse := []TestTypesORM{}
 	db, err := ops.ApplyCollectionOperators(db, ctx)
@@ -306,7 +319,7 @@ func DefaultListTestTypes(ctx context.Context, db *gorm.DB) ([]*TestTypes, error
 	return pbResponse, nil
 }
 
-// DefaultUpdateTestTypes executes a basic gorm update call
+// DefaultCascadedUpdateTestTypes executes a basic gorm update call
 func DefaultCascadedUpdateTestTypes(ctx context.Context, in *TestTypes, db *gorm.DB) (*TestTypes, error) {
 	if in == nil {
 		return nil, fmt.Errorf("Nil argument to DefaultCascadedUpdateTestTypes")
@@ -383,8 +396,8 @@ func DefaultDeleteTypeWithID(ctx context.Context, in *TypeWithId, db *gorm.DB) e
 	return err
 }
 
-// DefaultListTypeWithID executes a basic gorm find call
-func DefaultListTypeWithID(ctx context.Context, db *gorm.DB) ([]*TypeWithId, error) {
+// DefaultListTypeWithID executes a gorm list call
+func DefaultListTypeWithID(ctx context.Context, db *gorm.DB) ([]*TypeWithID, error) {
 	ormResponse := []TypeWithIDORM{}
 	db, err := ops.ApplyCollectionOperators(db, ctx)
 	if err != nil {
@@ -404,7 +417,7 @@ func DefaultListTypeWithID(ctx context.Context, db *gorm.DB) ([]*TypeWithId, err
 	return pbResponse, nil
 }
 
-// DefaultUpdateTypeWithID executes a basic gorm update call
+// DefaultCascadedUpdateTypeWithID executes a basic gorm update call
 func DefaultCascadedUpdateTypeWithID(ctx context.Context, in *TypeWithId, db *gorm.DB) (*TypeWithId, error) {
 	if in == nil {
 		return nil, fmt.Errorf("Nil argument to DefaultCascadedUpdateTypeWithID")
@@ -501,8 +514,8 @@ func DefaultDeleteMultitenantTypeWithID(ctx context.Context, in *MultitenantType
 	return err
 }
 
-// DefaultListMultitenantTypeWithID executes a basic gorm find call
-func DefaultListMultitenantTypeWithID(ctx context.Context, db *gorm.DB) ([]*MultitenantTypeWithId, error) {
+// DefaultListMultitenantTypeWithID executes a gorm list call
+func DefaultListMultitenantTypeWithID(ctx context.Context, db *gorm.DB) ([]*MultitenantTypeWithID, error) {
 	ormResponse := []MultitenantTypeWithIDORM{}
 	db, err := ops.ApplyCollectionOperators(db, ctx)
 	if err != nil {
@@ -527,7 +540,7 @@ func DefaultListMultitenantTypeWithID(ctx context.Context, db *gorm.DB) ([]*Mult
 	return pbResponse, nil
 }
 
-// DefaultUpdateMultitenantTypeWithID executes a basic gorm update call
+// DefaultCascadedUpdateMultitenantTypeWithID executes a basic gorm update call
 func DefaultCascadedUpdateMultitenantTypeWithID(ctx context.Context, in *MultitenantTypeWithId, db *gorm.DB) (*MultitenantTypeWithId, error) {
 	if in == nil {
 		return nil, fmt.Errorf("Nil argument to DefaultCascadedUpdateMultitenantTypeWithID")
@@ -605,8 +618,8 @@ func DefaultDeleteMultitenantTypeWithoutID(ctx context.Context, in *MultitenantT
 	return err
 }
 
-// DefaultListMultitenantTypeWithoutID executes a basic gorm find call
-func DefaultListMultitenantTypeWithoutID(ctx context.Context, db *gorm.DB) ([]*MultitenantTypeWithoutId, error) {
+// DefaultListMultitenantTypeWithoutID executes a gorm list call
+func DefaultListMultitenantTypeWithoutID(ctx context.Context, db *gorm.DB) ([]*MultitenantTypeWithoutID, error) {
 	ormResponse := []MultitenantTypeWithoutIDORM{}
 	db, err := ops.ApplyCollectionOperators(db, ctx)
 	if err != nil {
@@ -631,7 +644,7 @@ func DefaultListMultitenantTypeWithoutID(ctx context.Context, db *gorm.DB) ([]*M
 	return pbResponse, nil
 }
 
-// DefaultUpdateMultitenantTypeWithoutID executes a basic gorm update call
+// DefaultCascadedUpdateMultitenantTypeWithoutID executes a basic gorm update call
 func DefaultCascadedUpdateMultitenantTypeWithoutID(ctx context.Context, in *MultitenantTypeWithoutId, db *gorm.DB) (*MultitenantTypeWithoutId, error) {
 	if in == nil {
 		return nil, fmt.Errorf("Nil argument to DefaultCascadedUpdateMultitenantTypeWithoutID")
@@ -708,7 +721,7 @@ func DefaultDeleteTypeBecomesEmpty(ctx context.Context, in *TypeBecomesEmpty, db
 	return err
 }
 
-// DefaultListTypeBecomesEmpty executes a basic gorm find call
+// DefaultListTypeBecomesEmpty executes a gorm list call
 func DefaultListTypeBecomesEmpty(ctx context.Context, db *gorm.DB) ([]*TypeBecomesEmpty, error) {
 	ormResponse := []TypeBecomesEmptyORM{}
 	db, err := ops.ApplyCollectionOperators(db, ctx)
@@ -729,7 +742,7 @@ func DefaultListTypeBecomesEmpty(ctx context.Context, db *gorm.DB) ([]*TypeBecom
 	return pbResponse, nil
 }
 
-// DefaultUpdateTypeBecomesEmpty executes a basic gorm update call
+// DefaultCascadedUpdateTypeBecomesEmpty executes a basic gorm update call
 func DefaultCascadedUpdateTypeBecomesEmpty(ctx context.Context, in *TypeBecomesEmpty, db *gorm.DB) (*TypeBecomesEmpty, error) {
 	if in == nil {
 		return nil, fmt.Errorf("Nil argument to DefaultCascadedUpdateTypeBecomesEmpty")

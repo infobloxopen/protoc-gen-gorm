@@ -675,7 +675,6 @@ func (p *ormPlugin) removeNestedAssociations(message *generator.Descriptor) {
 				fieldType, _ := p.GoType(message, field)
 				rawFieldType := strings.Trim(fieldType, "[]*")
 				if _, exists := convertibleTypes[rawFieldType]; exists {
-					//	p.removeNestedAssociations(typeNames[fieldType])
 
 					keys := findAssociationKeys(message, typeNames[typeName], field)
 					childFKeyTypeName := ""
@@ -713,7 +712,7 @@ func (p *ormPlugin) removeNestedAssociations(message *generator.Descriptor) {
 func (p *ormPlugin) generateUpdateWithOverwriteHandler(message *generator.Descriptor) {
 	typeNamePb := generator.CamelCaseSlice(message.TypeName())
 	typeName := lintName(typeNamePb)
-	p.P(`// DefaultUpdate`, typeName, ` executes a basic gorm update call`)
+	p.P(`// DefaultCascadedUpdate`, typeName, ` executes a basic gorm update call`)
 	p.P(`func DefaultCascadedUpdate`, typeName, `(ctx context.Context, in *`,
 		typeNamePb, `, db *`, p.gormPkgAlias, `.DB) (`, `*`, typeNamePb, `, error) {`)
 	p.In()

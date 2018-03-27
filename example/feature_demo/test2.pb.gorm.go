@@ -114,7 +114,7 @@ func DefaultDeleteIntPoint(ctx context.Context, in *IntPoint, db *gorm.DB) error
 	return err
 }
 
-// DefaultListIntPoint executes a basic gorm find call
+// DefaultListIntPoint executes a gorm list call
 func DefaultListIntPoint(ctx context.Context, db *gorm.DB) ([]*IntPoint, error) {
 	ormResponse := []IntPointORM{}
 	db, err := ops.ApplyCollectionOperators(db, ctx)
@@ -135,7 +135,7 @@ func DefaultListIntPoint(ctx context.Context, db *gorm.DB) ([]*IntPoint, error) 
 	return pbResponse, nil
 }
 
-// DefaultUpdateIntPoint executes a basic gorm update call
+// DefaultCascadedUpdateIntPoint executes a basic gorm update call
 func DefaultCascadedUpdateIntPoint(ctx context.Context, in *IntPoint, db *gorm.DB) (*IntPoint, error) {
 	if in == nil {
 		return nil, fmt.Errorf("Nil argument to DefaultCascadedUpdateIntPoint")
