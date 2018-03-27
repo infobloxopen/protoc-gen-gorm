@@ -127,13 +127,18 @@ func DefaultDeleteContact(ctx context.Context, in *Contact, db *gorm.DB) error {
 	return err
 }
 
-// DefaultListContact executes a basic gorm delete call
+// DefaultListContact executes a basic gorm find call
 func DefaultListContact(ctx context.Context, db *gorm.DB) ([]*Contact, error) {
 	ormResponse := []ContactORM{}
 	db, err := ops.ApplyCollectionOperators(db, ctx)
 	if err != nil {
 		return nil, err
 	}
+	tenantID, tIDErr := auth.GetTenantID(ctx)
+	if tIDErr != nil {
+		return nil, tIDErr
+	}
+	db = db.Where(&ContactORM{TenantID: tenantID})
 	if err := db.Set("gorm:auto_preload", true).Find(&ormResponse).Error; err != nil {
 		return nil, err
 	}

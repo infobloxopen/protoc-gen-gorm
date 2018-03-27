@@ -96,7 +96,7 @@ func DefaultDeleteIntPoint(ctx context.Context, in *IntPoint, db *gorm.DB) error
 	return err
 }
 
-// DefaultListIntPoint executes a basic gorm delete call
+// DefaultListIntPoint executes a basic gorm find call
 func DefaultListIntPoint(ctx context.Context, db *gorm.DB) ([]*IntPoint, error) {
 	ormResponse := []IntPointORM{}
 	db, err := ops.ApplyCollectionOperators(db, ctx)

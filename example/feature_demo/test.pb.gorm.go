@@ -231,7 +231,7 @@ func DefaultDeleteTestTypes(ctx context.Context, in *TestTypes, db *gorm.DB) err
 	return err
 }
 
-// DefaultListTestTypes executes a basic gorm delete call
+// DefaultListTestTypes executes a basic gorm find call
 func DefaultListTestTypes(ctx context.Context, db *gorm.DB) ([]*TestTypes, error) {
 	ormResponse := []TestTypesORM{}
 	db, err := ops.ApplyCollectionOperators(db, ctx)
@@ -299,7 +299,7 @@ func DefaultDeleteTypeWithID(ctx context.Context, in *TypeWithId, db *gorm.DB) e
 	return err
 }
 
-// DefaultListTypeWithID executes a basic gorm delete call
+// DefaultListTypeWithID executes a basic gorm find call
 func DefaultListTypeWithID(ctx context.Context, db *gorm.DB) ([]*TypeWithID, error) {
 	ormResponse := []TypeWithIDORM{}
 	db, err := ops.ApplyCollectionOperators(db, ctx)
@@ -387,13 +387,18 @@ func DefaultDeleteMultitenantTypeWithID(ctx context.Context, in *MultitenantType
 	return err
 }
 
-// DefaultListMultitenantTypeWithID executes a basic gorm delete call
+// DefaultListMultitenantTypeWithID executes a basic gorm find call
 func DefaultListMultitenantTypeWithID(ctx context.Context, db *gorm.DB) ([]*MultitenantTypeWithID, error) {
 	ormResponse := []MultitenantTypeWithIDORM{}
 	db, err := ops.ApplyCollectionOperators(db, ctx)
 	if err != nil {
 		return nil, err
 	}
+	tenantID, tIDErr := auth.GetTenantID(ctx)
+	if tIDErr != nil {
+		return nil, tIDErr
+	}
+	db = db.Where(&ContactORM{TenantID: tenantID})
 	if err := db.Set("gorm:auto_preload", true).Find(&ormResponse).Error; err != nil {
 		return nil, err
 	}
@@ -459,13 +464,18 @@ func DefaultDeleteMultitenantTypeWithoutID(ctx context.Context, in *MultitenantT
 	return err
 }
 
-// DefaultListMultitenantTypeWithoutID executes a basic gorm delete call
+// DefaultListMultitenantTypeWithoutID executes a basic gorm find call
 func DefaultListMultitenantTypeWithoutID(ctx context.Context, db *gorm.DB) ([]*MultitenantTypeWithoutID, error) {
 	ormResponse := []MultitenantTypeWithoutIDORM{}
 	db, err := ops.ApplyCollectionOperators(db, ctx)
 	if err != nil {
 		return nil, err
 	}
+	tenantID, tIDErr := auth.GetTenantID(ctx)
+	if tIDErr != nil {
+		return nil, tIDErr
+	}
+	db = db.Where(&ContactORM{TenantID: tenantID})
 	if err := db.Set("gorm:auto_preload", true).Find(&ormResponse).Error; err != nil {
 		return nil, err
 	}
@@ -527,7 +537,7 @@ func DefaultDeleteTypeBecomesEmpty(ctx context.Context, in *TypeBecomesEmpty, db
 	return err
 }
 
-// DefaultListTypeBecomesEmpty executes a basic gorm delete call
+// DefaultListTypeBecomesEmpty executes a basic gorm find call
 func DefaultListTypeBecomesEmpty(ctx context.Context, db *gorm.DB) ([]*TypeBecomesEmpty, error) {
 	ormResponse := []TypeBecomesEmptyORM{}
 	db, err := ops.ApplyCollectionOperators(db, ctx)
