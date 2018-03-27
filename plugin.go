@@ -533,13 +533,20 @@ func (p *ormPlugin) generateListHandler(message *generator.Descriptor) {
 	typeNamePb := generator.CamelCaseSlice(message.TypeName())
 	typeName := lintName(typeNamePb)
 
-	p.P(`// DefaultList`, typeName, ` executes a basic gorm delete call`)
+	p.P(`// DefaultList`, typeName, ` executes a basic gorm find call`)
 	p.P(`func DefaultList`, typeName, `(ctx context.Context, db *`, p.gormPkgAlias, `.DB) ([]*`, typeName, `, error) {`)
 	p.P(`ormResponse := []`, typeName, `ORM{}`)
 	p.P(`db, err := `, p.lftPkgName, `.ApplyCollectionOperators(db, ctx)`)
 	p.P(`if err != nil {`)
 	p.P(`return nil, err`)
 	p.P(`}`)
+	if opts := p.GetMessageOptions(message); opts != nil && opts.GetMultiTenant() {
+		p.P("tenantID, tIDErr := auth.GetTenantID(ctx)")
+		p.P("if tIDErr != nil {")
+		p.P("return nil, tIDErr")
+		p.P("}")
+		p.P("db = db.Where(&ContactORM{TenantID: tenantID})")
+	}
 	p.P(`if err := db.Set("gorm:auto_preload", true).Find(&ormResponse).Error; err != nil {`)
 	p.P(`return nil, err`)
 	p.P(`}`)
