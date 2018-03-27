@@ -166,3 +166,19 @@ func DefaultListContact(ctx context.Context, db *gorm.DB) ([]*Contact, error) {
 	}
 	return pbResponse, nil
 }
+
+// DefaultUpdateContact executes a basic gorm update call
+func DefaultCascadedUpdateContact(ctx context.Context, in *Contact, db *gorm.DB) (*Contact, error) {
+	if in == nil {
+		return nil, fmt.Errorf("Nil argument to DefaultCascadedUpdateContact")
+	}
+	ormObj := ConvertContactToORM(*in)
+	tx := db.Begin()
+	if err := tx.Save(&ormObj).Error; err != nil {
+		tx.Rollback()
+		return nil, err
+	}
+	pbResponse := ConvertContactFromORM(ormObj)
+	tx.Commit()
+	return &pbResponse, nil
+}

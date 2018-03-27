@@ -306,6 +306,22 @@ func DefaultListTestTypes(ctx context.Context, db *gorm.DB) ([]*TestTypes, error
 	return pbResponse, nil
 }
 
+// DefaultUpdateTestTypes executes a basic gorm update call
+func DefaultCascadedUpdateTestTypes(ctx context.Context, in *TestTypes, db *gorm.DB) (*TestTypes, error) {
+	if in == nil {
+		return nil, fmt.Errorf("Nil argument to DefaultCascadedUpdateTestTypes")
+	}
+	ormObj := ConvertTestTypesToORM(*in)
+	tx := db.Begin()
+	if err := tx.Save(&ormObj).Error; err != nil {
+		tx.Rollback()
+		return nil, err
+	}
+	pbResponse := ConvertTestTypesFromORM(ormObj)
+	tx.Commit()
+	return &pbResponse, nil
+}
+
 // DefaultCreateTypeWithID executes a basic gorm create call
 func DefaultCreateTypeWithID(ctx context.Context, in *TypeWithId, db *gorm.DB) (*TypeWithId, error) {
 	if in == nil {
@@ -386,6 +402,22 @@ func DefaultListTypeWithID(ctx context.Context, db *gorm.DB) ([]*TypeWithId, err
 		pbResponse = append(pbResponse, &temp)
 	}
 	return pbResponse, nil
+}
+
+// DefaultUpdateTypeWithID executes a basic gorm update call
+func DefaultCascadedUpdateTypeWithID(ctx context.Context, in *TypeWithId, db *gorm.DB) (*TypeWithId, error) {
+	if in == nil {
+		return nil, fmt.Errorf("Nil argument to DefaultCascadedUpdateTypeWithID")
+	}
+	ormObj := ConvertTypeWithIDToORM(*in)
+	tx := db.Begin()
+	if err := tx.Save(&ormObj).Error; err != nil {
+		tx.Rollback()
+		return nil, err
+	}
+	pbResponse := ConvertTypeWithIDFromORM(ormObj)
+	tx.Commit()
+	return &pbResponse, nil
 }
 
 // DefaultCreateMultitenantTypeWithID executes a basic gorm create call
@@ -495,6 +527,22 @@ func DefaultListMultitenantTypeWithID(ctx context.Context, db *gorm.DB) ([]*Mult
 	return pbResponse, nil
 }
 
+// DefaultUpdateMultitenantTypeWithID executes a basic gorm update call
+func DefaultCascadedUpdateMultitenantTypeWithID(ctx context.Context, in *MultitenantTypeWithId, db *gorm.DB) (*MultitenantTypeWithId, error) {
+	if in == nil {
+		return nil, fmt.Errorf("Nil argument to DefaultCascadedUpdateMultitenantTypeWithID")
+	}
+	ormObj := ConvertMultitenantTypeWithIDToORM(*in)
+	tx := db.Begin()
+	if err := tx.Save(&ormObj).Error; err != nil {
+		tx.Rollback()
+		return nil, err
+	}
+	pbResponse := ConvertMultitenantTypeWithIDFromORM(ormObj)
+	tx.Commit()
+	return &pbResponse, nil
+}
+
 // DefaultCreateMultitenantTypeWithoutID executes a basic gorm create call
 func DefaultCreateMultitenantTypeWithoutID(ctx context.Context, in *MultitenantTypeWithoutId, db *gorm.DB) (*MultitenantTypeWithoutId, error) {
 	if in == nil {
@@ -583,6 +631,22 @@ func DefaultListMultitenantTypeWithoutID(ctx context.Context, db *gorm.DB) ([]*M
 	return pbResponse, nil
 }
 
+// DefaultUpdateMultitenantTypeWithoutID executes a basic gorm update call
+func DefaultCascadedUpdateMultitenantTypeWithoutID(ctx context.Context, in *MultitenantTypeWithoutId, db *gorm.DB) (*MultitenantTypeWithoutId, error) {
+	if in == nil {
+		return nil, fmt.Errorf("Nil argument to DefaultCascadedUpdateMultitenantTypeWithoutID")
+	}
+	ormObj := ConvertMultitenantTypeWithoutIDToORM(*in)
+	tx := db.Begin()
+	if err := tx.Save(&ormObj).Error; err != nil {
+		tx.Rollback()
+		return nil, err
+	}
+	pbResponse := ConvertMultitenantTypeWithoutIDFromORM(ormObj)
+	tx.Commit()
+	return &pbResponse, nil
+}
+
 // DefaultCreateTypeBecomesEmpty executes a basic gorm create call
 func DefaultCreateTypeBecomesEmpty(ctx context.Context, in *TypeBecomesEmpty, db *gorm.DB) (*TypeBecomesEmpty, error) {
 	if in == nil {
@@ -663,4 +727,20 @@ func DefaultListTypeBecomesEmpty(ctx context.Context, db *gorm.DB) ([]*TypeBecom
 		pbResponse = append(pbResponse, &temp)
 	}
 	return pbResponse, nil
+}
+
+// DefaultUpdateTypeBecomesEmpty executes a basic gorm update call
+func DefaultCascadedUpdateTypeBecomesEmpty(ctx context.Context, in *TypeBecomesEmpty, db *gorm.DB) (*TypeBecomesEmpty, error) {
+	if in == nil {
+		return nil, fmt.Errorf("Nil argument to DefaultCascadedUpdateTypeBecomesEmpty")
+	}
+	ormObj := ConvertTypeBecomesEmptyToORM(*in)
+	tx := db.Begin()
+	if err := tx.Save(&ormObj).Error; err != nil {
+		tx.Rollback()
+		return nil, err
+	}
+	pbResponse := ConvertTypeBecomesEmptyFromORM(ormObj)
+	tx.Commit()
+	return &pbResponse, nil
 }

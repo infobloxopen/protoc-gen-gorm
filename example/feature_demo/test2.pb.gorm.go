@@ -134,3 +134,19 @@ func DefaultListIntPoint(ctx context.Context, db *gorm.DB) ([]*IntPoint, error) 
 	}
 	return pbResponse, nil
 }
+
+// DefaultUpdateIntPoint executes a basic gorm update call
+func DefaultCascadedUpdateIntPoint(ctx context.Context, in *IntPoint, db *gorm.DB) (*IntPoint, error) {
+	if in == nil {
+		return nil, fmt.Errorf("Nil argument to DefaultCascadedUpdateIntPoint")
+	}
+	ormObj := ConvertIntPointToORM(*in)
+	tx := db.Begin()
+	if err := tx.Save(&ormObj).Error; err != nil {
+		tx.Rollback()
+		return nil, err
+	}
+	pbResponse := ConvertIntPointFromORM(ormObj)
+	tx.Commit()
+	return &pbResponse, nil
+}
