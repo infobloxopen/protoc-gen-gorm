@@ -18,8 +18,13 @@ var convertibleTypes = make(map[string]struct{})
 // All message objects
 var typeNames = make(map[string]generator.Descriptor)
 
-const typeMessage = 11
-const typeEnum = 14
+const (
+	typeMessage = 11
+	typeEnum    = 14
+
+	protoTypeTimestamp = "Timestamp" // last segment, first will be *google_protobufX
+	protoTypeUUID      = "*gormable_types.UUIDValue"
+)
 
 var wellKnownTypes = map[string]string{
 	"StringValue": "*string",
@@ -36,16 +41,26 @@ var wellKnownTypes = map[string]string{
 type ormPlugin struct {
 	*generator.Generator
 	generator.PluginImports
-	wktPkgName   string
-	gormPkgAlias string
-	lftPkgName   string // 'Locally Famous Types', used for collection operators
+	wktPkgName  string
+	gormPkgName string
+	lftPkgName  string // 'Locally Famous Types', used for collection operators
+	usingUUID   bool
+	usingTime   bool
 }
 
 func (p *ormPlugin) GenerateImports(file *generator.FileDescriptor) {
-	if p.gormPkgAlias != "" {
+	if p.gormPkgName != "" {
 		p.PrintImport("context", "context")
-		p.PrintImport(p.gormPkgAlias, "github.com/jinzhu/gorm")
+		p.PrintImport("errors", "errors")
+		p.PrintImport(p.gormPkgName, "github.com/jinzhu/gorm")
 		p.PrintImport(p.lftPkgName, "github.com/Infoblox-CTO/ngp.api.toolkit/op/gorm")
+	}
+	if p.usingUUID {
+		p.PrintImport("uuid", "github.com/satori/go.uuid")
+	}
+	if p.usingTime {
+		p.PrintImport("time", "time")
+		p.PrintImport("ptypes", "github.com/golang/protobuf/ptypes")
 	}
 }
 
@@ -163,6 +178,24 @@ func (p *ormPlugin) generateMessages(message *generator.Descriptor) {
 				p.RecordTypeUse(".google.protobuf.Empty")
 				p.P("// Empty type has no ORM equivalency")
 				continue
+			} else if fieldType == protoTypeUUID {
+				fieldType = "uuid.UUID"
+				p.usingUUID = true
+				if tagString == "" {
+					tagString = "`sql:\"type:uuid\"`"
+				} else if strings.Contains(strings.ToLower(tagString), "sql:") &&
+					!strings.Contains(strings.ToLower(tagString), "type:") { // sql tag already there
+
+					index := strings.Index(tagString, "sql:")
+					tagString = fmt.Sprintf("%stype:uuid;%s", tagString[:index+6],
+						tagString[index+6:])
+				} else { // no sql tag yet
+					tagString = fmt.Sprintf("`sql:\"foreignkey:%sID\" %s", lintName(ccTypeNamePb), tagString[1:])
+				}
+
+			} else if parts[len(parts)-1] == protoTypeTimestamp {
+				p.usingTime = true
+				fieldType = "time.Time"
 			} else if _, exists := convertibleTypes[strings.Trim(fieldType, "[]*")]; !exists {
 				p.P("// Skipping type ", fieldType, ", not tagged as ormable")
 				continue
@@ -214,9 +247,13 @@ func (p *ormPlugin) generateMapFunctions(message *generator.Descriptor) {
 	ccTypeNameOrm := fmt.Sprintf("%sORM", ccTypeNameBase)
 	///// To Orm
 	p.P(`// Convert`, ccTypeNameBase, `ToORM takes a pb object and returns an orm object`)
-	p.P(`func Convert`, ccTypeNameBase, `ToORM (from `,
-		ccTypeNamePb, `) `, ccTypeNameOrm, ` {`)
-	p.P(`to := `, ccTypeNameOrm, `{}`)
+	p.P(`func Convert`, ccTypeNameBase, `ToORM (from *`,
+		ccTypeNamePb, `) (*`, ccTypeNameOrm, `, error) {`)
+	p.P(`to := &`, ccTypeNameOrm, `{}`)
+	p.P(`if from == nil {`)
+	p.P(`return to, errors.New("Nil argument for ToORM converter")`)
+	p.P(`}`)
+	p.P(`var err error`)
 	for _, field := range message.Field {
 		// Checking if field is skipped
 		if field.Options != nil {
@@ -230,15 +267,19 @@ func (p *ormPlugin) generateMapFunctions(message *generator.Descriptor) {
 		}
 		p.generateFieldMap(message, field, true)
 	}
-	p.P(`return to`)
+	p.P(`return to, err`)
 	p.P(`}`)
 
 	p.P()
 	///// To Pb
 	p.P(`// Convert`, ccTypeNameBase, `FromORM takes an orm object and returns a pb object`)
-	p.P(`func Convert`, ccTypeNameBase, `FromORM (from `, ccTypeNameOrm, `) `,
-		ccTypeNamePb, ` {`)
-	p.P(`to := `, ccTypeNamePb, `{}`)
+	p.P(`func Convert`, ccTypeNameBase, `FromORM (from *`, ccTypeNameOrm, `) (*`,
+		ccTypeNamePb, `, error) {`)
+	p.P(`to := &`, ccTypeNamePb, `{}`)
+	p.P(`if from == nil {`)
+	p.P(`return to, errors.New("Nil argument for FromORM converter")`)
+	p.P(`}`)
+	p.P(`var err error`)
 	for _, field := range message.Field {
 		// Checking if field is skipped
 		if field.Options != nil {
@@ -252,7 +293,7 @@ func (p *ormPlugin) generateMapFunctions(message *generator.Descriptor) {
 		}
 		p.generateFieldMap(message, field, false)
 	}
-	p.P(`return to`)
+	p.P(`return to, err`)
 	p.P(`}`)
 }
 
@@ -268,10 +309,10 @@ func (p *ormPlugin) generateFieldMap(message *generator.Descriptor, field *descr
 		if *(field.Type) == typeEnum {
 			p.P(`for _, v := range from.`, fromName, ` {`)
 			if toORM {
-				p.P(`to.`, fieldName, ` = int32(from.`, fromName, `)`)
+				p.P(`to.`, fieldName, ` = int32(v)`)
 			} else {
 				fieldType, _ := p.GoType(message, field)
-				p.P(`to.`, fieldName, ` = `, fieldType, `(from.`, fromName, `)`)
+				p.P(`to.`, fieldName, ` = `, fieldType, `(v)`)
 			}
 			p.P(`}`) // end for
 		} else if *(field.Type) == typeMessage { // WKT or custom type (hopefully)
@@ -283,20 +324,30 @@ func (p *ormPlugin) generateFieldMap(message *generator.Descriptor, field *descr
 			// Type is a WKT, convert to/from as ptr to base type
 			if _, exists := wellKnownTypes[coreType]; exists {
 				if toORM {
-					p.P(`if `, fieldName, ` != nil {`)
+					p.P(`if v != nil {`)
 					p.P(`temp := from.`, fromName, `.Value`)
 					p.P(`to.`, fieldName, ` = append(to.`, fieldName, `, &temp`)
 					p.P(`} else {`)
 					p.P(`to.`, fieldName, ` = append(nil)`)
 					p.P(`}`)
 				} else {
-					p.P(`if from.`, fromName, ` != nil {`)
+					p.P(`if v != nil {`)
 					p.P(`to.`, fieldName, ` = append(t.`, fieldName, `, &`, p.wktPkgName, ".", coreType,
 						`{Value: *from.`, fromName, `}`)
 					p.P(`} else {`)
 					p.P(`to.`, fieldName, ` = append(to.`, fieldName, `, nil)`)
 					p.P(`}`)
 				}
+			} else if fieldType == protoTypeUUID {
+				if toORM {
+					p.P(`if to.`, fieldName, `, err = uuid.FromString(v); err != nil {`)
+					p.P(`return nil, err`)
+					p.P(`}`)
+				} else {
+					p.P(`to.`, fieldName, ` = v.String()`)
+				}
+			} else if parts[len(parts)-1] == protoTypeTimestamp {
+
 			} else if _, exists := convertibleTypes[strings.Trim(fieldType, "[]*")]; exists {
 				isPtr := strings.Contains(fieldType, "*") // Really, it should always be a ptr
 
@@ -307,14 +358,19 @@ func (p *ormPlugin) generateFieldMap(message *generator.Descriptor, field *descr
 					dir = "To"
 				}
 				if isPtr {
-					p.P(`if from.`, fromName, ` != nil {`)
-					p.P(`temp`, lintName(fieldName), ` := Convert`, fieldType, dir, `ORM (*v)`)
-					p.P(`to.`, fieldName, ` = append(to.`, fieldName, `, &temp`, lintName(fieldName), `)`)
+					p.P(`if v != nil {`)
+					p.P(`if temp`, lintName(fieldName), `, cErr := Convert`, fieldType, dir, `ORM (v); cErr == nil {`)
+					p.P(`to.`, fieldName, ` = append(to.`, fieldName, `, temp`, lintName(fieldName), `)`)
+					p.P(`} else {`)
+					p.P(`return nil, cErr`)
+					p.P(`}`)
 					p.P(`} else {`)
 					p.P(`to.`, fieldName, ` = append(to.`, fieldName, `, nil)`)
 					p.P(`}`)
 				} else {
-					p.P(`to.`, fieldName, ` = Convert`, fieldType, dir, `ORM (from.`, fromName, `)`)
+					p.P(`if to.`, fieldName, `, err = Convert`, fieldType, dir, `ORM (from.`, fromName, `); err != nil {`)
+					p.P(`return nil, err`)
+					p.P(`}`)
 				}
 				p.P(`}`) // end for
 			} else {
@@ -347,9 +403,30 @@ func (p *ormPlugin) generateFieldMap(message *generator.Descriptor, field *descr
 				p.P(`to.`, fieldName, ` = &`, p.wktPkgName, ".", coreType, `{Value: *from.`, fromName, `}`)
 				p.P(`}`)
 			}
+		} else if fieldType == protoTypeUUID {
+			if toORM {
+				p.P(`if from.`, fromName, ` != nil {`)
+				p.P(`if to.`, fieldName, `, err = uuid.FromString(*from.`, fromName, `); err != nil {`)
+				p.P(`return nil, err`)
+				p.P(`}`)
+				p.P(`}`)
+			} else {
+				p.P(`to.`, fieldName, ` = from.`, fromName, `.String()`)
+			}
+		} else if parts[len(parts)-1] == protoTypeTimestamp {
+			if toORM {
+				p.P(`if from.`, fromName, ` != nil {`)
+				p.P(`if to.`, fieldName, `, err = ptypes.Timestamp(from.`, fromName, `); err != nil {`)
+				p.P(`return nil, err`)
+				p.P(`}`)
+				p.P(`}`)
+			} else {
+				p.P(`if to.`, fieldName, `, err = ptypes.TimestampProto(from.`, fromName, `); err != nil {`)
+				p.P(`return nil, err`)
+				p.P(`}`)
+			}
 		} else { // Not a WKT, but a type we're building converters for
 			if _, exists := convertibleTypes[strings.Trim(fieldType, "[]*")]; exists {
-				isPtr := strings.Contains(fieldType, "*")
 
 				fieldType = strings.Trim(fieldType, "*")
 				fieldType = lintName(fieldType)
@@ -357,14 +434,11 @@ func (p *ormPlugin) generateFieldMap(message *generator.Descriptor, field *descr
 				if toORM {
 					dir = "To"
 				}
-				if isPtr {
-					p.P(`if from.`, fromName, ` != nil {`)
-					p.P(`temp`, lintName(fieldName), ` := Convert`, fieldType, dir, `ORM (*from.`, fromName, `)`)
-					p.P(`to.`, fieldName, ` = &temp`, lintName(fieldName))
-					p.P(`}`)
-				} else {
-					p.P(`to.`, fieldName, ` = Convert`, fieldType, dir, `ORM (from.`, fromName, `)`)
-				}
+				p.P(`if from.`, fromName, ` != nil {`)
+				p.P(`if to.`, fieldName, `, err = Convert`, fieldType, dir, `ORM (from.`, fromName, `); err != nil {`)
+				p.P(`return nil, err`)
+				p.P(`}`)
+				p.P(`}`)
 			}
 		}
 	} else { // Singular raw ----------------------------------------------------
@@ -386,7 +460,7 @@ func (p *ormPlugin) generateDefaultHandlers(file *generator.FileDescriptor) {
 		} else {
 			continue
 		}
-		p.gormPkgAlias = "gorm"
+		p.gormPkgName = "gorm"
 		p.lftPkgName = "ops"
 
 		p.generateCreateHandler(message)
@@ -413,11 +487,14 @@ func (p *ormPlugin) generateCreateHandler(message *generator.Descriptor) {
 	typeName := lintName(typeNamePb)
 	p.P(`// DefaultCreate`, typeName, ` executes a basic gorm create call`)
 	p.P(`func DefaultCreate`, typeName, `(ctx context.Context, in *`,
-		typeNamePb, `, db *`, p.gormPkgAlias, `.DB) (*`, typeNamePb, `, error) {`)
+		typeNamePb, `, db *`, p.gormPkgName, `.DB) (*`, typeNamePb, `, error) {`)
 	p.P(`if in == nil {`)
-	p.P(`return nil, fmt.Errorf("Nil argument to DefaultCreate`, typeName, `")`)
+	p.P(`return nil, errors.New("Nil argument to DefaultCreate`, typeName, `")`)
 	p.P(`}`)
-	p.P(`ormObj := Convert`, typeName, `ToORM(*in)`)
+	p.P(`ormObj, err := Convert`, typeName, `ToORM(in)`)
+	p.P(`if err != nil {`)
+	p.P(`return nil, err`)
+	p.P(`}`)
 	if opts := p.GetMessageOptions(message); opts != nil && opts.GetMultiTenant() {
 		p.P("tenantID, tIDErr := auth.GetTenantID(ctx)")
 		p.P("if tIDErr != nil {")
@@ -425,11 +502,10 @@ func (p *ormPlugin) generateCreateHandler(message *generator.Descriptor) {
 		p.P("}")
 		p.P("ormObj.TenantID = tenantID")
 	}
-	p.P(`if err := db.Create(&ormObj).Error; err != nil {`)
+	p.P(`if err = db.Create(&ormObj).Error; err != nil {`)
 	p.P(`return nil, err`)
 	p.P(`}`)
-	p.P(`pbResponse := Convert`, typeName, `FromORM(ormObj)`)
-	p.P(`return &pbResponse, nil`)
+	p.P(`return Convert`, typeName, `FromORM(ormObj)`)
 	p.P(`}`)
 	p.P()
 }
@@ -439,11 +515,14 @@ func (p *ormPlugin) generateReadHandler(message *generator.Descriptor) {
 	typeName := lintName(typeNamePb)
 	p.P(`// DefaultRead`, typeName, ` executes a basic gorm read call`)
 	p.P(`func DefaultRead`, typeName, `(ctx context.Context, in *`,
-		typeNamePb, `, db *`, p.gormPkgAlias, `.DB) (*`, typeNamePb, `, error) {`)
+		typeNamePb, `, db *`, p.gormPkgName, `.DB) (*`, typeNamePb, `, error) {`)
 	p.P(`if in == nil {`)
-	p.P(`return nil, fmt.Errorf("Nil argument to DefaultRead`, typeName, `")`)
+	p.P(`return nil, errors.New("Nil argument to DefaultRead`, typeName, `")`)
 	p.P(`}`)
-	p.P(`ormParams := Convert`, typeName, `ToORM(*in)`)
+	p.P(`ormParams, err := Convert`, typeName, `ToORM(in)`)
+	p.P(`if err != nil {`)
+	p.P(`return nil, err`)
+	p.P(`}`)
 	if opts := p.GetMessageOptions(message); opts != nil && opts.GetMultiTenant() {
 		p.P("tenantID, tIDErr := auth.GetTenantID(ctx)")
 		p.P("if tIDErr != nil {")
@@ -451,12 +530,11 @@ func (p *ormPlugin) generateReadHandler(message *generator.Descriptor) {
 		p.P("}")
 		p.P("ormParams.TenantID = tenantID")
 	}
-	p.P(`ormResponse := `, typeName, `ORM{}`)
-	p.P(`if err := db.Set("gorm:auto_preload", true).Where(&ormParams).First(&ormResponse).Error; err != nil {`)
+	p.P(`ormResponse := &`, typeName, `ORM{}`)
+	p.P(`if err = db.Set("gorm:auto_preload", true).Where(&ormParams).First(&ormResponse).Error; err != nil {`)
 	p.P(`return nil, err`)
 	p.P(`}`)
-	p.P(`pbResponse := Convert`, typeName, `FromORM(ormResponse)`)
-	p.P(`return &pbResponse, nil`)
+	p.P(`return Convert`, typeName, `FromORM(ormResponse)`)
 	p.P(`}`)
 	p.P()
 }
@@ -484,9 +562,9 @@ func (p *ormPlugin) generateUpdateHandler(message *generator.Descriptor) {
 
 	p.P(`// DefaultUpdate`, typeName, ` executes a basic gorm update call`)
 	p.P(`func DefaultUpdate`, typeName, `(ctx context.Context, in *`,
-		typeNamePb, `, db *`, p.gormPkgAlias, `.DB) (*`, typeNamePb, `, error) {`)
+		typeNamePb, `, db *`, p.gormPkgName, `.DB) (*`, typeNamePb, `, error) {`)
 	p.P(`if in == nil {`)
-	p.P(`return nil, fmt.Errorf("Nil argument to DefaultUpdate`, typeName, `")`)
+	p.P(`return nil, errors.New("Nil argument to DefaultUpdate`, typeName, `")`)
 	p.P(`}`)
 	if isMultiTenant {
 		p.P(fmt.Sprintf("if exists, err := DefaultRead%s(ctx, &%s{Id: in.GetId()}, db); err != nil {", typeName, typeName))
@@ -496,12 +574,14 @@ func (p *ormPlugin) generateUpdateHandler(message *generator.Descriptor) {
 		p.P("}")
 	}
 
-	p.P(`ormObj := Convert`, typeName, `ToORM(*in)`)
-	p.P(`if err := db.Save(&ormObj).Error; err != nil {`)
+	p.P(`ormObj, err := Convert`, typeName, `ToORM(in)`)
+	p.P(`if err != nil {`)
 	p.P(`return nil, err`)
 	p.P(`}`)
-	p.P(`pbResponse := Convert`, typeName, `FromORM(ormObj)`)
-	p.P(`return &pbResponse, nil`)
+	p.P(`if err = db.Save(&ormObj).Error; err != nil {`)
+	p.P(`return nil, err`)
+	p.P(`}`)
+	p.P(`return Convert`, typeName, `FromORM(ormObj)`)
 	p.P(`}`)
 	p.P()
 }
@@ -511,11 +591,14 @@ func (p *ormPlugin) generateDeleteHandler(message *generator.Descriptor) {
 	typeName := lintName(typeNamePb)
 	p.P(`// DefaultDelete`, typeName, ` executes a basic gorm delete call`)
 	p.P(`func DefaultDelete`, typeName, `(ctx context.Context, in *`,
-		typeNamePb, `, db *`, p.gormPkgAlias, `.DB) error {`)
+		typeNamePb, `, db *`, p.gormPkgName, `.DB) error {`)
 	p.P(`if in == nil {`)
-	p.P(`return fmt.Errorf("Nil argument to DefaultDelete`, typeName, `")`)
+	p.P(`return errors.New("Nil argument to DefaultDelete`, typeName, `")`)
 	p.P(`}`)
-	p.P(`ormObj := Convert`, typeName, `ToORM(*in)`)
+	p.P(`ormObj, err := Convert`, typeName, `ToORM(in)`)
+	p.P(`if err != nil {`)
+	p.P(`return err`)
+	p.P(`}`)
 	if opts := p.GetMessageOptions(message); opts != nil && opts.GetMultiTenant() {
 		p.P("tenantID, tIDErr := auth.GetTenantID(ctx)")
 		p.P("if tIDErr != nil {")
@@ -523,7 +606,7 @@ func (p *ormPlugin) generateDeleteHandler(message *generator.Descriptor) {
 		p.P("}")
 		p.P("ormObj.TenantID = tenantID")
 	}
-	p.P(`err := db.Where(&ormObj).Delete(&`, typeName, `ORM{}).Error`)
+	p.P(`err = db.Where(&ormObj).Delete(&`, typeName, `ORM{}).Error`)
 	p.P(`return err`)
 	p.P(`}`)
 	p.P()
@@ -534,8 +617,8 @@ func (p *ormPlugin) generateListHandler(message *generator.Descriptor) {
 	typeName := lintName(typeNamePb)
 
 	p.P(`// DefaultList`, typeName, ` executes a basic gorm find call`)
-	p.P(`func DefaultList`, typeName, `(ctx context.Context, db *`, p.gormPkgAlias, `.DB) ([]*`, typeName, `, error) {`)
-	p.P(`ormResponse := []`, typeName, `ORM{}`)
+	p.P(`func DefaultList`, typeName, `(ctx context.Context, db *`, p.gormPkgName, `.DB) ([]*`, typeNamePb, `, error) {`)
+	p.P(`ormResponse := []*`, typeName, `ORM{}`)
 	p.P(`db, err := `, p.lftPkgName, `.ApplyCollectionOperators(db, ctx)`)
 	p.P(`if err != nil {`)
 	p.P(`return nil, err`)
@@ -550,10 +633,13 @@ func (p *ormPlugin) generateListHandler(message *generator.Descriptor) {
 	p.P(`if err := db.Set("gorm:auto_preload", true).Find(&ormResponse).Error; err != nil {`)
 	p.P(`return nil, err`)
 	p.P(`}`)
-	p.P(`pbResponse := []*`, typeName, `{}`)
+	p.P(`pbResponse := []*`, typeNamePb, `{}`)
 	p.P(`for _, responseEntry := range ormResponse {`)
-	p.P(`temp := Convert`, typeName, `FromORM(responseEntry)`)
-	p.P(`pbResponse = append(pbResponse, &temp)`)
+	p.P(`temp, err := Convert`, typeName, `FromORM(responseEntry)`)
+	p.P(`if err != nil {`)
+	p.P(`return nil, err`)
+	p.P(`}`)
+	p.P(`pbResponse = append(pbResponse, temp)`)
 	p.P(`}`)
 	p.P(`return pbResponse, nil`)
 	p.P(`}`)
