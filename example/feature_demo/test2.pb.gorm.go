@@ -32,11 +32,8 @@ func (IntPointORM) TableName() string {
 }
 
 // ConvertIntPointToORM takes a pb object and returns an orm object
-func ConvertIntPointToORM(from *IntPoint) (*IntPointORM, error) {
-	to := &IntPointORM{}
-	if from == nil {
-		return to, errors.New("Nil argument for ToORM converter")
-	}
+func ConvertIntPointToORM(from IntPoint) (IntPointORM, error) {
+	to := IntPointORM{}
 	var err error
 	to.ID = from.Id
 	to.X = from.X
@@ -45,11 +42,8 @@ func ConvertIntPointToORM(from *IntPoint) (*IntPointORM, error) {
 }
 
 // ConvertIntPointFromORM takes an orm object and returns a pb object
-func ConvertIntPointFromORM(from *IntPointORM) (*IntPoint, error) {
-	to := &IntPoint{}
-	if from == nil {
-		return to, errors.New("Nil argument for FromORM converter")
-	}
+func ConvertIntPointFromORM(from IntPointORM) (IntPoint, error) {
+	to := IntPoint{}
 	var err error
 	to.Id = from.ID
 	to.X = from.X
@@ -63,14 +57,15 @@ func DefaultCreateIntPoint(ctx context.Context, in *IntPoint, db *gorm.DB) (*Int
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultCreateIntPoint")
 	}
-	ormObj, err := ConvertIntPointToORM(in)
+	ormObj, err := ConvertIntPointToORM(*in)
 	if err != nil {
 		return nil, err
 	}
 	if err = db.Create(&ormObj).Error; err != nil {
 		return nil, err
 	}
-	return ConvertIntPointFromORM(ormObj)
+	pbResponse, err := ConvertIntPointFromORM(ormObj)
+	return &pbResponse, err
 }
 
 // DefaultReadIntPoint executes a basic gorm read call
@@ -78,15 +73,16 @@ func DefaultReadIntPoint(ctx context.Context, in *IntPoint, db *gorm.DB) (*IntPo
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultReadIntPoint")
 	}
-	ormParams, err := ConvertIntPointToORM(in)
+	ormParams, err := ConvertIntPointToORM(*in)
 	if err != nil {
 		return nil, err
 	}
-	ormResponse := &IntPointORM{}
+	ormResponse := IntPointORM{}
 	if err = db.Set("gorm:auto_preload", true).Where(&ormParams).First(&ormResponse).Error; err != nil {
 		return nil, err
 	}
-	return ConvertIntPointFromORM(ormResponse)
+	pbResponse, err := ConvertIntPointFromORM(ormResponse)
+	return &pbResponse, err
 }
 
 // DefaultUpdateIntPoint executes a basic gorm update call
@@ -94,14 +90,15 @@ func DefaultUpdateIntPoint(ctx context.Context, in *IntPoint, db *gorm.DB) (*Int
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultUpdateIntPoint")
 	}
-	ormObj, err := ConvertIntPointToORM(in)
+	ormObj, err := ConvertIntPointToORM(*in)
 	if err != nil {
 		return nil, err
 	}
 	if err = db.Save(&ormObj).Error; err != nil {
 		return nil, err
 	}
-	return ConvertIntPointFromORM(ormObj)
+	pbResponse, err := ConvertIntPointFromORM(ormObj)
+	return &pbResponse, err
 }
 
 // DefaultDeleteIntPoint executes a basic gorm delete call
@@ -109,7 +106,7 @@ func DefaultDeleteIntPoint(ctx context.Context, in *IntPoint, db *gorm.DB) error
 	if in == nil {
 		return errors.New("Nil argument to DefaultDeleteIntPoint")
 	}
-	ormObj, err := ConvertIntPointToORM(in)
+	ormObj, err := ConvertIntPointToORM(*in)
 	if err != nil {
 		return err
 	}
@@ -119,7 +116,7 @@ func DefaultDeleteIntPoint(ctx context.Context, in *IntPoint, db *gorm.DB) error
 
 // DefaultListIntPoint executes a basic gorm find call
 func DefaultListIntPoint(ctx context.Context, db *gorm.DB) ([]*IntPoint, error) {
-	ormResponse := []*IntPointORM{}
+	ormResponse := []IntPointORM{}
 	db, err := ops.ApplyCollectionOperators(db, ctx)
 	if err != nil {
 		return nil, err
@@ -133,7 +130,7 @@ func DefaultListIntPoint(ctx context.Context, db *gorm.DB) ([]*IntPoint, error) 
 		if err != nil {
 			return nil, err
 		}
-		pbResponse = append(pbResponse, temp)
+		pbResponse = append(pbResponse, &temp)
 	}
 	return pbResponse, nil
 }

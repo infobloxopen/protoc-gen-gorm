@@ -247,12 +247,9 @@ func (p *ormPlugin) generateMapFunctions(message *generator.Descriptor) {
 	ccTypeNameOrm := fmt.Sprintf("%sORM", ccTypeNameBase)
 	///// To Orm
 	p.P(`// Convert`, ccTypeNameBase, `ToORM takes a pb object and returns an orm object`)
-	p.P(`func Convert`, ccTypeNameBase, `ToORM (from *`,
-		ccTypeNamePb, `) (*`, ccTypeNameOrm, `, error) {`)
-	p.P(`to := &`, ccTypeNameOrm, `{}`)
-	p.P(`if from == nil {`)
-	p.P(`return to, errors.New("Nil argument for ToORM converter")`)
-	p.P(`}`)
+	p.P(`func Convert`, ccTypeNameBase, `ToORM (from `,
+		ccTypeNamePb, `) (`, ccTypeNameOrm, `, error) {`)
+	p.P(`to := `, ccTypeNameOrm, `{}`)
 	p.P(`var err error`)
 	for _, field := range message.Field {
 		// Checking if field is skipped
@@ -273,12 +270,9 @@ func (p *ormPlugin) generateMapFunctions(message *generator.Descriptor) {
 	p.P()
 	///// To Pb
 	p.P(`// Convert`, ccTypeNameBase, `FromORM takes an orm object and returns a pb object`)
-	p.P(`func Convert`, ccTypeNameBase, `FromORM (from *`, ccTypeNameOrm, `) (*`,
+	p.P(`func Convert`, ccTypeNameBase, `FromORM (from `, ccTypeNameOrm, `) (`,
 		ccTypeNamePb, `, error) {`)
-	p.P(`to := &`, ccTypeNamePb, `{}`)
-	p.P(`if from == nil {`)
-	p.P(`return to, errors.New("Nil argument for FromORM converter")`)
-	p.P(`}`)
+	p.P(`to := `, ccTypeNamePb, `{}`)
 	p.P(`var err error`)
 	for _, field := range message.Field {
 		// Checking if field is skipped
@@ -341,7 +335,7 @@ func (p *ormPlugin) generateFieldMap(message *generator.Descriptor, field *descr
 			} else if fieldType == protoTypeUUID {
 				if toORM {
 					p.P(`if to.`, fieldName, `, err = uuid.FromString(v); err != nil {`)
-					p.P(`return nil, err`)
+					p.P(`return to, err`)
 					p.P(`}`)
 				} else {
 					p.P(`to.`, fieldName, ` = v.String()`)
@@ -359,17 +353,17 @@ func (p *ormPlugin) generateFieldMap(message *generator.Descriptor, field *descr
 				}
 				if isPtr {
 					p.P(`if v != nil {`)
-					p.P(`if temp`, lintName(fieldName), `, cErr := Convert`, fieldType, dir, `ORM (v); cErr == nil {`)
-					p.P(`to.`, fieldName, ` = append(to.`, fieldName, `, temp`, lintName(fieldName), `)`)
+					p.P(`if temp`, lintName(fieldName), `, cErr := Convert`, fieldType, dir, `ORM (*v); cErr == nil {`)
+					p.P(`to.`, fieldName, ` = append(to.`, fieldName, `, &temp`, lintName(fieldName), `)`)
 					p.P(`} else {`)
-					p.P(`return nil, cErr`)
+					p.P(`return to, cErr`)
 					p.P(`}`)
 					p.P(`} else {`)
 					p.P(`to.`, fieldName, ` = append(to.`, fieldName, `, nil)`)
 					p.P(`}`)
 				} else {
-					p.P(`if to.`, fieldName, `, err = Convert`, fieldType, dir, `ORM (from.`, fromName, `); err != nil {`)
-					p.P(`return nil, err`)
+					p.P(`if to.`, fieldName, `, err =  Convert`, fieldType, dir, `ORM (*from.`, fromName, `); err != nil {`)
+					p.P(`return to, err`)
 					p.P(`}`)
 				}
 				p.P(`}`) // end for
@@ -407,7 +401,7 @@ func (p *ormPlugin) generateFieldMap(message *generator.Descriptor, field *descr
 			if toORM {
 				p.P(`if from.`, fromName, ` != nil {`)
 				p.P(`if to.`, fieldName, `, err = uuid.FromString(*from.`, fromName, `); err != nil {`)
-				p.P(`return nil, err`)
+				p.P(`return to, err`)
 				p.P(`}`)
 				p.P(`}`)
 			} else {
@@ -417,12 +411,12 @@ func (p *ormPlugin) generateFieldMap(message *generator.Descriptor, field *descr
 			if toORM {
 				p.P(`if from.`, fromName, ` != nil {`)
 				p.P(`if to.`, fieldName, `, err = ptypes.Timestamp(from.`, fromName, `); err != nil {`)
-				p.P(`return nil, err`)
+				p.P(`return to, err`)
 				p.P(`}`)
 				p.P(`}`)
 			} else {
 				p.P(`if to.`, fieldName, `, err = ptypes.TimestampProto(from.`, fromName, `); err != nil {`)
-				p.P(`return nil, err`)
+				p.P(`return to, err`)
 				p.P(`}`)
 			}
 		} else { // Not a WKT, but a type we're building converters for
@@ -436,7 +430,7 @@ func (p *ormPlugin) generateFieldMap(message *generator.Descriptor, field *descr
 				}
 				p.P(`if from.`, fromName, ` != nil {`)
 				p.P(`if to.`, fieldName, `, err = Convert`, fieldType, dir, `ORM (from.`, fromName, `); err != nil {`)
-				p.P(`return nil, err`)
+				p.P(`return to, err`)
 				p.P(`}`)
 				p.P(`}`)
 			}
@@ -491,7 +485,7 @@ func (p *ormPlugin) generateCreateHandler(message *generator.Descriptor) {
 	p.P(`if in == nil {`)
 	p.P(`return nil, errors.New("Nil argument to DefaultCreate`, typeName, `")`)
 	p.P(`}`)
-	p.P(`ormObj, err := Convert`, typeName, `ToORM(in)`)
+	p.P(`ormObj, err := Convert`, typeName, `ToORM(*in)`)
 	p.P(`if err != nil {`)
 	p.P(`return nil, err`)
 	p.P(`}`)
@@ -505,7 +499,8 @@ func (p *ormPlugin) generateCreateHandler(message *generator.Descriptor) {
 	p.P(`if err = db.Create(&ormObj).Error; err != nil {`)
 	p.P(`return nil, err`)
 	p.P(`}`)
-	p.P(`return Convert`, typeName, `FromORM(ormObj)`)
+	p.P(`pbResponse, err := Convert`, typeName, `FromORM(ormObj)`)
+	p.P(`return &pbResponse, err`)
 	p.P(`}`)
 	p.P()
 }
@@ -519,7 +514,7 @@ func (p *ormPlugin) generateReadHandler(message *generator.Descriptor) {
 	p.P(`if in == nil {`)
 	p.P(`return nil, errors.New("Nil argument to DefaultRead`, typeName, `")`)
 	p.P(`}`)
-	p.P(`ormParams, err := Convert`, typeName, `ToORM(in)`)
+	p.P(`ormParams, err := Convert`, typeName, `ToORM(*in)`)
 	p.P(`if err != nil {`)
 	p.P(`return nil, err`)
 	p.P(`}`)
@@ -530,11 +525,12 @@ func (p *ormPlugin) generateReadHandler(message *generator.Descriptor) {
 		p.P("}")
 		p.P("ormParams.TenantID = tenantID")
 	}
-	p.P(`ormResponse := &`, typeName, `ORM{}`)
+	p.P(`ormResponse := `, typeName, `ORM{}`)
 	p.P(`if err = db.Set("gorm:auto_preload", true).Where(&ormParams).First(&ormResponse).Error; err != nil {`)
 	p.P(`return nil, err`)
 	p.P(`}`)
-	p.P(`return Convert`, typeName, `FromORM(ormResponse)`)
+	p.P(`pbResponse, err := Convert`, typeName, `FromORM(ormResponse)`)
+	p.P(`return &pbResponse, err`)
 	p.P(`}`)
 	p.P()
 }
@@ -574,14 +570,15 @@ func (p *ormPlugin) generateUpdateHandler(message *generator.Descriptor) {
 		p.P("}")
 	}
 
-	p.P(`ormObj, err := Convert`, typeName, `ToORM(in)`)
+	p.P(`ormObj, err := Convert`, typeName, `ToORM(*in)`)
 	p.P(`if err != nil {`)
 	p.P(`return nil, err`)
 	p.P(`}`)
 	p.P(`if err = db.Save(&ormObj).Error; err != nil {`)
 	p.P(`return nil, err`)
 	p.P(`}`)
-	p.P(`return Convert`, typeName, `FromORM(ormObj)`)
+	p.P(`pbResponse, err := Convert`, typeName, `FromORM(ormObj)`)
+	p.P(`return &pbResponse, err`)
 	p.P(`}`)
 	p.P()
 }
@@ -595,7 +592,7 @@ func (p *ormPlugin) generateDeleteHandler(message *generator.Descriptor) {
 	p.P(`if in == nil {`)
 	p.P(`return errors.New("Nil argument to DefaultDelete`, typeName, `")`)
 	p.P(`}`)
-	p.P(`ormObj, err := Convert`, typeName, `ToORM(in)`)
+	p.P(`ormObj, err := Convert`, typeName, `ToORM(*in)`)
 	p.P(`if err != nil {`)
 	p.P(`return err`)
 	p.P(`}`)
@@ -618,7 +615,7 @@ func (p *ormPlugin) generateListHandler(message *generator.Descriptor) {
 
 	p.P(`// DefaultList`, typeName, ` executes a basic gorm find call`)
 	p.P(`func DefaultList`, typeName, `(ctx context.Context, db *`, p.gormPkgName, `.DB) ([]*`, typeNamePb, `, error) {`)
-	p.P(`ormResponse := []*`, typeName, `ORM{}`)
+	p.P(`ormResponse := []`, typeName, `ORM{}`)
 	p.P(`db, err := `, p.lftPkgName, `.ApplyCollectionOperators(db, ctx)`)
 	p.P(`if err != nil {`)
 	p.P(`return nil, err`)
@@ -639,7 +636,7 @@ func (p *ormPlugin) generateListHandler(message *generator.Descriptor) {
 	p.P(`if err != nil {`)
 	p.P(`return nil, err`)
 	p.P(`}`)
-	p.P(`pbResponse = append(pbResponse, temp)`)
+	p.P(`pbResponse = append(pbResponse, &temp)`)
 	p.P(`}`)
 	p.P(`return pbResponse, nil`)
 	p.P(`}`)

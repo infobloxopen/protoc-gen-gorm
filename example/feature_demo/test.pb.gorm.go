@@ -40,11 +40,8 @@ func (TestTypesORM) TableName() string {
 }
 
 // ConvertTestTypesToORM takes a pb object and returns an orm object
-func ConvertTestTypesToORM(from *TestTypes) (*TestTypesORM, error) {
-	to := &TestTypesORM{}
-	if from == nil {
-		return to, errors.New("Nil argument for ToORM converter")
-	}
+func ConvertTestTypesToORM(from TestTypes) (TestTypesORM, error) {
+	to := TestTypesORM{}
 	var err error
 	// Skipping field: ApiOnlyString
 	if from.OptionalString != nil {
@@ -54,23 +51,20 @@ func ConvertTestTypesToORM(from *TestTypes) (*TestTypesORM, error) {
 	to.BecomesInt = int32(from.BecomesInt)
 	if from.Uuid != nil {
 		if to.UUID, err = uuid.FromString(*from.Uuid); err != nil {
-			return nil, err
+			return to, err
 		}
 	}
 	if from.CreatedAt != nil {
 		if to.CreatedAt, err = ptypes.Timestamp(from.CreatedAt); err != nil {
-			return nil, err
+			return to, err
 		}
 	}
 	return to, err
 }
 
 // ConvertTestTypesFromORM takes an orm object and returns a pb object
-func ConvertTestTypesFromORM(from *TestTypesORM) (*TestTypes, error) {
-	to := &TestTypes{}
-	if from == nil {
-		return to, errors.New("Nil argument for FromORM converter")
-	}
+func ConvertTestTypesFromORM(from TestTypesORM) (TestTypes, error) {
+	to := TestTypes{}
 	var err error
 	// Skipping field: ApiOnlyString
 	if from.OptionalString != nil {
@@ -79,7 +73,7 @@ func ConvertTestTypesFromORM(from *TestTypesORM) (*TestTypes, error) {
 	to.BecomesInt = TestTypesStatus(from.BecomesInt)
 	to.Uuid = from.UUID.String()
 	if to.CreatedAt, err = ptypes.TimestampProto(from.CreatedAt); err != nil {
-		return nil, err
+		return to, err
 	}
 	return to, err
 }
@@ -98,19 +92,16 @@ func (TypeWithIDORM) TableName() string {
 }
 
 // ConvertTypeWithIDToORM takes a pb object and returns an orm object
-func ConvertTypeWithIDToORM(from *TypeWithId) (*TypeWithIDORM, error) {
-	to := &TypeWithIDORM{}
-	if from == nil {
-		return to, errors.New("Nil argument for ToORM converter")
-	}
+func ConvertTypeWithIDToORM(from TypeWithId) (TypeWithIDORM, error) {
+	to := TypeWithIDORM{}
 	var err error
 	to.IP = from.Ip
 	for _, v := range from.Things {
 		if v != nil {
-			if tempThings, cErr := ConvertTestTypesToORM(v); cErr == nil {
-				to.Things = append(to.Things, tempThings)
+			if tempThings, cErr := ConvertTestTypesToORM(*v); cErr == nil {
+				to.Things = append(to.Things, &tempThings)
 			} else {
-				return nil, cErr
+				return to, cErr
 			}
 		} else {
 			to.Things = append(to.Things, nil)
@@ -118,26 +109,23 @@ func ConvertTypeWithIDToORM(from *TypeWithId) (*TypeWithIDORM, error) {
 	}
 	if from.ANestedObject != nil {
 		if to.ANestedObject, err = ConvertTestTypesToORM(from.ANestedObject); err != nil {
-			return nil, err
+			return to, err
 		}
 	}
 	return to, err
 }
 
 // ConvertTypeWithIDFromORM takes an orm object and returns a pb object
-func ConvertTypeWithIDFromORM(from *TypeWithIDORM) (*TypeWithId, error) {
-	to := &TypeWithId{}
-	if from == nil {
-		return to, errors.New("Nil argument for FromORM converter")
-	}
+func ConvertTypeWithIDFromORM(from TypeWithIDORM) (TypeWithId, error) {
+	to := TypeWithId{}
 	var err error
 	to.Ip = from.IP
 	for _, v := range from.Things {
 		if v != nil {
-			if tempThings, cErr := ConvertTestTypesFromORM(v); cErr == nil {
-				to.Things = append(to.Things, tempThings)
+			if tempThings, cErr := ConvertTestTypesFromORM(*v); cErr == nil {
+				to.Things = append(to.Things, &tempThings)
 			} else {
-				return nil, cErr
+				return to, cErr
 			}
 		} else {
 			to.Things = append(to.Things, nil)
@@ -145,7 +133,7 @@ func ConvertTypeWithIDFromORM(from *TypeWithIDORM) (*TypeWithId, error) {
 	}
 	if from.ANestedObject != nil {
 		if to.ANestedObject, err = ConvertTestTypesFromORM(from.ANestedObject); err != nil {
-			return nil, err
+			return to, err
 		}
 	}
 	return to, err
@@ -164,11 +152,8 @@ func (MultitenantTypeWithIDORM) TableName() string {
 }
 
 // ConvertMultitenantTypeWithIDToORM takes a pb object and returns an orm object
-func ConvertMultitenantTypeWithIDToORM(from *MultitenantTypeWithId) (*MultitenantTypeWithIDORM, error) {
-	to := &MultitenantTypeWithIDORM{}
-	if from == nil {
-		return to, errors.New("Nil argument for ToORM converter")
-	}
+func ConvertMultitenantTypeWithIDToORM(from MultitenantTypeWithId) (MultitenantTypeWithIDORM, error) {
+	to := MultitenantTypeWithIDORM{}
 	var err error
 	to.ID = from.Id
 	to.SomeField = from.SomeField
@@ -176,11 +161,8 @@ func ConvertMultitenantTypeWithIDToORM(from *MultitenantTypeWithId) (*Multitenan
 }
 
 // ConvertMultitenantTypeWithIDFromORM takes an orm object and returns a pb object
-func ConvertMultitenantTypeWithIDFromORM(from *MultitenantTypeWithIDORM) (*MultitenantTypeWithId, error) {
-	to := &MultitenantTypeWithId{}
-	if from == nil {
-		return to, errors.New("Nil argument for FromORM converter")
-	}
+func ConvertMultitenantTypeWithIDFromORM(from MultitenantTypeWithIDORM) (MultitenantTypeWithId, error) {
+	to := MultitenantTypeWithId{}
 	var err error
 	to.Id = from.ID
 	to.SomeField = from.SomeField
@@ -199,22 +181,16 @@ func (MultitenantTypeWithoutIDORM) TableName() string {
 }
 
 // ConvertMultitenantTypeWithoutIDToORM takes a pb object and returns an orm object
-func ConvertMultitenantTypeWithoutIDToORM(from *MultitenantTypeWithoutId) (*MultitenantTypeWithoutIDORM, error) {
-	to := &MultitenantTypeWithoutIDORM{}
-	if from == nil {
-		return to, errors.New("Nil argument for ToORM converter")
-	}
+func ConvertMultitenantTypeWithoutIDToORM(from MultitenantTypeWithoutId) (MultitenantTypeWithoutIDORM, error) {
+	to := MultitenantTypeWithoutIDORM{}
 	var err error
 	to.SomeField = from.SomeField
 	return to, err
 }
 
 // ConvertMultitenantTypeWithoutIDFromORM takes an orm object and returns a pb object
-func ConvertMultitenantTypeWithoutIDFromORM(from *MultitenantTypeWithoutIDORM) (*MultitenantTypeWithoutId, error) {
-	to := &MultitenantTypeWithoutId{}
-	if from == nil {
-		return to, errors.New("Nil argument for FromORM converter")
-	}
+func ConvertMultitenantTypeWithoutIDFromORM(from MultitenantTypeWithoutIDORM) (MultitenantTypeWithoutId, error) {
+	to := MultitenantTypeWithoutId{}
 	var err error
 	to.SomeField = from.SomeField
 	return to, err
@@ -231,21 +207,15 @@ func (TypeBecomesEmptyORM) TableName() string {
 }
 
 // ConvertTypeBecomesEmptyToORM takes a pb object and returns an orm object
-func ConvertTypeBecomesEmptyToORM(from *TypeBecomesEmpty) (*TypeBecomesEmptyORM, error) {
-	to := &TypeBecomesEmptyORM{}
-	if from == nil {
-		return to, errors.New("Nil argument for ToORM converter")
-	}
+func ConvertTypeBecomesEmptyToORM(from TypeBecomesEmpty) (TypeBecomesEmptyORM, error) {
+	to := TypeBecomesEmptyORM{}
 	var err error
 	return to, err
 }
 
 // ConvertTypeBecomesEmptyFromORM takes an orm object and returns a pb object
-func ConvertTypeBecomesEmptyFromORM(from *TypeBecomesEmptyORM) (*TypeBecomesEmpty, error) {
-	to := &TypeBecomesEmpty{}
-	if from == nil {
-		return to, errors.New("Nil argument for FromORM converter")
-	}
+func ConvertTypeBecomesEmptyFromORM(from TypeBecomesEmptyORM) (TypeBecomesEmpty, error) {
+	to := TypeBecomesEmpty{}
 	var err error
 	return to, err
 }
@@ -256,14 +226,15 @@ func DefaultCreateTestTypes(ctx context.Context, in *TestTypes, db *gorm.DB) (*T
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultCreateTestTypes")
 	}
-	ormObj, err := ConvertTestTypesToORM(in)
+	ormObj, err := ConvertTestTypesToORM(*in)
 	if err != nil {
 		return nil, err
 	}
 	if err = db.Create(&ormObj).Error; err != nil {
 		return nil, err
 	}
-	return ConvertTestTypesFromORM(ormObj)
+	pbResponse, err := ConvertTestTypesFromORM(ormObj)
+	return &pbResponse, err
 }
 
 // DefaultReadTestTypes executes a basic gorm read call
@@ -271,15 +242,16 @@ func DefaultReadTestTypes(ctx context.Context, in *TestTypes, db *gorm.DB) (*Tes
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultReadTestTypes")
 	}
-	ormParams, err := ConvertTestTypesToORM(in)
+	ormParams, err := ConvertTestTypesToORM(*in)
 	if err != nil {
 		return nil, err
 	}
-	ormResponse := &TestTypesORM{}
+	ormResponse := TestTypesORM{}
 	if err = db.Set("gorm:auto_preload", true).Where(&ormParams).First(&ormResponse).Error; err != nil {
 		return nil, err
 	}
-	return ConvertTestTypesFromORM(ormResponse)
+	pbResponse, err := ConvertTestTypesFromORM(ormResponse)
+	return &pbResponse, err
 }
 
 // DefaultUpdateTestTypes executes a basic gorm update call
@@ -287,14 +259,15 @@ func DefaultUpdateTestTypes(ctx context.Context, in *TestTypes, db *gorm.DB) (*T
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultUpdateTestTypes")
 	}
-	ormObj, err := ConvertTestTypesToORM(in)
+	ormObj, err := ConvertTestTypesToORM(*in)
 	if err != nil {
 		return nil, err
 	}
 	if err = db.Save(&ormObj).Error; err != nil {
 		return nil, err
 	}
-	return ConvertTestTypesFromORM(ormObj)
+	pbResponse, err := ConvertTestTypesFromORM(ormObj)
+	return &pbResponse, err
 }
 
 // DefaultDeleteTestTypes executes a basic gorm delete call
@@ -302,7 +275,7 @@ func DefaultDeleteTestTypes(ctx context.Context, in *TestTypes, db *gorm.DB) err
 	if in == nil {
 		return errors.New("Nil argument to DefaultDeleteTestTypes")
 	}
-	ormObj, err := ConvertTestTypesToORM(in)
+	ormObj, err := ConvertTestTypesToORM(*in)
 	if err != nil {
 		return err
 	}
@@ -312,7 +285,7 @@ func DefaultDeleteTestTypes(ctx context.Context, in *TestTypes, db *gorm.DB) err
 
 // DefaultListTestTypes executes a basic gorm find call
 func DefaultListTestTypes(ctx context.Context, db *gorm.DB) ([]*TestTypes, error) {
-	ormResponse := []*TestTypesORM{}
+	ormResponse := []TestTypesORM{}
 	db, err := ops.ApplyCollectionOperators(db, ctx)
 	if err != nil {
 		return nil, err
@@ -326,7 +299,7 @@ func DefaultListTestTypes(ctx context.Context, db *gorm.DB) ([]*TestTypes, error
 		if err != nil {
 			return nil, err
 		}
-		pbResponse = append(pbResponse, temp)
+		pbResponse = append(pbResponse, &temp)
 	}
 	return pbResponse, nil
 }
@@ -336,14 +309,15 @@ func DefaultCreateTypeWithID(ctx context.Context, in *TypeWithId, db *gorm.DB) (
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultCreateTypeWithID")
 	}
-	ormObj, err := ConvertTypeWithIDToORM(in)
+	ormObj, err := ConvertTypeWithIDToORM(*in)
 	if err != nil {
 		return nil, err
 	}
 	if err = db.Create(&ormObj).Error; err != nil {
 		return nil, err
 	}
-	return ConvertTypeWithIDFromORM(ormObj)
+	pbResponse, err := ConvertTypeWithIDFromORM(ormObj)
+	return &pbResponse, err
 }
 
 // DefaultReadTypeWithID executes a basic gorm read call
@@ -351,15 +325,16 @@ func DefaultReadTypeWithID(ctx context.Context, in *TypeWithId, db *gorm.DB) (*T
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultReadTypeWithID")
 	}
-	ormParams, err := ConvertTypeWithIDToORM(in)
+	ormParams, err := ConvertTypeWithIDToORM(*in)
 	if err != nil {
 		return nil, err
 	}
-	ormResponse := &TypeWithIDORM{}
+	ormResponse := TypeWithIDORM{}
 	if err = db.Set("gorm:auto_preload", true).Where(&ormParams).First(&ormResponse).Error; err != nil {
 		return nil, err
 	}
-	return ConvertTypeWithIDFromORM(ormResponse)
+	pbResponse, err := ConvertTypeWithIDFromORM(ormResponse)
+	return &pbResponse, err
 }
 
 // DefaultUpdateTypeWithID executes a basic gorm update call
@@ -367,14 +342,15 @@ func DefaultUpdateTypeWithID(ctx context.Context, in *TypeWithId, db *gorm.DB) (
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultUpdateTypeWithID")
 	}
-	ormObj, err := ConvertTypeWithIDToORM(in)
+	ormObj, err := ConvertTypeWithIDToORM(*in)
 	if err != nil {
 		return nil, err
 	}
 	if err = db.Save(&ormObj).Error; err != nil {
 		return nil, err
 	}
-	return ConvertTypeWithIDFromORM(ormObj)
+	pbResponse, err := ConvertTypeWithIDFromORM(ormObj)
+	return &pbResponse, err
 }
 
 // DefaultDeleteTypeWithID executes a basic gorm delete call
@@ -382,7 +358,7 @@ func DefaultDeleteTypeWithID(ctx context.Context, in *TypeWithId, db *gorm.DB) e
 	if in == nil {
 		return errors.New("Nil argument to DefaultDeleteTypeWithID")
 	}
-	ormObj, err := ConvertTypeWithIDToORM(in)
+	ormObj, err := ConvertTypeWithIDToORM(*in)
 	if err != nil {
 		return err
 	}
@@ -392,7 +368,7 @@ func DefaultDeleteTypeWithID(ctx context.Context, in *TypeWithId, db *gorm.DB) e
 
 // DefaultListTypeWithID executes a basic gorm find call
 func DefaultListTypeWithID(ctx context.Context, db *gorm.DB) ([]*TypeWithId, error) {
-	ormResponse := []*TypeWithIDORM{}
+	ormResponse := []TypeWithIDORM{}
 	db, err := ops.ApplyCollectionOperators(db, ctx)
 	if err != nil {
 		return nil, err
@@ -406,7 +382,7 @@ func DefaultListTypeWithID(ctx context.Context, db *gorm.DB) ([]*TypeWithId, err
 		if err != nil {
 			return nil, err
 		}
-		pbResponse = append(pbResponse, temp)
+		pbResponse = append(pbResponse, &temp)
 	}
 	return pbResponse, nil
 }
@@ -416,7 +392,7 @@ func DefaultCreateMultitenantTypeWithID(ctx context.Context, in *MultitenantType
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultCreateMultitenantTypeWithID")
 	}
-	ormObj, err := ConvertMultitenantTypeWithIDToORM(in)
+	ormObj, err := ConvertMultitenantTypeWithIDToORM(*in)
 	if err != nil {
 		return nil, err
 	}
@@ -428,7 +404,8 @@ func DefaultCreateMultitenantTypeWithID(ctx context.Context, in *MultitenantType
 	if err = db.Create(&ormObj).Error; err != nil {
 		return nil, err
 	}
-	return ConvertMultitenantTypeWithIDFromORM(ormObj)
+	pbResponse, err := ConvertMultitenantTypeWithIDFromORM(ormObj)
+	return &pbResponse, err
 }
 
 // DefaultReadMultitenantTypeWithID executes a basic gorm read call
@@ -436,7 +413,7 @@ func DefaultReadMultitenantTypeWithID(ctx context.Context, in *MultitenantTypeWi
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultReadMultitenantTypeWithID")
 	}
-	ormParams, err := ConvertMultitenantTypeWithIDToORM(in)
+	ormParams, err := ConvertMultitenantTypeWithIDToORM(*in)
 	if err != nil {
 		return nil, err
 	}
@@ -445,11 +422,12 @@ func DefaultReadMultitenantTypeWithID(ctx context.Context, in *MultitenantTypeWi
 		return nil, tIDErr
 	}
 	ormParams.TenantID = tenantID
-	ormResponse := &MultitenantTypeWithIDORM{}
+	ormResponse := MultitenantTypeWithIDORM{}
 	if err = db.Set("gorm:auto_preload", true).Where(&ormParams).First(&ormResponse).Error; err != nil {
 		return nil, err
 	}
-	return ConvertMultitenantTypeWithIDFromORM(ormResponse)
+	pbResponse, err := ConvertMultitenantTypeWithIDFromORM(ormResponse)
+	return &pbResponse, err
 }
 
 // DefaultUpdateMultitenantTypeWithID executes a basic gorm update call
@@ -462,14 +440,15 @@ func DefaultUpdateMultitenantTypeWithID(ctx context.Context, in *MultitenantType
 	} else if exists == nil {
 		return nil, errors.New("MultitenantTypeWithID not found")
 	}
-	ormObj, err := ConvertMultitenantTypeWithIDToORM(in)
+	ormObj, err := ConvertMultitenantTypeWithIDToORM(*in)
 	if err != nil {
 		return nil, err
 	}
 	if err = db.Save(&ormObj).Error; err != nil {
 		return nil, err
 	}
-	return ConvertMultitenantTypeWithIDFromORM(ormObj)
+	pbResponse, err := ConvertMultitenantTypeWithIDFromORM(ormObj)
+	return &pbResponse, err
 }
 
 // DefaultDeleteMultitenantTypeWithID executes a basic gorm delete call
@@ -477,7 +456,7 @@ func DefaultDeleteMultitenantTypeWithID(ctx context.Context, in *MultitenantType
 	if in == nil {
 		return errors.New("Nil argument to DefaultDeleteMultitenantTypeWithID")
 	}
-	ormObj, err := ConvertMultitenantTypeWithIDToORM(in)
+	ormObj, err := ConvertMultitenantTypeWithIDToORM(*in)
 	if err != nil {
 		return err
 	}
@@ -492,7 +471,7 @@ func DefaultDeleteMultitenantTypeWithID(ctx context.Context, in *MultitenantType
 
 // DefaultListMultitenantTypeWithID executes a basic gorm find call
 func DefaultListMultitenantTypeWithID(ctx context.Context, db *gorm.DB) ([]*MultitenantTypeWithId, error) {
-	ormResponse := []*MultitenantTypeWithIDORM{}
+	ormResponse := []MultitenantTypeWithIDORM{}
 	db, err := ops.ApplyCollectionOperators(db, ctx)
 	if err != nil {
 		return nil, err
@@ -511,7 +490,7 @@ func DefaultListMultitenantTypeWithID(ctx context.Context, db *gorm.DB) ([]*Mult
 		if err != nil {
 			return nil, err
 		}
-		pbResponse = append(pbResponse, temp)
+		pbResponse = append(pbResponse, &temp)
 	}
 	return pbResponse, nil
 }
@@ -521,7 +500,7 @@ func DefaultCreateMultitenantTypeWithoutID(ctx context.Context, in *MultitenantT
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultCreateMultitenantTypeWithoutID")
 	}
-	ormObj, err := ConvertMultitenantTypeWithoutIDToORM(in)
+	ormObj, err := ConvertMultitenantTypeWithoutIDToORM(*in)
 	if err != nil {
 		return nil, err
 	}
@@ -533,7 +512,8 @@ func DefaultCreateMultitenantTypeWithoutID(ctx context.Context, in *MultitenantT
 	if err = db.Create(&ormObj).Error; err != nil {
 		return nil, err
 	}
-	return ConvertMultitenantTypeWithoutIDFromORM(ormObj)
+	pbResponse, err := ConvertMultitenantTypeWithoutIDFromORM(ormObj)
+	return &pbResponse, err
 }
 
 // DefaultReadMultitenantTypeWithoutID executes a basic gorm read call
@@ -541,7 +521,7 @@ func DefaultReadMultitenantTypeWithoutID(ctx context.Context, in *MultitenantTyp
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultReadMultitenantTypeWithoutID")
 	}
-	ormParams, err := ConvertMultitenantTypeWithoutIDToORM(in)
+	ormParams, err := ConvertMultitenantTypeWithoutIDToORM(*in)
 	if err != nil {
 		return nil, err
 	}
@@ -550,11 +530,12 @@ func DefaultReadMultitenantTypeWithoutID(ctx context.Context, in *MultitenantTyp
 		return nil, tIDErr
 	}
 	ormParams.TenantID = tenantID
-	ormResponse := &MultitenantTypeWithoutIDORM{}
+	ormResponse := MultitenantTypeWithoutIDORM{}
 	if err = db.Set("gorm:auto_preload", true).Where(&ormParams).First(&ormResponse).Error; err != nil {
 		return nil, err
 	}
-	return ConvertMultitenantTypeWithoutIDFromORM(ormResponse)
+	pbResponse, err := ConvertMultitenantTypeWithoutIDFromORM(ormResponse)
+	return &pbResponse, err
 }
 
 // Cannot autogen DefaultUpdateMultitenantTypeWithoutID: this is a multi-tenant table without an "id" field in the message.
@@ -564,7 +545,7 @@ func DefaultDeleteMultitenantTypeWithoutID(ctx context.Context, in *MultitenantT
 	if in == nil {
 		return errors.New("Nil argument to DefaultDeleteMultitenantTypeWithoutID")
 	}
-	ormObj, err := ConvertMultitenantTypeWithoutIDToORM(in)
+	ormObj, err := ConvertMultitenantTypeWithoutIDToORM(*in)
 	if err != nil {
 		return err
 	}
@@ -579,7 +560,7 @@ func DefaultDeleteMultitenantTypeWithoutID(ctx context.Context, in *MultitenantT
 
 // DefaultListMultitenantTypeWithoutID executes a basic gorm find call
 func DefaultListMultitenantTypeWithoutID(ctx context.Context, db *gorm.DB) ([]*MultitenantTypeWithoutId, error) {
-	ormResponse := []*MultitenantTypeWithoutIDORM{}
+	ormResponse := []MultitenantTypeWithoutIDORM{}
 	db, err := ops.ApplyCollectionOperators(db, ctx)
 	if err != nil {
 		return nil, err
@@ -598,7 +579,7 @@ func DefaultListMultitenantTypeWithoutID(ctx context.Context, db *gorm.DB) ([]*M
 		if err != nil {
 			return nil, err
 		}
-		pbResponse = append(pbResponse, temp)
+		pbResponse = append(pbResponse, &temp)
 	}
 	return pbResponse, nil
 }
@@ -608,14 +589,15 @@ func DefaultCreateTypeBecomesEmpty(ctx context.Context, in *TypeBecomesEmpty, db
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultCreateTypeBecomesEmpty")
 	}
-	ormObj, err := ConvertTypeBecomesEmptyToORM(in)
+	ormObj, err := ConvertTypeBecomesEmptyToORM(*in)
 	if err != nil {
 		return nil, err
 	}
 	if err = db.Create(&ormObj).Error; err != nil {
 		return nil, err
 	}
-	return ConvertTypeBecomesEmptyFromORM(ormObj)
+	pbResponse, err := ConvertTypeBecomesEmptyFromORM(ormObj)
+	return &pbResponse, err
 }
 
 // DefaultReadTypeBecomesEmpty executes a basic gorm read call
@@ -623,15 +605,16 @@ func DefaultReadTypeBecomesEmpty(ctx context.Context, in *TypeBecomesEmpty, db *
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultReadTypeBecomesEmpty")
 	}
-	ormParams, err := ConvertTypeBecomesEmptyToORM(in)
+	ormParams, err := ConvertTypeBecomesEmptyToORM(*in)
 	if err != nil {
 		return nil, err
 	}
-	ormResponse := &TypeBecomesEmptyORM{}
+	ormResponse := TypeBecomesEmptyORM{}
 	if err = db.Set("gorm:auto_preload", true).Where(&ormParams).First(&ormResponse).Error; err != nil {
 		return nil, err
 	}
-	return ConvertTypeBecomesEmptyFromORM(ormResponse)
+	pbResponse, err := ConvertTypeBecomesEmptyFromORM(ormResponse)
+	return &pbResponse, err
 }
 
 // DefaultUpdateTypeBecomesEmpty executes a basic gorm update call
@@ -639,14 +622,15 @@ func DefaultUpdateTypeBecomesEmpty(ctx context.Context, in *TypeBecomesEmpty, db
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultUpdateTypeBecomesEmpty")
 	}
-	ormObj, err := ConvertTypeBecomesEmptyToORM(in)
+	ormObj, err := ConvertTypeBecomesEmptyToORM(*in)
 	if err != nil {
 		return nil, err
 	}
 	if err = db.Save(&ormObj).Error; err != nil {
 		return nil, err
 	}
-	return ConvertTypeBecomesEmptyFromORM(ormObj)
+	pbResponse, err := ConvertTypeBecomesEmptyFromORM(ormObj)
+	return &pbResponse, err
 }
 
 // DefaultDeleteTypeBecomesEmpty executes a basic gorm delete call
@@ -654,7 +638,7 @@ func DefaultDeleteTypeBecomesEmpty(ctx context.Context, in *TypeBecomesEmpty, db
 	if in == nil {
 		return errors.New("Nil argument to DefaultDeleteTypeBecomesEmpty")
 	}
-	ormObj, err := ConvertTypeBecomesEmptyToORM(in)
+	ormObj, err := ConvertTypeBecomesEmptyToORM(*in)
 	if err != nil {
 		return err
 	}
@@ -664,7 +648,7 @@ func DefaultDeleteTypeBecomesEmpty(ctx context.Context, in *TypeBecomesEmpty, db
 
 // DefaultListTypeBecomesEmpty executes a basic gorm find call
 func DefaultListTypeBecomesEmpty(ctx context.Context, db *gorm.DB) ([]*TypeBecomesEmpty, error) {
-	ormResponse := []*TypeBecomesEmptyORM{}
+	ormResponse := []TypeBecomesEmptyORM{}
 	db, err := ops.ApplyCollectionOperators(db, ctx)
 	if err != nil {
 		return nil, err
@@ -678,7 +662,7 @@ func DefaultListTypeBecomesEmpty(ctx context.Context, db *gorm.DB) ([]*TypeBecom
 		if err != nil {
 			return nil, err
 		}
-		pbResponse = append(pbResponse, temp)
+		pbResponse = append(pbResponse, &temp)
 	}
 	return pbResponse, nil
 }
