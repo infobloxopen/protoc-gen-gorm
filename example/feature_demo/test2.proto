@@ -2,7 +2,6 @@ syntax = "proto3";
 
 package example;
 import "github.com/infobloxopen/protoc-gen-gorm/options/gorm.proto";
-import "example/feature_demo/test.proto";
 
 option go_package = "github.com/infobloxopen/protoc-gen-gorm/example/feature_demo;example";
 
