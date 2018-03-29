@@ -8,6 +8,7 @@ import errors "errors"
 import gorm "github.com/jinzhu/gorm"
 import ops "github.com/Infoblox-CTO/ngp.api.toolkit/op/gorm"
 import uuid "github.com/satori/go.uuid"
+import gtypes "github.com/infobloxopen/protoc-gen-gorm/types"
 import time "time"
 import ptypes "github.com/golang/protobuf/ptypes"
 import proto "github.com/gogo/protobuf/proto"
@@ -26,7 +27,7 @@ var _ = math.Inf
 // TestTypesORM is a message that serves as an example
 type TestTypesORM struct {
 	// Skipping field from proto option: ApiOnlyString
-	// A repeated raw type is not supported by gORM
+	// The non-ORMable repeated field "Numbers" can't be included
 	OptionalString *string
 	BecomesInt     int32
 	// Empty type has no ORM equivalency
@@ -44,13 +45,14 @@ func ConvertTestTypesToORM(from TestTypes) (TestTypesORM, error) {
 	to := TestTypesORM{}
 	var err error
 	// Skipping field: ApiOnlyString
+	// Repeated type []int32 is not an ORMable message type
 	if from.OptionalString != nil {
 		v := from.OptionalString.Value
 		to.OptionalString = &v
 	}
 	to.BecomesInt = int32(from.BecomesInt)
 	if from.Uuid != nil {
-		if to.UUID, err = uuid.FromString(*from.Uuid); err != nil {
+		if to.UUID, err = uuid.FromString(from.Uuid.Value); err != nil {
 			return to, err
 		}
 	}
@@ -67,11 +69,12 @@ func ConvertTestTypesFromORM(from TestTypesORM) (TestTypes, error) {
 	to := TestTypes{}
 	var err error
 	// Skipping field: ApiOnlyString
+	// Repeated type []int32 is not an ORMable message type
 	if from.OptionalString != nil {
 		to.OptionalString = &google_protobuf1.StringValue{Value: *from.OptionalString}
 	}
 	to.BecomesInt = TestTypesStatus(from.BecomesInt)
-	to.Uuid = from.UUID.String()
+	to.Uuid = &gtypes.UUIDValue{Value: from.UUID.String()}
 	if to.CreatedAt, err = ptypes.TimestampProto(from.CreatedAt); err != nil {
 		return to, err
 	}
@@ -270,7 +273,6 @@ func DefaultUpdateTestTypes(ctx context.Context, in *TestTypes, db *gorm.DB) (*T
 	return &pbResponse, err
 }
 
-// DefaultDeleteTestTypes executes a basic gorm delete call
 func DefaultDeleteTestTypes(ctx context.Context, in *TestTypes, db *gorm.DB) error {
 	if in == nil {
 		return errors.New("Nil argument to DefaultDeleteTestTypes")
@@ -353,7 +355,6 @@ func DefaultUpdateTypeWithID(ctx context.Context, in *TypeWithId, db *gorm.DB) (
 	return &pbResponse, err
 }
 
-// DefaultDeleteTypeWithID executes a basic gorm delete call
 func DefaultDeleteTypeWithID(ctx context.Context, in *TypeWithId, db *gorm.DB) error {
 	if in == nil {
 		return errors.New("Nil argument to DefaultDeleteTypeWithID")
@@ -451,7 +452,6 @@ func DefaultUpdateMultitenantTypeWithID(ctx context.Context, in *MultitenantType
 	return &pbResponse, err
 }
 
-// DefaultDeleteMultitenantTypeWithID executes a basic gorm delete call
 func DefaultDeleteMultitenantTypeWithID(ctx context.Context, in *MultitenantTypeWithId, db *gorm.DB) error {
 	if in == nil {
 		return errors.New("Nil argument to DefaultDeleteMultitenantTypeWithID")
@@ -540,7 +540,6 @@ func DefaultReadMultitenantTypeWithoutID(ctx context.Context, in *MultitenantTyp
 
 // Cannot autogen DefaultUpdateMultitenantTypeWithoutID: this is a multi-tenant table without an "id" field in the message.
 
-// DefaultDeleteMultitenantTypeWithoutID executes a basic gorm delete call
 func DefaultDeleteMultitenantTypeWithoutID(ctx context.Context, in *MultitenantTypeWithoutId, db *gorm.DB) error {
 	if in == nil {
 		return errors.New("Nil argument to DefaultDeleteMultitenantTypeWithoutID")
@@ -633,7 +632,6 @@ func DefaultUpdateTypeBecomesEmpty(ctx context.Context, in *TypeBecomesEmpty, db
 	return &pbResponse, err
 }
 
-// DefaultDeleteTypeBecomesEmpty executes a basic gorm delete call
 func DefaultDeleteTypeBecomesEmpty(ctx context.Context, in *TypeBecomesEmpty, db *gorm.DB) error {
 	if in == nil {
 		return errors.New("Nil argument to DefaultDeleteTypeBecomesEmpty")

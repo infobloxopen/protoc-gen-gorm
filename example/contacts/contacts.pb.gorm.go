@@ -124,7 +124,6 @@ func DefaultUpdateContact(ctx context.Context, in *Contact, db *gorm.DB) (*Conta
 	return &pbResponse, err
 }
 
-// DefaultDeleteContact executes a basic gorm delete call
 func DefaultDeleteContact(ctx context.Context, in *Contact, db *gorm.DB) error {
 	if in == nil {
 		return errors.New("Nil argument to DefaultDeleteContact")

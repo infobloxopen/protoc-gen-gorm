@@ -8,6 +8,7 @@ import errors "errors"
 import gorm "github.com/jinzhu/gorm"
 import ops "github.com/Infoblox-CTO/ngp.api.toolkit/op/gorm"
 import uuid "github.com/satori/go.uuid"
+import gtypes "github.com/infobloxopen/protoc-gen-gorm/types"
 import time "time"
 import ptypes "github.com/golang/protobuf/ptypes"
 import proto "github.com/gogo/protobuf/proto"
@@ -101,7 +102,6 @@ func DefaultUpdateIntPoint(ctx context.Context, in *IntPoint, db *gorm.DB) (*Int
 	return &pbResponse, err
 }
 
-// DefaultDeleteIntPoint executes a basic gorm delete call
 func DefaultDeleteIntPoint(ctx context.Context, in *IntPoint, db *gorm.DB) error {
 	if in == nil {
 		return errors.New("Nil argument to DefaultDeleteIntPoint")
