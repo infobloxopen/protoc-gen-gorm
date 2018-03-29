@@ -565,18 +565,17 @@ func (p *ormPlugin) generateListHandler(message *generator.Descriptor) {
 
 func (p *ormPlugin) generateDefaultServer(file *generator.FileDescriptor) {
 	for _, service := range file.GetService() {
-
 		svcName := lintName(generator.CamelCase(service.GetName()))
 		if service.Options != nil {
-			v, err := proto.GetExtension(service.GetOptions(), gorm.E_Service)
-			opts := v.(*gorm.AutoServiceOptions)
+			v, err := proto.GetExtension(service.GetOptions(), gorm.E_Server)
+			opts := v.(*gorm.AutoServerOptions)
 			if err == nil && opts != nil && *opts.Autogen {
-				// All the default handler has is a db connection
+				// All the default server has is a db connection
 				p.P(`type `, svcName, `DefaultServer struct {`)
 				p.P(`DB `, p.gormPkgAlias, `.DB`)
 				p.P(`}`)
 				for _, method := range service.GetMethod() {
-					methodName := generator.CamelCase(method.GetName())
+					methodName := lintName(generator.CamelCase(method.GetName()))
 					if strings.HasPrefix(methodName, "Create") {
 						p.generateCreateServerMethod(file, service, method)
 					} else if strings.HasPrefix(methodName, "Read") {
@@ -596,7 +595,6 @@ func (p *ormPlugin) generateDefaultServer(file *generator.FileDescriptor) {
 
 func (p *ormPlugin) generateCreateServerMethod(file *generator.FileDescriptor,
 	service *descriptor.ServiceDescriptorProto, method *descriptor.MethodDescriptorProto) {
-
 	inType, outType, methodName, svcName := p.getMethodProps(service, method)
 	p.generateMethodSignature(inType, outType, methodName, svcName)
 	p.P(`return DefaultCreate`, p.TypeName(inType), `(ctx, in, db)`)
@@ -605,7 +603,6 @@ func (p *ormPlugin) generateCreateServerMethod(file *generator.FileDescriptor,
 
 func (p *ormPlugin) generateReadServerMethod(file *generator.FileDescriptor,
 	service *descriptor.ServiceDescriptorProto, method *descriptor.MethodDescriptorProto) {
-
 	inType, outType, methodName, svcName := p.getMethodProps(service, method)
 	p.generateMethodSignature(inType, outType, methodName, svcName)
 	p.P(`return DefaultRead`, p.TypeName(inType), `(ctx, in, db)`)
@@ -614,7 +611,6 @@ func (p *ormPlugin) generateReadServerMethod(file *generator.FileDescriptor,
 
 func (p *ormPlugin) generateUpdateServerMethod(file *generator.FileDescriptor,
 	service *descriptor.ServiceDescriptorProto, method *descriptor.MethodDescriptorProto) {
-
 	inType, outType, methodName, svcName := p.getMethodProps(service, method)
 	p.generateMethodSignature(inType, outType, methodName, svcName)
 	p.P(`return DefaultUpdate`, p.TypeName(inType), `(ctx, in, db)`)
@@ -623,7 +619,6 @@ func (p *ormPlugin) generateUpdateServerMethod(file *generator.FileDescriptor,
 
 func (p *ormPlugin) generateDeleteServerMethod(file *generator.FileDescriptor,
 	service *descriptor.ServiceDescriptorProto, method *descriptor.MethodDescriptorProto) {
-
 	inType, outType, methodName, svcName := p.getMethodProps(service, method)
 	p.generateMethodSignature(inType, outType, methodName, svcName)
 	p.P(`return nil, DefaultDelete`, p.TypeName(inType), `(ctx, in, db)`)
@@ -632,27 +627,23 @@ func (p *ormPlugin) generateDeleteServerMethod(file *generator.FileDescriptor,
 
 func (p *ormPlugin) generateListServerMethod(file *generator.FileDescriptor,
 	service *descriptor.ServiceDescriptorProto, method *descriptor.MethodDescriptorProto) {
-
 	inType, outType, methodName, svcName := p.getMethodProps(service, method)
 	p.generateMethodSignature(inType, outType, methodName, svcName)
-	p.P(`var page `, p.TypeName(inType), `Page`)
+	p.P(`var l `, p.TypeName(outType))
 	p.P(`res, err := DefaultList`, p.TypeName(inType), `(ctx, db)`)
-	p.P(`page.Results = res`)
-	p.P(`return &page, err`)
+	p.P(`l.Results = res`)
+	p.P(`return &l, err`)
 	p.P(`}`)
 }
 
 func (p *ormPlugin) generateMethodSignature(inType, outType generator.Object, methodName, svcName string) {
-
-	p.P(`// `, methodName, ` ...`) // Golint comment, should check for proto file comments
+	p.P(`// `, methodName, ` ...`)
 	p.P(`func (m *`, svcName, `DefaultServer) `, methodName, ` (ctx context.Context, in *`,
-		p.TypeName(inType), `, opts ...grpc.CallOption) (*`,
-		p.TypeName(outType), `, error) {`)
+		p.TypeName(inType), `, opts ...grpc.CallOption) (*`, p.TypeName(outType), `, error) {`)
 }
 
 func (p *ormPlugin) getMethodProps(service *descriptor.ServiceDescriptorProto,
 	method *descriptor.MethodDescriptorProto) (generator.Object, generator.Object, string, string) {
-
 	inType := p.ObjectNamed(method.GetInputType())
 	p.RecordTypeUse(method.GetInputType())
 	outType := p.ObjectNamed(method.GetOutputType())

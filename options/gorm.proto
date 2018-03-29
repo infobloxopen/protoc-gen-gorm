@@ -46,10 +46,10 @@ message GormFieldOptions {
 
 // To be used in (leiu of) the interceptor
 extend google.protobuf.ServiceOptions {
-  optional AutoServiceOptions service = 52119;
+  optional AutoServerOptions server = 52119;
 }
 
-message AutoServiceOptions {
+message AutoServerOptions {
   optional bool autogen = 1;
 }
 

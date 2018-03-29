@@ -155,10 +155,10 @@ func (m *PointDefaultServer) UpdateIntPoint(ctx context.Context, in *IntPoint, o
 
 // ListIntPoint ...
 func (m *PointDefaultServer) ListIntPoint(ctx context.Context, in *IntPoint, opts ...grpc.CallOption) (*IntPointPage, error) {
-	var page IntPointPage
+	var l IntPointPage
 	res, err := DefaultListIntPoint(ctx, db)
-	page.Results = res
-	return &page, err
+	l.Results = res
+	return &l, err
 }
 
 // DeleteIntPoint ...

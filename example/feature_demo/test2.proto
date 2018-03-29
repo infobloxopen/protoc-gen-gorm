@@ -18,7 +18,7 @@ message int_point_page {
 }
 
 service Point {
-  option (gorm.service).autogen = true;
+  option (gorm.server).autogen = true;
   rpc CreateIntPoint ( int_point ) returns ( int_point ) {}
   rpc ReadIntPoint ( int_point ) returns ( int_point ) {}
   rpc UpdateIntPoint ( int_point ) returns ( int_point ) {}
