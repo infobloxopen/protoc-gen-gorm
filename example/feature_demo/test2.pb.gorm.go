@@ -28,6 +28,7 @@ import proto "github.com/gogo/protobuf/proto"
 import fmt "fmt"
 import math "math"
 import google_protobuf "github.com/golang/protobuf/ptypes/empty"
+import _ "github.com/infobloxopen/protoc-gen-gorm/options"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal

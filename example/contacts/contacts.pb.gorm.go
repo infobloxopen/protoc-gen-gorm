@@ -27,6 +27,7 @@ import _ "github.com/golang/protobuf/ptypes/empty"
 import _ "google.golang.org/genproto/googleapis/api/annotations"
 import _ "github.com/lyft/protoc-gen-validate/validate"
 import _ "github.com/grpc-ecosystem/grpc-gateway/protoc-gen-swagger/options"
+import _ "github.com/infobloxopen/protoc-gen-gorm/options"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal

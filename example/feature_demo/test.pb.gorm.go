@@ -10,6 +10,7 @@ import ops "github.com/Infoblox-CTO/ngp.api.toolkit/op/gorm"
 import proto "github.com/gogo/protobuf/proto"
 import fmt "fmt"
 import math "math"
+import _ "github.com/infobloxopen/protoc-gen-gorm/options"
 import google_protobuf2 "github.com/golang/protobuf/ptypes/wrappers"
 import google_protobuf "github.com/golang/protobuf/ptypes/empty"
 
