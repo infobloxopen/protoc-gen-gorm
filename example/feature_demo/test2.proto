@@ -22,6 +22,6 @@ service Point {
   rpc CreateIntPoint ( int_point ) returns ( int_point ) {}
   rpc ReadIntPoint ( int_point ) returns ( int_point ) {}
   rpc UpdateIntPoint ( int_point ) returns ( int_point ) {}
-  rpc ListIntPoint ( int_point ) returns ( int_point_page ) {}
+  rpc ListIntPoint ( google.protobuf.Empty ) returns ( int_point_page ) {}
   rpc DeleteIntPoint ( int_point ) returns  ( google.protobuf.Empty ) {}
 }

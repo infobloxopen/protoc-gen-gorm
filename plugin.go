@@ -630,7 +630,7 @@ func (p *ormPlugin) generateListServerMethod(file *generator.FileDescriptor,
 	inType, outType, methodName, svcName := p.getMethodProps(service, method)
 	p.generateMethodSignature(inType, outType, methodName, svcName)
 	p.P(`var l `, p.TypeName(outType))
-	p.P(`res, err := DefaultList`, p.TypeName(inType), `(ctx, db)`)
+	p.P(`res, err := DefaultList`, strings.TrimPrefix(methodName, "List"), `(ctx, db)`)
 	p.P(`l.Results = res`)
 	p.P(`return &l, err`)
 	p.P(`}`)

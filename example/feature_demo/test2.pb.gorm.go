@@ -154,7 +154,7 @@ func (m *PointDefaultServer) UpdateIntPoint(ctx context.Context, in *IntPoint, o
 }
 
 // ListIntPoint ...
-func (m *PointDefaultServer) ListIntPoint(ctx context.Context, in *IntPoint, opts ...grpc.CallOption) (*IntPointPage, error) {
+func (m *PointDefaultServer) ListIntPoint(ctx context.Context, in *google_protobuf.Empty, opts ...grpc.CallOption) (*IntPointPage, error) {
 	var l IntPointPage
 	res, err := DefaultListIntPoint(ctx, db)
 	l.Results = res
