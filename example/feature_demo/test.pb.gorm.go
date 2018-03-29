@@ -319,7 +319,7 @@ func DefaultListTestTypes(ctx context.Context, db *gorm.DB) ([]*TestTypes, error
 	return pbResponse, nil
 }
 
-// DefaultCascadedUpdateTestTypes executes a basic gorm update call
+// DefaultCascadedUpdateTestTypes clears first level 1:many children and then executes a gorm update call
 func DefaultCascadedUpdateTestTypes(ctx context.Context, in *TestTypes, db *gorm.DB) (*TestTypes, error) {
 	if in == nil {
 		return nil, fmt.Errorf("Nil argument to DefaultCascadedUpdateTestTypes")
@@ -417,7 +417,7 @@ func DefaultListTypeWithID(ctx context.Context, db *gorm.DB) ([]*TypeWithID, err
 	return pbResponse, nil
 }
 
-// DefaultCascadedUpdateTypeWithID executes a basic gorm update call
+// DefaultCascadedUpdateTypeWithID clears first level 1:many children and then executes a gorm update call
 func DefaultCascadedUpdateTypeWithID(ctx context.Context, in *TypeWithId, db *gorm.DB) (*TypeWithId, error) {
 	if in == nil {
 		return nil, fmt.Errorf("Nil argument to DefaultCascadedUpdateTypeWithID")
@@ -540,7 +540,7 @@ func DefaultListMultitenantTypeWithID(ctx context.Context, db *gorm.DB) ([]*Mult
 	return pbResponse, nil
 }
 
-// DefaultCascadedUpdateMultitenantTypeWithID executes a basic gorm update call
+// DefaultCascadedUpdateMultitenantTypeWithID clears first level 1:many children and then executes a gorm update call
 func DefaultCascadedUpdateMultitenantTypeWithID(ctx context.Context, in *MultitenantTypeWithId, db *gorm.DB) (*MultitenantTypeWithId, error) {
 	if in == nil {
 		return nil, fmt.Errorf("Nil argument to DefaultCascadedUpdateMultitenantTypeWithID")
@@ -644,7 +644,7 @@ func DefaultListMultitenantTypeWithoutID(ctx context.Context, db *gorm.DB) ([]*M
 	return pbResponse, nil
 }
 
-// DefaultCascadedUpdateMultitenantTypeWithoutID executes a basic gorm update call
+// DefaultCascadedUpdateMultitenantTypeWithoutID clears first level 1:many children and then executes a gorm update call
 func DefaultCascadedUpdateMultitenantTypeWithoutID(ctx context.Context, in *MultitenantTypeWithoutId, db *gorm.DB) (*MultitenantTypeWithoutId, error) {
 	if in == nil {
 		return nil, fmt.Errorf("Nil argument to DefaultCascadedUpdateMultitenantTypeWithoutID")
@@ -742,7 +742,7 @@ func DefaultListTypeBecomesEmpty(ctx context.Context, db *gorm.DB) ([]*TypeBecom
 	return pbResponse, nil
 }
 
-// DefaultCascadedUpdateTypeBecomesEmpty executes a basic gorm update call
+// DefaultCascadedUpdateTypeBecomesEmpty clears first level 1:many children and then executes a gorm update call
 func DefaultCascadedUpdateTypeBecomesEmpty(ctx context.Context, in *TypeBecomesEmpty, db *gorm.DB) (*TypeBecomesEmpty, error) {
 	if in == nil {
 		return nil, fmt.Errorf("Nil argument to DefaultCascadedUpdateTypeBecomesEmpty")

@@ -167,7 +167,7 @@ func DefaultListContact(ctx context.Context, db *gorm.DB) ([]*Contact, error) {
 	return pbResponse, nil
 }
 
-// DefaultCascadedUpdateContact executes a basic gorm update call
+// DefaultCascadedUpdateContact clears first level 1:many children and then executes a gorm update call
 func DefaultCascadedUpdateContact(ctx context.Context, in *Contact, db *gorm.DB) (*Contact, error) {
 	if in == nil {
 		return nil, fmt.Errorf("Nil argument to DefaultCascadedUpdateContact")

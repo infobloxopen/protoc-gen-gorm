@@ -135,7 +135,7 @@ func DefaultListIntPoint(ctx context.Context, db *gorm.DB) ([]*IntPoint, error) 
 	return pbResponse, nil
 }
 
-// DefaultCascadedUpdateIntPoint executes a basic gorm update call
+// DefaultCascadedUpdateIntPoint clears first level 1:many children and then executes a gorm update call
 func DefaultCascadedUpdateIntPoint(ctx context.Context, in *IntPoint, db *gorm.DB) (*IntPoint, error) {
 	if in == nil {
 		return nil, fmt.Errorf("Nil argument to DefaultCascadedUpdateIntPoint")

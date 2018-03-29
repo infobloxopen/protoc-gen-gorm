@@ -531,7 +531,8 @@ func (p *ormPlugin) generateUpdateHandler(message *generator.Descriptor) {
 	p.P(`return nil, errors.New("Nil argument to DefaultUpdate`, typeName, `")`)
 	p.P(`}`)
 	if isMultiTenant {
-		p.P(fmt.Sprintf("if exists, err := DefaultRead%s(ctx, &%s{Id: in.GetId()}, db); err != nil {", typeName, typeName))
+		p.P(fmt.Sprintf("if exists, err := DefaultRead%s(ctx, &%s{Id: in.GetId()}, db); err != nil {",
+			typeName, typeName))
 		p.P("return nil, err")
 		p.P("} else if exists == nil {")
 		p.P(fmt.Sprintf("return nil, errors.New(\"%s not found\")", typeName))
@@ -578,8 +579,9 @@ func (p *ormPlugin) generateDeleteHandler(message *generator.Descriptor) {
 func (p *ormPlugin) generateListHandler(message *generator.Descriptor) {
 	typeNamePb, typeName, _ := getTypeNames(message)
 
-	p.P(`// DefaultList`, typeName, ` executes a basic gorm find call`)
-	p.P(`func DefaultList`, typeName, `(ctx context.Context, db *`, p.gormPkgName, `.DB) ([]*`, typeNamePb, `, error) {`)
+	p.P(`// DefaultList`, typeName, ` executes a gorm list call`)
+	p.P(`func DefaultList`, typeName, `(ctx context.Context, db *`, p.gormPkgAlias,
+		`.DB) ([]*`, typeName, `, error) {`)
 	p.P(`ormResponse := []`, typeName, `ORM{}`)
 	p.P(`db, err := `, p.lftPkgName, `.ApplyCollectionOperators(db, ctx)`)
 	p.P(`if err != nil {`)
@@ -611,42 +613,53 @@ func (p *ormPlugin) generateListHandler(message *generator.Descriptor) {
 /////////// For association removal during update
 
 // findAssociationKeys should return a map[childFK]parentKeyField
-func findAssociationKeys(parent *generator.Descriptor, child *generator.Descriptor, field *descriptor.FieldDescriptorProto) map[string]string {
+func (p *ormPlugin) findAssociationKeys(parent *generator.Descriptor,
+	child *generator.Descriptor, field *descriptor.FieldDescriptorProto) map[string]string {
 	// Check for gorm tags
 	parentTypeNamePb := generator.CamelCaseSlice(parent.TypeName())
 	parentTypeName := lintName(parentTypeNamePb)
 	keyMap := make(map[string]string)
+	defaultKeyMap := map[string]string{fmt.Sprintf("%sID", parentTypeName): "ID"}
 	childFields := []string{fmt.Sprintf("%sID", parentTypeName)}
 	parentFields := []string{"ID"}
-	if field.Options != nil {
-		v, err := proto.GetExtension(field.Options, gorm.E_Field)
-		if err == nil && v.(*gorm.GormFieldOptions) != nil && v.(*gorm.GormFieldOptions).Tags != nil {
-			tag := v.(*gorm.GormFieldOptions).GetTags()
-			if value, ok := reflect.StructTag(tag).Lookup("gorm"); ok {
-				tagParts := strings.Split(value, ";") // Can have multiple ';' separated tags
-				for _, arg := range tagParts {
-					tagType := strings.Split(arg, ":") // tags follow key:value convention
-					tagType[0] = strings.ToLower(tagType[0])
-					if tagType[0] == "many2many" {
-						// Not there just yet
-					} else if tagType[0] == "foreignkey" {
-						childFields = []string{}
-						for _, fName := range strings.Split(tagType[1], ",") { // for compound key
-							childFields = append(childFields, lintName(generator.CamelCase(fName)))
-						}
-					} else if tagType[0] == "association_foreignkey" {
-						parentFields = []string{}
-						for _, fName := range strings.Split(tagType[1], ",") { // for compound key
-							parentFields = append(parentFields, lintName(generator.CamelCase(fName)))
-						}
-					}
-				}
-			} // End 'gorm' tag exists within gorm options
-		} // End gorm options exist
-	} // End field options of any kind exist
-	// Resort to default FK: ParentTypeID
+	if field.Options == nil {
+		return defaultKeyMap
+	}
+	v, err := proto.GetExtension(field.Options, gorm.E_Field)
+	if err != nil {
+		return defaultKeyMap
+	}
+	gfOptions := v.(*gorm.GormFieldOptions)
+	if gfOptions == nil || gfOptions.Tags == nil {
+		return defaultKeyMap
+	}
+	tag := gfOptions.GetTags()
+	value, ok := reflect.StructTag(tag).Lookup("gorm")
+	if !ok {
+		return defaultKeyMap
+	}
+	tagParts := strings.Split(value, ";") // Can have multiple ';' separated tags
+	for _, arg := range tagParts {
+		tagType := strings.Split(arg, ":") // tags follow key:value convention
+		tagType[0] = strings.ToLower(tagType[0])
+		if tagType[0] == "many2many" {
+			// Not there just yet
+		} else if tagType[0] == "foreignkey" {
+			childFields = []string{}
+			for _, fName := range strings.Split(tagType[1], ",") { // for compound key
+				childFields = append(childFields, lintName(generator.CamelCase(fName)))
+			}
+		} else if tagType[0] == "association_foreignkey" {
+			parentFields = []string{}
+			for _, fName := range strings.Split(tagType[1], ",") { // for compound key
+				parentFields = append(parentFields, lintName(generator.CamelCase(fName)))
+			}
+		}
+	}
+
 	if len(childFields) != len(parentFields) {
-		// Something's wrong here, mismatched number of primary keys vs. foreign keys
+		p.Fail(`Number of foreign keys and association foreign keys between type `,
+			parentTypeName, ` and `, field.GetName(), ` didn't match`)
 	} else {
 		for i, child := range childFields {
 			keyMap[child] = parentFields[i]
@@ -655,6 +668,7 @@ func findAssociationKeys(parent *generator.Descriptor, child *generator.Descript
 	return keyMap
 }
 
+// guessZeroValue of the input type, so that we can check if a (key) value is set or not
 func guessZeroValue(typeName string) string {
 	typeName = strings.ToLower(typeName)
 	if strings.Contains(typeName, "string") {
@@ -666,74 +680,78 @@ func guessZeroValue(typeName string) string {
 	return ``
 }
 
-func (p *ormPlugin) removeNestedAssociations(message *generator.Descriptor) {
+func (p *ormPlugin) removeChildAssociations(message *generator.Descriptor) {
 	typeNamePb := generator.CamelCaseSlice(message.TypeName())
 	typeName := lintName(typeNamePb)
-	if _, exists := typeNames[typeName]; exists {
-		for _, field := range message.Field {
-			if field.IsRepeated() { // Slice, check that it's ORMable, then do stuff
-				fieldType, _ := p.GoType(message, field)
-				rawFieldType := strings.Trim(fieldType, "[]*")
-				if _, exists := convertibleTypes[rawFieldType]; exists {
+	if _, exists := typeNames[typeName]; !exists {
+		return
+	}
+	for _, field := range message.Field {
+		// Only looking at slices
+		if !field.IsRepeated() {
+			continue
+		}
+		fieldType, _ := p.GoType(message, field)
+		rawFieldType := strings.Trim(fieldType, "[]*")
+		// Has to be ORMable
+		if _, exists := convertibleTypes[rawFieldType]; !exists {
+			continue
+		}
 
-					keys := findAssociationKeys(message, typeNames[typeName], field)
-					childFKeyTypeName := ""
-					p.P(`filterObj`, rawFieldType, ` := `, rawFieldType, `{}`)
-					for k, v := range keys {
-						for _, childField := range typeNames[rawFieldType].GetField() {
-							if strings.EqualFold(childField.GetName(), k) {
-								childFKeyTypeName, _ = p.GoType(message, childField)
-								break
-							}
-						}
-						if strings.Contains(childFKeyTypeName, "*") { // pointer as key type is strange
-							p.P(`if ormObj.`, v, ` == nil || ormObj.`, v, ` == `, guessZeroValue(childFKeyTypeName), ` {`)
-						} else {
-							p.P(`if ormObj.`, v, ` == `, guessZeroValue(childFKeyTypeName), ` {`)
-						}
-						p.In()
-						p.P(`tx.Rollback()`)
-						p.P(`return nil, fmt.Errorf("Can't do overwriting update with no '`, v,
-							`' value for FK of field '`, lintName(generator.CamelCase(field.GetName())), `'")`)
-						p.P(`}`)
-
-						p.P(`filterObj`, rawFieldType, `.`, k, ` = ormObj.`, v)
-					}
-					p.P(`if err := tx.Where(filterObj`, rawFieldType, `).Delete(`, strings.Trim(fieldType, "[]*"), `{}).Error; err != nil {`)
-					p.P(`tx.Rollback()`)
-					p.P(`return nil, err`)
-					p.P(`}`)
+		// Prep the filter for the child objects of this type
+		keys := p.findAssociationKeys(message, typeNames[typeName], field)
+		childFKeyTypeName := ""
+		p.P(`filterObj`, rawFieldType, ` := `, rawFieldType, `{}`)
+		for k, v := range keys {
+			for _, childField := range typeNames[rawFieldType].GetField() {
+				if strings.EqualFold(childField.GetName(), k) {
+					childFKeyTypeName, _ = p.GoType(message, childField)
+					break
 				}
 			}
+			// If we accidentally delete without a set PK in our filter, everything might go
+			if strings.Contains(childFKeyTypeName, "*") {
+				p.P(`if ormObj.`, v, ` == nil || *ormObj.`, v, ` == `,
+					guessZeroValue(childFKeyTypeName), ` {`)
+			} else {
+				p.P(`if ormObj.`, v, ` == `, guessZeroValue(childFKeyTypeName), ` {`)
+			}
+			p.P(`tx.Rollback()`)
+			p.P(`return nil, errors.New("Can't do overwriting update with no '`, v,
+				`' value for FK of field '`, lintName(generator.CamelCase(field.GetName())), `'")`)
+			p.P(`}`)
+
+			p.P(`filterObj`, rawFieldType, `.`, k, ` = ormObj.`, v)
 		}
+
+		p.P(`if err := tx.Where(filterObj`, rawFieldType, `).Delete(`,
+			strings.Trim(fieldType, "[]*"), `{}).Error; err != nil {`)
+		p.P(`tx.Rollback()`)
+		p.P(`return nil, err`)
+		p.P(`}`)
 	}
+
 }
 
 func (p *ormPlugin) generateUpdateWithOverwriteHandler(message *generator.Descriptor) {
 	typeNamePb := generator.CamelCaseSlice(message.TypeName())
 	typeName := lintName(typeNamePb)
-	p.P(`// DefaultCascadedUpdate`, typeName, ` executes a basic gorm update call`)
+	p.P(`// DefaultCascadedUpdate`, typeName, ` clears first level 1:many children and then executes a gorm update call`)
 	p.P(`func DefaultCascadedUpdate`, typeName, `(ctx context.Context, in *`,
 		typeNamePb, `, db *`, p.gormPkgAlias, `.DB) (`, `*`, typeNamePb, `, error) {`)
-	p.In()
 	p.P(`if in == nil {`)
-	p.In()
 	p.P(`return nil, fmt.Errorf("Nil argument to DefaultCascadedUpdate`, typeName, `")`)
-	p.Out()
 	p.P(`}`)
 	p.P(`ormObj := Convert`, typeName, `ToORM(*in)`)
 	p.P(`tx := db.Begin()`)
-	p.removeNestedAssociations(message)
+	p.removeChildAssociations(message)
 	p.P(`if err := tx.Save(&ormObj).Error; err != nil {`)
-	p.In()
 	p.P(`tx.Rollback()`)
 	p.P(`return nil, err`)
-	p.Out()
 	p.P(`}`)
 	p.P(`pbResponse := Convert`, typeName, `FromORM(ormObj)`)
 	p.P(`tx.Commit()`)
 	p.P(`return &pbResponse, nil`)
-	p.Out()
 	p.P(`}`)
 	p.P()
 }
