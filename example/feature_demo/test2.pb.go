@@ -10,6 +10,7 @@ It is generated from these files:
 
 It has these top-level messages:
 	IntPoint
+	IntPointPage
 	TestTypes
 	TypeWithId
 	MultitenantTypeWithId
@@ -22,6 +23,7 @@ package example
 import proto "github.com/golang/protobuf/proto"
 import fmt "fmt"
 import math "math"
+import google_protobuf "github.com/golang/protobuf/ptypes/empty"
 import _ "github.com/infobloxopen/protoc-gen-gorm/options"
 
 import (
@@ -72,8 +74,25 @@ func (m *IntPoint) GetY() int32 {
 	return 0
 }
 
+type IntPointPage struct {
+	Results []*IntPoint `protobuf:"bytes,1,rep,name=results" json:"results,omitempty"`
+}
+
+func (m *IntPointPage) Reset()                    { *m = IntPointPage{} }
+func (m *IntPointPage) String() string            { return proto.CompactTextString(m) }
+func (*IntPointPage) ProtoMessage()               {}
+func (*IntPointPage) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{1} }
+
+func (m *IntPointPage) GetResults() []*IntPoint {
+	if m != nil {
+		return m.Results
+	}
+	return nil
+}
+
 func init() {
 	proto.RegisterType((*IntPoint)(nil), "example.int_point")
+	proto.RegisterType((*IntPointPage)(nil), "example.int_point_page")
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -84,130 +103,196 @@ var _ grpc.ClientConn
 // is compatible with the grpc package it is being compiled against.
 const _ = grpc.SupportPackageIsVersion4
 
-// Client API for PointService service
+// Client API for Point service
 
-type PointServiceClient interface {
+type PointClient interface {
 	CreateIntPoint(ctx context.Context, in *IntPoint, opts ...grpc.CallOption) (*IntPoint, error)
 	ReadIntPoint(ctx context.Context, in *IntPoint, opts ...grpc.CallOption) (*IntPoint, error)
 	UpdateIntPoint(ctx context.Context, in *IntPoint, opts ...grpc.CallOption) (*IntPoint, error)
+	ListIntPoint(ctx context.Context, in *IntPoint, opts ...grpc.CallOption) (*IntPointPage, error)
+	DeleteIntPoint(ctx context.Context, in *IntPoint, opts ...grpc.CallOption) (*google_protobuf.Empty, error)
 }
 
-type pointServiceClient struct {
+type pointClient struct {
 	cc *grpc.ClientConn
 }
 
-func NewPointServiceClient(cc *grpc.ClientConn) PointServiceClient {
-	return &pointServiceClient{cc}
+func NewPointClient(cc *grpc.ClientConn) PointClient {
+	return &pointClient{cc}
 }
 
-func (c *pointServiceClient) CreateIntPoint(ctx context.Context, in *IntPoint, opts ...grpc.CallOption) (*IntPoint, error) {
+func (c *pointClient) CreateIntPoint(ctx context.Context, in *IntPoint, opts ...grpc.CallOption) (*IntPoint, error) {
 	out := new(IntPoint)
-	err := grpc.Invoke(ctx, "/example.PointService/CreateIntPoint", in, out, c.cc, opts...)
+	err := grpc.Invoke(ctx, "/example.Point/CreateIntPoint", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *pointServiceClient) ReadIntPoint(ctx context.Context, in *IntPoint, opts ...grpc.CallOption) (*IntPoint, error) {
+func (c *pointClient) ReadIntPoint(ctx context.Context, in *IntPoint, opts ...grpc.CallOption) (*IntPoint, error) {
 	out := new(IntPoint)
-	err := grpc.Invoke(ctx, "/example.PointService/ReadIntPoint", in, out, c.cc, opts...)
+	err := grpc.Invoke(ctx, "/example.Point/ReadIntPoint", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *pointServiceClient) UpdateIntPoint(ctx context.Context, in *IntPoint, opts ...grpc.CallOption) (*IntPoint, error) {
+func (c *pointClient) UpdateIntPoint(ctx context.Context, in *IntPoint, opts ...grpc.CallOption) (*IntPoint, error) {
 	out := new(IntPoint)
-	err := grpc.Invoke(ctx, "/example.PointService/UpdateIntPoint", in, out, c.cc, opts...)
+	err := grpc.Invoke(ctx, "/example.Point/UpdateIntPoint", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-// Server API for PointService service
+func (c *pointClient) ListIntPoint(ctx context.Context, in *IntPoint, opts ...grpc.CallOption) (*IntPointPage, error) {
+	out := new(IntPointPage)
+	err := grpc.Invoke(ctx, "/example.Point/ListIntPoint", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
 
-type PointServiceServer interface {
+func (c *pointClient) DeleteIntPoint(ctx context.Context, in *IntPoint, opts ...grpc.CallOption) (*google_protobuf.Empty, error) {
+	out := new(google_protobuf.Empty)
+	err := grpc.Invoke(ctx, "/example.Point/DeleteIntPoint", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// Server API for Point service
+
+type PointServer interface {
 	CreateIntPoint(context.Context, *IntPoint) (*IntPoint, error)
 	ReadIntPoint(context.Context, *IntPoint) (*IntPoint, error)
 	UpdateIntPoint(context.Context, *IntPoint) (*IntPoint, error)
+	ListIntPoint(context.Context, *IntPoint) (*IntPointPage, error)
+	DeleteIntPoint(context.Context, *IntPoint) (*google_protobuf.Empty, error)
 }
 
-func RegisterPointServiceServer(s *grpc.Server, srv PointServiceServer) {
-	s.RegisterService(&_PointService_serviceDesc, srv)
+func RegisterPointServer(s *grpc.Server, srv PointServer) {
+	s.RegisterService(&_Point_serviceDesc, srv)
 }
 
-func _PointService_CreateIntPoint_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Point_CreateIntPoint_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(IntPoint)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(PointServiceServer).CreateIntPoint(ctx, in)
+		return srv.(PointServer).CreateIntPoint(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/example.PointService/CreateIntPoint",
+		FullMethod: "/example.Point/CreateIntPoint",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(PointServiceServer).CreateIntPoint(ctx, req.(*IntPoint))
+		return srv.(PointServer).CreateIntPoint(ctx, req.(*IntPoint))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _PointService_ReadIntPoint_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Point_ReadIntPoint_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(IntPoint)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(PointServiceServer).ReadIntPoint(ctx, in)
+		return srv.(PointServer).ReadIntPoint(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/example.PointService/ReadIntPoint",
+		FullMethod: "/example.Point/ReadIntPoint",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(PointServiceServer).ReadIntPoint(ctx, req.(*IntPoint))
+		return srv.(PointServer).ReadIntPoint(ctx, req.(*IntPoint))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _PointService_UpdateIntPoint_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Point_UpdateIntPoint_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(IntPoint)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(PointServiceServer).UpdateIntPoint(ctx, in)
+		return srv.(PointServer).UpdateIntPoint(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/example.PointService/UpdateIntPoint",
+		FullMethod: "/example.Point/UpdateIntPoint",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(PointServiceServer).UpdateIntPoint(ctx, req.(*IntPoint))
+		return srv.(PointServer).UpdateIntPoint(ctx, req.(*IntPoint))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-var _PointService_serviceDesc = grpc.ServiceDesc{
-	ServiceName: "example.PointService",
-	HandlerType: (*PointServiceServer)(nil),
+func _Point_ListIntPoint_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(IntPoint)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PointServer).ListIntPoint(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/example.Point/ListIntPoint",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PointServer).ListIntPoint(ctx, req.(*IntPoint))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Point_DeleteIntPoint_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(IntPoint)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PointServer).DeleteIntPoint(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/example.Point/DeleteIntPoint",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PointServer).DeleteIntPoint(ctx, req.(*IntPoint))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+var _Point_serviceDesc = grpc.ServiceDesc{
+	ServiceName: "example.Point",
+	HandlerType: (*PointServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
 			MethodName: "CreateIntPoint",
-			Handler:    _PointService_CreateIntPoint_Handler,
+			Handler:    _Point_CreateIntPoint_Handler,
 		},
 		{
 			MethodName: "ReadIntPoint",
-			Handler:    _PointService_ReadIntPoint_Handler,
+			Handler:    _Point_ReadIntPoint_Handler,
 		},
 		{
 			MethodName: "UpdateIntPoint",
-			Handler:    _PointService_UpdateIntPoint_Handler,
+			Handler:    _Point_UpdateIntPoint_Handler,
+		},
+		{
+			MethodName: "ListIntPoint",
+			Handler:    _Point_ListIntPoint_Handler,
+		},
+		{
+			MethodName: "DeleteIntPoint",
+			Handler:    _Point_DeleteIntPoint_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
@@ -217,21 +302,26 @@ var _PointService_serviceDesc = grpc.ServiceDesc{
 func init() { proto.RegisterFile("example/feature_demo/test2.proto", fileDescriptor0) }
 
 var fileDescriptor0 = []byte{
-	// 251 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x9c, 0x91, 0x31, 0x4f, 0xc3, 0x30,
-	0x10, 0x85, 0x71, 0x10, 0x05, 0xac, 0x90, 0xc1, 0x53, 0xe8, 0x14, 0x75, 0xea, 0xd2, 0x58, 0x2a,
-	0x0b, 0x0a, 0x03, 0x12, 0x20, 0x24, 0x36, 0x14, 0xc4, 0xc2, 0x52, 0x25, 0xf1, 0x35, 0x9c, 0xd4,
-	0xf8, 0x2c, 0xf7, 0x8a, 0xd2, 0x9f, 0x06, 0x13, 0x3f, 0x0d, 0x25, 0x8d, 0x98, 0x3a, 0x54, 0x1d,
-	0xdf, 0xf3, 0xf7, 0xfc, 0x4e, 0x77, 0x32, 0x81, 0xb6, 0x68, 0xdc, 0x0a, 0xf4, 0x12, 0x0a, 0xde,
-	0x78, 0x58, 0x18, 0x68, 0x48, 0x33, 0xac, 0x79, 0x9e, 0x3a, 0x4f, 0x4c, 0xea, 0x7c, 0x20, 0xc6,
-	0x59, 0x8d, 0xfc, 0xb9, 0x29, 0xd3, 0x8a, 0x1a, 0x8d, 0x76, 0x49, 0xe5, 0x8a, 0x5a, 0x72, 0x60,
-	0x75, 0xcf, 0x55, 0xb3, 0x1a, 0xec, 0xac, 0x26, 0xdf, 0x68, 0x72, 0x8c, 0x64, 0xd7, 0xba, 0x13,
-	0xbb, 0x4f, 0x26, 0xf7, 0xf2, 0x12, 0x2d, 0x2f, 0x1c, 0xa1, 0x65, 0x15, 0xc9, 0x00, 0x4d, 0x2c,
-	0x12, 0x31, 0xbd, 0xca, 0x03, 0x34, 0x2a, 0x94, 0xa2, 0x8d, 0x83, 0x44, 0x4c, 0xcf, 0x72, 0xd1,
-	0x76, 0x6a, 0x1b, 0x9f, 0xee, 0xd4, 0x36, 0x1b, 0xfd, 0x7c, 0x5f, 0x07, 0x17, 0x62, 0xfe, 0x2b,
-	0x64, 0xf8, 0xda, 0xa5, 0xdf, 0xc0, 0x7f, 0x61, 0x05, 0x2a, 0x93, 0xd1, 0xa3, 0x87, 0x82, 0xe1,
-	0xc5, 0x72, 0xff, 0xa0, 0x54, 0x3a, 0x4c, 0x9a, 0xfe, 0x57, 0x8d, 0xf7, 0x78, 0x93, 0x13, 0x75,
-	0x2b, 0xc3, 0x1c, 0x0a, 0x73, 0x44, 0x32, 0x93, 0xd1, 0xbb, 0x33, 0x47, 0xb5, 0x3e, 0x3c, 0x7f,
-	0x3c, 0x1d, 0xba, 0xc1, 0x7d, 0x47, 0xb9, 0x1b, 0xcc, 0x72, 0xd4, 0xd3, 0x37, 0x7f, 0x01, 0x00,
-	0x00, 0xff, 0xff, 0xc3, 0xa3, 0xd4, 0xfd, 0xbb, 0x01, 0x00, 0x00,
+	// 328 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x9c, 0x92, 0xb1, 0x4b, 0xc3, 0x40,
+	0x18, 0xc5, 0x9b, 0x94, 0xb6, 0x7a, 0xd6, 0x0c, 0x37, 0x68, 0x8c, 0x4b, 0xc8, 0xd4, 0xc1, 0xde,
+	0x41, 0x5d, 0x24, 0x62, 0x05, 0xad, 0x82, 0xe0, 0x20, 0x01, 0x17, 0x97, 0x92, 0x34, 0x5f, 0xe3,
+	0x41, 0x72, 0x77, 0x24, 0x5f, 0x20, 0xfd, 0xd3, 0x74, 0xf2, 0x4f, 0x93, 0x26, 0x69, 0x17, 0x8b,
+	0x4a, 0xc7, 0xf7, 0xf8, 0xbd, 0x3c, 0x72, 0xef, 0x23, 0x2e, 0x54, 0x61, 0xa6, 0x53, 0xe0, 0x4b,
+	0x08, 0xb1, 0xcc, 0x61, 0x1e, 0x43, 0xa6, 0x38, 0x42, 0x81, 0x13, 0xa6, 0x73, 0x85, 0x8a, 0x0e,
+	0x5a, 0xc2, 0x39, 0x4f, 0x94, 0x4a, 0x52, 0xe0, 0xb5, 0x1d, 0x95, 0x4b, 0x0e, 0x99, 0xc6, 0x55,
+	0x43, 0x39, 0x7e, 0x22, 0xf0, 0xbd, 0x8c, 0xd8, 0x42, 0x65, 0x5c, 0xc8, 0xa5, 0x8a, 0x52, 0x55,
+	0x29, 0x0d, 0xb2, 0xa1, 0x17, 0xe3, 0x04, 0xe4, 0x38, 0x51, 0x79, 0xc6, 0x95, 0x46, 0xa1, 0x64,
+	0xc1, 0xd7, 0xa2, 0xc9, 0x7a, 0xb7, 0xe4, 0x50, 0x48, 0x9c, 0x6b, 0x25, 0x24, 0x52, 0x8b, 0x98,
+	0x22, 0xb6, 0x0d, 0xd7, 0x18, 0x1d, 0x07, 0xa6, 0x88, 0xe9, 0x90, 0x18, 0x95, 0x6d, 0xba, 0xc6,
+	0xa8, 0x17, 0x18, 0xd5, 0x5a, 0xad, 0xec, 0x6e, 0xa3, 0x56, 0x7e, 0xff, 0xf3, 0xe3, 0xcc, 0x3c,
+	0x30, 0xbc, 0x29, 0xb1, 0xb6, 0x1f, 0x98, 0xeb, 0x30, 0x01, 0x7a, 0x41, 0x06, 0x39, 0x14, 0x65,
+	0x8a, 0x85, 0x6d, 0xb8, 0xdd, 0xd1, 0xd1, 0x84, 0xb2, 0xf6, 0x37, 0xd8, 0x96, 0x0c, 0x36, 0xc8,
+	0xe4, 0xcb, 0x24, 0xbd, 0x97, 0xba, 0xdd, 0x27, 0xd6, 0x7d, 0x0e, 0x21, 0xc2, 0x93, 0xc4, 0xc6,
+	0xd9, 0x11, 0x74, 0x76, 0x78, 0x5e, 0x87, 0x5e, 0x91, 0x61, 0x00, 0x61, 0xbc, 0x47, 0xd2, 0x27,
+	0xd6, 0xab, 0x8e, 0xf7, 0x6b, 0xbd, 0x21, 0xc3, 0x67, 0x51, 0xe0, 0xaf, 0xc9, 0xd3, 0x9f, 0x5e,
+	0xfd, 0x4c, 0x5e, 0x87, 0x4e, 0x89, 0x35, 0x83, 0x14, 0xfe, 0xa8, 0x3e, 0x61, 0xcd, 0xf6, 0x6c,
+	0xb3, 0x3d, 0x7b, 0x58, 0x6f, 0xef, 0x75, 0x9c, 0x76, 0x82, 0xbb, 0xc7, 0xb7, 0xd9, 0x7f, 0x2f,
+	0x60, 0xd7, 0xc5, 0x5d, 0xb7, 0x66, 0xd4, 0xaf, 0xe9, 0xcb, 0xef, 0x00, 0x00, 0x00, 0xff, 0xff,
+	0xfe, 0xf0, 0x99, 0x2d, 0x98, 0x02, 0x00, 0x00,
 }

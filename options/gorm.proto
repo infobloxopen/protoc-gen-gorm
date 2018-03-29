@@ -44,7 +44,6 @@ message GormFieldOptions {
   optional bool drop = 2;
 }
 
-
 // To be used in (leiu of) the interceptor
 extend google.protobuf.ServiceOptions {
   optional AutoServiceOptions service = 52119;

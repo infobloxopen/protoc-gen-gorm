@@ -18,11 +18,12 @@ package contacts
 
 import context "context"
 import gorm "github.com/jinzhu/gorm"
+import grpc "google.golang.org/grpc"
 import ops "github.com/Infoblox-CTO/ngp.api.toolkit/op/gorm"
 import proto "github.com/gogo/protobuf/proto"
 import fmt "fmt"
 import math "math"
-import google_protobuf "github.com/golang/protobuf/ptypes/empty"
+import _ "github.com/golang/protobuf/ptypes/empty"
 import _ "google.golang.org/genproto/googleapis/api/annotations"
 import _ "github.com/lyft/protoc-gen-validate/validate"
 import _ "github.com/grpc-ecosystem/grpc-gateway/protoc-gen-swagger/options"
@@ -162,16 +163,3 @@ func DefaultListContact(ctx context.Context, db *gorm.DB) ([]*Contact, error) {
 	}
 	return pbResponse, nil
 }
-
-type ContactsDefaultHandler struct {
-	DB gorm.DB
-}
-
-// You'll have to create the Search handler function yourself
-
-// Cannot autogen create function Create: unrecognized anticipated type
-// You'll have to create the Get handler function yourself
-
-// Cannot autogen update function Update: unrecognized anticipated type
-// Cannot autogen read function Delete: unrecognized anticipated type
-// You'll have to create the SendSMS handler function yourself

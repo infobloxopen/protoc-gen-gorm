@@ -10,6 +10,7 @@ It is generated from these files:
 
 It has these top-level messages:
 	IntPoint
+	IntPointPage
 	TestTypes
 	TypeWithId
 	MultitenantTypeWithId
@@ -21,10 +22,12 @@ package example
 
 import context "context"
 import gorm "github.com/jinzhu/gorm"
+import grpc "google.golang.org/grpc"
 import ops "github.com/Infoblox-CTO/ngp.api.toolkit/op/gorm"
 import proto "github.com/gogo/protobuf/proto"
 import fmt "fmt"
 import math "math"
+import google_protobuf "github.com/golang/protobuf/ptypes/empty"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -130,21 +133,34 @@ func DefaultListIntPoint(ctx context.Context, db *gorm.DB) ([]*IntPoint, error) 
 	return pbResponse, nil
 }
 
-type PointServiceDefaultHandler struct {
+type PointDefaultServer struct {
 	DB gorm.DB
 }
 
 // CreateIntPoint ...
-func (m *PointServiceDefaultHandler) CreateIntPoint(ctx context.Context, in *example.IntPoint, opts ...grpc.CallOption) (*example.IntPoint, error) {
-	return nil, nil
+func (m *PointDefaultServer) CreateIntPoint(ctx context.Context, in *IntPoint, opts ...grpc.CallOption) (*IntPoint, error) {
+	return DefaultCreateIntPoint(ctx, in, db)
 }
 
 // ReadIntPoint ...
-func (m *PointServiceDefaultHandler) ReadIntPoint(ctx context.Context, in *example.IntPoint, opts ...grpc.CallOption) (*example.IntPoint, error) {
-	return nil, nil
+func (m *PointDefaultServer) ReadIntPoint(ctx context.Context, in *IntPoint, opts ...grpc.CallOption) (*IntPoint, error) {
+	return DefaultReadIntPoint(ctx, in, db)
 }
 
 // UpdateIntPoint ...
-func (m *PointServiceDefaultHandler) UpdateIntPoint(ctx context.Context, in *example.IntPoint, opts ...grpc.CallOption) (*example.IntPoint, error) {
-	return nil, nil
+func (m *PointDefaultServer) UpdateIntPoint(ctx context.Context, in *IntPoint, opts ...grpc.CallOption) (*IntPoint, error) {
+	return DefaultUpdateIntPoint(ctx, in, db)
+}
+
+// ListIntPoint ...
+func (m *PointDefaultServer) ListIntPoint(ctx context.Context, in *IntPoint, opts ...grpc.CallOption) (*IntPointPage, error) {
+	var page IntPointPage
+	res, err := DefaultListIntPoint(ctx, db)
+	page.Results = res
+	return &page, err
+}
+
+// DeleteIntPoint ...
+func (m *PointDefaultServer) DeleteIntPoint(ctx context.Context, in *IntPoint, opts ...grpc.CallOption) (*google_protobuf.Empty, error) {
+	return nil, DefaultDeleteIntPoint(ctx, in, db)
 }

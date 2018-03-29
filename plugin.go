@@ -45,6 +45,7 @@ func (p *ormPlugin) GenerateImports(file *generator.FileDescriptor) {
 	if p.gormPkgAlias != "" {
 		p.PrintImport("context", "context")
 		p.PrintImport(p.gormPkgAlias, "github.com/jinzhu/gorm")
+		p.PrintImport("grpc", "google.golang.org/grpc")
 		p.PrintImport(p.lftPkgName, "github.com/Infoblox-CTO/ngp.api.toolkit/op/gorm")
 	}
 }
@@ -562,178 +563,101 @@ func (p *ormPlugin) generateListHandler(message *generator.Descriptor) {
 	p.P()
 }
 
-/*************************** Service Based Generation *************/
 func (p *ormPlugin) generateDefaultServer(file *generator.FileDescriptor) {
 	for _, service := range file.GetService() {
-		svcName := lintName(generator.CamelCase(service.GetName()))
 
-		// All the default handler has is a db connection
-		p.P(`type `, svcName, `DefaultHandler struct {`)
-		p.RecordTypeUse(`github.com/jinzhu/gorm`)
-		p.P(`DB `, p.gormPkgAlias, `.DB`)
-		p.P(`}`)
-		for _, method := range service.GetMethod() {
-			methodName := generator.CamelCase(method.GetName())
-			if strings.HasPrefix(methodName, "Create") {
-				p.generateCreateServiceHandler(file, service, method)
-			} else if strings.HasPrefix(methodName, "Read") {
-				p.generateReadServiceHandler(file, service, method)
-			} else if strings.HasPrefix(methodName, "Update") {
-				p.generateUpdateServiceHandler(file, service, method)
-			} else if strings.HasPrefix(methodName, "Delete") {
-				p.generateDeleteServiceHandler(file, service, method)
-			} else if strings.HasPrefix(methodName, "List") {
-				p.generateListServiceHandler(file, service, method)
-			} else {
-				p.P(`// You'll have to create the `, methodName, ` handler function yourself`)
-				p.P()
+		svcName := lintName(generator.CamelCase(service.GetName()))
+		if service.Options != nil {
+			v, err := proto.GetExtension(service.GetOptions(), gorm.E_Service)
+			opts := v.(*gorm.AutoServiceOptions)
+			if err == nil && opts != nil && *opts.Autogen {
+				// All the default handler has is a db connection
+				p.P(`type `, svcName, `DefaultServer struct {`)
+				p.P(`DB `, p.gormPkgAlias, `.DB`)
+				p.P(`}`)
+				for _, method := range service.GetMethod() {
+					methodName := generator.CamelCase(method.GetName())
+					if strings.HasPrefix(methodName, "Create") {
+						p.generateCreateServerMethod(file, service, method)
+					} else if strings.HasPrefix(methodName, "Read") {
+						p.generateReadServerMethod(file, service, method)
+					} else if strings.HasPrefix(methodName, "Update") {
+						p.generateUpdateServerMethod(file, service, method)
+					} else if strings.HasPrefix(methodName, "Delete") {
+						p.generateDeleteServerMethod(file, service, method)
+					} else if strings.HasPrefix(methodName, "List") {
+						p.generateListServerMethod(file, service, method)
+					}
+				}
 			}
 		}
 	}
 }
 
-// TODO if type is from same package, need to not output package name or it
-// causes "import loop" error
-func (p *ormPlugin) generateDefaultRPCHandlerSignature(inType, outType generator.Object, methodName, svcName string) {
+func (p *ormPlugin) generateCreateServerMethod(file *generator.FileDescriptor,
+	service *descriptor.ServiceDescriptorProto, method *descriptor.MethodDescriptorProto) {
 
-	p.P(`// `, methodName, ` ...`) // Golint comment, should check for proto file comments
-	p.P(`func (m *`, svcName, `DefaultHandler) `, methodName, ` (ctx context.Context, in *`,
-		inType.PackageName(), ".", generator.CamelCaseSlice(inType.TypeName()),
-		`, opts ...grpc.CallOption) (*`, outType.PackageName(), ".",
-		generator.CamelCaseSlice(outType.TypeName()), `, error) {`)
+	inType, outType, methodName, svcName := p.getMethodProps(service, method)
+	p.generateMethodSignature(inType, outType, methodName, svcName)
+	p.P(`return DefaultCreate`, p.TypeName(inType), `(ctx, in, db)`)
+	p.P(`}`)
 }
 
-// Fetches and formats some names
-func (p *ormPlugin) getNames(file *generator.FileDescriptor,
-	service *descriptor.ServiceDescriptorProto, method *descriptor.MethodDescriptorProto) (generator.Object, generator.Object, string, string) {
+func (p *ormPlugin) generateReadServerMethod(file *generator.FileDescriptor,
+	service *descriptor.ServiceDescriptorProto, method *descriptor.MethodDescriptorProto) {
+
+	inType, outType, methodName, svcName := p.getMethodProps(service, method)
+	p.generateMethodSignature(inType, outType, methodName, svcName)
+	p.P(`return DefaultRead`, p.TypeName(inType), `(ctx, in, db)`)
+	p.P(`}`)
+}
+
+func (p *ormPlugin) generateUpdateServerMethod(file *generator.FileDescriptor,
+	service *descriptor.ServiceDescriptorProto, method *descriptor.MethodDescriptorProto) {
+
+	inType, outType, methodName, svcName := p.getMethodProps(service, method)
+	p.generateMethodSignature(inType, outType, methodName, svcName)
+	p.P(`return DefaultUpdate`, p.TypeName(inType), `(ctx, in, db)`)
+	p.P(`}`)
+}
+
+func (p *ormPlugin) generateDeleteServerMethod(file *generator.FileDescriptor,
+	service *descriptor.ServiceDescriptorProto, method *descriptor.MethodDescriptorProto) {
+
+	inType, outType, methodName, svcName := p.getMethodProps(service, method)
+	p.generateMethodSignature(inType, outType, methodName, svcName)
+	p.P(`return nil, DefaultDelete`, p.TypeName(inType), `(ctx, in, db)`)
+	p.P(`}`)
+}
+
+func (p *ormPlugin) generateListServerMethod(file *generator.FileDescriptor,
+	service *descriptor.ServiceDescriptorProto, method *descriptor.MethodDescriptorProto) {
+
+	inType, outType, methodName, svcName := p.getMethodProps(service, method)
+	p.generateMethodSignature(inType, outType, methodName, svcName)
+	p.P(`var page `, p.TypeName(inType), `Page`)
+	p.P(`res, err := DefaultList`, p.TypeName(inType), `(ctx, db)`)
+	p.P(`page.Results = res`)
+	p.P(`return &page, err`)
+	p.P(`}`)
+}
+
+func (p *ormPlugin) generateMethodSignature(inType, outType generator.Object, methodName, svcName string) {
+
+	p.P(`// `, methodName, ` ...`) // Golint comment, should check for proto file comments
+	p.P(`func (m *`, svcName, `DefaultServer) `, methodName, ` (ctx context.Context, in *`,
+		p.TypeName(inType), `, opts ...grpc.CallOption) (*`,
+		p.TypeName(outType), `, error) {`)
+}
+
+func (p *ormPlugin) getMethodProps(service *descriptor.ServiceDescriptorProto,
+	method *descriptor.MethodDescriptorProto) (generator.Object, generator.Object, string, string) {
 
 	inType := p.ObjectNamed(method.GetInputType())
 	p.RecordTypeUse(method.GetInputType())
 	outType := p.ObjectNamed(method.GetOutputType())
 	p.RecordTypeUse(method.GetOutputType())
-	methodName := generator.CamelCase(method.GetName())
+	methodName := lintName(generator.CamelCase(method.GetName()))
 	svcName := lintName(generator.CamelCase(service.GetName()))
 	return inType, outType, methodName, svcName
-}
-
-// Enforces convention of <Operation><Object Type>, e.g. CreateTag, UpdateContact
-// outputting an object that is or contains the Object Type in the name
-func validateORMableOutputType(operation string, method *descriptor.MethodDescriptorProto,
-	outputType generator.Object) error {
-
-	typeInMethodName := strings.TrimPrefix(generator.CamelCase(method.GetName()), operation)
-	validOutputType := false
-	outputTypeName := generator.CamelCaseSlice(outputType.TypeName())
-	if outputTypeName == typeInMethodName || strings.TrimSuffix(strings.TrimPrefix(outputTypeName, operation), "Response") == typeInMethodName {
-		validOutputType = true
-	} else if typeMsg, exists := typeNames[outputTypeName]; exists {
-		// Check subfields for an ormable object that matches name with the method
-		for _, field := range typeMsg.Field {
-			rawType := strings.Split(field.GetTypeName(), ".")
-			if generator.CamelCase(rawType[len(rawType)-1]) == typeInMethodName {
-				// fmt.Fprintf(os.Stderr, "Match found for type %s in %s\n", generator.CamelCase(rawType[len(rawType)-1]), typeMsg.GetName())
-				validOutputType = true
-				break
-			}
-		}
-	}
-	if !validOutputType {
-		return fmt.Errorf(`Your choice of output type (%s) in %s breaks convention`,
-			generator.CamelCaseSlice(outputType.TypeName()), generator.CamelCase(method.GetName()))
-	}
-	return nil
-}
-
-// Just checks if the method name is <Operation><Ormable Type>
-func checkTypeInMethodName(operation, method string) bool {
-	typeInMethodName := strings.TrimPrefix(method, operation)
-	_, exists := convertibleTypes[typeInMethodName]
-	return exists
-}
-
-func (p *ormPlugin) generateCreateServiceHandler(file *generator.FileDescriptor,
-	service *descriptor.ServiceDescriptorProto, method *descriptor.MethodDescriptorProto) {
-
-	inType, outType, methodName, svcName := p.getNames(file, service, method)
-	if !checkTypeInMethodName("Create", methodName) {
-		p.P(`// Cannot autogen create function `, methodName, `: unrecognized anticipated type `)
-		return
-	}
-	if err := validateORMableOutputType("Create", method, outType); err != nil {
-		p.Fail(err.Error())
-	}
-	p.P()
-	p.generateDefaultRPCHandlerSignature(inType, outType, methodName, svcName)
-	p.In()
-	p.P(`return nil, nil`)
-	p.Out()
-	p.P(`}`)
-}
-
-func (p *ormPlugin) generateReadServiceHandler(file *generator.FileDescriptor,
-	service *descriptor.ServiceDescriptorProto, method *descriptor.MethodDescriptorProto) {
-
-	inType, outType, methodName, svcName := p.getNames(file, service, method)
-	if !checkTypeInMethodName("Read", methodName) {
-		p.P(`// Cannot autogen read function `, methodName, `: unrecognized anticipated type `)
-		return
-	}
-	if err := validateORMableOutputType("Read", method, outType); err != nil {
-		p.Fail(err.Error())
-	}
-	//typeInMethodName := strings.TrimPrefix(strings.TrimPrefix(methodName, "Read"), "read")
-	p.generateDefaultRPCHandlerSignature(inType, outType, methodName, svcName)
-	p.In()
-	p.P(`return nil, nil`)
-	p.Out()
-	p.P(`}`)
-}
-
-func (p *ormPlugin) generateUpdateServiceHandler(file *generator.FileDescriptor,
-	service *descriptor.ServiceDescriptorProto, method *descriptor.MethodDescriptorProto) {
-
-	inType, outType, methodName, svcName := p.getNames(file, service, method)
-	if !checkTypeInMethodName("Update", methodName) {
-		p.P(`// Cannot autogen update function `, methodName, `: unrecognized anticipated type `)
-		return
-	}
-	if err := validateORMableOutputType("Update", method, outType); err != nil {
-		p.Fail(err.Error())
-	}
-	p.generateDefaultRPCHandlerSignature(inType, outType, methodName, svcName)
-	p.In()
-	p.P(`return nil, nil`)
-	p.Out()
-	p.P(`}`)
-}
-
-func (p *ormPlugin) generateDeleteServiceHandler(file *generator.FileDescriptor,
-	service *descriptor.ServiceDescriptorProto, method *descriptor.MethodDescriptorProto) {
-
-	inType, outType, methodName, svcName := p.getNames(file, service, method)
-	if !checkTypeInMethodName("Delete", methodName) {
-		p.P(`// Cannot autogen read function `, methodName, `: unrecognized anticipated type `)
-		return
-	}
-	p.generateDefaultRPCHandlerSignature(inType, outType, methodName, svcName)
-	p.In()
-	p.P(`return nil, nil`)
-	p.Out()
-	p.P(`}`)
-}
-
-func (p *ormPlugin) generateListServiceHandler(file *generator.FileDescriptor,
-	service *descriptor.ServiceDescriptorProto, method *descriptor.MethodDescriptorProto) {
-
-	inType, outType, methodName, svcName := p.getNames(file, service, method)
-	typeInMethodName := strings.TrimPrefix(methodName, "List")
-	if _, exists := convertibleTypes[typeInMethodName]; !exists {
-		p.P(`// Cannot autogen list function for unrecognized anticipated type `, typeInMethodName)
-		return
-	}
-	p.generateDefaultRPCHandlerSignature(inType, outType, methodName, svcName)
-	p.In()
-	p.P(`return nil, nil`)
-	p.Out()
-	p.P(`}`)
 }

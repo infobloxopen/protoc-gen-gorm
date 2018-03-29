@@ -5,12 +5,13 @@ package example
 
 import context "context"
 import gorm "github.com/jinzhu/gorm"
+import grpc "google.golang.org/grpc"
 import ops "github.com/Infoblox-CTO/ngp.api.toolkit/op/gorm"
 import proto "github.com/gogo/protobuf/proto"
 import fmt "fmt"
 import math "math"
-import google_protobuf1 "github.com/golang/protobuf/ptypes/wrappers"
-import google_protobuf2 "github.com/golang/protobuf/ptypes/empty"
+import google_protobuf2 "github.com/golang/protobuf/ptypes/wrappers"
+import google_protobuf "github.com/golang/protobuf/ptypes/empty"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -48,7 +49,7 @@ func ConvertTestTypesFromORM(from TestTypesORM) TestTypes {
 	to := TestTypes{}
 	// Skipping field: ApiOnlyString
 	if from.OptionalString != nil {
-		to.OptionalString = &google_protobuf1.StringValue{Value: *from.OptionalString}
+		to.OptionalString = &google_protobuf2.StringValue{Value: *from.OptionalString}
 	}
 	to.BecomesInt = TestTypesStatus(from.BecomesInt)
 	return to

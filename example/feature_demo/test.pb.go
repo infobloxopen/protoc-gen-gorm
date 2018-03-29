@@ -7,8 +7,8 @@ import proto "github.com/golang/protobuf/proto"
 import fmt "fmt"
 import math "math"
 import _ "github.com/infobloxopen/protoc-gen-gorm/options"
-import google_protobuf1 "github.com/golang/protobuf/ptypes/wrappers"
-import google_protobuf2 "github.com/golang/protobuf/ptypes/empty"
+import google_protobuf2 "github.com/golang/protobuf/ptypes/wrappers"
+import google_protobuf "github.com/golang/protobuf/ptypes/empty"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -43,9 +43,9 @@ func (TestTypesStatus) EnumDescriptor() ([]byte, []int) { return fileDescriptor1
 type TestTypes struct {
 	ApiOnlyString  string                        `protobuf:"bytes,1,opt,name=api_only_string,json=apiOnlyString" json:"api_only_string,omitempty"`
 	Numbers        []int32                       `protobuf:"varint,2,rep,packed,name=numbers" json:"numbers,omitempty"`
-	OptionalString *google_protobuf1.StringValue `protobuf:"bytes,3,opt,name=optional_string,json=optionalString" json:"optional_string,omitempty"`
+	OptionalString *google_protobuf2.StringValue `protobuf:"bytes,3,opt,name=optional_string,json=optionalString" json:"optional_string,omitempty"`
 	BecomesInt     TestTypesStatus               `protobuf:"varint,4,opt,name=becomes_int,json=becomesInt,enum=example.TestTypesStatus" json:"becomes_int,omitempty"`
-	Nothingness    *google_protobuf2.Empty       `protobuf:"bytes,5,opt,name=nothingness" json:"nothingness,omitempty"`
+	Nothingness    *google_protobuf.Empty        `protobuf:"bytes,5,opt,name=nothingness" json:"nothingness,omitempty"`
 }
 
 func (m *TestTypes) Reset()                    { *m = TestTypes{} }
@@ -67,7 +67,7 @@ func (m *TestTypes) GetNumbers() []int32 {
 	return nil
 }
 
-func (m *TestTypes) GetOptionalString() *google_protobuf1.StringValue {
+func (m *TestTypes) GetOptionalString() *google_protobuf2.StringValue {
 	if m != nil {
 		return m.OptionalString
 	}
@@ -81,7 +81,7 @@ func (m *TestTypes) GetBecomesInt() TestTypesStatus {
 	return TestTypes_UNKNOWN
 }
 
-func (m *TestTypes) GetNothingness() *google_protobuf2.Empty {
+func (m *TestTypes) GetNothingness() *google_protobuf.Empty {
 	if m != nil {
 		return m.Nothingness
 	}

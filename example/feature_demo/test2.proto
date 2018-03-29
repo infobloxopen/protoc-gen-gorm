@@ -1,6 +1,7 @@
 syntax = "proto3";
 
 package example;
+import "google/protobuf/empty.proto";
 import "github.com/infobloxopen/protoc-gen-gorm/options/gorm.proto";
 
 option go_package = "github.com/infobloxopen/protoc-gen-gorm/example/feature_demo;example";
@@ -12,8 +13,15 @@ message int_point {
   int32 y = 3;
 }
 
-service PointService {
+message int_point_page {
+    repeated int_point results = 1;
+}
+
+service Point {
+  option (gorm.service).autogen = true;
   rpc CreateIntPoint ( int_point ) returns ( int_point ) {}
   rpc ReadIntPoint ( int_point ) returns ( int_point ) {}
   rpc UpdateIntPoint ( int_point ) returns ( int_point ) {}
+  rpc ListIntPoint ( int_point ) returns ( int_point_page ) {}
+  rpc DeleteIntPoint ( int_point ) returns  ( google.protobuf.Empty ) {}
 }
