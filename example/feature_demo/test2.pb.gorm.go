@@ -10,7 +10,14 @@ It is generated from these files:
 
 It has these top-level messages:
 	IntPoint
-	IntPointPage
+	CreateIntPointRequest
+	CreateIntPointResponse
+	ReadIntPointRequest
+	ReadIntPointResponse
+	UpdateIntPointRequest
+	UpdateIntPointResponse
+	DeleteIntPointRequest
+	ListIntPointResponse
 	TestTypes
 	TypeWithId
 	MultitenantTypeWithId
@@ -135,33 +142,47 @@ func DefaultListIntPoint(ctx context.Context, db *gorm.DB) ([]*IntPoint, error) 
 }
 
 type PointDefaultServer struct {
-	DB gorm.DB
+	DB *gorm.DB
 }
 
 // CreateIntPoint ...
-func (m *PointDefaultServer) CreateIntPoint(ctx context.Context, in *IntPoint, opts ...grpc.CallOption) (*IntPoint, error) {
-	return DefaultCreateIntPoint(ctx, in, db)
+func (m *PointDefaultServer) CreateIntPoint(ctx context.Context, in *CreateIntPointRequest, opts ...grpc.CallOption) (*CreateIntPointResponse, error) {
+	var out CreateIntPointResponse
+	res, err := DefaultCreateIntPoint(ctx, in.GetPayload(), db)
+	out.Result = res
+	return &out, err
 }
 
 // ReadIntPoint ...
-func (m *PointDefaultServer) ReadIntPoint(ctx context.Context, in *IntPoint, opts ...grpc.CallOption) (*IntPoint, error) {
-	return DefaultReadIntPoint(ctx, in, db)
+func (m *PointDefaultServer) ReadIntPoint(ctx context.Context, in *ReadIntPointRequest, opts ...grpc.CallOption) (*ReadIntPointResponse, error) {
+	var out ReadIntPointResponse
+	res, err := DefaultReadIntPoint(ctx, in.GetPayload(), db)
+	out.Result = res
+	return &out, err
 }
 
 // UpdateIntPoint ...
-func (m *PointDefaultServer) UpdateIntPoint(ctx context.Context, in *IntPoint, opts ...grpc.CallOption) (*IntPoint, error) {
-	return DefaultUpdateIntPoint(ctx, in, db)
+func (m *PointDefaultServer) UpdateIntPoint(ctx context.Context, in *UpdateIntPointRequest, opts ...grpc.CallOption) (*UpdateIntPointResponse, error) {
+	var out UpdateIntPointResponse
+	res, err := DefaultUpdateIntPoint(ctx, in.GetPayload(), db)
+	out.Result = res
+	return &out, err
 }
 
 // ListIntPoint ...
-func (m *PointDefaultServer) ListIntPoint(ctx context.Context, in *google_protobuf.Empty, opts ...grpc.CallOption) (*IntPointPage, error) {
-	var l IntPointPage
+func (m *PointDefaultServer) ListIntPoint(ctx context.Context, in *google_protobuf.Empty, opts ...grpc.CallOption) (*ListIntPointResponse, error) {
+	var out ListIntPointResponse
 	res, err := DefaultListIntPoint(ctx, db)
 	l.Results = res
-	return &l, err
+	return &out, err
 }
 
 // DeleteIntPoint ...
-func (m *PointDefaultServer) DeleteIntPoint(ctx context.Context, in *IntPoint, opts ...grpc.CallOption) (*google_protobuf.Empty, error) {
-	return nil, DefaultDeleteIntPoint(ctx, in, db)
+func (m *PointDefaultServer) DeleteIntPoint(ctx context.Context, in *DeleteIntPointRequest, opts ...grpc.CallOption) (*google_protobuf.Empty, error) {
+	return nil, DefaultDeleteIntPoint(ctx, in.GetPayload(), db)
+}
+
+// CustomMethod ...
+func (m *PointDefaultServer) CustomMethod(ctx context.Context, in *google_protobuf.Empty, opts ...grpc.CallOption) (*google_protobuf.Empty, error) {
+	return nil, nil
 }

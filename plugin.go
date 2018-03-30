@@ -572,20 +572,22 @@ func (p *ormPlugin) generateDefaultServer(file *generator.FileDescriptor) {
 			if err == nil && opts != nil && *opts.Autogen {
 				// All the default server has is a db connection
 				p.P(`type `, svcName, `DefaultServer struct {`)
-				p.P(`DB `, p.gormPkgAlias, `.DB`)
+				p.P(`DB *`, p.gormPkgAlias, `.DB`)
 				p.P(`}`)
 				for _, method := range service.GetMethod() {
 					methodName := lintName(generator.CamelCase(method.GetName()))
 					if strings.HasPrefix(methodName, "Create") {
-						p.generateCreateServerMethod(file, service, method)
+						p.generateCreateServerMethod(service, method)
 					} else if strings.HasPrefix(methodName, "Read") {
-						p.generateReadServerMethod(file, service, method)
+						p.generateReadServerMethod(service, method)
 					} else if strings.HasPrefix(methodName, "Update") {
-						p.generateUpdateServerMethod(file, service, method)
+						p.generateUpdateServerMethod(service, method)
 					} else if strings.HasPrefix(methodName, "Delete") {
-						p.generateDeleteServerMethod(file, service, method)
+						p.generateDeleteServerMethod(service, method)
 					} else if strings.HasPrefix(methodName, "List") {
-						p.generateListServerMethod(file, service, method)
+						p.generateListServerMethod(service, method)
+					} else {
+						p.generateMethodStub(service, method)
 					}
 				}
 			}
@@ -593,46 +595,57 @@ func (p *ormPlugin) generateDefaultServer(file *generator.FileDescriptor) {
 	}
 }
 
-func (p *ormPlugin) generateCreateServerMethod(file *generator.FileDescriptor,
-	service *descriptor.ServiceDescriptorProto, method *descriptor.MethodDescriptorProto) {
+func (p *ormPlugin) generateCreateServerMethod(service *descriptor.ServiceDescriptorProto, method *descriptor.MethodDescriptorProto) {
 	inType, outType, methodName, svcName := p.getMethodProps(service, method)
 	p.generateMethodSignature(inType, outType, methodName, svcName)
-	p.P(`return DefaultCreate`, p.TypeName(inType), `(ctx, in, db)`)
+	p.P(`var out `, p.TypeName(outType))
+	p.P(`res, err := DefaultCreate`, strings.TrimPrefix(methodName, "Create"), `(ctx, in.GetPayload(), db)`)
+	p.P(`out.Result = res`)
+	p.P(`return &out, err`)
 	p.P(`}`)
 }
 
-func (p *ormPlugin) generateReadServerMethod(file *generator.FileDescriptor,
-	service *descriptor.ServiceDescriptorProto, method *descriptor.MethodDescriptorProto) {
+func (p *ormPlugin) generateReadServerMethod(service *descriptor.ServiceDescriptorProto, method *descriptor.MethodDescriptorProto) {
 	inType, outType, methodName, svcName := p.getMethodProps(service, method)
 	p.generateMethodSignature(inType, outType, methodName, svcName)
-	p.P(`return DefaultRead`, p.TypeName(inType), `(ctx, in, db)`)
+	p.P(`var out `, p.TypeName(outType))
+	p.P(`res, err := DefaultRead`, strings.TrimPrefix(methodName, "Read"), `(ctx, in.GetPayload(), db)`)
+	p.P(`out.Result = res`)
+	p.P(`return &out, err`)
 	p.P(`}`)
 }
 
-func (p *ormPlugin) generateUpdateServerMethod(file *generator.FileDescriptor,
-	service *descriptor.ServiceDescriptorProto, method *descriptor.MethodDescriptorProto) {
+func (p *ormPlugin) generateUpdateServerMethod(service *descriptor.ServiceDescriptorProto, method *descriptor.MethodDescriptorProto) {
 	inType, outType, methodName, svcName := p.getMethodProps(service, method)
 	p.generateMethodSignature(inType, outType, methodName, svcName)
-	p.P(`return DefaultUpdate`, p.TypeName(inType), `(ctx, in, db)`)
+	p.P(`var out `, p.TypeName(outType))
+	p.P(`res, err := DefaultUpdate`, strings.TrimPrefix(methodName, "Update"), `(ctx, in.GetPayload(), db)`)
+	p.P(`out.Result = res`)
+	p.P(`return &out, err`)
 	p.P(`}`)
 }
 
-func (p *ormPlugin) generateDeleteServerMethod(file *generator.FileDescriptor,
-	service *descriptor.ServiceDescriptorProto, method *descriptor.MethodDescriptorProto) {
+func (p *ormPlugin) generateDeleteServerMethod(service *descriptor.ServiceDescriptorProto, method *descriptor.MethodDescriptorProto) {
 	inType, outType, methodName, svcName := p.getMethodProps(service, method)
 	p.generateMethodSignature(inType, outType, methodName, svcName)
-	p.P(`return nil, DefaultDelete`, p.TypeName(inType), `(ctx, in, db)`)
+	p.P(`return nil, DefaultDelete`, strings.TrimPrefix(methodName, "Delete"), `(ctx, in.GetPayload(), db)`)
 	p.P(`}`)
 }
 
-func (p *ormPlugin) generateListServerMethod(file *generator.FileDescriptor,
-	service *descriptor.ServiceDescriptorProto, method *descriptor.MethodDescriptorProto) {
+func (p *ormPlugin) generateListServerMethod(service *descriptor.ServiceDescriptorProto, method *descriptor.MethodDescriptorProto) {
 	inType, outType, methodName, svcName := p.getMethodProps(service, method)
 	p.generateMethodSignature(inType, outType, methodName, svcName)
-	p.P(`var l `, p.TypeName(outType))
+	p.P(`var out `, p.TypeName(outType))
 	p.P(`res, err := DefaultList`, strings.TrimPrefix(methodName, "List"), `(ctx, db)`)
 	p.P(`l.Results = res`)
-	p.P(`return &l, err`)
+	p.P(`return &out, err`)
+	p.P(`}`)
+}
+
+func (p *ormPlugin) generateMethodStub(service *descriptor.ServiceDescriptorProto, method *descriptor.MethodDescriptorProto) {
+	inType, outType, methodName, svcName := p.getMethodProps(service, method)
+	p.generateMethodSignature(inType, outType, methodName, svcName)
+	p.P(`return nil, nil`)
 	p.P(`}`)
 }
 
