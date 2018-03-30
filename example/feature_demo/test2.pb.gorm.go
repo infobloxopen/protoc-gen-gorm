@@ -135,18 +135,24 @@ func DefaultListIntPoint(ctx context.Context, db *gorm.DB) ([]*IntPoint, error) 
 	return pbResponse, nil
 }
 
-// DefaultCascadedUpdateIntPoint clears first level 1:many children and then executes a gorm update call
-func DefaultCascadedUpdateIntPoint(ctx context.Context, in *IntPoint, db *gorm.DB) (*IntPoint, error) {
+// DefaultStrictUpdateIntPoint clears first level 1:many children and then executes a gorm update call
+func DefaultStrictUpdateIntPoint(ctx context.Context, in *IntPoint, db *gorm.DB) (*IntPoint, error) {
 	if in == nil {
 		return nil, fmt.Errorf("Nil argument to DefaultCascadedUpdateIntPoint")
 	}
-	ormObj := ConvertIntPointToORM(*in)
+	ormObj, err := ConvertIntPointToORM(*in)
+	if err != nil {
+		return nil, err
+	}
 	tx := db.Begin()
-	if err := tx.Save(&ormObj).Error; err != nil {
+	if err = tx.Save(&ormObj).Error; err != nil {
 		tx.Rollback()
 		return nil, err
 	}
-	pbResponse := ConvertIntPointFromORM(ormObj)
+	pbResponse, err := ConvertIntPointFromORM(ormObj)
+	if err != nil {
+		return nil, err
+	}
 	tx.Commit()
 	return &pbResponse, nil
 }

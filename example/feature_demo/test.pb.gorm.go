@@ -3,34 +3,21 @@
 
 package example
 
-import (
-	context "context"
-	errors "errors"
-
-	gorm "github.com/jinzhu/gorm"
-
-	"github.com/Infoblox-CTO/ngp.api.toolkit/mw/auth"
-	ops "github.com/Infoblox-CTO/ngp.api.toolkit/op/gorm"
-	uuid "github.com/satori/go.uuid"
-
-	gtypes "github.com/infobloxopen/protoc-gen-gorm/types"
-
-	time "time"
-
-	ptypes "github.com/golang/protobuf/ptypes"
-
-	proto "github.com/gogo/protobuf/proto"
-
-	fmt "fmt"
-
-	math "math"
-
-	_ "github.com/infobloxopen/protoc-gen-gorm/types"
-
-	google_protobuf1 "github.com/golang/protobuf/ptypes/wrappers"
-
-	_ "github.com/golang/protobuf/ptypes/timestamp"
-)
+import context "context"
+import errors "errors"
+import gorm "github.com/jinzhu/gorm"
+import ops "github.com/Infoblox-CTO/ngp.api.toolkit/op/gorm"
+import uuid "github.com/satori/go.uuid"
+import gtypes "github.com/infobloxopen/protoc-gen-gorm/types"
+import time "time"
+import ptypes "github.com/golang/protobuf/ptypes"
+import proto "github.com/gogo/protobuf/proto"
+import fmt "fmt"
+import math "math"
+import _ "github.com/infobloxopen/protoc-gen-gorm/types"
+import google_protobuf1 "github.com/golang/protobuf/ptypes/wrappers"
+import google_protobuf2 "github.com/golang/protobuf/ptypes/empty"
+import _ "github.com/golang/protobuf/ptypes/timestamp"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -319,18 +306,24 @@ func DefaultListTestTypes(ctx context.Context, db *gorm.DB) ([]*TestTypes, error
 	return pbResponse, nil
 }
 
-// DefaultCascadedUpdateTestTypes clears first level 1:many children and then executes a gorm update call
-func DefaultCascadedUpdateTestTypes(ctx context.Context, in *TestTypes, db *gorm.DB) (*TestTypes, error) {
+// DefaultStrictUpdateTestTypes clears first level 1:many children and then executes a gorm update call
+func DefaultStrictUpdateTestTypes(ctx context.Context, in *TestTypes, db *gorm.DB) (*TestTypes, error) {
 	if in == nil {
 		return nil, fmt.Errorf("Nil argument to DefaultCascadedUpdateTestTypes")
 	}
-	ormObj := ConvertTestTypesToORM(*in)
+	ormObj, err := ConvertTestTypesToORM(*in)
+	if err != nil {
+		return nil, err
+	}
 	tx := db.Begin()
-	if err := tx.Save(&ormObj).Error; err != nil {
+	if err = tx.Save(&ormObj).Error; err != nil {
 		tx.Rollback()
 		return nil, err
 	}
-	pbResponse := ConvertTestTypesFromORM(ormObj)
+	pbResponse, err := ConvertTestTypesFromORM(ormObj)
+	if err != nil {
+		return nil, err
+	}
 	tx.Commit()
 	return &pbResponse, nil
 }
@@ -417,18 +410,24 @@ func DefaultListTypeWithID(ctx context.Context, db *gorm.DB) ([]*TypeWithID, err
 	return pbResponse, nil
 }
 
-// DefaultCascadedUpdateTypeWithID clears first level 1:many children and then executes a gorm update call
-func DefaultCascadedUpdateTypeWithID(ctx context.Context, in *TypeWithId, db *gorm.DB) (*TypeWithId, error) {
+// DefaultStrictUpdateTypeWithID clears first level 1:many children and then executes a gorm update call
+func DefaultStrictUpdateTypeWithID(ctx context.Context, in *TypeWithId, db *gorm.DB) (*TypeWithId, error) {
 	if in == nil {
 		return nil, fmt.Errorf("Nil argument to DefaultCascadedUpdateTypeWithID")
 	}
-	ormObj := ConvertTypeWithIDToORM(*in)
+	ormObj, err := ConvertTypeWithIDToORM(*in)
+	if err != nil {
+		return nil, err
+	}
 	tx := db.Begin()
-	if err := tx.Save(&ormObj).Error; err != nil {
+	if err = tx.Save(&ormObj).Error; err != nil {
 		tx.Rollback()
 		return nil, err
 	}
-	pbResponse := ConvertTypeWithIDFromORM(ormObj)
+	pbResponse, err := ConvertTypeWithIDFromORM(ormObj)
+	if err != nil {
+		return nil, err
+	}
 	tx.Commit()
 	return &pbResponse, nil
 }
@@ -540,18 +539,24 @@ func DefaultListMultitenantTypeWithID(ctx context.Context, db *gorm.DB) ([]*Mult
 	return pbResponse, nil
 }
 
-// DefaultCascadedUpdateMultitenantTypeWithID clears first level 1:many children and then executes a gorm update call
-func DefaultCascadedUpdateMultitenantTypeWithID(ctx context.Context, in *MultitenantTypeWithId, db *gorm.DB) (*MultitenantTypeWithId, error) {
+// DefaultStrictUpdateMultitenantTypeWithID clears first level 1:many children and then executes a gorm update call
+func DefaultStrictUpdateMultitenantTypeWithID(ctx context.Context, in *MultitenantTypeWithId, db *gorm.DB) (*MultitenantTypeWithId, error) {
 	if in == nil {
 		return nil, fmt.Errorf("Nil argument to DefaultCascadedUpdateMultitenantTypeWithID")
 	}
-	ormObj := ConvertMultitenantTypeWithIDToORM(*in)
+	ormObj, err := ConvertMultitenantTypeWithIDToORM(*in)
+	if err != nil {
+		return nil, err
+	}
 	tx := db.Begin()
-	if err := tx.Save(&ormObj).Error; err != nil {
+	if err = tx.Save(&ormObj).Error; err != nil {
 		tx.Rollback()
 		return nil, err
 	}
-	pbResponse := ConvertMultitenantTypeWithIDFromORM(ormObj)
+	pbResponse, err := ConvertMultitenantTypeWithIDFromORM(ormObj)
+	if err != nil {
+		return nil, err
+	}
 	tx.Commit()
 	return &pbResponse, nil
 }
@@ -644,18 +649,24 @@ func DefaultListMultitenantTypeWithoutID(ctx context.Context, db *gorm.DB) ([]*M
 	return pbResponse, nil
 }
 
-// DefaultCascadedUpdateMultitenantTypeWithoutID clears first level 1:many children and then executes a gorm update call
-func DefaultCascadedUpdateMultitenantTypeWithoutID(ctx context.Context, in *MultitenantTypeWithoutId, db *gorm.DB) (*MultitenantTypeWithoutId, error) {
+// DefaultStrictUpdateMultitenantTypeWithoutID clears first level 1:many children and then executes a gorm update call
+func DefaultStrictUpdateMultitenantTypeWithoutID(ctx context.Context, in *MultitenantTypeWithoutId, db *gorm.DB) (*MultitenantTypeWithoutId, error) {
 	if in == nil {
 		return nil, fmt.Errorf("Nil argument to DefaultCascadedUpdateMultitenantTypeWithoutID")
 	}
-	ormObj := ConvertMultitenantTypeWithoutIDToORM(*in)
+	ormObj, err := ConvertMultitenantTypeWithoutIDToORM(*in)
+	if err != nil {
+		return nil, err
+	}
 	tx := db.Begin()
-	if err := tx.Save(&ormObj).Error; err != nil {
+	if err = tx.Save(&ormObj).Error; err != nil {
 		tx.Rollback()
 		return nil, err
 	}
-	pbResponse := ConvertMultitenantTypeWithoutIDFromORM(ormObj)
+	pbResponse, err := ConvertMultitenantTypeWithoutIDFromORM(ormObj)
+	if err != nil {
+		return nil, err
+	}
 	tx.Commit()
 	return &pbResponse, nil
 }
@@ -742,18 +753,24 @@ func DefaultListTypeBecomesEmpty(ctx context.Context, db *gorm.DB) ([]*TypeBecom
 	return pbResponse, nil
 }
 
-// DefaultCascadedUpdateTypeBecomesEmpty clears first level 1:many children and then executes a gorm update call
-func DefaultCascadedUpdateTypeBecomesEmpty(ctx context.Context, in *TypeBecomesEmpty, db *gorm.DB) (*TypeBecomesEmpty, error) {
+// DefaultStrictUpdateTypeBecomesEmpty clears first level 1:many children and then executes a gorm update call
+func DefaultStrictUpdateTypeBecomesEmpty(ctx context.Context, in *TypeBecomesEmpty, db *gorm.DB) (*TypeBecomesEmpty, error) {
 	if in == nil {
 		return nil, fmt.Errorf("Nil argument to DefaultCascadedUpdateTypeBecomesEmpty")
 	}
-	ormObj := ConvertTypeBecomesEmptyToORM(*in)
+	ormObj, err := ConvertTypeBecomesEmptyToORM(*in)
+	if err != nil {
+		return nil, err
+	}
 	tx := db.Begin()
-	if err := tx.Save(&ormObj).Error; err != nil {
+	if err = tx.Save(&ormObj).Error; err != nil {
 		tx.Rollback()
 		return nil, err
 	}
-	pbResponse := ConvertTypeBecomesEmptyFromORM(ormObj)
+	pbResponse, err := ConvertTypeBecomesEmptyFromORM(ormObj)
+	if err != nil {
+		return nil, err
+	}
 	tx.Commit()
 	return &pbResponse, nil
 }

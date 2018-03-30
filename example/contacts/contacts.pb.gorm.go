@@ -167,18 +167,24 @@ func DefaultListContact(ctx context.Context, db *gorm.DB) ([]*Contact, error) {
 	return pbResponse, nil
 }
 
-// DefaultCascadedUpdateContact clears first level 1:many children and then executes a gorm update call
-func DefaultCascadedUpdateContact(ctx context.Context, in *Contact, db *gorm.DB) (*Contact, error) {
+// DefaultStrictUpdateContact clears first level 1:many children and then executes a gorm update call
+func DefaultStrictUpdateContact(ctx context.Context, in *Contact, db *gorm.DB) (*Contact, error) {
 	if in == nil {
 		return nil, fmt.Errorf("Nil argument to DefaultCascadedUpdateContact")
 	}
-	ormObj := ConvertContactToORM(*in)
+	ormObj, err := ConvertContactToORM(*in)
+	if err != nil {
+		return nil, err
+	}
 	tx := db.Begin()
-	if err := tx.Save(&ormObj).Error; err != nil {
+	if err = tx.Save(&ormObj).Error; err != nil {
 		tx.Rollback()
 		return nil, err
 	}
-	pbResponse := ConvertContactFromORM(ormObj)
+	pbResponse, err := ConvertContactFromORM(ormObj)
+	if err != nil {
+		return nil, err
+	}
 	tx.Commit()
 	return &pbResponse, nil
 }

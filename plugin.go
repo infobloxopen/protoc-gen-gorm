@@ -432,7 +432,7 @@ func (p *ormPlugin) generateDefaultHandlers(file *generator.FileDescriptor) {
 		p.generateUpdateHandler(message)
 		p.generateDeleteHandler(message)
 		p.generateListHandler(message)
-		p.generateUpdateWithOverwriteHandler(message)
+		p.generateStrictUpdateHandler(message)
 	}
 }
 
@@ -580,7 +580,7 @@ func (p *ormPlugin) generateListHandler(message *generator.Descriptor) {
 	typeNamePb, typeName, _ := getTypeNames(message)
 
 	p.P(`// DefaultList`, typeName, ` executes a gorm list call`)
-	p.P(`func DefaultList`, typeName, `(ctx context.Context, db *`, p.gormPkgAlias,
+	p.P(`func DefaultList`, typeName, `(ctx context.Context, db *`, p.gormPkgName,
 		`.DB) ([]*`, typeName, `, error) {`)
 	p.P(`ormResponse := []`, typeName, `ORM{}`)
 	p.P(`db, err := `, p.lftPkgName, `.ApplyCollectionOperators(db, ctx)`)
@@ -616,8 +616,7 @@ func (p *ormPlugin) generateListHandler(message *generator.Descriptor) {
 func (p *ormPlugin) findAssociationKeys(parent *generator.Descriptor,
 	child *generator.Descriptor, field *descriptor.FieldDescriptorProto) map[string]string {
 	// Check for gorm tags
-	parentTypeNamePb := generator.CamelCaseSlice(parent.TypeName())
-	parentTypeName := lintName(parentTypeNamePb)
+	_, parentTypeName, _ := getTypeNames(parent)
 	keyMap := make(map[string]string)
 	defaultKeyMap := map[string]string{fmt.Sprintf("%sID", parentTypeName): "ID"}
 	childFields := []string{fmt.Sprintf("%sID", parentTypeName)}
@@ -629,8 +628,8 @@ func (p *ormPlugin) findAssociationKeys(parent *generator.Descriptor,
 	if err != nil {
 		return defaultKeyMap
 	}
-	gfOptions := v.(*gorm.GormFieldOptions)
-	if gfOptions == nil || gfOptions.Tags == nil {
+	gfOptions, ok := v.(*gorm.GormFieldOptions)
+	if !ok || gfOptions.Tags == nil {
 		return defaultKeyMap
 	}
 	tag := gfOptions.GetTags()
@@ -677,12 +676,14 @@ func guessZeroValue(typeName string) string {
 	if strings.Contains(typeName, "int") {
 		return `0`
 	}
+	if strings.Contains(typeName, "uuid") {
+		return `uuid.Nil`
+	}
 	return ``
 }
 
 func (p *ormPlugin) removeChildAssociations(message *generator.Descriptor) {
-	typeNamePb := generator.CamelCaseSlice(message.TypeName())
-	typeName := lintName(typeNamePb)
+	_, typeName, _ := getTypeNames(message)
 	if _, exists := typeNames[typeName]; !exists {
 		return
 	}
@@ -733,23 +734,28 @@ func (p *ormPlugin) removeChildAssociations(message *generator.Descriptor) {
 
 }
 
-func (p *ormPlugin) generateUpdateWithOverwriteHandler(message *generator.Descriptor) {
-	typeNamePb := generator.CamelCaseSlice(message.TypeName())
-	typeName := lintName(typeNamePb)
-	p.P(`// DefaultCascadedUpdate`, typeName, ` clears first level 1:many children and then executes a gorm update call`)
-	p.P(`func DefaultCascadedUpdate`, typeName, `(ctx context.Context, in *`,
-		typeNamePb, `, db *`, p.gormPkgAlias, `.DB) (`, `*`, typeNamePb, `, error) {`)
+func (p *ormPlugin) generateStrictUpdateHandler(message *generator.Descriptor) {
+	typeNamePb, typeName, _ := getTypeNames(message)
+	p.P(`// DefaultStrictUpdate`, typeName, ` clears first level 1:many children and then executes a gorm update call`)
+	p.P(`func DefaultStrictUpdate`, typeName, `(ctx context.Context, in *`,
+		typeNamePb, `, db *`, p.gormPkgName, `.DB) (`, `*`, typeNamePb, `, error) {`)
 	p.P(`if in == nil {`)
 	p.P(`return nil, fmt.Errorf("Nil argument to DefaultCascadedUpdate`, typeName, `")`)
 	p.P(`}`)
-	p.P(`ormObj := Convert`, typeName, `ToORM(*in)`)
+	p.P(`ormObj, err := Convert`, typeName, `ToORM(*in)`)
+	p.P(`if err != nil {`)
+	p.P(`return nil, err`)
+	p.P(`}`)
 	p.P(`tx := db.Begin()`)
 	p.removeChildAssociations(message)
-	p.P(`if err := tx.Save(&ormObj).Error; err != nil {`)
+	p.P(`if err = tx.Save(&ormObj).Error; err != nil {`)
 	p.P(`tx.Rollback()`)
 	p.P(`return nil, err`)
 	p.P(`}`)
-	p.P(`pbResponse := Convert`, typeName, `FromORM(ormObj)`)
+	p.P(`pbResponse, err := Convert`, typeName, `FromORM(ormObj)`)
+	p.P(`if err != nil {`)
+	p.P(`return nil, err`)
+	p.P(`}`)
 	p.P(`tx.Commit()`)
 	p.P(`return &pbResponse, nil`)
 	p.P(`}`)
