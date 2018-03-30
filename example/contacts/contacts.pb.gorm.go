@@ -17,8 +17,9 @@ It has these top-level messages:
 package contacts
 
 import context "context"
-import gorm "github.com/jinzhu/gorm"
 import grpc "google.golang.org/grpc"
+import errors "errors"
+import gorm "github.com/jinzhu/gorm"
 import ops "github.com/Infoblox-CTO/ngp.api.toolkit/op/gorm"
 import proto "github.com/gogo/protobuf/proto"
 import fmt "fmt"
@@ -50,99 +51,112 @@ func (ContactORM) TableName() string {
 }
 
 // ConvertContactToORM takes a pb object and returns an orm object
-func ConvertContactToORM(from Contact) ContactORM {
+func ConvertContactToORM(from Contact) (ContactORM, error) {
 	to := ContactORM{}
+	var err error
 	to.ID = from.Id
 	to.FirstName = from.FirstName
 	to.MiddleName = from.MiddleName
 	to.LastName = from.LastName
 	to.EmailAddress = from.EmailAddress
-	return to
+	return to, err
 }
 
 // ConvertContactFromORM takes an orm object and returns a pb object
-func ConvertContactFromORM(from ContactORM) Contact {
+func ConvertContactFromORM(from ContactORM) (Contact, error) {
 	to := Contact{}
+	var err error
 	to.Id = from.ID
 	to.FirstName = from.FirstName
 	to.MiddleName = from.MiddleName
 	to.LastName = from.LastName
 	to.EmailAddress = from.EmailAddress
-	return to
+	return to, err
 }
 
 ////////////////////////// CURDL for objects
 // DefaultCreateContact executes a basic gorm create call
 func DefaultCreateContact(ctx context.Context, in *Contact, db *gorm.DB) (*Contact, error) {
 	if in == nil {
-		return nil, fmt.Errorf("Nil argument to DefaultCreateContact")
+		return nil, errors.New("Nil argument to DefaultCreateContact")
 	}
-	ormObj := ConvertContactToORM(*in)
+	ormObj, err := ConvertContactToORM(*in)
+	if err != nil {
+		return nil, err
+	}
 	tenantID, tIDErr := auth.GetTenantID(ctx)
 	if tIDErr != nil {
 		return nil, tIDErr
 	}
 	ormObj.TenantID = tenantID
-	if err := db.Create(&ormObj).Error; err != nil {
+	if err = db.Create(&ormObj).Error; err != nil {
 		return nil, err
 	}
-	pbResponse := ConvertContactFromORM(ormObj)
-	return &pbResponse, nil
+	pbResponse, err := ConvertContactFromORM(ormObj)
+	return &pbResponse, err
 }
 
 // DefaultReadContact executes a basic gorm read call
 func DefaultReadContact(ctx context.Context, in *Contact, db *gorm.DB) (*Contact, error) {
 	if in == nil {
-		return nil, fmt.Errorf("Nil argument to DefaultReadContact")
+		return nil, errors.New("Nil argument to DefaultReadContact")
 	}
-	ormParams := ConvertContactToORM(*in)
+	ormParams, err := ConvertContactToORM(*in)
+	if err != nil {
+		return nil, err
+	}
 	tenantID, tIDErr := auth.GetTenantID(ctx)
 	if tIDErr != nil {
 		return nil, tIDErr
 	}
 	ormParams.TenantID = tenantID
 	ormResponse := ContactORM{}
-	if err := db.Set("gorm:auto_preload", true).Where(&ormParams).First(&ormResponse).Error; err != nil {
+	if err = db.Set("gorm:auto_preload", true).Where(&ormParams).First(&ormResponse).Error; err != nil {
 		return nil, err
 	}
-	pbResponse := ConvertContactFromORM(ormResponse)
-	return &pbResponse, nil
+	pbResponse, err := ConvertContactFromORM(ormResponse)
+	return &pbResponse, err
 }
 
 // DefaultUpdateContact executes a basic gorm update call
 func DefaultUpdateContact(ctx context.Context, in *Contact, db *gorm.DB) (*Contact, error) {
 	if in == nil {
-		return nil, fmt.Errorf("Nil argument to DefaultUpdateContact")
+		return nil, errors.New("Nil argument to DefaultUpdateContact")
 	}
 	if exists, err := DefaultReadContact(ctx, &Contact{Id: in.GetId()}, db); err != nil {
 		return nil, err
 	} else if exists == nil {
 		return nil, errors.New("Contact not found")
 	}
-	ormObj := ConvertContactToORM(*in)
-	if err := db.Save(&ormObj).Error; err != nil {
+	ormObj, err := ConvertContactToORM(*in)
+	if err != nil {
 		return nil, err
 	}
-	pbResponse := ConvertContactFromORM(ormObj)
-	return &pbResponse, nil
+	if err = db.Save(&ormObj).Error; err != nil {
+		return nil, err
+	}
+	pbResponse, err := ConvertContactFromORM(ormObj)
+	return &pbResponse, err
 }
 
-// DefaultDeleteContact executes a basic gorm delete call
 func DefaultDeleteContact(ctx context.Context, in *Contact, db *gorm.DB) error {
 	if in == nil {
-		return fmt.Errorf("Nil argument to DefaultDeleteContact")
+		return errors.New("Nil argument to DefaultDeleteContact")
 	}
-	ormObj := ConvertContactToORM(*in)
+	ormObj, err := ConvertContactToORM(*in)
+	if err != nil {
+		return err
+	}
 	tenantID, tIDErr := auth.GetTenantID(ctx)
 	if tIDErr != nil {
 		return tIDErr
 	}
 	ormObj.TenantID = tenantID
-	err := db.Where(&ormObj).Delete(&ContactORM{}).Error
+	err = db.Where(&ormObj).Delete(&ContactORM{}).Error
 	return err
 }
 
-// DefaultListContact executes a basic gorm find call
+// DefaultListContact executes a gorm list call
 func DefaultListContact(ctx context.Context, db *gorm.DB) ([]*Contact, error) {
 	ormResponse := []ContactORM{}
 	db, err := ops.ApplyCollectionOperators(db, ctx)
@@ -159,8 +173,33 @@ func DefaultListContact(ctx context.Context, db *gorm.DB) ([]*Contact, error) {
 	}
 	pbResponse := []*Contact{}
 	for _, responseEntry := range ormResponse {
-		temp := ConvertContactFromORM(responseEntry)
+		temp, err := ConvertContactFromORM(responseEntry)
+		if err != nil {
+			return nil, err
+		}
 		pbResponse = append(pbResponse, &temp)
 	}
 	return pbResponse, nil
+}
+
+// DefaultStrictUpdateContact clears first level 1:many children and then executes a gorm update call
+func DefaultStrictUpdateContact(ctx context.Context, in *Contact, db *gorm.DB) (*Contact, error) {
+	if in == nil {
+		return nil, fmt.Errorf("Nil argument to DefaultCascadedUpdateContact")
+	}
+	ormObj, err := ConvertContactToORM(*in)
+	if err != nil {
+		return nil, err
+	}
+	tx := db.Begin()
+	if err = tx.Save(&ormObj).Error; err != nil {
+		tx.Rollback()
+		return nil, err
+	}
+	pbResponse, err := ConvertContactFromORM(ormObj)
+	if err != nil {
+		return nil, err
+	}
+	tx.Commit()
+	return &pbResponse, nil
 }
