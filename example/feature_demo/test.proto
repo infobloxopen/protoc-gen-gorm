@@ -2,8 +2,10 @@ syntax = "proto3";
 
 package example;
 import "github.com/infobloxopen/protoc-gen-gorm/options/gorm.proto";
+import "github.com/infobloxopen/protoc-gen-gorm/types/types.proto";
 import "google/protobuf/wrappers.proto";
 import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
 
 option go_package = "github.com/infobloxopen/protoc-gen-gorm/example/feature_demo;example";
 
@@ -20,6 +22,8 @@ message test_types {
   }
   status becomes_int = 4;
   google.protobuf.Empty nothingness = 5;
+  gormable_types.UUIDValue uuid = 6;
+  google.protobuf.Timestamp created_at = 7;
 }
 
 message type_with_id {
