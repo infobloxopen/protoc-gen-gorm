@@ -141,7 +141,7 @@ func DefaultDeleteContact(ctx context.Context, in *Contact, db *gorm.DB) error {
 	return err
 }
 
-// DefaultListContact executes a basic gorm find call
+// DefaultListContact executes a gorm list call
 func DefaultListContact(ctx context.Context, db *gorm.DB) ([]*Contact, error) {
 	ormResponse := []ContactORM{}
 	db, err := ops.ApplyCollectionOperators(db, ctx)
@@ -165,4 +165,26 @@ func DefaultListContact(ctx context.Context, db *gorm.DB) ([]*Contact, error) {
 		pbResponse = append(pbResponse, &temp)
 	}
 	return pbResponse, nil
+}
+
+// DefaultStrictUpdateContact clears first level 1:many children and then executes a gorm update call
+func DefaultStrictUpdateContact(ctx context.Context, in *Contact, db *gorm.DB) (*Contact, error) {
+	if in == nil {
+		return nil, fmt.Errorf("Nil argument to DefaultCascadedUpdateContact")
+	}
+	ormObj, err := ConvertContactToORM(*in)
+	if err != nil {
+		return nil, err
+	}
+	tx := db.Begin()
+	if err = tx.Save(&ormObj).Error; err != nil {
+		tx.Rollback()
+		return nil, err
+	}
+	pbResponse, err := ConvertContactFromORM(ormObj)
+	if err != nil {
+		return nil, err
+	}
+	tx.Commit()
+	return &pbResponse, nil
 }

@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"reflect"
 	"strings"
 
 	"github.com/gogo/protobuf/proto"
@@ -16,7 +17,7 @@ import (
 var convertibleTypes = make(map[string]struct{})
 
 // All message objects
-var typeNames = make(map[string]generator.Descriptor)
+var typeNames = make(map[string]*generator.Descriptor)
 
 const (
 	typeMessage = 11
@@ -84,7 +85,7 @@ func (p *ormPlugin) Generate(file *generator.FileDescriptor) {
 			continue
 		}
 		unlintedTypeName := generator.CamelCaseSlice(msg.TypeName())
-		typeNames[unlintedTypeName] = *msg
+		typeNames[unlintedTypeName] = msg
 		if msg.Options != nil {
 			v, err := proto.GetExtension(msg.Options, gorm.E_Opts)
 			opts := v.(*gorm.GormMessageOptions)
@@ -431,6 +432,7 @@ func (p *ormPlugin) generateDefaultHandlers(file *generator.FileDescriptor) {
 		p.generateUpdateHandler(message)
 		p.generateDeleteHandler(message)
 		p.generateListHandler(message)
+		p.generateStrictUpdateHandler(message)
 	}
 }
 
@@ -529,7 +531,8 @@ func (p *ormPlugin) generateUpdateHandler(message *generator.Descriptor) {
 	p.P(`return nil, errors.New("Nil argument to DefaultUpdate`, typeName, `")`)
 	p.P(`}`)
 	if isMultiTenant {
-		p.P(fmt.Sprintf("if exists, err := DefaultRead%s(ctx, &%s{Id: in.GetId()}, db); err != nil {", typeName, typeName))
+		p.P(fmt.Sprintf("if exists, err := DefaultRead%s(ctx, &%s{Id: in.GetId()}, db); err != nil {",
+			typeName, typeName))
 		p.P("return nil, err")
 		p.P("} else if exists == nil {")
 		p.P(fmt.Sprintf("return nil, errors.New(\"%s not found\")", typeName))
@@ -576,8 +579,9 @@ func (p *ormPlugin) generateDeleteHandler(message *generator.Descriptor) {
 func (p *ormPlugin) generateListHandler(message *generator.Descriptor) {
 	typeNamePb, typeName, _ := getTypeNames(message)
 
-	p.P(`// DefaultList`, typeName, ` executes a basic gorm find call`)
-	p.P(`func DefaultList`, typeName, `(ctx context.Context, db *`, p.gormPkgName, `.DB) ([]*`, typeNamePb, `, error) {`)
+	p.P(`// DefaultList`, typeName, ` executes a gorm list call`)
+	p.P(`func DefaultList`, typeName, `(ctx context.Context, db *`, p.gormPkgName,
+		`.DB) ([]*`, typeName, `, error) {`)
 	p.P(`ormResponse := []`, typeName, `ORM{}`)
 	p.P(`db, err := `, p.lftPkgName, `.ApplyCollectionOperators(db, ctx)`)
 	p.P(`if err != nil {`)
@@ -602,6 +606,158 @@ func (p *ormPlugin) generateListHandler(message *generator.Descriptor) {
 	p.P(`pbResponse = append(pbResponse, &temp)`)
 	p.P(`}`)
 	p.P(`return pbResponse, nil`)
+	p.P(`}`)
+	p.P()
+}
+
+/////////// For association removal during update
+
+// findAssociationKeys should return a map[childFK]parentKeyField
+func (p *ormPlugin) findAssociationKeys(parent *generator.Descriptor,
+	child *generator.Descriptor, field *descriptor.FieldDescriptorProto) map[string]string {
+	// Check for gorm tags
+	_, parentTypeName, _ := getTypeNames(parent)
+	keyMap := make(map[string]string)
+	defaultKeyMap := map[string]string{fmt.Sprintf("%sID", parentTypeName): "ID"}
+	childFields := []string{fmt.Sprintf("%sID", parentTypeName)}
+	parentFields := []string{"ID"}
+	if field.Options == nil {
+		return defaultKeyMap
+	}
+	v, err := proto.GetExtension(field.Options, gorm.E_Field)
+	if err != nil {
+		return defaultKeyMap
+	}
+	gfOptions, ok := v.(*gorm.GormFieldOptions)
+	if !ok || gfOptions.Tags == nil {
+		return defaultKeyMap
+	}
+	tag := gfOptions.GetTags()
+	value, ok := reflect.StructTag(tag).Lookup("gorm")
+	if !ok {
+		return defaultKeyMap
+	}
+	tagParts := strings.Split(value, ";") // Can have multiple ';' separated tags
+	for _, arg := range tagParts {
+		tagType := strings.Split(arg, ":") // tags follow key:value convention
+		tagType[0] = strings.ToLower(tagType[0])
+		if tagType[0] == "many2many" {
+			// Not there just yet
+		} else if tagType[0] == "foreignkey" {
+			childFields = []string{}
+			for _, fName := range strings.Split(tagType[1], ",") { // for compound key
+				childFields = append(childFields, lintName(generator.CamelCase(fName)))
+			}
+		} else if tagType[0] == "association_foreignkey" {
+			parentFields = []string{}
+			for _, fName := range strings.Split(tagType[1], ",") { // for compound key
+				parentFields = append(parentFields, lintName(generator.CamelCase(fName)))
+			}
+		}
+	}
+
+	if len(childFields) != len(parentFields) {
+		p.Fail(`Number of foreign keys and association foreign keys between type `,
+			parentTypeName, ` and `, field.GetName(), ` didn't match`)
+	} else {
+		for i, child := range childFields {
+			keyMap[child] = parentFields[i]
+		}
+	}
+	return keyMap
+}
+
+// guessZeroValue of the input type, so that we can check if a (key) value is set or not
+func guessZeroValue(typeName string) string {
+	typeName = strings.ToLower(typeName)
+	if strings.Contains(typeName, "string") {
+		return `""`
+	}
+	if strings.Contains(typeName, "int") {
+		return `0`
+	}
+	if strings.Contains(typeName, "uuid") {
+		return `uuid.Nil`
+	}
+	return ``
+}
+
+func (p *ormPlugin) removeChildAssociations(message *generator.Descriptor) {
+	_, typeName, _ := getTypeNames(message)
+	if _, exists := typeNames[typeName]; !exists {
+		return
+	}
+	for _, field := range message.Field {
+		// Only looking at slices
+		if !field.IsRepeated() {
+			continue
+		}
+		fieldType, _ := p.GoType(message, field)
+		rawFieldType := strings.Trim(fieldType, "[]*")
+		// Has to be ORMable
+		if _, exists := convertibleTypes[rawFieldType]; !exists {
+			continue
+		}
+
+		// Prep the filter for the child objects of this type
+		keys := p.findAssociationKeys(message, typeNames[typeName], field)
+		childFKeyTypeName := ""
+		p.P(`filterObj`, rawFieldType, ` := `, rawFieldType, `{}`)
+		for k, v := range keys {
+			for _, childField := range typeNames[rawFieldType].GetField() {
+				if strings.EqualFold(childField.GetName(), k) {
+					childFKeyTypeName, _ = p.GoType(message, childField)
+					break
+				}
+			}
+			// If we accidentally delete without a set PK in our filter, everything might go
+			if strings.Contains(childFKeyTypeName, "*") {
+				p.P(`if ormObj.`, v, ` == nil || *ormObj.`, v, ` == `,
+					guessZeroValue(childFKeyTypeName), ` {`)
+			} else {
+				p.P(`if ormObj.`, v, ` == `, guessZeroValue(childFKeyTypeName), ` {`)
+			}
+			p.P(`tx.Rollback()`)
+			p.P(`return nil, errors.New("Can't do overwriting update with no '`, v,
+				`' value for FK of field '`, lintName(generator.CamelCase(field.GetName())), `'")`)
+			p.P(`}`)
+
+			p.P(`filterObj`, rawFieldType, `.`, k, ` = ormObj.`, v)
+		}
+
+		p.P(`if err := tx.Where(filterObj`, rawFieldType, `).Delete(`,
+			strings.Trim(fieldType, "[]*"), `{}).Error; err != nil {`)
+		p.P(`tx.Rollback()`)
+		p.P(`return nil, err`)
+		p.P(`}`)
+	}
+
+}
+
+func (p *ormPlugin) generateStrictUpdateHandler(message *generator.Descriptor) {
+	typeNamePb, typeName, _ := getTypeNames(message)
+	p.P(`// DefaultStrictUpdate`, typeName, ` clears first level 1:many children and then executes a gorm update call`)
+	p.P(`func DefaultStrictUpdate`, typeName, `(ctx context.Context, in *`,
+		typeNamePb, `, db *`, p.gormPkgName, `.DB) (`, `*`, typeNamePb, `, error) {`)
+	p.P(`if in == nil {`)
+	p.P(`return nil, fmt.Errorf("Nil argument to DefaultCascadedUpdate`, typeName, `")`)
+	p.P(`}`)
+	p.P(`ormObj, err := Convert`, typeName, `ToORM(*in)`)
+	p.P(`if err != nil {`)
+	p.P(`return nil, err`)
+	p.P(`}`)
+	p.P(`tx := db.Begin()`)
+	p.removeChildAssociations(message)
+	p.P(`if err = tx.Save(&ormObj).Error; err != nil {`)
+	p.P(`tx.Rollback()`)
+	p.P(`return nil, err`)
+	p.P(`}`)
+	p.P(`pbResponse, err := Convert`, typeName, `FromORM(ormObj)`)
+	p.P(`if err != nil {`)
+	p.P(`return nil, err`)
+	p.P(`}`)
+	p.P(`tx.Commit()`)
+	p.P(`return &pbResponse, nil`)
 	p.P(`}`)
 	p.P()
 }
