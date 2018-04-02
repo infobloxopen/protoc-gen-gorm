@@ -41,12 +41,12 @@ var wellKnownTypes = map[string]string{
 
 type ormPlugin struct {
 	*generator.Generator
-	generator.PluginImports
 	wktPkgName  string
 	gormPkgName string
 	lftPkgName  string // 'Locally Famous Types', used for collection operators
 	usingUUID   bool
 	usingTime   bool
+	usingAuth   bool
 }
 
 func (p *ormPlugin) GenerateImports(file *generator.FileDescriptor) {
@@ -64,6 +64,9 @@ func (p *ormPlugin) GenerateImports(file *generator.FileDescriptor) {
 		p.PrintImport("time", "time")
 		p.PrintImport("ptypes", "github.com/golang/protobuf/ptypes")
 	}
+	if p.usingAuth {
+		p.PrintImport("auth", "github.com/Infoblox-CTO/ngp.api.toolkit/mw/auth")
+	}
 }
 
 func (p *ormPlugin) Name() string {
@@ -75,8 +78,6 @@ func (p *ormPlugin) Init(g *generator.Generator) {
 }
 
 func (p *ormPlugin) Generate(file *generator.FileDescriptor) {
-
-	p.PluginImports = generator.NewPluginImports(p.Generator)
 
 	// Preload just the types we'll be creating
 	for _, msg := range file.Messages() {
@@ -577,7 +578,7 @@ func (p *ormPlugin) generateDeleteHandler(message *generator.Descriptor) {
 }
 
 func (p *ormPlugin) generateListHandler(message *generator.Descriptor) {
-	typeNamePb, typeName, _ := getTypeNames(message)
+	typeNamePb, typeName, typeNameOrm := getTypeNames(message)
 
 	p.P(`// DefaultList`, typeName, ` executes a gorm list call`)
 	p.P(`func DefaultList`, typeName, `(ctx context.Context, db *`, p.gormPkgName,
@@ -592,7 +593,7 @@ func (p *ormPlugin) generateListHandler(message *generator.Descriptor) {
 		p.P("if tIDErr != nil {")
 		p.P("return nil, tIDErr")
 		p.P("}")
-		p.P("db = db.Where(&ContactORM{TenantID: tenantID})")
+		p.P(`db = db.Where(&`, typeNameOrm, `{TenantID: tenantID})`)
 	}
 	p.P(`if err := db.Set("gorm:auto_preload", true).Find(&ormResponse).Error; err != nil {`)
 	p.P(`return nil, err`)
@@ -682,10 +683,11 @@ func guessZeroValue(typeName string) string {
 	return ``
 }
 
-func (p *ormPlugin) removeChildAssociations(message *generator.Descriptor) {
+func (p *ormPlugin) removeChildAssociations(message *generator.Descriptor) bool {
 	_, typeName, _ := getTypeNames(message)
+	usedTenantID := false
 	if _, exists := typeNames[typeName]; !exists {
-		return
+		return usedTenantID
 	}
 	for _, field := range message.Field {
 		// Only looking at slices
@@ -702,7 +704,7 @@ func (p *ormPlugin) removeChildAssociations(message *generator.Descriptor) {
 		// Prep the filter for the child objects of this type
 		keys := p.findAssociationKeys(message, typeNames[typeName], field)
 		childFKeyTypeName := ""
-		p.P(`filterObj`, rawFieldType, ` := `, rawFieldType, `{}`)
+		p.P(`filterObj`, rawFieldType, ` := `, rawFieldType, `ORM{}`)
 		for k, v := range keys {
 			for _, childField := range typeNames[rawFieldType].GetField() {
 				if strings.EqualFold(childField.GetName(), k) {
@@ -717,25 +719,31 @@ func (p *ormPlugin) removeChildAssociations(message *generator.Descriptor) {
 			} else {
 				p.P(`if ormObj.`, v, ` == `, guessZeroValue(childFKeyTypeName), ` {`)
 			}
-			p.P(`tx.Rollback()`)
 			p.P(`return nil, errors.New("Can't do overwriting update with no '`, v,
 				`' value for FK of field '`, lintName(generator.CamelCase(field.GetName())), `'")`)
 			p.P(`}`)
 
 			p.P(`filterObj`, rawFieldType, `.`, k, ` = ormObj.`, v)
 		}
+		if opts := p.GetMessageOptions(typeNames[rawFieldType]); opts != nil && opts.GetMultiTenant() {
+			p.P("tenantID, tIDErr := auth.GetTenantID(ctx)")
+			p.P("if tIDErr != nil {")
+			p.P("return nil, tIDErr")
+			p.P("}")
+			p.P(`filterObj`, rawFieldType, `.TenantID = tenantID`)
+			usedTenantID = true
+		}
 
-		p.P(`if err := tx.Where(filterObj`, rawFieldType, `).Delete(`,
+		p.P(`if err = db.Where(filterObj`, rawFieldType, `).Delete(`,
 			strings.Trim(fieldType, "[]*"), `{}).Error; err != nil {`)
-		p.P(`tx.Rollback()`)
 		p.P(`return nil, err`)
 		p.P(`}`)
 	}
-
+	return usedTenantID
 }
 
 func (p *ormPlugin) generateStrictUpdateHandler(message *generator.Descriptor) {
-	typeNamePb, typeName, _ := getTypeNames(message)
+	typeNamePb, typeName, typeNameOrm := getTypeNames(message)
 	p.P(`// DefaultStrictUpdate`, typeName, ` clears first level 1:many children and then executes a gorm update call`)
 	p.P(`func DefaultStrictUpdate`, typeName, `(ctx context.Context, in *`,
 		typeNamePb, `, db *`, p.gormPkgName, `.DB) (`, `*`, typeNamePb, `, error) {`)
@@ -746,17 +754,23 @@ func (p *ormPlugin) generateStrictUpdateHandler(message *generator.Descriptor) {
 	p.P(`if err != nil {`)
 	p.P(`return nil, err`)
 	p.P(`}`)
-	p.P(`tx := db.Begin()`)
-	p.removeChildAssociations(message)
-	p.P(`if err = tx.Save(&ormObj).Error; err != nil {`)
-	p.P(`tx.Rollback()`)
+	usedTenantID := p.removeChildAssociations(message)
+	if opts := p.GetMessageOptions(message); opts != nil && opts.GetMultiTenant() {
+		if !usedTenantID {
+			p.P("tenantID, tIDErr := auth.GetTenantID(ctx)")
+			p.P("if tIDErr != nil {")
+			p.P("return nil, tIDErr")
+			p.P("}")
+		}
+		p.P(`db = db.Where(&`, typeNameOrm, `{TenantID: tenantID})`)
+	}
+	p.P(`if err = db.Save(&ormObj).Error; err != nil {`)
 	p.P(`return nil, err`)
 	p.P(`}`)
 	p.P(`pbResponse, err := Convert`, typeName, `FromORM(ormObj)`)
 	p.P(`if err != nil {`)
 	p.P(`return nil, err`)
 	p.P(`}`)
-	p.P(`tx.Commit()`)
 	p.P(`return &pbResponse, nil`)
 	p.P(`}`)
 	p.P()
