@@ -8,8 +8,8 @@ import fmt "fmt"
 import math "math"
 import _ "github.com/infobloxopen/protoc-gen-gorm/options"
 import gormable_types "github.com/infobloxopen/protoc-gen-gorm/types"
-import google_protobuf1 "github.com/golang/protobuf/ptypes/wrappers"
-import google_protobuf2 "github.com/golang/protobuf/ptypes/empty"
+import google_protobuf2 "github.com/golang/protobuf/ptypes/wrappers"
+import google_protobuf "github.com/golang/protobuf/ptypes/empty"
 import google_protobuf3 "github.com/golang/protobuf/ptypes/timestamp"
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -39,15 +39,15 @@ var TestTypesStatus_value = map[string]int32{
 func (x TestTypesStatus) String() string {
 	return proto.EnumName(TestTypesStatus_name, int32(x))
 }
-func (TestTypesStatus) EnumDescriptor() ([]byte, []int) { return fileDescriptor2, []int{0, 0} }
+func (TestTypesStatus) EnumDescriptor() ([]byte, []int) { return fileDescriptor1, []int{0, 0} }
 
 // test_types is a message that serves as an example
 type TestTypes struct {
 	ApiOnlyString  string                        `protobuf:"bytes,1,opt,name=api_only_string,json=apiOnlyString" json:"api_only_string,omitempty"`
 	Numbers        []int32                       `protobuf:"varint,2,rep,packed,name=numbers" json:"numbers,omitempty"`
-	OptionalString *google_protobuf1.StringValue `protobuf:"bytes,3,opt,name=optional_string,json=optionalString" json:"optional_string,omitempty"`
+	OptionalString *google_protobuf2.StringValue `protobuf:"bytes,3,opt,name=optional_string,json=optionalString" json:"optional_string,omitempty"`
 	BecomesInt     TestTypesStatus               `protobuf:"varint,4,opt,name=becomes_int,json=becomesInt,enum=example.TestTypesStatus" json:"becomes_int,omitempty"`
-	Nothingness    *google_protobuf2.Empty       `protobuf:"bytes,5,opt,name=nothingness" json:"nothingness,omitempty"`
+	Nothingness    *google_protobuf.Empty        `protobuf:"bytes,5,opt,name=nothingness" json:"nothingness,omitempty"`
 	Uuid           *gormable_types.UUIDValue     `protobuf:"bytes,6,opt,name=uuid" json:"uuid,omitempty"`
 	CreatedAt      *google_protobuf3.Timestamp   `protobuf:"bytes,7,opt,name=created_at,json=createdAt" json:"created_at,omitempty"`
 }
@@ -55,7 +55,7 @@ type TestTypes struct {
 func (m *TestTypes) Reset()                    { *m = TestTypes{} }
 func (m *TestTypes) String() string            { return proto.CompactTextString(m) }
 func (*TestTypes) ProtoMessage()               {}
-func (*TestTypes) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{0} }
+func (*TestTypes) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{0} }
 
 func (m *TestTypes) GetApiOnlyString() string {
 	if m != nil {
@@ -71,7 +71,7 @@ func (m *TestTypes) GetNumbers() []int32 {
 	return nil
 }
 
-func (m *TestTypes) GetOptionalString() *google_protobuf1.StringValue {
+func (m *TestTypes) GetOptionalString() *google_protobuf2.StringValue {
 	if m != nil {
 		return m.OptionalString
 	}
@@ -85,7 +85,7 @@ func (m *TestTypes) GetBecomesInt() TestTypesStatus {
 	return TestTypes_UNKNOWN
 }
 
-func (m *TestTypes) GetNothingness() *google_protobuf2.Empty {
+func (m *TestTypes) GetNothingness() *google_protobuf.Empty {
 	if m != nil {
 		return m.Nothingness
 	}
@@ -115,7 +115,7 @@ type TypeWithId struct {
 func (m *TypeWithId) Reset()                    { *m = TypeWithId{} }
 func (m *TypeWithId) String() string            { return proto.CompactTextString(m) }
 func (*TypeWithId) ProtoMessage()               {}
-func (*TypeWithId) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{1} }
+func (*TypeWithId) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{1} }
 
 func (m *TypeWithId) GetIp() string {
 	if m != nil {
@@ -146,7 +146,7 @@ type MultitenantTypeWithId struct {
 func (m *MultitenantTypeWithId) Reset()                    { *m = MultitenantTypeWithId{} }
 func (m *MultitenantTypeWithId) String() string            { return proto.CompactTextString(m) }
 func (*MultitenantTypeWithId) ProtoMessage()               {}
-func (*MultitenantTypeWithId) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{2} }
+func (*MultitenantTypeWithId) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{2} }
 
 func (m *MultitenantTypeWithId) GetId() uint64 {
 	if m != nil {
@@ -169,7 +169,7 @@ type MultitenantTypeWithoutId struct {
 func (m *MultitenantTypeWithoutId) Reset()                    { *m = MultitenantTypeWithoutId{} }
 func (m *MultitenantTypeWithoutId) String() string            { return proto.CompactTextString(m) }
 func (*MultitenantTypeWithoutId) ProtoMessage()               {}
-func (*MultitenantTypeWithoutId) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{3} }
+func (*MultitenantTypeWithoutId) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{3} }
 
 func (m *MultitenantTypeWithoutId) GetSomeField() string {
 	if m != nil {
@@ -185,7 +185,7 @@ type ApiOnlyType struct {
 func (m *ApiOnlyType) Reset()                    { *m = ApiOnlyType{} }
 func (m *ApiOnlyType) String() string            { return proto.CompactTextString(m) }
 func (*ApiOnlyType) ProtoMessage()               {}
-func (*ApiOnlyType) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{4} }
+func (*ApiOnlyType) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{4} }
 
 func (m *ApiOnlyType) GetContents() string {
 	if m != nil {
@@ -201,7 +201,7 @@ type TypeBecomesEmpty struct {
 func (m *TypeBecomesEmpty) Reset()                    { *m = TypeBecomesEmpty{} }
 func (m *TypeBecomesEmpty) String() string            { return proto.CompactTextString(m) }
 func (*TypeBecomesEmpty) ProtoMessage()               {}
-func (*TypeBecomesEmpty) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{5} }
+func (*TypeBecomesEmpty) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{5} }
 
 func (m *TypeBecomesEmpty) GetAThing() *ApiOnlyType {
 	if m != nil {
@@ -220,9 +220,9 @@ func init() {
 	proto.RegisterEnum("example.TestTypesStatus", TestTypesStatus_name, TestTypesStatus_value)
 }
 
-func init() { proto.RegisterFile("example/feature_demo/test.proto", fileDescriptor2) }
+func init() { proto.RegisterFile("example/feature_demo/test.proto", fileDescriptor1) }
 
-var fileDescriptor2 = []byte{
+var fileDescriptor1 = []byte{
 	// 690 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x54, 0x5d, 0x6b, 0xe3, 0x38,
 	0x14, 0x5d, 0x3b, 0x69, 0x92, 0xde, 0x6c, 0x93, 0xa0, 0x2e, 0x8b, 0x93, 0xee, 0x6e, 0xb3, 0x66,

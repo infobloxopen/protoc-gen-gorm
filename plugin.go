@@ -52,6 +52,7 @@ type ormPlugin struct {
 func (p *ormPlugin) GenerateImports(file *generator.FileDescriptor) {
 	if p.gormPkgName != "" {
 		p.PrintImport("context", "context")
+		p.PrintImport("grpc", "google.golang.org/grpc")
 		p.PrintImport("errors", "errors")
 		p.PrintImport(p.gormPkgName, "github.com/jinzhu/gorm")
 		p.PrintImport(p.lftPkgName, "github.com/Infoblox-CTO/ngp.api.toolkit/op/gorm")
@@ -112,6 +113,8 @@ func (p *ormPlugin) Generate(file *generator.FileDescriptor) {
 	p.P(`////////////////////////// CURDL for objects`)
 	p.generateDefaultHandlers(file)
 	p.P()
+
+	p.generateDefaultServer(file)
 }
 
 func (p *ormPlugin) generateMessages(message *generator.Descriptor) {
@@ -608,6 +611,109 @@ func (p *ormPlugin) generateListHandler(message *generator.Descriptor) {
 	p.P(`return pbResponse, nil`)
 	p.P(`}`)
 	p.P()
+}
+
+func (p *ormPlugin) generateDefaultServer(file *generator.FileDescriptor) {
+	for _, service := range file.GetService() {
+		svcName := lintName(generator.CamelCase(service.GetName()))
+		if service.Options != nil {
+			v, err := proto.GetExtension(service.GetOptions(), gorm.E_Server)
+			opts := v.(*gorm.AutoServerOptions)
+			if err == nil && opts != nil && *opts.Autogen {
+				// All the default server has is a db connection
+				p.P(`type `, svcName, `DefaultServer struct {`)
+				p.P(`DB *`, p.gormPkgName, `.DB`)
+				p.P(`}`)
+				for _, method := range service.GetMethod() {
+					methodName := lintName(generator.CamelCase(method.GetName()))
+					if strings.HasPrefix(methodName, "Create") {
+						p.generateCreateServerMethod(service, method)
+					} else if strings.HasPrefix(methodName, "Read") {
+						p.generateReadServerMethod(service, method)
+					} else if strings.HasPrefix(methodName, "Update") {
+						p.generateUpdateServerMethod(service, method)
+					} else if strings.HasPrefix(methodName, "Delete") {
+						p.generateDeleteServerMethod(service, method)
+					} else if strings.HasPrefix(methodName, "List") {
+						p.generateListServerMethod(service, method)
+					} else {
+						p.generateMethodStub(service, method)
+					}
+				}
+			}
+		}
+	}
+}
+
+func (p *ormPlugin) generateCreateServerMethod(service *descriptor.ServiceDescriptorProto, method *descriptor.MethodDescriptorProto) {
+	inType, outType, methodName, svcName := p.getMethodProps(service, method)
+	p.generateMethodSignature(inType, outType, methodName, svcName)
+	p.P(`var out `, p.TypeName(outType))
+	p.P(`res, err := DefaultCreate`, strings.TrimPrefix(methodName, "Create"), `(ctx, in.GetPayload(), db)`)
+	p.P(`out.Result = res`)
+	p.P(`return &out, err`)
+	p.P(`}`)
+}
+
+func (p *ormPlugin) generateReadServerMethod(service *descriptor.ServiceDescriptorProto, method *descriptor.MethodDescriptorProto) {
+	inType, outType, methodName, svcName := p.getMethodProps(service, method)
+	p.generateMethodSignature(inType, outType, methodName, svcName)
+	p.P(`var out `, p.TypeName(outType))
+	p.P(`res, err := DefaultRead`, strings.TrimPrefix(methodName, "Read"), `(ctx, in.GetPayload(), db)`)
+	p.P(`out.Result = res`)
+	p.P(`return &out, err`)
+	p.P(`}`)
+}
+
+func (p *ormPlugin) generateUpdateServerMethod(service *descriptor.ServiceDescriptorProto, method *descriptor.MethodDescriptorProto) {
+	inType, outType, methodName, svcName := p.getMethodProps(service, method)
+	p.generateMethodSignature(inType, outType, methodName, svcName)
+	p.P(`var out `, p.TypeName(outType))
+	p.P(`res, err := DefaultUpdate`, strings.TrimPrefix(methodName, "Update"), `(ctx, in.GetPayload(), db)`)
+	p.P(`out.Result = res`)
+	p.P(`return &out, err`)
+	p.P(`}`)
+}
+
+func (p *ormPlugin) generateDeleteServerMethod(service *descriptor.ServiceDescriptorProto, method *descriptor.MethodDescriptorProto) {
+	inType, outType, methodName, svcName := p.getMethodProps(service, method)
+	p.generateMethodSignature(inType, outType, methodName, svcName)
+	p.P(`return nil, DefaultDelete`, strings.TrimPrefix(methodName, "Delete"), `(ctx, in.GetPayload(), db)`)
+	p.P(`}`)
+}
+
+func (p *ormPlugin) generateListServerMethod(service *descriptor.ServiceDescriptorProto, method *descriptor.MethodDescriptorProto) {
+	inType, outType, methodName, svcName := p.getMethodProps(service, method)
+	p.generateMethodSignature(inType, outType, methodName, svcName)
+	p.P(`var out `, p.TypeName(outType))
+	p.P(`res, err := DefaultList`, strings.TrimPrefix(methodName, "List"), `(ctx, db)`)
+	p.P(`l.Results = res`)
+	p.P(`return &out, err`)
+	p.P(`}`)
+}
+
+func (p *ormPlugin) generateMethodStub(service *descriptor.ServiceDescriptorProto, method *descriptor.MethodDescriptorProto) {
+	inType, outType, methodName, svcName := p.getMethodProps(service, method)
+	p.generateMethodSignature(inType, outType, methodName, svcName)
+	p.P(`return nil, nil`)
+	p.P(`}`)
+}
+
+func (p *ormPlugin) generateMethodSignature(inType, outType generator.Object, methodName, svcName string) {
+	p.P(`// `, methodName, ` ...`)
+	p.P(`func (m *`, svcName, `DefaultServer) `, methodName, ` (ctx context.Context, in *`,
+		p.TypeName(inType), `, opts ...grpc.CallOption) (*`, p.TypeName(outType), `, error) {`)
+}
+
+func (p *ormPlugin) getMethodProps(service *descriptor.ServiceDescriptorProto,
+	method *descriptor.MethodDescriptorProto) (generator.Object, generator.Object, string, string) {
+	inType := p.ObjectNamed(method.GetInputType())
+	p.RecordTypeUse(method.GetInputType())
+	outType := p.ObjectNamed(method.GetOutputType())
+	p.RecordTypeUse(method.GetOutputType())
+	methodName := lintName(generator.CamelCase(method.GetName()))
+	svcName := lintName(generator.CamelCase(service.GetName()))
+	return inType, outType, methodName, svcName
 }
 
 /////////// For association removal during update

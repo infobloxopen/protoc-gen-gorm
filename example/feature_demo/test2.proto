@@ -1,8 +1,8 @@
 syntax = "proto3";
 
 package example;
+import "google/protobuf/empty.proto";
 import "github.com/infobloxopen/protoc-gen-gorm/options/gorm.proto";
-import "example/feature_demo/test.proto";
 
 option go_package = "github.com/infobloxopen/protoc-gen-gorm/example/feature_demo;example";
 
@@ -13,8 +13,44 @@ message int_point {
   int32 y = 3;
 }
 
-service PointService {
-  rpc CreateIntPoint ( int_point ) returns ( int_point ) {}
-  rpc ReadIntPoint ( int_point ) returns ( int_point ) {}
-  rpc UpdateIntPoint ( int_point ) returns ( int_point ) {}
+message CreateIntPointRequest {
+    int_point payload = 1;
+}
+
+message CreateIntPointResponse {
+    int_point result = 1;
+}
+
+message ReadIntPointRequest {
+    int_point payload = 1;
+}
+
+message ReadIntPointResponse {
+    int_point result = 1;
+}
+
+message UpdateIntPointRequest {
+    int_point payload = 1;
+}
+
+message UpdateIntPointResponse {
+    int_point result = 1;
+}
+
+message DeleteIntPointRequest {
+    int_point payload = 1;
+}
+
+message ListIntPointResponse {
+    repeated int_point results = 1;
+}
+
+service Point {
+  option (gorm.server).autogen = true;
+  rpc CreateIntPoint ( CreateIntPointRequest ) returns ( CreateIntPointResponse ) {}
+  rpc ReadIntPoint ( ReadIntPointRequest ) returns ( ReadIntPointResponse ) {}
+  rpc UpdateIntPoint ( UpdateIntPointRequest ) returns ( UpdateIntPointResponse ) {}
+  rpc ListIntPoint ( google.protobuf.Empty ) returns ( ListIntPointResponse ) {}
+  rpc DeleteIntPoint ( DeleteIntPointRequest ) returns  ( google.protobuf.Empty ) {}
+  rpc CustomMethod ( google.protobuf.Empty ) returns  ( google.protobuf.Empty ) {}
 }

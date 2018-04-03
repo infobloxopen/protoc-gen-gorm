@@ -44,20 +44,11 @@ message GormFieldOptions {
   optional bool drop = 2;
 }
 
-
 // To be used in (leiu of) the interceptor
 extend google.protobuf.ServiceOptions {
-  optional AutoServiceOptions service = 52119;
+  optional AutoServerOptions server = 52119;
 }
 
-message AutoServiceOptions {
+message AutoServerOptions {
   optional bool autogen = 1;
-}
-
-extend google.protobuf.MethodOptions {
-  optional RpcOptions method = 52119;
-}
-
-message RpcOptions {
-  optional bool exclude = 1;
 }

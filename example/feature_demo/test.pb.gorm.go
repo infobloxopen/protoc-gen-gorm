@@ -4,6 +4,7 @@
 package example
 
 import context "context"
+import grpc "google.golang.org/grpc"
 import errors "errors"
 import gorm "github.com/jinzhu/gorm"
 import ops "github.com/Infoblox-CTO/ngp.api.toolkit/op/gorm"
@@ -14,9 +15,10 @@ import ptypes "github.com/golang/protobuf/ptypes"
 import proto "github.com/gogo/protobuf/proto"
 import fmt "fmt"
 import math "math"
+import _ "github.com/infobloxopen/protoc-gen-gorm/options"
 import _ "github.com/infobloxopen/protoc-gen-gorm/types"
-import google_protobuf1 "github.com/golang/protobuf/ptypes/wrappers"
-import google_protobuf2 "github.com/golang/protobuf/ptypes/empty"
+import google_protobuf2 "github.com/golang/protobuf/ptypes/wrappers"
+import google_protobuf "github.com/golang/protobuf/ptypes/empty"
 import _ "github.com/golang/protobuf/ptypes/timestamp"
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -71,7 +73,7 @@ func ConvertTestTypesFromORM(from TestTypesORM) (TestTypes, error) {
 	// Skipping field: ApiOnlyString
 	// Repeated type []int32 is not an ORMable message type
 	if from.OptionalString != nil {
-		to.OptionalString = &google_protobuf1.StringValue{Value: *from.OptionalString}
+		to.OptionalString = &google_protobuf2.StringValue{Value: *from.OptionalString}
 	}
 	to.BecomesInt = TestTypesStatus(from.BecomesInt)
 	to.Uuid = &gtypes.UUIDValue{Value: from.UUID.String()}
