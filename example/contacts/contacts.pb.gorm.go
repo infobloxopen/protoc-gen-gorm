@@ -17,7 +17,6 @@ It has these top-level messages:
 package contacts
 
 import context "context"
-import grpc "google.golang.org/grpc"
 import errors "errors"
 import gorm "github.com/jinzhu/gorm"
 import ops "github.com/Infoblox-CTO/ngp.api.toolkit/op/gorm"

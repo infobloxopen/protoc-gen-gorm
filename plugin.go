@@ -47,15 +47,18 @@ type ormPlugin struct {
 	usingUUID   bool
 	usingTime   bool
 	usingAuth   bool
+	usingGRPC   bool
 }
 
 func (p *ormPlugin) GenerateImports(file *generator.FileDescriptor) {
 	if p.gormPkgName != "" {
 		p.PrintImport("context", "context")
-		p.PrintImport("grpc", "google.golang.org/grpc")
 		p.PrintImport("errors", "errors")
 		p.PrintImport(p.gormPkgName, "github.com/jinzhu/gorm")
 		p.PrintImport(p.lftPkgName, "github.com/Infoblox-CTO/ngp.api.toolkit/op/gorm")
+	}
+	if p.usingGRPC {
+		p.PrintImport("grpc", "google.golang.org/grpc")
 	}
 	if p.usingUUID {
 		p.PrintImport("uuid", "github.com/satori/go.uuid")
@@ -628,6 +631,7 @@ func (p *ormPlugin) generateDefaultServer(file *generator.FileDescriptor) {
 			v, err := proto.GetExtension(service.GetOptions(), gorm.E_Server)
 			opts := v.(*gorm.AutoServerOptions)
 			if err == nil && opts != nil && *opts.Autogen {
+				p.usingGRPC = true
 				// All the default server has is a db connection
 				p.P(`type `, svcName, `DefaultServer struct {`)
 				p.P(`DB *`, p.gormPkgName, `.DB`)
