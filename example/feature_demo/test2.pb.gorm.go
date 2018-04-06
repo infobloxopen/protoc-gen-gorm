@@ -167,16 +167,13 @@ func DefaultStrictUpdateIntPoint(ctx context.Context, in *IntPoint, db *gorm.DB)
 	if err != nil {
 		return nil, err
 	}
-	tx := db.Begin()
-	if err = tx.Save(&ormObj).Error; err != nil {
-		tx.Rollback()
+	if err = db.Save(&ormObj).Error; err != nil {
 		return nil, err
 	}
 	pbResponse, err := ConvertIntPointFromORM(ormObj)
 	if err != nil {
 		return nil, err
 	}
-	tx.Commit()
 	return &pbResponse, nil
 }
 

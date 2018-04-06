@@ -317,16 +317,13 @@ func DefaultStrictUpdateTestTypes(ctx context.Context, in *TestTypes, db *gorm.D
 	if err != nil {
 		return nil, err
 	}
-	tx := db.Begin()
-	if err = tx.Save(&ormObj).Error; err != nil {
-		tx.Rollback()
+	if err = db.Save(&ormObj).Error; err != nil {
 		return nil, err
 	}
 	pbResponse, err := ConvertTestTypesFromORM(ormObj)
 	if err != nil {
 		return nil, err
 	}
-	tx.Commit()
 	return &pbResponse, nil
 }
 
@@ -421,16 +418,13 @@ func DefaultStrictUpdateTypeWithID(ctx context.Context, in *TypeWithId, db *gorm
 	if err != nil {
 		return nil, err
 	}
-	tx := db.Begin()
-	if err = tx.Save(&ormObj).Error; err != nil {
-		tx.Rollback()
+	if err = db.Save(&ormObj).Error; err != nil {
 		return nil, err
 	}
 	pbResponse, err := ConvertTypeWithIDFromORM(ormObj)
 	if err != nil {
 		return nil, err
 	}
-	tx.Commit()
 	return &pbResponse, nil
 }
 
@@ -526,7 +520,7 @@ func DefaultListMultitenantTypeWithID(ctx context.Context, db *gorm.DB) ([]*Mult
 	if tIDErr != nil {
 		return nil, tIDErr
 	}
-	db = db.Where(&ContactORM{TenantID: tenantID})
+	db = db.Where(&MultitenantTypeWithIDORM{TenantID: tenantID})
 	if err := db.Set("gorm:auto_preload", true).Find(&ormResponse).Error; err != nil {
 		return nil, err
 	}
@@ -550,16 +544,18 @@ func DefaultStrictUpdateMultitenantTypeWithID(ctx context.Context, in *Multitena
 	if err != nil {
 		return nil, err
 	}
-	tx := db.Begin()
-	if err = tx.Save(&ormObj).Error; err != nil {
-		tx.Rollback()
+	tenantID, tIDErr := auth.GetTenantID(ctx)
+	if tIDErr != nil {
+		return nil, tIDErr
+	}
+	db = db.Where(&MultitenantTypeWithIDORM{TenantID: tenantID})
+	if err = db.Save(&ormObj).Error; err != nil {
 		return nil, err
 	}
 	pbResponse, err := ConvertMultitenantTypeWithIDFromORM(ormObj)
 	if err != nil {
 		return nil, err
 	}
-	tx.Commit()
 	return &pbResponse, nil
 }
 
@@ -636,7 +632,7 @@ func DefaultListMultitenantTypeWithoutID(ctx context.Context, db *gorm.DB) ([]*M
 	if tIDErr != nil {
 		return nil, tIDErr
 	}
-	db = db.Where(&ContactORM{TenantID: tenantID})
+	db = db.Where(&MultitenantTypeWithoutIDORM{TenantID: tenantID})
 	if err := db.Set("gorm:auto_preload", true).Find(&ormResponse).Error; err != nil {
 		return nil, err
 	}
@@ -660,16 +656,18 @@ func DefaultStrictUpdateMultitenantTypeWithoutID(ctx context.Context, in *Multit
 	if err != nil {
 		return nil, err
 	}
-	tx := db.Begin()
-	if err = tx.Save(&ormObj).Error; err != nil {
-		tx.Rollback()
+	tenantID, tIDErr := auth.GetTenantID(ctx)
+	if tIDErr != nil {
+		return nil, tIDErr
+	}
+	db = db.Where(&MultitenantTypeWithoutIDORM{TenantID: tenantID})
+	if err = db.Save(&ormObj).Error; err != nil {
 		return nil, err
 	}
 	pbResponse, err := ConvertMultitenantTypeWithoutIDFromORM(ormObj)
 	if err != nil {
 		return nil, err
 	}
-	tx.Commit()
 	return &pbResponse, nil
 }
 
@@ -764,15 +762,12 @@ func DefaultStrictUpdateTypeBecomesEmpty(ctx context.Context, in *TypeBecomesEmp
 	if err != nil {
 		return nil, err
 	}
-	tx := db.Begin()
-	if err = tx.Save(&ormObj).Error; err != nil {
-		tx.Rollback()
+	if err = db.Save(&ormObj).Error; err != nil {
 		return nil, err
 	}
 	pbResponse, err := ConvertTypeBecomesEmptyFromORM(ormObj)
 	if err != nil {
 		return nil, err
 	}
-	tx.Commit()
 	return &pbResponse, nil
 }

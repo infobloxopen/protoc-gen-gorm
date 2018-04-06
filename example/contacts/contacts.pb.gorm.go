@@ -191,15 +191,17 @@ func DefaultStrictUpdateContact(ctx context.Context, in *Contact, db *gorm.DB) (
 	if err != nil {
 		return nil, err
 	}
-	tx := db.Begin()
-	if err = tx.Save(&ormObj).Error; err != nil {
-		tx.Rollback()
+	tenantID, tIDErr := auth.GetTenantID(ctx)
+	if tIDErr != nil {
+		return nil, tIDErr
+	}
+	db = db.Where(&ContactORM{TenantID: tenantID})
+	if err = db.Save(&ormObj).Error; err != nil {
 		return nil, err
 	}
 	pbResponse, err := ConvertContactFromORM(ormObj)
 	if err != nil {
 		return nil, err
 	}
-	tx.Commit()
 	return &pbResponse, nil
 }
