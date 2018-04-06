@@ -33,7 +33,7 @@ type TestTypesORM struct {
 	OptionalString *string
 	BecomesInt     int32
 	// Empty type has no ORM equivalency
-	UUID      uuid.UUID `sql:"type:uuid"`
+	UUID      *uuid.UUID `sql:"type:uuid"`
 	CreatedAt time.Time
 }
 
@@ -54,9 +54,11 @@ func ConvertTestTypesToORM(from TestTypes) (TestTypesORM, error) {
 	}
 	to.BecomesInt = int32(from.BecomesInt)
 	if from.Uuid != nil {
-		if to.UUID, err = uuid.FromString(from.Uuid.Value); err != nil {
-			return to, err
+		tempUUID, uErr := uuid.FromString(from.Uuid.Value)
+		if uErr != nil {
+			return to, uErr
 		}
+		to.UUID = &tempUUID
 	}
 	if from.CreatedAt != nil {
 		if to.CreatedAt, err = ptypes.Timestamp(from.CreatedAt); err != nil {
@@ -76,7 +78,9 @@ func ConvertTestTypesFromORM(from TestTypesORM) (TestTypes, error) {
 		to.OptionalString = &google_protobuf2.StringValue{Value: *from.OptionalString}
 	}
 	to.BecomesInt = TestTypesStatus(from.BecomesInt)
-	to.Uuid = &gtypes.UUIDValue{Value: from.UUID.String()}
+	if from.UUID != nil {
+		to.Uuid = &gtypes.UUIDValue{Value: from.UUID.String()}
+	}
 	if to.CreatedAt, err = ptypes.TimestampProto(from.CreatedAt); err != nil {
 		return to, err
 	}
@@ -389,7 +393,7 @@ func DefaultDeleteTypeWithID(ctx context.Context, in *TypeWithId, db *gorm.DB) e
 }
 
 // DefaultListTypeWithID executes a gorm list call
-func DefaultListTypeWithID(ctx context.Context, db *gorm.DB) ([]*TypeWithID, error) {
+func DefaultListTypeWithID(ctx context.Context, db *gorm.DB) ([]*TypeWithId, error) {
 	ormResponse := []TypeWithIDORM{}
 	db, err := ops.ApplyCollectionOperators(db, ctx)
 	if err != nil {
@@ -510,7 +514,7 @@ func DefaultDeleteMultitenantTypeWithID(ctx context.Context, in *MultitenantType
 }
 
 // DefaultListMultitenantTypeWithID executes a gorm list call
-func DefaultListMultitenantTypeWithID(ctx context.Context, db *gorm.DB) ([]*MultitenantTypeWithID, error) {
+func DefaultListMultitenantTypeWithID(ctx context.Context, db *gorm.DB) ([]*MultitenantTypeWithId, error) {
 	ormResponse := []MultitenantTypeWithIDORM{}
 	db, err := ops.ApplyCollectionOperators(db, ctx)
 	if err != nil {
@@ -622,7 +626,7 @@ func DefaultDeleteMultitenantTypeWithoutID(ctx context.Context, in *MultitenantT
 }
 
 // DefaultListMultitenantTypeWithoutID executes a gorm list call
-func DefaultListMultitenantTypeWithoutID(ctx context.Context, db *gorm.DB) ([]*MultitenantTypeWithoutID, error) {
+func DefaultListMultitenantTypeWithoutID(ctx context.Context, db *gorm.DB) ([]*MultitenantTypeWithoutId, error) {
 	ormResponse := []MultitenantTypeWithoutIDORM{}
 	db, err := ops.ApplyCollectionOperators(db, ctx)
 	if err != nil {
