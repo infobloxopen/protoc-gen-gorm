@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+package infoblox.ddi.dns.config;
+
+import "github.com/infobloxopen/protoc-gen-gorm/options/gorm.proto";
+
+option go_package = "github.com/infobloxopen/protoc-gen-gorm/example/bug";
+
+message AclItem {
+    option (gorm.opts) = {ormable: true};
+
+    uint64 id = 1;
+}
+
+message Acl {
+    option (gorm.opts) = {
+      ormable: true,
+      multi_tenant: true
+    };
+
+    uint64 id = 1;
+    repeated AclItem acl_items = 4;
+}
