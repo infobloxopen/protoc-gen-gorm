@@ -47,15 +47,18 @@ type ormPlugin struct {
 	usingUUID   bool
 	usingTime   bool
 	usingAuth   bool
+	usingGRPC   bool
 }
 
 func (p *ormPlugin) GenerateImports(file *generator.FileDescriptor) {
 	if p.gormPkgName != "" {
 		p.PrintImport("context", "context")
-		p.PrintImport("grpc", "google.golang.org/grpc")
 		p.PrintImport("errors", "errors")
 		p.PrintImport(p.gormPkgName, "github.com/jinzhu/gorm")
 		p.PrintImport(p.lftPkgName, "github.com/Infoblox-CTO/ngp.api.toolkit/op/gorm")
+	}
+	if p.usingGRPC {
+		p.PrintImport("grpc", "google.golang.org/grpc")
 	}
 	if p.usingUUID {
 		p.PrintImport("uuid", "github.com/satori/go.uuid")
@@ -120,15 +123,16 @@ func (p *ormPlugin) Generate(file *generator.FileDescriptor) {
 
 func (p *ormPlugin) generateMessages(message *generator.Descriptor) {
 	typeNamePb, _, _ := getTypeNames(message)
-	p.generateMessageComment(message)
+	p.generateMessageHead(message)
 	for _, field := range message.Field {
 		fieldName := generator.CamelCase(field.GetName())
 		fieldType, _ := p.GoType(message, field)
 		var tagString string
 		if field.Options != nil {
-			v, _ := proto.GetExtension(field.Options, gorm.E_Field)
-			if v != nil && v.(*gorm.GormFieldOptions) != nil {
-				if v.(*gorm.GormFieldOptions).Drop != nil && *v.(*gorm.GormFieldOptions).Drop {
+			v, err := proto.GetExtension(field.Options, gorm.E_Field)
+			opts, valid := v.(*gorm.GormFieldOptions)
+			if err == nil && valid && opts != nil {
+				if opts.Drop != nil && *opts.Drop {
 					p.P(`// Skipping field from proto option: `, fieldName)
 					continue
 				}
@@ -156,7 +160,7 @@ func (p *ormPlugin) generateMessages(message *generator.Descriptor) {
 				p.P("// Empty type has no ORM equivalency")
 				continue
 			} else if rawType == protoTypeUUID {
-				fieldType = "uuid.UUID"
+				fieldType = "*uuid.UUID"
 				p.usingUUID = true
 				if tagString == "" {
 					tagString = "`sql:\"type:uuid\"`"
@@ -208,8 +212,9 @@ func getTypeNames(desc *generator.Descriptor) (string, string, string) {
 }
 
 // generateMessageComment pulls from the proto file comment or creates a
-// default comment if none is present there
-func (p *ormPlugin) generateMessageComment(message *generator.Descriptor) {
+// default comment if none is present there, and writes the signature and
+// fields from the proto file options
+func (p *ormPlugin) generateMessageHead(message *generator.Descriptor) {
 	typeNamePb, _, typeNameOrm := getTypeNames(message)
 	// Check for a comment, generate a default if none is provided
 	comment := p.Comments(message.Path())
@@ -228,8 +233,8 @@ func (p *ormPlugin) generateMessageComment(message *generator.Descriptor) {
 	// Checking for any ORM only fields specified by option (gorm.opts).include
 	if message.Options != nil {
 		v, err := proto.GetExtension(message.Options, gorm.E_Opts)
-		opts := v.(*gorm.GormMessageOptions)
-		if err == nil && opts != nil {
+		opts, valid := v.(*gorm.GormMessageOptions)
+		if err == nil && valid && opts != nil {
 			for _, field := range opts.Include {
 				tagString := ""
 				if field.Tags != nil {
@@ -280,8 +285,9 @@ func (p *ormPlugin) generateConvertFunctions(message *generator.Descriptor) {
 		// Checking if field is skipped
 		if field.Options != nil {
 			v, err := proto.GetExtension(field.Options, gorm.E_Field)
-			if err == nil && v.(*gorm.GormFieldOptions) != nil {
-				if v.(*gorm.GormFieldOptions).Drop != nil && *v.(*gorm.GormFieldOptions).Drop {
+			opts, valid := v.(*gorm.GormFieldOptions)
+			if err == nil && valid && opts != nil {
+				if opts.Drop != nil && *opts.Drop {
 					p.P(`// Skipping field: `, generator.CamelCase(field.GetName()))
 					continue
 				}
@@ -303,8 +309,9 @@ func (p *ormPlugin) generateConvertFunctions(message *generator.Descriptor) {
 		// Checking if field is skipped
 		if field.Options != nil {
 			v, err := proto.GetExtension(field.Options, gorm.E_Field)
-			if err == nil && v.(*gorm.GormFieldOptions) != nil {
-				if v.(*gorm.GormFieldOptions).Drop != nil && *v.(*gorm.GormFieldOptions).Drop {
+			opts, valid := v.(*gorm.GormFieldOptions)
+			if err == nil && valid && opts != nil {
+				if opts.Drop != nil && *opts.Drop {
 					p.P(`// Skipping field: `, generator.CamelCase(field.GetName()))
 					continue
 				}
@@ -375,13 +382,16 @@ func (p *ormPlugin) generateFieldConversion(message *generator.Descriptor, field
 		} else if coreType == protoTypeUUID { // Singular UUID type ------------
 			if toORM {
 				p.P(`if from.`, fromName, ` != nil {`)
-				p.P(`if to.`, fieldName, `, err = uuid.FromString(from.`,
-					fromName, `.Value); err != nil {`)
-				p.P(`return to, err`)
+				p.P(`tempUUID, uErr := uuid.FromString(from.`, fromName, `.Value)`)
+				p.P(`if uErr != nil {`)
+				p.P(`return to, uErr`)
 				p.P(`}`)
+				p.P(`to.`, fieldName, ` = &tempUUID`)
 				p.P(`}`)
 			} else {
+				p.P(`if from.`, fromName, ` != nil {`)
 				p.P(`to.`, fieldName, ` = &gtypes.UUIDValue{Value: from.`, fromName, `.String()}`)
+				p.P(`}`)
 			}
 		} else if coreType == protoTypeTimestamp { // Singular WKT Timestamp ---
 			if toORM {
@@ -422,7 +432,7 @@ func (p *ormPlugin) generateDefaultHandlers(file *generator.FileDescriptor) {
 			if err != nil {
 				continue
 			}
-			if opts := v.(*gorm.GormMessageOptions); opts == nil || !*opts.Ormable {
+			if opts, valid := v.(*gorm.GormMessageOptions); !valid || opts == nil || !*opts.Ormable {
 				continue
 			}
 		} else {
@@ -585,7 +595,7 @@ func (p *ormPlugin) generateListHandler(message *generator.Descriptor) {
 
 	p.P(`// DefaultList`, typeName, ` executes a gorm list call`)
 	p.P(`func DefaultList`, typeName, `(ctx context.Context, db *`, p.gormPkgName,
-		`.DB) ([]*`, typeName, `, error) {`)
+		`.DB) ([]*`, typeNamePb, `, error) {`)
 	p.P(`ormResponse := []`, typeName, `ORM{}`)
 	p.P(`db, err := `, p.lftPkgName, `.ApplyCollectionOperators(db, ctx)`)
 	p.P(`if err != nil {`)
@@ -621,6 +631,7 @@ func (p *ormPlugin) generateDefaultServer(file *generator.FileDescriptor) {
 			v, err := proto.GetExtension(service.GetOptions(), gorm.E_Server)
 			opts := v.(*gorm.AutoServerOptions)
 			if err == nil && opts != nil && *opts.Autogen {
+				p.usingGRPC = true
 				// All the default server has is a db connection
 				p.P(`type `, svcName, `DefaultServer struct {`)
 				p.P(`DB *`, p.gormPkgName, `.DB`)
@@ -810,13 +821,34 @@ func (p *ormPlugin) removeChildAssociations(message *generator.Descriptor) bool 
 		// Prep the filter for the child objects of this type
 		keys := p.findAssociationKeys(message, typeNames[typeName], field)
 		childFKeyTypeName := ""
-		p.P(`filterObj`, rawFieldType, ` := `, rawFieldType, `ORM{}`)
+		_, _, fieldTypeNameORM := getTypeNames(typeNames[rawFieldType])
+		p.P(`filterObj`, rawFieldType, ` := `, fieldTypeNameORM, `{}`)
 		for k, v := range keys {
 			for _, childField := range typeNames[rawFieldType].GetField() {
 				if strings.EqualFold(childField.GetName(), k) {
 					childFKeyTypeName, _ = p.GoType(message, childField)
 					break
 				}
+			}
+			if typeNames[rawFieldType].Options != nil {
+				ext, err := proto.GetExtension(typeNames[rawFieldType].Options, gorm.E_Opts)
+				opts, valid := ext.(*gorm.GormMessageOptions)
+				if err == nil && valid {
+					for _, field := range opts.Include {
+						if strings.EqualFold(field.GetName(), k) {
+							childFKeyTypeName = field.GetType()
+							break
+						}
+					}
+					if opts.GetMultiTenant() && k == "TenantID" {
+						childFKeyTypeName = "string"
+					}
+				}
+			}
+			if childFKeyTypeName == "" {
+				p.Fail(`Child type`, rawFieldType, `seems to have no foreign key field`,
+					`linking it to parent type`, typeName, `: expected field`, k, `in`,
+					rawFieldType, `associated with field`, v, `in`, typeName)
 			}
 			// If we accidentally delete without a set PK in our filter, everything might go
 			if strings.Contains(childFKeyTypeName, "*") {
@@ -852,7 +884,7 @@ func (p *ormPlugin) generateStrictUpdateHandler(message *generator.Descriptor) {
 	typeNamePb, typeName, typeNameOrm := getTypeNames(message)
 	p.P(`// DefaultStrictUpdate`, typeName, ` clears first level 1:many children and then executes a gorm update call`)
 	p.P(`func DefaultStrictUpdate`, typeName, `(ctx context.Context, in *`,
-		typeNamePb, `, db *`, p.gormPkgName, `.DB) (`, `*`, typeNamePb, `, error) {`)
+		typeNamePb, `, db *`, p.gormPkgName, `.DB) (*`, typeNamePb, `, error) {`)
 	p.P(`if in == nil {`)
 	p.P(`return nil, fmt.Errorf("Nil argument to DefaultCascadedUpdate`, typeName, `")`)
 	p.P(`}`)
