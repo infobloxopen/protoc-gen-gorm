@@ -15,7 +15,6 @@ package bug
 
 import (
 	context "context"
-
 	errors "errors"
 
 	gorm "github.com/jinzhu/gorm"
@@ -175,7 +174,7 @@ func DefaultDeleteACLItem(ctx context.Context, in *AclItem, db *gorm.DB) error {
 }
 
 // DefaultListACLItem executes a gorm list call
-func DefaultListACLItem(ctx context.Context, db *gorm.DB) ([]*ACLItem, error) {
+func DefaultListACLItem(ctx context.Context, db *gorm.DB) ([]*AclItem, error) {
 	ormResponse := []ACLItemORM{}
 	db, err := ops.ApplyCollectionOperators(db, ctx)
 	if err != nil {
@@ -296,7 +295,7 @@ func DefaultDeleteACL(ctx context.Context, in *Acl, db *gorm.DB) error {
 }
 
 // DefaultListACL executes a gorm list call
-func DefaultListACL(ctx context.Context, db *gorm.DB) ([]*ACL, error) {
+func DefaultListACL(ctx context.Context, db *gorm.DB) ([]*Acl, error) {
 	ormResponse := []ACLORM{}
 	db, err := ops.ApplyCollectionOperators(db, ctx)
 	if err != nil {
