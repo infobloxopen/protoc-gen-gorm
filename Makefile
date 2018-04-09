@@ -1,3 +1,4 @@
+GOPATH ?= $(HOME)/go
 SRCPATH := $(patsubst %/,%,$(GOPATH))/src
 
 default: build install
