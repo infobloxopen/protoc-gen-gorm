@@ -22,3 +22,5 @@ example: default
 		-I$(SRCPATH)/github.com/grpc-ecosystem/grpc-gateway/third_party/googleapis \
 		--go_out="plugins=grpc:$(SRCPATH)" --gorm_out="$(SRCPATH)" \
 		example/contacts/contacts.proto
+
+	goimports -w ./example

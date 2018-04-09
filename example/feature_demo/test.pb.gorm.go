@@ -27,22 +27,36 @@ It has these top-level messages:
 */
 package example
 
-import context "context"
-import errors "errors"
-import gorm "github.com/jinzhu/gorm"
-import ops "github.com/Infoblox-CTO/ngp.api.toolkit/op/gorm"
-import uuid "github.com/satori/go.uuid"
-import gtypes "github.com/infobloxopen/protoc-gen-gorm/types"
-import time "time"
-import ptypes "github.com/golang/protobuf/ptypes"
-import proto "github.com/gogo/protobuf/proto"
-import fmt "fmt"
-import math "math"
-import _ "github.com/infobloxopen/protoc-gen-gorm/options"
-import _ "github.com/infobloxopen/protoc-gen-gorm/types"
-import google_protobuf1 "github.com/golang/protobuf/ptypes/wrappers"
-import google_protobuf2 "github.com/golang/protobuf/ptypes/empty"
-import _ "github.com/golang/protobuf/ptypes/timestamp"
+import (
+	context "context"
+	errors "errors"
+
+	gorm "github.com/jinzhu/gorm"
+
+	"github.com/Infoblox-CTO/ngp.api.toolkit/mw/auth"
+	ops "github.com/Infoblox-CTO/ngp.api.toolkit/op/gorm"
+	uuid "github.com/satori/go.uuid"
+
+	gtypes "github.com/infobloxopen/protoc-gen-gorm/types"
+
+	time "time"
+
+	ptypes "github.com/golang/protobuf/ptypes"
+
+	proto "github.com/gogo/protobuf/proto"
+
+	fmt "fmt"
+
+	math "math"
+
+	_ "github.com/infobloxopen/protoc-gen-gorm/options"
+
+	_ "github.com/infobloxopen/protoc-gen-gorm/types"
+
+	google_protobuf1 "github.com/golang/protobuf/ptypes/wrappers"
+
+	_ "github.com/golang/protobuf/ptypes/timestamp"
+)
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
