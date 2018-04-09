@@ -24,3 +24,8 @@ example: default
 		example/contacts/contacts.proto
 
 	goimports -w ./example
+
+test: example
+	go test ./...
+	go build ./example/contacts
+	go build ./example/feature_demo
