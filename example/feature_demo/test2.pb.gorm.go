@@ -5,21 +5,16 @@ package example
 
 import context "context"
 import errors "errors"
+
 import gorm "github.com/jinzhu/gorm"
-import ops "github.com/Infoblox-CTO/ngp.api.toolkit/op/gorm"
 import grpc "google.golang.org/grpc"
-import uuid "github.com/satori/go.uuid"
-import gtypes "github.com/infobloxopen/protoc-gen-gorm/types"
-import time "time"
-import ptypes "github.com/golang/protobuf/ptypes"
-import proto "github.com/gogo/protobuf/proto"
+import ops "github.com/Infoblox-CTO/ngp.api.toolkit/op/gorm"
+
 import fmt "fmt"
 import math "math"
 import google_protobuf2 "github.com/golang/protobuf/ptypes/empty"
-import _ "github.com/infobloxopen/protoc-gen-gorm/options"
 
 // Reference imports to suppress errors if they are not otherwise used.
-var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
 
