@@ -19,7 +19,7 @@ var unneededImports = []string{
 	"import proto \"github.com/gogo/protobuf/proto\"\n",
 	"import _ \"github.com/infobloxopen/protoc-gen-gorm/options\"\n",
 	// if needed will be imported with an alias
-	"import _ \"github.com/infobloxopen/protoc-gen-gorm/types\"",
+	"import _ \"github.com/infobloxopen/protoc-gen-gorm/types\"\n",
 	"var _ = proto.Marshal\n",
 }
 
