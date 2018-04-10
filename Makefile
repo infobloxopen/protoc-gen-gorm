@@ -23,9 +23,8 @@ example: default
 		--go_out="plugins=grpc:$(SRCPATH)" --gorm_out="$(SRCPATH)" \
 		example/contacts/contacts.proto
 
-	goimports -w ./example
-
 test: example
+	goimports -w ./example
 	go test ./...
 	go build ./example/contacts
 	go build ./example/feature_demo
