@@ -392,9 +392,11 @@ func (p *OrmPlugin) generateFieldConversion(message *generator.Descriptor, field
 				dir = "To"
 			}
 			p.P(`if from.`, fromName, ` != nil {`)
-			p.P(`if to.`, fieldName, `, err = Convert`, fieldType, dir, `ORM (from.`, fromName, `); err != nil {`)
+			p.P(`temp`, fieldType, `, err := Convert`, fieldType, dir, `ORM (*from.`, fromName, `)`)
+			p.P(`if err != nil {`)
 			p.P(`return to, err`)
 			p.P(`}`)
+			p.P(`to.`, fieldName, ` = &temp`, fieldType)
 			p.P(`}`)
 		}
 	} else { // Singular raw ----------------------------------------------------

@@ -123,7 +123,7 @@ func (p *OrmPlugin) generateUpdateHandler(message *generator.Descriptor) {
 	p.P(`}`)
 	if isMultiTenant {
 		p.P(fmt.Sprintf("if exists, err := DefaultRead%s(ctx, &%s{Id: in.GetId()}, db); err != nil {",
-			typeName, typeName))
+			typeName, typeNamePb))
 		p.P("return nil, err")
 		p.P("} else if exists == nil {")
 		p.P(fmt.Sprintf("return nil, errors.New(\"%s not found\")", typeName))

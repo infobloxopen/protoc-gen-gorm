@@ -17,7 +17,7 @@ func (p *OrmPlugin) generateDefaultServer(file *generator.FileDescriptor) {
 			opts := v.(*gorm.AutoServerOptions)
 			if err == nil && opts != nil && *opts.Autogen {
 				p.usingGRPC = true
-				// All the default server has is a db connection
+				// All the default server has is a m.DB connection
 				p.P(`type `, svcName, `DefaultServer struct {`)
 				p.P(`DB *`, p.gormPkgName, `.DB`)
 				p.P(`}`)
@@ -46,7 +46,7 @@ func (p *OrmPlugin) generateCreateServerMethod(service *descriptor.ServiceDescri
 	inType, outType, methodName, svcName := p.getMethodProps(service, method)
 	p.generateMethodSignature(inType, outType, methodName, svcName)
 	p.P(`var out `, p.TypeName(outType))
-	p.P(`res, err := DefaultCreate`, strings.TrimPrefix(methodName, "Create"), `(ctx, in.GetPayload(), db)`)
+	p.P(`res, err := DefaultCreate`, strings.TrimPrefix(methodName, "Create"), `(ctx, in.GetPayload(), m.DB)`)
 	p.P(`out.Result = res`)
 	p.P(`return &out, err`)
 	p.P(`}`)
@@ -56,7 +56,7 @@ func (p *OrmPlugin) generateReadServerMethod(service *descriptor.ServiceDescript
 	inType, outType, methodName, svcName := p.getMethodProps(service, method)
 	p.generateMethodSignature(inType, outType, methodName, svcName)
 	p.P(`var out `, p.TypeName(outType))
-	p.P(`res, err := DefaultRead`, strings.TrimPrefix(methodName, "Read"), `(ctx, in.GetPayload(), db)`)
+	p.P(`res, err := DefaultRead`, strings.TrimPrefix(methodName, "Read"), `(ctx, in.GetPayload(), m.DB)`)
 	p.P(`out.Result = res`)
 	p.P(`return &out, err`)
 	p.P(`}`)
@@ -66,7 +66,7 @@ func (p *OrmPlugin) generateUpdateServerMethod(service *descriptor.ServiceDescri
 	inType, outType, methodName, svcName := p.getMethodProps(service, method)
 	p.generateMethodSignature(inType, outType, methodName, svcName)
 	p.P(`var out `, p.TypeName(outType))
-	p.P(`res, err := DefaultUpdate`, strings.TrimPrefix(methodName, "Update"), `(ctx, in.GetPayload(), db)`)
+	p.P(`res, err := DefaultUpdate`, strings.TrimPrefix(methodName, "Update"), `(ctx, in.GetPayload(), m.DB)`)
 	p.P(`out.Result = res`)
 	p.P(`return &out, err`)
 	p.P(`}`)
@@ -75,7 +75,7 @@ func (p *OrmPlugin) generateUpdateServerMethod(service *descriptor.ServiceDescri
 func (p *OrmPlugin) generateDeleteServerMethod(service *descriptor.ServiceDescriptorProto, method *descriptor.MethodDescriptorProto) {
 	inType, outType, methodName, svcName := p.getMethodProps(service, method)
 	p.generateMethodSignature(inType, outType, methodName, svcName)
-	p.P(`return nil, DefaultDelete`, strings.TrimPrefix(methodName, "Delete"), `(ctx, in.GetPayload(), db)`)
+	p.P(`return nil, DefaultDelete`, strings.TrimPrefix(methodName, "Delete"), `(ctx, in.GetPayload(), m.DB)`)
 	p.P(`}`)
 }
 
@@ -83,8 +83,8 @@ func (p *OrmPlugin) generateListServerMethod(service *descriptor.ServiceDescript
 	inType, outType, methodName, svcName := p.getMethodProps(service, method)
 	p.generateMethodSignature(inType, outType, methodName, svcName)
 	p.P(`var out `, p.TypeName(outType))
-	p.P(`res, err := DefaultList`, strings.TrimPrefix(methodName, "List"), `(ctx, db)`)
-	p.P(`l.Results = res`)
+	p.P(`res, err := DefaultList`, strings.TrimPrefix(methodName, "List"), `(ctx, m.DB)`)
+	p.P(`out.Results = res`)
 	p.P(`return &out, err`)
 	p.P(`}`)
 }
