@@ -17,7 +17,7 @@ func (p *OrmPlugin) generateDefaultServer(file *generator.FileDescriptor) {
 			opts := v.(*gorm.AutoServerOptions)
 			if err == nil && opts != nil && *opts.Autogen {
 				p.usingGRPC = true
-				// All the default server has is a m.DB connection
+				// All the default server has is a db connection
 				p.P(`type `, svcName, `DefaultServer struct {`)
 				p.P(`DB *`, p.gormPkgName, `.DB`)
 				p.P(`}`)
