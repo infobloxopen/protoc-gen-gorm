@@ -1,9 +1,34 @@
-package main
+package plugin
 
 import (
+	"fmt"
 	"strings"
 	"unicode"
+
+	"github.com/gogo/protobuf/proto"
+	"github.com/gogo/protobuf/protoc-gen-gogo/generator"
+	gorm "github.com/infobloxopen/protoc-gen-gorm/options"
 )
+
+// Returns the pb, linted, and linted+ORM suffix type names for a given object
+func getTypeNames(desc *generator.Descriptor) (string, string, string) {
+	typeNamePb := generator.CamelCaseSlice(desc.TypeName())
+	typeName := lintName(typeNamePb)
+	typeNameOrm := fmt.Sprintf("%sORM", typeName)
+	return typeNamePb, typeName, typeNameOrm
+}
+
+// retrieves the GormMessageOptions from a message
+func getMessageOptions(message *generator.Descriptor) *gorm.GormMessageOptions {
+	if message.Options == nil {
+		return nil
+	}
+	v, err := proto.GetExtension(message.Options, gorm.E_Opts)
+	if err != nil {
+		return nil
+	}
+	return v.(*gorm.GormMessageOptions)
+}
 
 // Copyright (c) 2013 The Go Authors. All rights reserved.
 // https://github.com/golang/lint/blob/master/lint.go
