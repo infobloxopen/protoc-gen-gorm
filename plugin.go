@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"reflect"
+	"sort"
 	"strings"
 
 	"github.com/gogo/protobuf/proto"
@@ -50,27 +51,52 @@ type ormPlugin struct {
 	usingGRPC   bool
 }
 
+func (p *ormPlugin) resetImports() {
+	p.wktPkgName = ""
+	p.gormPkgName = ""
+	p.lftPkgName = ""
+	p.usingUUID = false
+	p.usingTime = false
+	p.usingAuth = false
+	p.usingGRPC = false
+}
+
 func (p *ormPlugin) GenerateImports(file *generator.FileDescriptor) {
+	stdImports := []string{}
+	githubImports := map[string]string{}
 	if p.gormPkgName != "" {
-		p.PrintImport("context", "context")
-		p.PrintImport("errors", "errors")
-		p.PrintImport(p.gormPkgName, "github.com/jinzhu/gorm")
-		p.PrintImport(p.lftPkgName, "github.com/Infoblox-CTO/ngp.api.toolkit/op/gorm")
+		stdImports = append(stdImports, "context", "errors")
+		githubImports[p.gormPkgName] = "github.com/jinzhu/gorm"
+		githubImports[p.lftPkgName] = "github.com/Infoblox-CTO/ngp.api.toolkit/op/gorm"
 	}
 	if p.usingGRPC {
-		p.PrintImport("grpc", "google.golang.org/grpc")
+		githubImports["grpc"] = "google.golang.org/grpc"
 	}
 	if p.usingUUID {
-		p.PrintImport("uuid", "github.com/satori/go.uuid")
-		p.PrintImport("gtypes", "github.com/infobloxopen/protoc-gen-gorm/types")
+		githubImports["uuid"] = "github.com/satori/go.uuid"
+		githubImports["gtypes"] = "github.com/infobloxopen/protoc-gen-gorm/types"
 	}
 	if p.usingTime {
-		p.PrintImport("time", "time")
-		p.PrintImport("ptypes", "github.com/golang/protobuf/ptypes")
+		stdImports = append(stdImports, "time")
+		githubImports["ptypes"] = "github.com/golang/protobuf/ptypes"
 	}
 	if p.usingAuth {
-		p.PrintImport("auth", "github.com/Infoblox-CTO/ngp.api.toolkit/mw/auth")
+		githubImports["auth"] = "github.com/Infoblox-CTO/ngp.api.toolkit/mw/auth"
 	}
+	sort.Strings(stdImports)
+	for _, dep := range stdImports {
+		p.PrintImport(dep, dep)
+	}
+	p.P()
+	keys := []string{}
+	for k := range githubImports {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	for _, key := range keys {
+		p.PrintImport(key, githubImports[key])
+	}
+	p.P()
 }
 
 func (p *ormPlugin) Name() string {
@@ -82,7 +108,7 @@ func (p *ormPlugin) Init(g *generator.Generator) {
 }
 
 func (p *ormPlugin) Generate(file *generator.FileDescriptor) {
-
+	p.resetImports()
 	// Preload just the types we'll be creating
 	for _, msg := range file.Messages() {
 		// We don't want to bother with the MapEntry stuff
@@ -181,7 +207,11 @@ func (p *ormPlugin) generateMessages(message *generator.Descriptor) {
 				p.P("// Skipping type ", fieldType, ", not tagged as ormable")
 				continue
 			} else {
-				fieldType = fmt.Sprintf("%sORM", lintName(fieldType))
+				if field.IsRepeated() {
+					fieldType = fmt.Sprintf("[]*%sORM", lintName(strings.Trim(fieldType, "[]*")))
+				} else {
+					fieldType = fmt.Sprintf("*%sORM", lintName(strings.Trim(fieldType, "*")))
+				}
 				// Insert the foreign key if not present,
 				if tagString == "" {
 					tagString = fmt.Sprintf("`gorm:\"foreignkey:%sID\"`", lintName(typeNamePb))
@@ -434,6 +464,8 @@ func (p *ormPlugin) generateDefaultHandlers(file *generator.FileDescriptor) {
 			}
 			if opts, valid := v.(*gorm.GormMessageOptions); !valid || opts == nil || !*opts.Ormable {
 				continue
+			} else if opts.GetMultiTenant() {
+				p.usingAuth = true
 			}
 		} else {
 			continue

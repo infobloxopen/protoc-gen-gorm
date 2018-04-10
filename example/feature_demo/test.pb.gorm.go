@@ -27,39 +27,24 @@ It has these top-level messages:
 */
 package example
 
-import (
-	context "context"
-	errors "errors"
+import context "context"
+import errors "errors"
+import time "time"
 
-	gorm "github.com/jinzhu/gorm"
+import auth "github.com/Infoblox-CTO/ngp.api.toolkit/mw/auth"
+import gorm "github.com/jinzhu/gorm"
+import gtypes "github.com/infobloxopen/protoc-gen-gorm/types"
+import ops "github.com/Infoblox-CTO/ngp.api.toolkit/op/gorm"
+import ptypes "github.com/golang/protobuf/ptypes"
+import uuid "github.com/satori/go.uuid"
 
-	"github.com/Infoblox-CTO/ngp.api.toolkit/mw/auth"
-	ops "github.com/Infoblox-CTO/ngp.api.toolkit/op/gorm"
-	uuid "github.com/satori/go.uuid"
-
-	gtypes "github.com/infobloxopen/protoc-gen-gorm/types"
-
-	time "time"
-
-	ptypes "github.com/golang/protobuf/ptypes"
-
-	proto "github.com/gogo/protobuf/proto"
-
-	fmt "fmt"
-
-	math "math"
-
-	_ "github.com/infobloxopen/protoc-gen-gorm/options"
-
-	_ "github.com/infobloxopen/protoc-gen-gorm/types"
-
-	google_protobuf1 "github.com/golang/protobuf/ptypes/wrappers"
-
-	_ "github.com/golang/protobuf/ptypes/timestamp"
-)
+import fmt "fmt"
+import math "math"
+import google_protobuf1 "github.com/golang/protobuf/ptypes/wrappers"
+import google_protobuf2 "github.com/golang/protobuf/ptypes/empty"
+import _ "github.com/golang/protobuf/ptypes/timestamp"
 
 // Reference imports to suppress errors if they are not otherwise used.
-var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
 
