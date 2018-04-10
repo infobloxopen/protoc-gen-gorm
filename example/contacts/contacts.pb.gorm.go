@@ -16,18 +16,30 @@ It has these top-level messages:
 */
 package contacts
 
-import context "context"
-import errors "errors"
-import gorm "github.com/jinzhu/gorm"
-import ops "github.com/Infoblox-CTO/ngp.api.toolkit/op/gorm"
-import proto "github.com/gogo/protobuf/proto"
-import fmt "fmt"
-import math "math"
-import _ "github.com/golang/protobuf/ptypes/empty"
-import _ "google.golang.org/genproto/googleapis/api/annotations"
-import _ "github.com/lyft/protoc-gen-validate/validate"
-import _ "github.com/grpc-ecosystem/grpc-gateway/protoc-gen-swagger/options"
-import _ "github.com/infobloxopen/protoc-gen-gorm/options"
+import (
+	context "context"
+	errors "errors"
+
+	gorm "github.com/jinzhu/gorm"
+
+	"github.com/Infoblox-CTO/ngp.api.toolkit/mw/auth"
+	ops "github.com/Infoblox-CTO/ngp.api.toolkit/op/gorm"
+	proto "github.com/gogo/protobuf/proto"
+
+	fmt "fmt"
+
+	math "math"
+
+	_ "github.com/golang/protobuf/ptypes/empty"
+
+	_ "google.golang.org/genproto/googleapis/api/annotations"
+
+	_ "github.com/lyft/protoc-gen-validate/validate"
+
+	_ "github.com/grpc-ecosystem/grpc-gateway/protoc-gen-swagger/options"
+
+	_ "github.com/infobloxopen/protoc-gen-gorm/options"
+)
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal

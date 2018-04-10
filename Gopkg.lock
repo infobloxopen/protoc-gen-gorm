@@ -5,11 +5,18 @@
   name = "github.com/Infoblox-CTO/ngp.api.toolkit"
   packages = [
     "gw",
+    "mw/auth",
     "op",
     "op/gorm"
   ]
   revision = "6d4048d1f8acb6d4c65f23215d0a2a6565ad739a"
   version = "0.0.2"
+
+[[projects]]
+  name = "github.com/dgrijalva/jwt-go"
+  packages = ["."]
+  revision = "06ea1031745cb8b3dab3f6a236daf2b0aa468b7e"
+  version = "v3.2.0"
 
 [[projects]]
   name = "github.com/gogo/protobuf"
@@ -60,6 +67,25 @@
   revision = "e09c5db296004fbe3f74490e84dcd62c3c5ddb1b"
 
 [[projects]]
+  name = "github.com/google/uuid"
+  packages = ["."]
+  revision = "064e2069ce9c359c118179501254f67d7d37ba24"
+  version = "0.2"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/grpc-ecosystem/go-grpc-middleware"
+  packages = [
+    ".",
+    "auth",
+    "logging/logrus/ctxlogrus",
+    "tags",
+    "tags/logrus",
+    "util/metautils"
+  ]
+  revision = "b9ed6aed6cf9de7330c7c8e81d3d8e49086539e8"
+
+[[projects]]
   name = "github.com/grpc-ecosystem/grpc-gateway"
   packages = [
     "protoc-gen-swagger/options",
@@ -69,6 +95,34 @@
   ]
   revision = "07f5e79768022f9a3265235f0db4ac8c3f675fec"
   version = "v1.3.1"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/grpc-ecosystem/grpc-opentracing"
+  packages = ["go/otgrpc"]
+  revision = "0e7658f8ee99ee5aa683e2a032b8880091b7a055"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/infobloxopen/go-trees"
+  packages = [
+    "dltree",
+    "domaintree",
+    "iptree",
+    "numtree",
+    "strtree"
+  ]
+  revision = "ba3cf0abf6c4176275bfdabf40f4da38da29becb"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/infobloxopen/themis"
+  packages = [
+    "pdp",
+    "pdp-service",
+    "pep"
+  ]
+  revision = "24700e294b4dcaea80b186a9bb7dd257ac250d09"
 
 [[projects]]
   name = "github.com/jinzhu/gorm"
@@ -89,6 +143,34 @@
   version = "v0.0.5"
 
 [[projects]]
+  name = "github.com/opentracing/opentracing-go"
+  packages = [
+    ".",
+    "ext",
+    "log"
+  ]
+  revision = "1949ddbfd147afd4d964a9f00b24eb291e0e7c38"
+  version = "v1.0.2"
+
+[[projects]]
+  name = "github.com/satori/go.uuid"
+  packages = ["."]
+  revision = "f58768cc1a7a7e77a3bd49e98cdd21419399b6a3"
+  version = "v1.2.0"
+
+[[projects]]
+  name = "github.com/sirupsen/logrus"
+  packages = ["."]
+  revision = "c155da19408a8799da419ed3eeb0cb5db0ad5dbc"
+  version = "v1.0.5"
+
+[[projects]]
+  branch = "master"
+  name = "golang.org/x/crypto"
+  packages = ["ssh/terminal"]
+  revision = "beb2a9779c3b677077c41673505f150149fce895"
+
+[[projects]]
   branch = "master"
   name = "golang.org/x/net"
   packages = [
@@ -101,6 +183,15 @@
     "trace"
   ]
   revision = "6078986fec03a1dcc236c34816c71b0e05018fda"
+
+[[projects]]
+  branch = "master"
+  name = "golang.org/x/sys"
+  packages = [
+    "unix",
+    "windows"
+  ]
+  revision = "3b87a42e500a6dc65dae1a55d0b641295971163e"
 
 [[projects]]
   name = "golang.org/x/text"
@@ -166,6 +257,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "ee74c9a0d85fde47950bda5dbd26dd876635e4d13855fa1ffd416a3aab66cdda"
+  inputs-digest = "34c2b7c10d895b69c08e48b49ca09b00bfe3af1e447702010ed3b49a857e64a4"
   solver-name = "gps-cdcl"
   solver-version = 1
