@@ -2,8 +2,13 @@ package main
 
 import (
 	"github.com/gogo/protobuf/vanity/command"
+	"github.com/infobloxopen/protoc-gen-gorm/plugin"
 )
 
 func main() {
-	command.Write(command.GeneratePlugin(command.Read(), &ormPlugin{}, ".pb.gorm.go"))
+	response := command.GeneratePlugin(command.Read(), &plugin.OrmPlugin{}, ".pb.gorm.go")
+	for _, file := range response.GetFile() {
+		file.Content = plugin.CleanImports(file.Content)
+	}
+	command.Write(response)
 }

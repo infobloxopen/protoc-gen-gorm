@@ -5,21 +5,16 @@ package example
 
 import context "context"
 import errors "errors"
+
 import gorm "github.com/jinzhu/gorm"
-import ops "github.com/Infoblox-CTO/ngp.api.toolkit/op/gorm"
 import grpc "google.golang.org/grpc"
-import uuid "github.com/satori/go.uuid"
-import gtypes "github.com/infobloxopen/protoc-gen-gorm/types"
-import time "time"
-import ptypes "github.com/golang/protobuf/ptypes"
-import proto "github.com/gogo/protobuf/proto"
+import ops "github.com/Infoblox-CTO/ngp.api.toolkit/op/gorm"
+
 import fmt "fmt"
 import math "math"
 import google_protobuf2 "github.com/golang/protobuf/ptypes/empty"
-import _ "github.com/infobloxopen/protoc-gen-gorm/options"
 
 // Reference imports to suppress errors if they are not otherwise used.
-var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
 
@@ -164,7 +159,7 @@ type PointDefaultServer struct {
 // CreateIntPoint ...
 func (m *PointDefaultServer) CreateIntPoint(ctx context.Context, in *CreateIntPointRequest, opts ...grpc.CallOption) (*CreateIntPointResponse, error) {
 	var out CreateIntPointResponse
-	res, err := DefaultCreateIntPoint(ctx, in.GetPayload(), db)
+	res, err := DefaultCreateIntPoint(ctx, in.GetPayload(), m.DB)
 	out.Result = res
 	return &out, err
 }
@@ -172,7 +167,7 @@ func (m *PointDefaultServer) CreateIntPoint(ctx context.Context, in *CreateIntPo
 // ReadIntPoint ...
 func (m *PointDefaultServer) ReadIntPoint(ctx context.Context, in *ReadIntPointRequest, opts ...grpc.CallOption) (*ReadIntPointResponse, error) {
 	var out ReadIntPointResponse
-	res, err := DefaultReadIntPoint(ctx, in.GetPayload(), db)
+	res, err := DefaultReadIntPoint(ctx, in.GetPayload(), m.DB)
 	out.Result = res
 	return &out, err
 }
@@ -180,7 +175,7 @@ func (m *PointDefaultServer) ReadIntPoint(ctx context.Context, in *ReadIntPointR
 // UpdateIntPoint ...
 func (m *PointDefaultServer) UpdateIntPoint(ctx context.Context, in *UpdateIntPointRequest, opts ...grpc.CallOption) (*UpdateIntPointResponse, error) {
 	var out UpdateIntPointResponse
-	res, err := DefaultUpdateIntPoint(ctx, in.GetPayload(), db)
+	res, err := DefaultUpdateIntPoint(ctx, in.GetPayload(), m.DB)
 	out.Result = res
 	return &out, err
 }
@@ -188,14 +183,14 @@ func (m *PointDefaultServer) UpdateIntPoint(ctx context.Context, in *UpdateIntPo
 // ListIntPoint ...
 func (m *PointDefaultServer) ListIntPoint(ctx context.Context, in *google_protobuf2.Empty, opts ...grpc.CallOption) (*ListIntPointResponse, error) {
 	var out ListIntPointResponse
-	res, err := DefaultListIntPoint(ctx, db)
-	l.Results = res
+	res, err := DefaultListIntPoint(ctx, m.DB)
+	out.Results = res
 	return &out, err
 }
 
 // DeleteIntPoint ...
 func (m *PointDefaultServer) DeleteIntPoint(ctx context.Context, in *DeleteIntPointRequest, opts ...grpc.CallOption) (*google_protobuf2.Empty, error) {
-	return nil, DefaultDeleteIntPoint(ctx, in.GetPayload(), db)
+	return nil, DefaultDeleteIntPoint(ctx, in.GetPayload(), m.DB)
 }
 
 // CustomMethod ...
