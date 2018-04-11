@@ -26,7 +26,7 @@ func (c SortCriteria) GoString() string {
 // data structure.
 // Provided string is supposed to be in accordance with the sorting collection
 // operator from REST API Syntax.
-// See: https://docs.google.com/document/d/1gi4npvvaY_M1uP2i9LCmX8tOyvF6E5E7HAg1c9uAp_E/edit#heading=h.usvz3nakezcg
+// See: https://github.com/infobloxopen/atlas-app-toolkit#sorting
 func ParseSorting(s string) (*Sorting, error) {
 	var sorting Sorting
 

@@ -27,8 +27,8 @@ const (
 	PartialContent
 )
 
-// RestStatus represents a response status in accordance with REST API Syntax Specification.
-// See: https://docs.google.com/document/d/1gi4npvvaY_M1uP2i9LCmX8tOyvF6E5E7HAg1c9uAp_E/edit#heading=h.1k78on7pyle
+// RestStatus represents a response status in accordance with REST API Syntax.
+// See: https://github.com/infobloxopen/atlas-app-toolkit#responses
 type RestStatus struct {
 	HTTPStatus int `json:"status,omitempty"`
 	// Code is a string representation of an error code

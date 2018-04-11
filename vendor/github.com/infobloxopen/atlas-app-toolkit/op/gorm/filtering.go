@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/Infoblox-CTO/ngp.api.toolkit/op"
+	"github.com/infobloxopen/atlas-app-toolkit/op"
 )
 
 // FilterStringToGorm is a shortcut to parse a filter string using default FilteringParser implementation

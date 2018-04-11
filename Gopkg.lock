@@ -2,17 +2,6 @@
 
 
 [[projects]]
-  name = "github.com/Infoblox-CTO/ngp.api.toolkit"
-  packages = [
-    "gw",
-    "mw/auth",
-    "op",
-    "op/gorm"
-  ]
-  revision = "6d4048d1f8acb6d4c65f23215d0a2a6565ad739a"
-  version = "0.0.2"
-
-[[projects]]
   name = "github.com/dgrijalva/jwt-go"
   packages = ["."]
   revision = "06ea1031745cb8b3dab3f6a236daf2b0aa468b7e"
@@ -101,6 +90,17 @@
   name = "github.com/grpc-ecosystem/grpc-opentracing"
   packages = ["go/otgrpc"]
   revision = "0e7658f8ee99ee5aa683e2a032b8880091b7a055"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/infobloxopen/atlas-app-toolkit"
+  packages = [
+    "gw",
+    "mw/auth",
+    "op",
+    "op/gorm"
+  ]
+  revision = "f2e4fd90263988a4e9c5f766b0e496814b6bed7a"
 
 [[projects]]
   branch = "master"
@@ -257,6 +257,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "34c2b7c10d895b69c08e48b49ca09b00bfe3af1e447702010ed3b49a857e64a4"
+  inputs-digest = "d77ddf9073956a028c07502c6eaa3e4785452ca3b79826af218d91ab85dca850"
   solver-name = "gps-cdcl"
   solver-version = 1

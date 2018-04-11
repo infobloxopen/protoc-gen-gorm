@@ -41,7 +41,7 @@ import uuid "github.com/satori/go.uuid"
 import fmt "fmt"
 import math "math"
 import google_protobuf1 "github.com/golang/protobuf/ptypes/wrappers"
-
+import google_protobuf2 "github.com/golang/protobuf/ptypes/empty"
 import _ "github.com/golang/protobuf/ptypes/timestamp"
 
 // Reference imports to suppress errors if they are not otherwise used.
