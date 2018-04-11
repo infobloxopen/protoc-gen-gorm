@@ -31,17 +31,17 @@ import context "context"
 import errors "errors"
 import time "time"
 
-import auth "github.com/Infoblox-CTO/ngp.api.toolkit/mw/auth"
+import auth "github.com/infobloxopen/atlas-app-toolkit/mw/auth"
 import gorm "github.com/jinzhu/gorm"
 import gtypes "github.com/infobloxopen/protoc-gen-gorm/types"
-import ops "github.com/Infoblox-CTO/ngp.api.toolkit/op/gorm"
+import ops "github.com/infobloxopen/atlas-app-toolkit/op/gorm"
 import ptypes "github.com/golang/protobuf/ptypes"
 import uuid "github.com/satori/go.uuid"
 
 import fmt "fmt"
 import math "math"
 import google_protobuf1 "github.com/golang/protobuf/ptypes/wrappers"
-import google_protobuf2 "github.com/golang/protobuf/ptypes/empty"
+
 import _ "github.com/golang/protobuf/ptypes/timestamp"
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -467,7 +467,7 @@ func DefaultCreateMultitenantTypeWithID(ctx context.Context, in *MultitenantType
 	if err != nil {
 		return nil, err
 	}
-	tenantID, tIDErr := auth.GetTenantID(ctx)
+	tenantID, tIDErr := auth.GetTenantID(ctx, nil)
 	if tIDErr != nil {
 		return nil, tIDErr
 	}
@@ -488,7 +488,7 @@ func DefaultReadMultitenantTypeWithID(ctx context.Context, in *MultitenantTypeWi
 	if err != nil {
 		return nil, err
 	}
-	tenantID, tIDErr := auth.GetTenantID(ctx)
+	tenantID, tIDErr := auth.GetTenantID(ctx, nil)
 	if tIDErr != nil {
 		return nil, tIDErr
 	}
@@ -530,7 +530,7 @@ func DefaultDeleteMultitenantTypeWithID(ctx context.Context, in *MultitenantType
 	if err != nil {
 		return err
 	}
-	tenantID, tIDErr := auth.GetTenantID(ctx)
+	tenantID, tIDErr := auth.GetTenantID(ctx, nil)
 	if tIDErr != nil {
 		return tIDErr
 	}
@@ -546,7 +546,7 @@ func DefaultListMultitenantTypeWithID(ctx context.Context, db *gorm.DB) ([]*Mult
 	if err != nil {
 		return nil, err
 	}
-	tenantID, tIDErr := auth.GetTenantID(ctx)
+	tenantID, tIDErr := auth.GetTenantID(ctx, nil)
 	if tIDErr != nil {
 		return nil, tIDErr
 	}
@@ -574,7 +574,7 @@ func DefaultStrictUpdateMultitenantTypeWithID(ctx context.Context, in *Multitena
 	if err != nil {
 		return nil, err
 	}
-	tenantID, tIDErr := auth.GetTenantID(ctx)
+	tenantID, tIDErr := auth.GetTenantID(ctx, nil)
 	if tIDErr != nil {
 		return nil, tIDErr
 	}
@@ -598,7 +598,7 @@ func DefaultCreateMultitenantTypeWithoutID(ctx context.Context, in *MultitenantT
 	if err != nil {
 		return nil, err
 	}
-	tenantID, tIDErr := auth.GetTenantID(ctx)
+	tenantID, tIDErr := auth.GetTenantID(ctx, nil)
 	if tIDErr != nil {
 		return nil, tIDErr
 	}
@@ -619,7 +619,7 @@ func DefaultReadMultitenantTypeWithoutID(ctx context.Context, in *MultitenantTyp
 	if err != nil {
 		return nil, err
 	}
-	tenantID, tIDErr := auth.GetTenantID(ctx)
+	tenantID, tIDErr := auth.GetTenantID(ctx, nil)
 	if tIDErr != nil {
 		return nil, tIDErr
 	}
@@ -642,7 +642,7 @@ func DefaultDeleteMultitenantTypeWithoutID(ctx context.Context, in *MultitenantT
 	if err != nil {
 		return err
 	}
-	tenantID, tIDErr := auth.GetTenantID(ctx)
+	tenantID, tIDErr := auth.GetTenantID(ctx, nil)
 	if tIDErr != nil {
 		return tIDErr
 	}
@@ -658,7 +658,7 @@ func DefaultListMultitenantTypeWithoutID(ctx context.Context, db *gorm.DB) ([]*M
 	if err != nil {
 		return nil, err
 	}
-	tenantID, tIDErr := auth.GetTenantID(ctx)
+	tenantID, tIDErr := auth.GetTenantID(ctx, nil)
 	if tIDErr != nil {
 		return nil, tIDErr
 	}
@@ -686,7 +686,7 @@ func DefaultStrictUpdateMultitenantTypeWithoutID(ctx context.Context, in *Multit
 	if err != nil {
 		return nil, err
 	}
-	tenantID, tIDErr := auth.GetTenantID(ctx)
+	tenantID, tIDErr := auth.GetTenantID(ctx, nil)
 	if tIDErr != nil {
 		return nil, tIDErr
 	}
