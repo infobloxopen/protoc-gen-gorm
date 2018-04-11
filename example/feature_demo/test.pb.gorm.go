@@ -139,9 +139,11 @@ func ConvertTypeWithIDToORM(from TypeWithId) (TypeWithIDORM, error) {
 		}
 	}
 	if from.ANestedObject != nil {
-		if to.ANestedObject, err = ConvertTestTypesToORM(from.ANestedObject); err != nil {
+		tempTestTypes, err := ConvertTestTypesToORM(*from.ANestedObject)
+		if err != nil {
 			return to, err
 		}
+		to.ANestedObject = &tempTestTypes
 	}
 	return to, err
 }
@@ -163,9 +165,11 @@ func ConvertTypeWithIDFromORM(from TypeWithIDORM) (TypeWithId, error) {
 		}
 	}
 	if from.ANestedObject != nil {
-		if to.ANestedObject, err = ConvertTestTypesFromORM(from.ANestedObject); err != nil {
+		tempTestTypes, err := ConvertTestTypesFromORM(*from.ANestedObject)
+		if err != nil {
 			return to, err
 		}
+		to.ANestedObject = &tempTestTypes
 	}
 	return to, err
 }
@@ -502,7 +506,7 @@ func DefaultUpdateMultitenantTypeWithID(ctx context.Context, in *MultitenantType
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultUpdateMultitenantTypeWithID")
 	}
-	if exists, err := DefaultReadMultitenantTypeWithID(ctx, &MultitenantTypeWithID{Id: in.GetId()}, db); err != nil {
+	if exists, err := DefaultReadMultitenantTypeWithID(ctx, &MultitenantTypeWithId{Id: in.GetId()}, db); err != nil {
 		return nil, err
 	} else if exists == nil {
 		return nil, errors.New("MultitenantTypeWithID not found")
