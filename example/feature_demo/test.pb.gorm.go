@@ -24,6 +24,7 @@ It has these top-level messages:
 	UpdateIntPointResponse
 	DeleteIntPointRequest
 	ListIntPointResponse
+	Something
 */
 package example
 

@@ -201,3 +201,8 @@ func (m *IntPointDefaultServer) Delete(ctx context.Context, in *DeleteIntPointRe
 func (m *IntPointDefaultServer) CustomMethod(ctx context.Context, in *google_protobuf2.Empty, opts ...grpc.CallOption) (*google_protobuf2.Empty, error) {
 	return &google_protobuf2.Empty{}, nil
 }
+
+// CreateSomething ...
+func (m *IntPointDefaultServer) CreateSomething(ctx context.Context, in *Something, opts ...grpc.CallOption) (*Something, error) {
+	return &Something{}, nil
+}
