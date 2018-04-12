@@ -19,9 +19,9 @@ package contacts
 import context "context"
 import errors "errors"
 
-import auth "github.com/Infoblox-CTO/ngp.api.toolkit/mw/auth"
+import auth "github.com/infobloxopen/atlas-app-toolkit/mw/auth"
 import gorm "github.com/jinzhu/gorm"
-import ops "github.com/Infoblox-CTO/ngp.api.toolkit/op/gorm"
+import ops "github.com/infobloxopen/atlas-app-toolkit/op/gorm"
 
 import fmt "fmt"
 import math "math"
@@ -83,7 +83,7 @@ func DefaultCreateContact(ctx context.Context, in *Contact, db *gorm.DB) (*Conta
 	if err != nil {
 		return nil, err
 	}
-	tenantID, tIDErr := auth.GetTenantID(ctx)
+	tenantID, tIDErr := auth.GetTenantID(ctx, nil)
 	if tIDErr != nil {
 		return nil, tIDErr
 	}
@@ -104,7 +104,7 @@ func DefaultReadContact(ctx context.Context, in *Contact, db *gorm.DB) (*Contact
 	if err != nil {
 		return nil, err
 	}
-	tenantID, tIDErr := auth.GetTenantID(ctx)
+	tenantID, tIDErr := auth.GetTenantID(ctx, nil)
 	if tIDErr != nil {
 		return nil, tIDErr
 	}
@@ -146,7 +146,7 @@ func DefaultDeleteContact(ctx context.Context, in *Contact, db *gorm.DB) error {
 	if err != nil {
 		return err
 	}
-	tenantID, tIDErr := auth.GetTenantID(ctx)
+	tenantID, tIDErr := auth.GetTenantID(ctx, nil)
 	if tIDErr != nil {
 		return tIDErr
 	}
@@ -162,7 +162,7 @@ func DefaultListContact(ctx context.Context, db *gorm.DB) ([]*Contact, error) {
 	if err != nil {
 		return nil, err
 	}
-	tenantID, tIDErr := auth.GetTenantID(ctx)
+	tenantID, tIDErr := auth.GetTenantID(ctx, nil)
 	if tIDErr != nil {
 		return nil, tIDErr
 	}
@@ -190,7 +190,7 @@ func DefaultStrictUpdateContact(ctx context.Context, in *Contact, db *gorm.DB) (
 	if err != nil {
 		return nil, err
 	}
-	tenantID, tIDErr := auth.GetTenantID(ctx)
+	tenantID, tIDErr := auth.GetTenantID(ctx, nil)
 	if tIDErr != nil {
 		return nil, tIDErr
 	}
