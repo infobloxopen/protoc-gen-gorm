@@ -14,7 +14,7 @@ install:
 example: default
 	protoc -I. -I$(SRCPATH) -I./vendor \
 		--go_out="plugins=grpc:$(SRCPATH)" --gorm_out="$(SRCPATH)" \
-		example/feature_demo/*.proto
+		example/feature_demo/test.proto example/feature_demo/test2.proto
 
 	protoc -I. -I$(SRCPATH) -I./vendor \
 		-I$(SRCPATH)/github.com/google/protobuf/src/ \
