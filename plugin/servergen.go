@@ -16,7 +16,6 @@ func (p *OrmPlugin) generateDefaultServer(file *generator.FileDescriptor) {
 			v, err := proto.GetExtension(service.GetOptions(), gorm.E_Server)
 			opts := v.(*gorm.AutoServerOptions)
 			if err == nil && opts != nil && *opts.Autogen {
-				p.usingGRPC = true
 				// All the default server has is a db connection
 				p.P(`type `, svcName, `DefaultServer struct {`)
 				p.P(`DB *`, p.gormPkgName, `.DB`)
@@ -250,7 +249,7 @@ func (p *OrmPlugin) generateMethodStub(service *descriptor.ServiceDescriptorProt
 func (p *OrmPlugin) generateMethodSignature(inType, outType generator.Object, methodName, svcName string) {
 	p.P(`// `, methodName, ` ...`)
 	p.P(`func (m *`, svcName, `DefaultServer) `, methodName, ` (ctx context.Context, in *`,
-		p.TypeName(inType), `, opts ...grpc.CallOption) (*`, p.TypeName(outType), `, error) {`)
+		p.TypeName(inType), `) (*`, p.TypeName(outType), `, error) {`)
 }
 
 func (p OrmPlugin) generateEmptyBody(outType generator.Object) {

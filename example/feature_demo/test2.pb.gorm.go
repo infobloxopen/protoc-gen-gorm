@@ -7,7 +7,6 @@ import context "context"
 import errors "errors"
 
 import gorm "github.com/jinzhu/gorm"
-import grpc "google.golang.org/grpc"
 import ops "github.com/Infoblox-CTO/ngp.api.toolkit/op/gorm"
 
 import fmt "fmt"
@@ -157,7 +156,7 @@ type IntPointDefaultServer struct {
 }
 
 // Create ...
-func (m *IntPointDefaultServer) Create(ctx context.Context, in *CreateIntPointRequest, opts ...grpc.CallOption) (*CreateIntPointResponse, error) {
+func (m *IntPointDefaultServer) Create(ctx context.Context, in *CreateIntPointRequest) (*CreateIntPointResponse, error) {
 	res, err := DefaultCreateIntPoint(ctx, in.GetPayload(), m.DB)
 	if err != nil {
 		return nil, err
@@ -166,7 +165,7 @@ func (m *IntPointDefaultServer) Create(ctx context.Context, in *CreateIntPointRe
 }
 
 // Read ...
-func (m *IntPointDefaultServer) Read(ctx context.Context, in *ReadIntPointRequest, opts ...grpc.CallOption) (*ReadIntPointResponse, error) {
+func (m *IntPointDefaultServer) Read(ctx context.Context, in *ReadIntPointRequest) (*ReadIntPointResponse, error) {
 	res, err := DefaultReadIntPoint(ctx, &IntPoint{Id: in.GetId()}, m.DB)
 	if err != nil {
 		return nil, err
@@ -175,7 +174,7 @@ func (m *IntPointDefaultServer) Read(ctx context.Context, in *ReadIntPointReques
 }
 
 // Update ...
-func (m *IntPointDefaultServer) Update(ctx context.Context, in *UpdateIntPointRequest, opts ...grpc.CallOption) (*UpdateIntPointResponse, error) {
+func (m *IntPointDefaultServer) Update(ctx context.Context, in *UpdateIntPointRequest) (*UpdateIntPointResponse, error) {
 	res, err := DefaultUpdateIntPoint(ctx, in.GetPayload(), m.DB)
 	if err != nil {
 		return nil, err
@@ -184,7 +183,7 @@ func (m *IntPointDefaultServer) Update(ctx context.Context, in *UpdateIntPointRe
 }
 
 // List ...
-func (m *IntPointDefaultServer) List(ctx context.Context, in *google_protobuf2.Empty, opts ...grpc.CallOption) (*ListIntPointResponse, error) {
+func (m *IntPointDefaultServer) List(ctx context.Context, in *google_protobuf2.Empty) (*ListIntPointResponse, error) {
 	res, err := DefaultListIntPoint(ctx, m.DB)
 	if err != nil {
 		return nil, err
@@ -193,16 +192,16 @@ func (m *IntPointDefaultServer) List(ctx context.Context, in *google_protobuf2.E
 }
 
 // Delete ...
-func (m *IntPointDefaultServer) Delete(ctx context.Context, in *DeleteIntPointRequest, opts ...grpc.CallOption) (*google_protobuf2.Empty, error) {
+func (m *IntPointDefaultServer) Delete(ctx context.Context, in *DeleteIntPointRequest) (*google_protobuf2.Empty, error) {
 	return &google_protobuf2.Empty{}, DefaultDeleteIntPoint(ctx, &IntPoint{Id: in.GetId()}, m.DB)
 }
 
 // CustomMethod ...
-func (m *IntPointDefaultServer) CustomMethod(ctx context.Context, in *google_protobuf2.Empty, opts ...grpc.CallOption) (*google_protobuf2.Empty, error) {
+func (m *IntPointDefaultServer) CustomMethod(ctx context.Context, in *google_protobuf2.Empty) (*google_protobuf2.Empty, error) {
 	return &google_protobuf2.Empty{}, nil
 }
 
 // CreateSomething ...
-func (m *IntPointDefaultServer) CreateSomething(ctx context.Context, in *Something, opts ...grpc.CallOption) (*Something, error) {
+func (m *IntPointDefaultServer) CreateSomething(ctx context.Context, in *Something) (*Something, error) {
 	return &Something{}, nil
 }

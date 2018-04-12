@@ -40,7 +40,6 @@ func (p *OrmPlugin) resetImports() {
 	p.usingUUID = false
 	p.usingTime = false
 	p.usingAuth = false
-	p.usingGRPC = false
 }
 
 // GenerateImports writes out required imports for the generated files
@@ -51,9 +50,6 @@ func (p *OrmPlugin) GenerateImports(file *generator.FileDescriptor) {
 		stdImports = append(stdImports, "context", "errors")
 		githubImports[p.gormPkgName] = "github.com/jinzhu/gorm"
 		githubImports[p.lftPkgName] = "github.com/Infoblox-CTO/ngp.api.toolkit/op/gorm"
-	}
-	if p.usingGRPC {
-		githubImports["grpc"] = "google.golang.org/grpc"
 	}
 	if p.usingUUID {
 		githubImports["uuid"] = "github.com/satori/go.uuid"
