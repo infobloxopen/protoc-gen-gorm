@@ -45,61 +45,217 @@ func (p *OrmPlugin) generateDefaultServer(file *generator.FileDescriptor) {
 func (p *OrmPlugin) generateCreateServerMethod(service *descriptor.ServiceDescriptorProto, method *descriptor.MethodDescriptorProto) {
 	inType, outType, methodName, svcName := p.getMethodProps(service, method)
 	p.generateMethodSignature(inType, outType, methodName, svcName)
-	p.P(`var out `, p.TypeName(outType))
-	p.P(`res, err := DefaultCreate`, strings.TrimPrefix(methodName, "Create"), `(ctx, in.GetPayload(), m.DB)`)
-	p.P(`out.Result = res`)
-	p.P(`return &out, err`)
-	p.P(`}`)
+	follows, typeName := p.followsCreateConventions(inType, outType)
+	if follows {
+		p.P(`res, err := DefaultCreate`, typeName, `(ctx, in.GetPayload(), m.DB)`)
+		p.P(`if err != nil {`)
+		p.P(`return nil, err`)
+		p.P(`}`)
+		p.P(`return &`, p.TypeName(outType), `{Result: res}, nil`)
+		p.P(`}`)
+	} else {
+		p.generateEmptyBody(outType)
+	}
+}
+
+func (p *OrmPlugin) followsCreateConventions(inType generator.Object, outType generator.Object) (bool, string) {
+	inMsg := inType.(*generator.Descriptor)
+	outMsg := outType.(*generator.Descriptor)
+	var inTypeName string
+	var typeOrmable bool
+	for _, field := range inMsg.Field {
+		if field.GetName() == "payload" {
+			gType, _ := p.GoType(inMsg, field)
+			inTypeName = strings.TrimPrefix(gType, "*")
+			if _, exists := convertibleTypes[inTypeName]; exists {
+				typeOrmable = true
+			}
+		}
+	}
+	var outTypeName string
+	for _, field := range outMsg.Field {
+		if field.GetName() == "result" {
+			gType, _ := p.GoType(outMsg, field)
+			outTypeName = strings.TrimPrefix(gType, "*")
+		}
+	}
+	if inTypeName == outTypeName && typeOrmable {
+		return true, lintName(inTypeName)
+	}
+	return false, ""
 }
 
 func (p *OrmPlugin) generateReadServerMethod(service *descriptor.ServiceDescriptorProto, method *descriptor.MethodDescriptorProto) {
 	inType, outType, methodName, svcName := p.getMethodProps(service, method)
 	p.generateMethodSignature(inType, outType, methodName, svcName)
-	p.P(`var out `, p.TypeName(outType))
-	p.P(`res, err := DefaultRead`, strings.TrimPrefix(methodName, "Read"), `(ctx, in.GetPayload(), m.DB)`)
-	p.P(`out.Result = res`)
-	p.P(`return &out, err`)
-	p.P(`}`)
+	follows, typeName := p.followsReadConventions(inType, outType)
+	if follows {
+		p.P(`res, err := DefaultRead`, typeName, `(ctx, &`, typeName, `{Id: in.GetId()}, m.DB)`)
+		p.P(`if err != nil {`)
+		p.P(`return nil, err`)
+		p.P(`}`)
+		p.P(`return &`, p.TypeName(outType), `{Result: res}, nil`)
+		p.P(`}`)
+	} else {
+		p.generateEmptyBody(outType)
+	}
+}
+
+func (p *OrmPlugin) followsReadConventions(inType generator.Object, outType generator.Object) (bool, string) {
+	inMsg := inType.(*generator.Descriptor)
+	outMsg := outType.(*generator.Descriptor)
+	var hasID bool
+	for _, field := range inMsg.Field {
+		if field.GetName() == "id" {
+			hasID = true
+		}
+	}
+	var outTypeName string
+	var typeOrmable bool
+	for _, field := range outMsg.Field {
+		if field.GetName() == "result" {
+			gType, _ := p.GoType(inMsg, field)
+			outTypeName = strings.TrimPrefix(gType, "*")
+			if _, exists := convertibleTypes[outTypeName]; exists {
+				typeOrmable = true
+			}
+		}
+	}
+	if hasID && typeOrmable {
+		return true, lintName(outTypeName)
+	}
+	return false, ""
 }
 
 func (p *OrmPlugin) generateUpdateServerMethod(service *descriptor.ServiceDescriptorProto, method *descriptor.MethodDescriptorProto) {
 	inType, outType, methodName, svcName := p.getMethodProps(service, method)
 	p.generateMethodSignature(inType, outType, methodName, svcName)
-	p.P(`var out `, p.TypeName(outType))
-	p.P(`res, err := DefaultUpdate`, strings.TrimPrefix(methodName, "Update"), `(ctx, in.GetPayload(), m.DB)`)
-	p.P(`out.Result = res`)
-	p.P(`return &out, err`)
-	p.P(`}`)
+	follows, typeName := p.followsUpdateConventions(inType, outType)
+	if follows {
+		p.P(`res, err := DefaultUpdate`, typeName, `(ctx, in.GetPayload(), m.DB)`)
+		p.P(`if err != nil {`)
+		p.P(`return nil, err`)
+		p.P(`}`)
+		p.P(`return &`, p.TypeName(outType), `{Result: res}, nil`)
+		p.P(`}`)
+	} else {
+		p.generateEmptyBody(outType)
+	}
+}
+
+func (p *OrmPlugin) followsUpdateConventions(inType generator.Object, outType generator.Object) (bool, string) {
+	inMsg := inType.(*generator.Descriptor)
+	outMsg := outType.(*generator.Descriptor)
+	var inTypeName string
+	var typeOrmable bool
+	for _, field := range inMsg.Field {
+		if field.GetName() == "payload" {
+			gType, _ := p.GoType(inMsg, field)
+			inTypeName = strings.TrimPrefix(gType, "*")
+			if _, exists := convertibleTypes[inTypeName]; exists {
+				typeOrmable = true
+			}
+		}
+	}
+	var outTypeName string
+	for _, field := range outMsg.Field {
+		if field.GetName() == "result" {
+			gType, _ := p.GoType(outMsg, field)
+			outTypeName = strings.TrimPrefix(gType, "*")
+		}
+	}
+	if inTypeName == outTypeName && typeOrmable {
+		return true, lintName(inTypeName)
+	}
+	return false, ""
 }
 
 func (p *OrmPlugin) generateDeleteServerMethod(service *descriptor.ServiceDescriptorProto, method *descriptor.MethodDescriptorProto) {
 	inType, outType, methodName, svcName := p.getMethodProps(service, method)
 	p.generateMethodSignature(inType, outType, methodName, svcName)
-	p.P(`return nil, DefaultDelete`, strings.TrimPrefix(methodName, "Delete"), `(ctx, in.GetPayload(), m.DB)`)
-	p.P(`}`)
+	follows, typeName := p.followsDeleteConventions(inType, outType, method)
+	if follows {
+		p.P(`return &`, p.TypeName(outType), `{}, `, `DefaultDelete`, typeName, `(ctx, &`, typeName, `{Id: in.GetId()}, m.DB)`)
+		p.P(`}`)
+	} else {
+		p.generateEmptyBody(outType)
+	}
+}
+
+func (p *OrmPlugin) followsDeleteConventions(inType generator.Object, outType generator.Object, method *descriptor.MethodDescriptorProto) (bool, string) {
+	inMsg := inType.(*generator.Descriptor)
+	var hasID bool
+	for _, field := range inMsg.Field {
+		if field.GetName() == "id" {
+			hasID = true
+		}
+	}
+	var typeName string
+	v, err := proto.GetExtension(method.GetOptions(), gorm.E_Method)
+	opts := v.(*gorm.MethodOptions)
+	if err == nil && opts != nil {
+		typeName = generator.CamelCase(*opts.ObjectType)
+	}
+	var typeOrmable bool
+	if _, exists := convertibleTypes[typeName]; exists {
+		typeOrmable = true
+	}
+	if hasID && typeOrmable {
+		return true, lintName(typeName)
+	}
+	return false, ""
 }
 
 func (p *OrmPlugin) generateListServerMethod(service *descriptor.ServiceDescriptorProto, method *descriptor.MethodDescriptorProto) {
 	inType, outType, methodName, svcName := p.getMethodProps(service, method)
 	p.generateMethodSignature(inType, outType, methodName, svcName)
-	p.P(`var out `, p.TypeName(outType))
-	p.P(`res, err := DefaultList`, strings.TrimPrefix(methodName, "List"), `(ctx, m.DB)`)
-	p.P(`out.Results = res`)
-	p.P(`return &out, err`)
-	p.P(`}`)
+	follows, typeName := p.followsListConventions(inType, outType)
+	if follows {
+		p.P(`res, err := DefaultList`, typeName, `(ctx, m.DB)`)
+		p.P(`if err != nil {`)
+		p.P(`return nil, err`)
+		p.P(`}`)
+		p.P(`return &`, p.TypeName(outType), `{Results: res}, nil`)
+		p.P(`}`)
+	} else {
+		p.generateEmptyBody(outType)
+	}
+}
+
+func (p *OrmPlugin) followsListConventions(inType generator.Object, outType generator.Object) (bool, string) {
+	outMsg := outType.(*generator.Descriptor)
+	var outTypeName string
+	var typeOrmable bool
+	for _, field := range outMsg.Field {
+		if field.GetName() == "results" {
+			gType, _ := p.GoType(outMsg, field)
+			outTypeName = strings.TrimPrefix(gType, "[]*")
+			if _, exists := convertibleTypes[outTypeName]; exists {
+				typeOrmable = true
+			}
+		}
+	}
+	if typeOrmable {
+		return true, lintName(outTypeName)
+	}
+	return false, ""
 }
 
 func (p *OrmPlugin) generateMethodStub(service *descriptor.ServiceDescriptorProto, method *descriptor.MethodDescriptorProto) {
 	inType, outType, methodName, svcName := p.getMethodProps(service, method)
 	p.generateMethodSignature(inType, outType, methodName, svcName)
-	p.P(`return nil, nil`)
-	p.P(`}`)
+	p.generateEmptyBody(outType)
 }
 
 func (p *OrmPlugin) generateMethodSignature(inType, outType generator.Object, methodName, svcName string) {
 	p.P(`// `, methodName, ` ...`)
 	p.P(`func (m *`, svcName, `DefaultServer) `, methodName, ` (ctx context.Context, in *`,
 		p.TypeName(inType), `, opts ...grpc.CallOption) (*`, p.TypeName(outType), `, error) {`)
+}
+
+func (p OrmPlugin) generateEmptyBody(outType generator.Object) {
+	p.P(`return &`, p.TypeName(outType), `{}, nil`)
+	p.P(`}`)
 }
 
 func (p *OrmPlugin) getMethodProps(service *descriptor.ServiceDescriptorProto,
