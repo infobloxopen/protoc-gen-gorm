@@ -6,8 +6,8 @@ import (
 
 	"github.com/jinzhu/gorm"
 
-	"github.com/Infoblox-CTO/ngp.api.toolkit/gw"
-	"github.com/Infoblox-CTO/ngp.api.toolkit/op"
+	"github.com/infobloxopen/atlas-app-toolkit/gw"
+	"github.com/infobloxopen/atlas-app-toolkit/op"
 )
 
 // ApplyCollectionOperators applies collections operators taken from context ctx to gorm instance db.

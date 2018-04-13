@@ -18,7 +18,7 @@ import (
 type ProtoStreamErrorHandlerFunc func(context.Context, bool, *runtime.ServeMux, runtime.Marshaler, http.ResponseWriter, *http.Request, error)
 
 // RestError represents an error in accordance with REST API Syntax Specification.
-// See: https://docs.google.com/document/d/1gi4npvvaY_M1uP2i9LCmX8tOyvF6E5E7HAg1c9uAp_E/edit#heading=h.5eg8odfip64f
+// See: https://github.com/infobloxopen/atlas-app-toolkit#errors
 type RestError struct {
 	Status  *RestStatus   `json:"error,omitempty"`
 	Details []interface{} `json:"details,omitempty"`

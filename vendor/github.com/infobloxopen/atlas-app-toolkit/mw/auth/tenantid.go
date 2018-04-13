@@ -23,8 +23,8 @@ var (
 	errInvalidAssertion = errors.New("unable to assert value as jwt.MapClaims")
 )
 
-func GetTenantID(ctx context.Context) (string, error) {
-	token, err := getToken(ctx)
+func GetTenantID(ctx context.Context, keyfunc jwt.Keyfunc) (string, error) {
+	token, err := getToken(ctx, keyfunc)
 	if err != nil {
 		return "", err
 	}

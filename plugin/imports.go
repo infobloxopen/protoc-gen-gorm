@@ -49,7 +49,7 @@ func (p *OrmPlugin) GenerateImports(file *generator.FileDescriptor) {
 	if p.gormPkgName != "" {
 		stdImports = append(stdImports, "context", "errors")
 		githubImports[p.gormPkgName] = "github.com/jinzhu/gorm"
-		githubImports[p.lftPkgName] = "github.com/Infoblox-CTO/ngp.api.toolkit/op/gorm"
+		githubImports[p.lftPkgName] = "github.com/infobloxopen/atlas-app-toolkit/op/gorm"
 	}
 	if p.usingUUID {
 		githubImports["uuid"] = "github.com/satori/go.uuid"
@@ -60,7 +60,7 @@ func (p *OrmPlugin) GenerateImports(file *generator.FileDescriptor) {
 		githubImports["ptypes"] = "github.com/golang/protobuf/ptypes"
 	}
 	if p.usingAuth {
-		githubImports["auth"] = "github.com/Infoblox-CTO/ngp.api.toolkit/mw/auth"
+		githubImports["auth"] = "github.com/infobloxopen/atlas-app-toolkit/mw/auth"
 	}
 	sort.Strings(stdImports)
 	for _, dep := range stdImports {

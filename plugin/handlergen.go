@@ -51,7 +51,7 @@ func (p *OrmPlugin) generateCreateHandler(message *generator.Descriptor) {
 	p.P(`return nil, err`)
 	p.P(`}`)
 	if opts := getMessageOptions(message); opts != nil && opts.GetMultiTenant() {
-		p.P("tenantID, tIDErr := auth.GetTenantID(ctx)")
+		p.P("tenantID, tIDErr := auth.GetTenantID(ctx, nil)")
 		p.P("if tIDErr != nil {")
 		p.P("return nil, tIDErr")
 		p.P("}")
@@ -79,7 +79,7 @@ func (p *OrmPlugin) generateReadHandler(message *generator.Descriptor) {
 	p.P(`return nil, err`)
 	p.P(`}`)
 	if opts := getMessageOptions(message); opts != nil && opts.GetMultiTenant() {
-		p.P("tenantID, tIDErr := auth.GetTenantID(ctx)")
+		p.P("tenantID, tIDErr := auth.GetTenantID(ctx, nil)")
 		p.P("if tIDErr != nil {")
 		p.P("return nil, tIDErr")
 		p.P("}")
@@ -155,7 +155,7 @@ func (p *OrmPlugin) generateDeleteHandler(message *generator.Descriptor) {
 	p.P(`return err`)
 	p.P(`}`)
 	if opts := getMessageOptions(message); opts != nil && opts.GetMultiTenant() {
-		p.P("tenantID, tIDErr := auth.GetTenantID(ctx)")
+		p.P("tenantID, tIDErr := auth.GetTenantID(ctx, nil)")
 		p.P("if tIDErr != nil {")
 		p.P("return tIDErr")
 		p.P("}")
@@ -179,7 +179,7 @@ func (p *OrmPlugin) generateListHandler(message *generator.Descriptor) {
 	p.P(`return nil, err`)
 	p.P(`}`)
 	if opts := getMessageOptions(message); opts != nil && opts.GetMultiTenant() {
-		p.P("tenantID, tIDErr := auth.GetTenantID(ctx)")
+		p.P("tenantID, tIDErr := auth.GetTenantID(ctx, nil)")
 		p.P("if tIDErr != nil {")
 		p.P("return nil, tIDErr")
 		p.P("}")
@@ -337,7 +337,7 @@ func (p *OrmPlugin) removeChildAssociations(message *generator.Descriptor) bool 
 			p.P(`filterObj`, rawFieldType, `.`, k, ` = ormObj.`, v)
 		}
 		if opts := getMessageOptions(typeNames[rawFieldType]); opts != nil && opts.GetMultiTenant() {
-			p.P("tenantID, tIDErr := auth.GetTenantID(ctx)")
+			p.P("tenantID, tIDErr := auth.GetTenantID(ctx, nil)")
 			p.P("if tIDErr != nil {")
 			p.P("return nil, tIDErr")
 			p.P("}")
@@ -368,7 +368,7 @@ func (p *OrmPlugin) generateStrictUpdateHandler(message *generator.Descriptor) {
 	usedTenantID := p.removeChildAssociations(message)
 	if opts := getMessageOptions(message); opts != nil && opts.GetMultiTenant() {
 		if !usedTenantID {
-			p.P("tenantID, tIDErr := auth.GetTenantID(ctx)")
+			p.P("tenantID, tIDErr := auth.GetTenantID(ctx, nil)")
 			p.P("if tIDErr != nil {")
 			p.P("return nil, tIDErr")
 			p.P("}")
