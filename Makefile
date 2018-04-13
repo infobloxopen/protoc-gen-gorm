@@ -5,7 +5,7 @@ default: build install
 
 build:
 	protoc -I. -I$(SRCPATH) -I./vendor \
-		--gogo_out="Mgoogle/protobuf/descriptor.proto=github.com/gogo/protobuf/protoc-gen-gogo/descriptor:." \
+		--gogo_out="Mgoogle/protobuf/descriptor.proto=github.com/gogo/protobuf/protoc-gen-gogo/descriptor:$(SRCPATH)" \
 		options/gorm.proto
 
 install:
@@ -24,7 +24,6 @@ example: default
 		example/contacts/contacts.proto
 
 test: example
-	goimports -w ./example
 	go test ./...
 	go build ./example/contacts
 	go build ./example/feature_demo
