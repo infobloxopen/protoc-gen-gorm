@@ -12,10 +12,13 @@ import (
 func (p *OrmPlugin) generateDefaultServer(file *generator.FileDescriptor) {
 	for _, service := range file.GetService() {
 		svcName := lintName(generator.CamelCase(service.GetName()))
-		if service.Options != nil {
+		if service.GetOptions() != nil {
 			v, err := proto.GetExtension(service.GetOptions(), gorm.E_Server)
+			if err != nil {
+				continue
+			}
 			opts := v.(*gorm.AutoServerOptions)
-			if err == nil && opts != nil && *opts.Autogen {
+			if opts.GetAutogen() {
 				// All the default server has is a db connection
 				p.P(`type `, svcName, `DefaultServer struct {`)
 				p.P(`DB *`, p.gormPkgName, `.DB`)
@@ -87,9 +90,9 @@ func (p *OrmPlugin) followsCreateConventions(inType generator.Object, outType ge
 func (p *OrmPlugin) generateReadServerMethod(service *descriptor.ServiceDescriptorProto, method *descriptor.MethodDescriptorProto) {
 	inType, outType, methodName, svcName := p.getMethodProps(service, method)
 	p.generateMethodSignature(inType, outType, methodName, svcName)
-	follows, typeName := p.followsReadConventions(inType, outType)
+	follows, pbTypeName, ormTypeName := p.followsReadConventions(inType, outType)
 	if follows {
-		p.P(`res, err := DefaultRead`, typeName, `(ctx, &`, typeName, `{Id: in.GetId()}, m.DB)`)
+		p.P(`res, err := DefaultRead`, ormTypeName, `(ctx, &`, pbTypeName, `{Id: in.GetId()}, m.DB)`)
 		p.P(`if err != nil {`)
 		p.P(`return nil, err`)
 		p.P(`}`)
@@ -100,7 +103,7 @@ func (p *OrmPlugin) generateReadServerMethod(service *descriptor.ServiceDescript
 	}
 }
 
-func (p *OrmPlugin) followsReadConventions(inType generator.Object, outType generator.Object) (bool, string) {
+func (p *OrmPlugin) followsReadConventions(inType generator.Object, outType generator.Object) (bool, string, string) {
 	inMsg := inType.(*generator.Descriptor)
 	outMsg := outType.(*generator.Descriptor)
 	var hasID bool
@@ -121,9 +124,9 @@ func (p *OrmPlugin) followsReadConventions(inType generator.Object, outType gene
 		}
 	}
 	if hasID && typeOrmable {
-		return true, lintName(outTypeName)
+		return true, outTypeName, lintName(outTypeName)
 	}
-	return false, ""
+	return false, "", ""
 }
 
 func (p *OrmPlugin) generateUpdateServerMethod(service *descriptor.ServiceDescriptorProto, method *descriptor.MethodDescriptorProto) {
@@ -172,16 +175,16 @@ func (p *OrmPlugin) followsUpdateConventions(inType generator.Object, outType ge
 func (p *OrmPlugin) generateDeleteServerMethod(service *descriptor.ServiceDescriptorProto, method *descriptor.MethodDescriptorProto) {
 	inType, outType, methodName, svcName := p.getMethodProps(service, method)
 	p.generateMethodSignature(inType, outType, methodName, svcName)
-	follows, typeName := p.followsDeleteConventions(inType, outType, method)
+	follows, pbTypeName, ormTypeName := p.followsDeleteConventions(inType, outType, method)
 	if follows {
-		p.P(`return &`, p.TypeName(outType), `{}, `, `DefaultDelete`, typeName, `(ctx, &`, typeName, `{Id: in.GetId()}, m.DB)`)
+		p.P(`return &`, p.TypeName(outType), `{}, `, `DefaultDelete`, ormTypeName, `(ctx, &`, pbTypeName, `{Id: in.GetId()}, m.DB)`)
 		p.P(`}`)
 	} else {
 		p.generateEmptyBody(outType)
 	}
 }
 
-func (p *OrmPlugin) followsDeleteConventions(inType generator.Object, outType generator.Object, method *descriptor.MethodDescriptorProto) (bool, string) {
+func (p *OrmPlugin) followsDeleteConventions(inType generator.Object, outType generator.Object, method *descriptor.MethodDescriptorProto) (bool, string, string) {
 	inMsg := inType.(*generator.Descriptor)
 	var hasID bool
 	for _, field := range inMsg.Field {
@@ -190,19 +193,22 @@ func (p *OrmPlugin) followsDeleteConventions(inType generator.Object, outType ge
 		}
 	}
 	var typeName string
-	v, err := proto.GetExtension(method.GetOptions(), gorm.E_Method)
-	opts := v.(*gorm.MethodOptions)
-	if err == nil && opts != nil {
-		typeName = generator.CamelCase(*opts.ObjectType)
+	if method.GetOptions() != nil {
+		v, err := proto.GetExtension(method.GetOptions(), gorm.E_Method)
+		if err != nil {
+			return false, "", ""
+		}
+		opts := v.(*gorm.MethodOptions)
+		typeName = generator.CamelCase(opts.GetObjectType())
 	}
 	var typeOrmable bool
 	if _, exists := convertibleTypes[typeName]; exists {
 		typeOrmable = true
 	}
 	if hasID && typeOrmable {
-		return true, lintName(typeName)
+		return true, typeName, lintName(typeName)
 	}
-	return false, ""
+	return false, "", ""
 }
 
 func (p *OrmPlugin) generateListServerMethod(service *descriptor.ServiceDescriptorProto, method *descriptor.MethodDescriptorProto) {
