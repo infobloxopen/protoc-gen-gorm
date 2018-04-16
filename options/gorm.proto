@@ -52,3 +52,11 @@ extend google.protobuf.ServiceOptions {
 message AutoServerOptions {
   optional bool autogen = 1;
 }
+
+extend google.protobuf.MethodOptions {
+  optional MethodOptions method = 52119;
+}
+
+message MethodOptions {
+  optional string object_type = 1;
+}

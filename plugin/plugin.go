@@ -138,7 +138,6 @@ func (p *OrmPlugin) generateMessages(message *generator.Descriptor) {
 				p.wktPkgName = strings.Trim(parts[0], "*")
 				fieldType = v
 			} else if rawType == "Empty" {
-				p.RecordTypeUse(".google.protobuf.Empty")
 				p.P("// Empty type has no ORM equivalency")
 				continue
 			} else if rawType == protoTypeUUID {
