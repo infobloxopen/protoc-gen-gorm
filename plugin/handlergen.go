@@ -298,8 +298,9 @@ func (p *OrmPlugin) removeChildAssociations(message *generator.Descriptor) bool 
 		p.P(`filterObj`, rawFieldType, ` := `, fieldTypeNameORM, `{}`)
 		for k, v := range keys {
 			for _, childField := range typeNames[rawFieldType].GetField() {
-				if generator.CamelCase(childField.GetName()) == k {
+				if strings.EqualFold(generator.CamelCase(childField.GetName()), k) {
 					childFKeyTypeName, _ = p.GoType(message, childField)
+					k = generator.CamelCase(childField.GetName())
 					break
 				}
 			}
@@ -308,8 +309,9 @@ func (p *OrmPlugin) removeChildAssociations(message *generator.Descriptor) bool 
 				opts, valid := ext.(*gorm.GormMessageOptions)
 				if err == nil && valid {
 					for _, field := range opts.Include {
-						if strings.EqualFold(field.GetName(), k) {
+						if strings.EqualFold(generator.CamelCase(field.GetName()), k) {
 							childFKeyTypeName = field.GetType()
+							k = generator.CamelCase(field.GetName())
 							break
 						}
 					}
