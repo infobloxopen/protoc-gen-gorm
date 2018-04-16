@@ -11,11 +11,10 @@ import (
 )
 
 // Returns the pb, linted, and linted+ORM suffix type names for a given object
-func getTypeNames(desc *generator.Descriptor) (string, string, string) {
-	typeNamePb := generator.CamelCaseSlice(desc.TypeName())
-	typeName := lintName(typeNamePb)
+func (p *OrmPlugin) getTypeNames(desc *generator.Descriptor) (string, string) {
+	typeName := p.TypeName(desc)
 	typeNameOrm := fmt.Sprintf("%sORM", typeName)
-	return typeNamePb, typeName, typeNameOrm
+	return typeName, typeNameOrm
 }
 
 // retrieves the GormMessageOptions from a message

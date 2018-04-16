@@ -39,10 +39,10 @@ func (p *OrmPlugin) generateDefaultHandlers(file *generator.FileDescriptor) {
 }
 
 func (p *OrmPlugin) generateCreateHandler(message *generator.Descriptor) {
-	typeNamePb, typeName, _ := getTypeNames(message)
+	typeName, _ := p.getTypeNames(message)
 	p.P(`// DefaultCreate`, typeName, ` executes a basic gorm create call`)
 	p.P(`func DefaultCreate`, typeName, `(ctx context.Context, in *`,
-		typeNamePb, `, db *`, p.gormPkgName, `.DB) (*`, typeNamePb, `, error) {`)
+		typeName, `, db *`, p.gormPkgName, `.DB) (*`, typeName, `, error) {`)
 	p.P(`if in == nil {`)
 	p.P(`return nil, errors.New("Nil argument to DefaultCreate`, typeName, `")`)
 	p.P(`}`)
@@ -67,10 +67,10 @@ func (p *OrmPlugin) generateCreateHandler(message *generator.Descriptor) {
 }
 
 func (p *OrmPlugin) generateReadHandler(message *generator.Descriptor) {
-	typeNamePb, typeName, typeNameOrm := getTypeNames(message)
+	typeName, typeNameOrm := p.getTypeNames(message)
 	p.P(`// DefaultRead`, typeName, ` executes a basic gorm read call`)
 	p.P(`func DefaultRead`, typeName, `(ctx context.Context, in *`,
-		typeNamePb, `, db *`, p.gormPkgName, `.DB) (*`, typeNamePb, `, error) {`)
+		typeName, `, db *`, p.gormPkgName, `.DB) (*`, typeName, `, error) {`)
 	p.P(`if in == nil {`)
 	p.P(`return nil, errors.New("Nil argument to DefaultRead`, typeName, `")`)
 	p.P(`}`)
@@ -96,7 +96,7 @@ func (p *OrmPlugin) generateReadHandler(message *generator.Descriptor) {
 }
 
 func (p *OrmPlugin) generateUpdateHandler(message *generator.Descriptor) {
-	typeNamePb, typeName, _ := getTypeNames(message)
+	typeName, _ := p.getTypeNames(message)
 
 	hasIDField := false
 	for _, field := range message.GetField() {
@@ -117,13 +117,13 @@ func (p *OrmPlugin) generateUpdateHandler(message *generator.Descriptor) {
 
 	p.P(`// DefaultUpdate`, typeName, ` executes a basic gorm update call`)
 	p.P(`func DefaultUpdate`, typeName, `(ctx context.Context, in *`,
-		typeNamePb, `, db *`, p.gormPkgName, `.DB) (*`, typeNamePb, `, error) {`)
+		typeName, `, db *`, p.gormPkgName, `.DB) (*`, typeName, `, error) {`)
 	p.P(`if in == nil {`)
 	p.P(`return nil, errors.New("Nil argument to DefaultUpdate`, typeName, `")`)
 	p.P(`}`)
 	if isMultiTenant {
 		p.P(fmt.Sprintf("if exists, err := DefaultRead%s(ctx, &%s{Id: in.GetId()}, db); err != nil {",
-			typeName, typeNamePb))
+			typeName, typeName))
 		p.P("return nil, err")
 		p.P("} else if exists == nil {")
 		p.P(fmt.Sprintf("return nil, errors.New(\"%s not found\")", typeName))
@@ -144,9 +144,9 @@ func (p *OrmPlugin) generateUpdateHandler(message *generator.Descriptor) {
 }
 
 func (p *OrmPlugin) generateDeleteHandler(message *generator.Descriptor) {
-	typeNamePb, typeName, _ := getTypeNames(message)
+	typeName, _ := p.getTypeNames(message)
 	p.P(`func DefaultDelete`, typeName, `(ctx context.Context, in *`,
-		typeNamePb, `, db *`, p.gormPkgName, `.DB) error {`)
+		typeName, `, db *`, p.gormPkgName, `.DB) error {`)
 	p.P(`if in == nil {`)
 	p.P(`return errors.New("Nil argument to DefaultDelete`, typeName, `")`)
 	p.P(`}`)
@@ -168,11 +168,11 @@ func (p *OrmPlugin) generateDeleteHandler(message *generator.Descriptor) {
 }
 
 func (p *OrmPlugin) generateListHandler(message *generator.Descriptor) {
-	typeNamePb, typeName, typeNameOrm := getTypeNames(message)
+	typeName, typeNameOrm := p.getTypeNames(message)
 
 	p.P(`// DefaultList`, typeName, ` executes a gorm list call`)
 	p.P(`func DefaultList`, typeName, `(ctx context.Context, db *`, p.gormPkgName,
-		`.DB) ([]*`, typeNamePb, `, error) {`)
+		`.DB) ([]*`, typeName, `, error) {`)
 	p.P(`ormResponse := []`, typeName, `ORM{}`)
 	p.P(`db, err := `, p.lftPkgName, `.ApplyCollectionOperators(db, ctx)`)
 	p.P(`if err != nil {`)
@@ -188,7 +188,7 @@ func (p *OrmPlugin) generateListHandler(message *generator.Descriptor) {
 	p.P(`if err := db.Set("gorm:auto_preload", true).Find(&ormResponse).Error; err != nil {`)
 	p.P(`return nil, err`)
 	p.P(`}`)
-	p.P(`pbResponse := []*`, typeNamePb, `{}`)
+	p.P(`pbResponse := []*`, typeName, `{}`)
 	p.P(`for _, responseEntry := range ormResponse {`)
 	p.P(`temp, err := Convert`, typeName, `FromORM(responseEntry)`)
 	p.P(`if err != nil {`)
@@ -207,11 +207,11 @@ func (p *OrmPlugin) generateListHandler(message *generator.Descriptor) {
 func (p *OrmPlugin) findAssociationKeys(parent *generator.Descriptor,
 	child *generator.Descriptor, field *descriptor.FieldDescriptorProto) map[string]string {
 	// Check for gorm tags
-	_, parentTypeName, _ := getTypeNames(parent)
+	parentTypeName, _ := p.getTypeNames(parent)
 	keyMap := make(map[string]string)
-	defaultKeyMap := map[string]string{fmt.Sprintf("%sID", parentTypeName): "ID"}
-	childFields := []string{fmt.Sprintf("%sID", parentTypeName)}
-	parentFields := []string{"ID"}
+	defaultKeyMap := map[string]string{fmt.Sprintf("%sId", parentTypeName): "Id"}
+	childFields := []string{fmt.Sprintf("%sId", parentTypeName)}
+	parentFields := []string{"Id"}
 	if field.Options == nil {
 		return defaultKeyMap
 	}
@@ -237,12 +237,12 @@ func (p *OrmPlugin) findAssociationKeys(parent *generator.Descriptor,
 		} else if tagType[0] == "foreignkey" {
 			childFields = []string{}
 			for _, fName := range strings.Split(tagType[1], ",") { // for compound key
-				childFields = append(childFields, lintName(generator.CamelCase(fName)))
+				childFields = append(childFields, generator.CamelCase(fName))
 			}
 		} else if tagType[0] == "association_foreignkey" {
 			parentFields = []string{}
 			for _, fName := range strings.Split(tagType[1], ",") { // for compound key
-				parentFields = append(parentFields, lintName(generator.CamelCase(fName)))
+				parentFields = append(parentFields, generator.CamelCase(fName))
 			}
 		}
 	}
@@ -274,7 +274,7 @@ func guessZeroValue(typeName string) string {
 }
 
 func (p *OrmPlugin) removeChildAssociations(message *generator.Descriptor) bool {
-	_, typeName, _ := getTypeNames(message)
+	typeName, _ := p.getTypeNames(message)
 	usedTenantID := false
 	if _, exists := typeNames[typeName]; !exists {
 		return usedTenantID
@@ -294,11 +294,11 @@ func (p *OrmPlugin) removeChildAssociations(message *generator.Descriptor) bool 
 		// Prep the filter for the child objects of this type
 		keys := p.findAssociationKeys(message, typeNames[typeName], field)
 		childFKeyTypeName := ""
-		_, _, fieldTypeNameORM := getTypeNames(typeNames[rawFieldType])
+		_, fieldTypeNameORM := p.getTypeNames(typeNames[rawFieldType])
 		p.P(`filterObj`, rawFieldType, ` := `, fieldTypeNameORM, `{}`)
 		for k, v := range keys {
 			for _, childField := range typeNames[rawFieldType].GetField() {
-				if strings.EqualFold(childField.GetName(), k) {
+				if generator.CamelCase(childField.GetName()) == k {
 					childFKeyTypeName, _ = p.GoType(message, childField)
 					break
 				}
@@ -331,7 +331,7 @@ func (p *OrmPlugin) removeChildAssociations(message *generator.Descriptor) bool 
 				p.P(`if ormObj.`, v, ` == `, guessZeroValue(childFKeyTypeName), ` {`)
 			}
 			p.P(`return nil, errors.New("Can't do overwriting update with no '`, v,
-				`' value for FK of field '`, lintName(generator.CamelCase(field.GetName())), `'")`)
+				`' value for FK of field '`, generator.CamelCase(field.GetName()), `'")`)
 			p.P(`}`)
 
 			p.P(`filterObj`, rawFieldType, `.`, k, ` = ormObj.`, v)
@@ -354,10 +354,10 @@ func (p *OrmPlugin) removeChildAssociations(message *generator.Descriptor) bool 
 }
 
 func (p *OrmPlugin) generateStrictUpdateHandler(message *generator.Descriptor) {
-	typeNamePb, typeName, typeNameOrm := getTypeNames(message)
+	typeName, typeNameOrm := p.getTypeNames(message)
 	p.P(`// DefaultStrictUpdate`, typeName, ` clears first level 1:many children and then executes a gorm update call`)
 	p.P(`func DefaultStrictUpdate`, typeName, `(ctx context.Context, in *`,
-		typeNamePb, `, db *`, p.gormPkgName, `.DB) (*`, typeNamePb, `, error) {`)
+		typeName, `, db *`, p.gormPkgName, `.DB) (*`, typeName, `, error) {`)
 	p.P(`if in == nil {`)
 	p.P(`return nil, fmt.Errorf("Nil argument to DefaultCascadedUpdate`, typeName, `")`)
 	p.P(`}`)

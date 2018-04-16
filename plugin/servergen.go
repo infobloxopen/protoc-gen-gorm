@@ -11,7 +11,7 @@ import (
 
 func (p *OrmPlugin) generateDefaultServer(file *generator.FileDescriptor) {
 	for _, service := range file.GetService() {
-		svcName := lintName(generator.CamelCase(service.GetName()))
+		svcName := generator.CamelCase(service.GetName())
 		if service.GetOptions() != nil {
 			v, err := proto.GetExtension(service.GetOptions(), gorm.E_Server)
 			if err != nil {
@@ -24,7 +24,7 @@ func (p *OrmPlugin) generateDefaultServer(file *generator.FileDescriptor) {
 				p.P(`DB *`, p.gormPkgName, `.DB`)
 				p.P(`}`)
 				for _, method := range service.GetMethod() {
-					methodName := lintName(generator.CamelCase(method.GetName()))
+					methodName := generator.CamelCase(method.GetName())
 					if strings.HasPrefix(methodName, "Create") {
 						p.generateCreateServerMethod(service, method)
 					} else if strings.HasPrefix(methodName, "Read") {
@@ -269,7 +269,7 @@ func (p *OrmPlugin) getMethodProps(service *descriptor.ServiceDescriptorProto,
 	p.RecordTypeUse(method.GetInputType())
 	outType := p.ObjectNamed(method.GetOutputType())
 	p.RecordTypeUse(method.GetOutputType())
-	methodName := lintName(generator.CamelCase(method.GetName()))
-	svcName := lintName(generator.CamelCase(service.GetName()))
+	methodName := generator.CamelCase(method.GetName())
+	svcName := generator.CamelCase(service.GetName())
 	return inType, outType, methodName, svcName
 }
