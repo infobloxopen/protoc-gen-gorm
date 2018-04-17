@@ -14,11 +14,7 @@ import (
 func (p *OrmPlugin) generateDefaultHandlers(file *generator.FileDescriptor) {
 	for _, message := range file.Messages() {
 		if message.Options != nil {
-			v, err := proto.GetExtension(message.Options, gorm.E_Opts)
-			if err != nil {
-				continue
-			}
-			if opts, valid := v.(*gorm.GormMessageOptions); !valid || opts == nil || !*opts.Ormable {
+			if opts := getMessageOptions(message); opts == nil || !*opts.Ormable {
 				continue
 			} else if opts.GetMultiTenant() {
 				p.usingAuth = true
@@ -39,7 +35,7 @@ func (p *OrmPlugin) generateDefaultHandlers(file *generator.FileDescriptor) {
 }
 
 func (p *OrmPlugin) generateCreateHandler(message *generator.Descriptor) {
-	typeName, _ := p.getTypeNames(message)
+	typeName := p.TypeName(message)
 	p.P(`// DefaultCreate`, typeName, ` executes a basic gorm create call`)
 	p.P(`func DefaultCreate`, typeName, `(ctx context.Context, in *`,
 		typeName, `, db *`, p.gormPkgName, `.DB) (*`, typeName, `, error) {`)
@@ -67,7 +63,7 @@ func (p *OrmPlugin) generateCreateHandler(message *generator.Descriptor) {
 }
 
 func (p *OrmPlugin) generateReadHandler(message *generator.Descriptor) {
-	typeName, typeNameOrm := p.getTypeNames(message)
+	typeName := p.TypeName(message)
 	p.P(`// DefaultRead`, typeName, ` executes a basic gorm read call`)
 	p.P(`func DefaultRead`, typeName, `(ctx context.Context, in *`,
 		typeName, `, db *`, p.gormPkgName, `.DB) (*`, typeName, `, error) {`)
@@ -85,7 +81,7 @@ func (p *OrmPlugin) generateReadHandler(message *generator.Descriptor) {
 		p.P("}")
 		p.P("ormParams.TenantID = tenantID")
 	}
-	p.P(`ormResponse := `, typeNameOrm, `{}`)
+	p.P(`ormResponse := `, typeName, `ORM{}`)
 	p.P(`if err = db.Set("gorm:auto_preload", true).Where(&ormParams).First(&ormResponse).Error; err != nil {`)
 	p.P(`return nil, err`)
 	p.P(`}`)
@@ -96,7 +92,7 @@ func (p *OrmPlugin) generateReadHandler(message *generator.Descriptor) {
 }
 
 func (p *OrmPlugin) generateUpdateHandler(message *generator.Descriptor) {
-	typeName, _ := p.getTypeNames(message)
+	typeName := p.TypeName(message)
 
 	hasIDField := false
 	for _, field := range message.GetField() {
@@ -144,7 +140,7 @@ func (p *OrmPlugin) generateUpdateHandler(message *generator.Descriptor) {
 }
 
 func (p *OrmPlugin) generateDeleteHandler(message *generator.Descriptor) {
-	typeName, _ := p.getTypeNames(message)
+	typeName := p.TypeName(message)
 	p.P(`func DefaultDelete`, typeName, `(ctx context.Context, in *`,
 		typeName, `, db *`, p.gormPkgName, `.DB) error {`)
 	p.P(`if in == nil {`)
@@ -168,7 +164,7 @@ func (p *OrmPlugin) generateDeleteHandler(message *generator.Descriptor) {
 }
 
 func (p *OrmPlugin) generateListHandler(message *generator.Descriptor) {
-	typeName, typeNameOrm := p.getTypeNames(message)
+	typeName := p.TypeName(message)
 
 	p.P(`// DefaultList`, typeName, ` executes a gorm list call`)
 	p.P(`func DefaultList`, typeName, `(ctx context.Context, db *`, p.gormPkgName,
@@ -183,7 +179,7 @@ func (p *OrmPlugin) generateListHandler(message *generator.Descriptor) {
 		p.P("if tIDErr != nil {")
 		p.P("return nil, tIDErr")
 		p.P("}")
-		p.P(`db = db.Where(&`, typeNameOrm, `{TenantID: tenantID})`)
+		p.P(`db = db.Where(&`, typeName, `ORM{TenantID: tenantID})`)
 	}
 	p.P(`if err := db.Set("gorm:auto_preload", true).Find(&ormResponse).Error; err != nil {`)
 	p.P(`return nil, err`)
@@ -207,7 +203,7 @@ func (p *OrmPlugin) generateListHandler(message *generator.Descriptor) {
 func (p *OrmPlugin) findAssociationKeys(parent *generator.Descriptor,
 	child *generator.Descriptor, field *descriptor.FieldDescriptorProto) map[string]string {
 	// Check for gorm tags
-	parentTypeName, _ := p.getTypeNames(parent)
+	parentTypeName := p.TypeName(parent)
 	keyMap := make(map[string]string)
 	defaultKeyMap := map[string]string{fmt.Sprintf("%sId", parentTypeName): "Id"}
 	childFields := []string{fmt.Sprintf("%sId", parentTypeName)}
@@ -274,7 +270,7 @@ func guessZeroValue(typeName string) string {
 }
 
 func (p *OrmPlugin) removeChildAssociations(message *generator.Descriptor) bool {
-	typeName, _ := p.getTypeNames(message)
+	typeName := p.TypeName(message)
 	usedTenantID := false
 	if _, exists := typeNames[typeName]; !exists {
 		return usedTenantID
@@ -294,8 +290,8 @@ func (p *OrmPlugin) removeChildAssociations(message *generator.Descriptor) bool 
 		// Prep the filter for the child objects of this type
 		keys := p.findAssociationKeys(message, typeNames[typeName], field)
 		childFKeyTypeName := ""
-		_, fieldTypeNameORM := p.getTypeNames(typeNames[rawFieldType])
-		p.P(`filterObj`, rawFieldType, ` := `, fieldTypeNameORM, `{}`)
+		fieldTypeName := p.TypeName(typeNames[rawFieldType])
+		p.P(`filterObj`, rawFieldType, ` := `, fieldTypeName, `ORM{}`)
 		for k, v := range keys {
 			for _, childField := range typeNames[rawFieldType].GetField() {
 				if strings.EqualFold(generator.CamelCase(childField.GetName()), k) {
@@ -305,9 +301,7 @@ func (p *OrmPlugin) removeChildAssociations(message *generator.Descriptor) bool 
 				}
 			}
 			if typeNames[rawFieldType].Options != nil {
-				ext, err := proto.GetExtension(typeNames[rawFieldType].Options, gorm.E_Opts)
-				opts, valid := ext.(*gorm.GormMessageOptions)
-				if err == nil && valid {
+				if opts := getMessageOptions(typeNames[rawFieldType]); opts != nil {
 					for _, field := range opts.Include {
 						if strings.EqualFold(generator.CamelCase(field.GetName()), k) {
 							childFKeyTypeName = field.GetType()
@@ -356,7 +350,7 @@ func (p *OrmPlugin) removeChildAssociations(message *generator.Descriptor) bool 
 }
 
 func (p *OrmPlugin) generateStrictUpdateHandler(message *generator.Descriptor) {
-	typeName, typeNameOrm := p.getTypeNames(message)
+	typeName := p.TypeName(message)
 	p.P(`// DefaultStrictUpdate`, typeName, ` clears first level 1:many children and then executes a gorm update call`)
 	p.P(`func DefaultStrictUpdate`, typeName, `(ctx context.Context, in *`,
 		typeName, `, db *`, p.gormPkgName, `.DB) (*`, typeName, `, error) {`)
@@ -375,7 +369,7 @@ func (p *OrmPlugin) generateStrictUpdateHandler(message *generator.Descriptor) {
 			p.P("return nil, tIDErr")
 			p.P("}")
 		}
-		p.P(`db = db.Where(&`, typeNameOrm, `{TenantID: tenantID})`)
+		p.P(`db = db.Where(&`, typeName, `ORM{TenantID: tenantID})`)
 	}
 	p.P(`if err = db.Save(&ormObj).Error; err != nil {`)
 	p.P(`return nil, err`)

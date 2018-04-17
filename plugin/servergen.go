@@ -82,7 +82,7 @@ func (p *OrmPlugin) followsCreateConventions(inType generator.Object, outType ge
 		}
 	}
 	if inTypeName == outTypeName && typeOrmable {
-		return true, lintName(inTypeName)
+		return true, inTypeName
 	}
 	return false, ""
 }
@@ -90,9 +90,9 @@ func (p *OrmPlugin) followsCreateConventions(inType generator.Object, outType ge
 func (p *OrmPlugin) generateReadServerMethod(service *descriptor.ServiceDescriptorProto, method *descriptor.MethodDescriptorProto) {
 	inType, outType, methodName, svcName := p.getMethodProps(service, method)
 	p.generateMethodSignature(inType, outType, methodName, svcName)
-	follows, pbTypeName, ormTypeName := p.followsReadConventions(inType, outType)
+	follows, typeName := p.followsReadConventions(inType, outType)
 	if follows {
-		p.P(`res, err := DefaultRead`, ormTypeName, `(ctx, &`, pbTypeName, `{Id: in.GetId()}, m.DB)`)
+		p.P(`res, err := DefaultRead`, typeName, `(ctx, &`, typeName, `{Id: in.GetId()}, m.DB)`)
 		p.P(`if err != nil {`)
 		p.P(`return nil, err`)
 		p.P(`}`)
@@ -103,7 +103,7 @@ func (p *OrmPlugin) generateReadServerMethod(service *descriptor.ServiceDescript
 	}
 }
 
-func (p *OrmPlugin) followsReadConventions(inType generator.Object, outType generator.Object) (bool, string, string) {
+func (p *OrmPlugin) followsReadConventions(inType generator.Object, outType generator.Object) (bool, string) {
 	inMsg := inType.(*generator.Descriptor)
 	outMsg := outType.(*generator.Descriptor)
 	var hasID bool
@@ -124,9 +124,9 @@ func (p *OrmPlugin) followsReadConventions(inType generator.Object, outType gene
 		}
 	}
 	if hasID && typeOrmable {
-		return true, outTypeName, lintName(outTypeName)
+		return true, outTypeName
 	}
-	return false, "", ""
+	return false, ""
 }
 
 func (p *OrmPlugin) generateUpdateServerMethod(service *descriptor.ServiceDescriptorProto, method *descriptor.MethodDescriptorProto) {
@@ -167,7 +167,7 @@ func (p *OrmPlugin) followsUpdateConventions(inType generator.Object, outType ge
 		}
 	}
 	if inTypeName == outTypeName && typeOrmable {
-		return true, lintName(inTypeName)
+		return true, inTypeName
 	}
 	return false, ""
 }
@@ -175,16 +175,16 @@ func (p *OrmPlugin) followsUpdateConventions(inType generator.Object, outType ge
 func (p *OrmPlugin) generateDeleteServerMethod(service *descriptor.ServiceDescriptorProto, method *descriptor.MethodDescriptorProto) {
 	inType, outType, methodName, svcName := p.getMethodProps(service, method)
 	p.generateMethodSignature(inType, outType, methodName, svcName)
-	follows, pbTypeName, ormTypeName := p.followsDeleteConventions(inType, outType, method)
+	follows, typeName := p.followsDeleteConventions(inType, outType, method)
 	if follows {
-		p.P(`return &`, p.TypeName(outType), `{}, `, `DefaultDelete`, ormTypeName, `(ctx, &`, pbTypeName, `{Id: in.GetId()}, m.DB)`)
+		p.P(`return &`, p.TypeName(outType), `{}, `, `DefaultDelete`, typeName, `(ctx, &`, typeName, `{Id: in.GetId()}, m.DB)`)
 		p.P(`}`)
 	} else {
 		p.generateEmptyBody(outType)
 	}
 }
 
-func (p *OrmPlugin) followsDeleteConventions(inType generator.Object, outType generator.Object, method *descriptor.MethodDescriptorProto) (bool, string, string) {
+func (p *OrmPlugin) followsDeleteConventions(inType generator.Object, outType generator.Object, method *descriptor.MethodDescriptorProto) (bool, string) {
 	inMsg := inType.(*generator.Descriptor)
 	var hasID bool
 	for _, field := range inMsg.Field {
@@ -196,7 +196,7 @@ func (p *OrmPlugin) followsDeleteConventions(inType generator.Object, outType ge
 	if method.GetOptions() != nil {
 		v, err := proto.GetExtension(method.GetOptions(), gorm.E_Method)
 		if err != nil {
-			return false, "", ""
+			return false, ""
 		}
 		opts := v.(*gorm.MethodOptions)
 		typeName = generator.CamelCase(opts.GetObjectType())
@@ -206,9 +206,9 @@ func (p *OrmPlugin) followsDeleteConventions(inType generator.Object, outType ge
 		typeOrmable = true
 	}
 	if hasID && typeOrmable {
-		return true, typeName, lintName(typeName)
+		return true, typeName
 	}
-	return false, "", ""
+	return false, ""
 }
 
 func (p *OrmPlugin) generateListServerMethod(service *descriptor.ServiceDescriptorProto, method *descriptor.MethodDescriptorProto) {
@@ -241,7 +241,7 @@ func (p *OrmPlugin) followsListConventions(inType generator.Object, outType gene
 		}
 	}
 	if typeOrmable {
-		return true, lintName(outTypeName)
+		return true, outTypeName
 	}
 	return false, ""
 }
