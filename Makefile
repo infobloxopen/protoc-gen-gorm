@@ -8,6 +8,10 @@ build:
 		--gogo_out="Mgoogle/protobuf/descriptor.proto=github.com/gogo/protobuf/protoc-gen-gogo/descriptor:$(SRCPATH)" \
 		options/gorm.proto
 
+.PHONY: types
+types:
+	protoc --go_out=. types/types.proto
+
 install:
 	go install
 

@@ -3,5 +3,5 @@ syntax = "proto3";
 package gormable_types;
 
 message UUIDValue {
-  string Value = 1;
+  string value = 1;
 }
