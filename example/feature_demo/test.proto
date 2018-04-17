@@ -24,7 +24,7 @@ message TestTypes {
   google.protobuf.Empty nothingness = 5;
   gormable_types.UUIDValue uuid = 6;
   google.protobuf.Timestamp created_at = 7;
-  uint32 TypeWithID_id = 8;
+  uint32 type_with_id_id = 8;
 }
 
 message TypeWithID {
