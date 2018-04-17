@@ -220,7 +220,7 @@ func (p *OrmPlugin) generateMessageHead(message *generator.Descriptor) {
 				p.P(lintName(generator.CamelCase(*field.Name)), ` `, field.Type, ` `, tagString)
 			}
 			if opts.GetMultiTenant() {
-				p.P("TenantID string")
+				p.P("AccountID string")
 			}
 		}
 	}

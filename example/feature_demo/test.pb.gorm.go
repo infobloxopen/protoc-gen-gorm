@@ -177,7 +177,7 @@ func ConvertTypeWithIDFromORM(from TypeWithIDORM) (TypeWithId, error) {
 
 // MultitenantTypeWithIDORM no comment was provided for message type
 type MultitenantTypeWithIDORM struct {
-	TenantID  string
+	AccountID string
 	ID        uint64
 	SomeField string
 }
@@ -207,7 +207,7 @@ func ConvertMultitenantTypeWithIDFromORM(from MultitenantTypeWithIDORM) (Multite
 
 // MultitenantTypeWithoutIDORM no comment was provided for message type
 type MultitenantTypeWithoutIDORM struct {
-	TenantID  string
+	AccountID string
 	SomeField string
 }
 
@@ -468,11 +468,11 @@ func DefaultCreateMultitenantTypeWithID(ctx context.Context, in *MultitenantType
 	if err != nil {
 		return nil, err
 	}
-	tenantID, tIDErr := auth.GetTenantID(ctx, nil)
-	if tIDErr != nil {
-		return nil, tIDErr
+	accountID, err := auth.GetAccountID(ctx, nil)
+	if err != nil {
+		return nil, err
 	}
-	ormObj.TenantID = tenantID
+	ormObj.AccountID = accountID
 	if err = db.Create(&ormObj).Error; err != nil {
 		return nil, err
 	}
@@ -489,11 +489,11 @@ func DefaultReadMultitenantTypeWithID(ctx context.Context, in *MultitenantTypeWi
 	if err != nil {
 		return nil, err
 	}
-	tenantID, tIDErr := auth.GetTenantID(ctx, nil)
-	if tIDErr != nil {
-		return nil, tIDErr
+	accountID, err := auth.GetAccountID(ctx, nil)
+	if err != nil {
+		return nil, err
 	}
-	ormParams.TenantID = tenantID
+	ormParams.AccountID = accountID
 	ormResponse := MultitenantTypeWithIDORM{}
 	if err = db.Set("gorm:auto_preload", true).Where(&ormParams).First(&ormResponse).Error; err != nil {
 		return nil, err
@@ -531,11 +531,11 @@ func DefaultDeleteMultitenantTypeWithID(ctx context.Context, in *MultitenantType
 	if err != nil {
 		return err
 	}
-	tenantID, tIDErr := auth.GetTenantID(ctx, nil)
-	if tIDErr != nil {
-		return tIDErr
+	accountID, err := auth.GetAccountID(ctx, nil)
+	if err != nil {
+		return err
 	}
-	ormObj.TenantID = tenantID
+	ormObj.AccountID = accountID
 	err = db.Where(&ormObj).Delete(&MultitenantTypeWithIDORM{}).Error
 	return err
 }
@@ -547,11 +547,11 @@ func DefaultListMultitenantTypeWithID(ctx context.Context, db *gorm.DB) ([]*Mult
 	if err != nil {
 		return nil, err
 	}
-	tenantID, tIDErr := auth.GetTenantID(ctx, nil)
-	if tIDErr != nil {
-		return nil, tIDErr
+	accountID, err := auth.GetAccountID(ctx, nil)
+	if err != nil {
+		return nil, err
 	}
-	db = db.Where(&MultitenantTypeWithIDORM{TenantID: tenantID})
+	db = db.Where(&MultitenantTypeWithIDORM{AccountID: accountID})
 	if err := db.Set("gorm:auto_preload", true).Find(&ormResponse).Error; err != nil {
 		return nil, err
 	}
@@ -575,11 +575,11 @@ func DefaultStrictUpdateMultitenantTypeWithID(ctx context.Context, in *Multitena
 	if err != nil {
 		return nil, err
 	}
-	tenantID, tIDErr := auth.GetTenantID(ctx, nil)
-	if tIDErr != nil {
-		return nil, tIDErr
+	accountID, err := auth.GetAccountID(ctx, nil)
+	if err != nil {
+		return nil, err
 	}
-	db = db.Where(&MultitenantTypeWithIDORM{TenantID: tenantID})
+	db = db.Where(&MultitenantTypeWithIDORM{AccountID: accountID})
 	if err = db.Save(&ormObj).Error; err != nil {
 		return nil, err
 	}
@@ -599,11 +599,11 @@ func DefaultCreateMultitenantTypeWithoutID(ctx context.Context, in *MultitenantT
 	if err != nil {
 		return nil, err
 	}
-	tenantID, tIDErr := auth.GetTenantID(ctx, nil)
-	if tIDErr != nil {
-		return nil, tIDErr
+	accountID, err := auth.GetAccountID(ctx, nil)
+	if err != nil {
+		return nil, err
 	}
-	ormObj.TenantID = tenantID
+	ormObj.AccountID = accountID
 	if err = db.Create(&ormObj).Error; err != nil {
 		return nil, err
 	}
@@ -620,11 +620,11 @@ func DefaultReadMultitenantTypeWithoutID(ctx context.Context, in *MultitenantTyp
 	if err != nil {
 		return nil, err
 	}
-	tenantID, tIDErr := auth.GetTenantID(ctx, nil)
-	if tIDErr != nil {
-		return nil, tIDErr
+	accountID, err := auth.GetAccountID(ctx, nil)
+	if err != nil {
+		return nil, err
 	}
-	ormParams.TenantID = tenantID
+	ormParams.AccountID = accountID
 	ormResponse := MultitenantTypeWithoutIDORM{}
 	if err = db.Set("gorm:auto_preload", true).Where(&ormParams).First(&ormResponse).Error; err != nil {
 		return nil, err
@@ -643,11 +643,11 @@ func DefaultDeleteMultitenantTypeWithoutID(ctx context.Context, in *MultitenantT
 	if err != nil {
 		return err
 	}
-	tenantID, tIDErr := auth.GetTenantID(ctx, nil)
-	if tIDErr != nil {
-		return tIDErr
+	accountID, err := auth.GetAccountID(ctx, nil)
+	if err != nil {
+		return err
 	}
-	ormObj.TenantID = tenantID
+	ormObj.AccountID = accountID
 	err = db.Where(&ormObj).Delete(&MultitenantTypeWithoutIDORM{}).Error
 	return err
 }
@@ -659,11 +659,11 @@ func DefaultListMultitenantTypeWithoutID(ctx context.Context, db *gorm.DB) ([]*M
 	if err != nil {
 		return nil, err
 	}
-	tenantID, tIDErr := auth.GetTenantID(ctx, nil)
-	if tIDErr != nil {
-		return nil, tIDErr
+	accountID, err := auth.GetAccountID(ctx, nil)
+	if err != nil {
+		return nil, err
 	}
-	db = db.Where(&MultitenantTypeWithoutIDORM{TenantID: tenantID})
+	db = db.Where(&MultitenantTypeWithoutIDORM{AccountID: accountID})
 	if err := db.Set("gorm:auto_preload", true).Find(&ormResponse).Error; err != nil {
 		return nil, err
 	}
@@ -687,11 +687,11 @@ func DefaultStrictUpdateMultitenantTypeWithoutID(ctx context.Context, in *Multit
 	if err != nil {
 		return nil, err
 	}
-	tenantID, tIDErr := auth.GetTenantID(ctx, nil)
-	if tIDErr != nil {
-		return nil, tIDErr
+	accountID, err := auth.GetAccountID(ctx, nil)
+	if err != nil {
+		return nil, err
 	}
-	db = db.Where(&MultitenantTypeWithoutIDORM{TenantID: tenantID})
+	db = db.Where(&MultitenantTypeWithoutIDORM{AccountID: accountID})
 	if err = db.Save(&ormObj).Error; err != nil {
 		return nil, err
 	}

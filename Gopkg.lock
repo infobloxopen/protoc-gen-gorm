@@ -72,7 +72,7 @@
     "tags/logrus",
     "util/metautils"
   ]
-  revision = "b9ed6aed6cf9de7330c7c8e81d3d8e49086539e8"
+  revision = "bc175326149c6c87ca6e2b9fe58cf6d2aa1036cd"
 
 [[projects]]
   name = "github.com/grpc-ecosystem/grpc-gateway"
@@ -92,7 +92,6 @@
   revision = "0e7658f8ee99ee5aa683e2a032b8880091b7a055"
 
 [[projects]]
-  branch = "master"
   name = "github.com/infobloxopen/atlas-app-toolkit"
   packages = [
     "gw",
@@ -100,7 +99,8 @@
     "op",
     "op/gorm"
   ]
-  revision = "f2e4fd90263988a4e9c5f766b0e496814b6bed7a"
+  revision = "2fde752676ad546628535aedf8106b2579624bc8"
+  version = "v0.2.0"
 
 [[projects]]
   branch = "master"
@@ -122,7 +122,7 @@
     "pdp-service",
     "pep"
   ]
-  revision = "24700e294b4dcaea80b186a9bb7dd257ac250d09"
+  revision = "75632aeed60b2f2dfa7938beeb9519d185c5cae4"
 
 [[projects]]
   name = "github.com/jinzhu/gorm"
@@ -168,13 +168,14 @@
   branch = "master"
   name = "golang.org/x/crypto"
   packages = ["ssh/terminal"]
-  revision = "beb2a9779c3b677077c41673505f150149fce895"
+  revision = "d6449816ce06963d9d136eee5a56fca5b0616e7e"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/net"
   packages = [
     "context",
+    "http/httpguts",
     "http2",
     "http2/hpack",
     "idna",
@@ -182,7 +183,7 @@
     "lex/httplex",
     "trace"
   ]
-  revision = "6078986fec03a1dcc236c34816c71b0e05018fda"
+  revision = "8d16fa6dc9a85c1cd3ed24ad08ff21cf94f10888"
 
 [[projects]]
   branch = "master"
@@ -191,7 +192,7 @@
     "unix",
     "windows"
   ]
-  revision = "3b87a42e500a6dc65dae1a55d0b641295971163e"
+  revision = "b126b21c05a91c856b027c16779c12e3bf236954"
 
 [[projects]]
   name = "golang.org/x/text"
@@ -222,7 +223,7 @@
     "googleapis/rpc/code",
     "googleapis/rpc/status"
   ]
-  revision = "ab0870e398d5dd054b868c0db1481ab029b9a9f2"
+  revision = "7fd901a49ba6a7f87732eb344f6e3c5b19d1b200"
 
 [[projects]]
   name = "google.golang.org/grpc"
@@ -251,8 +252,8 @@
     "tap",
     "transport"
   ]
-  revision = "8e4536a86ab602859c20df5ebfd0bd4228d08655"
-  version = "v1.10.0"
+  revision = "d11072e7ca9811b1100b80ca0269ac831f06d024"
+  version = "v1.11.3"
 
 [solve-meta]
   analyzer-name = "dep"
