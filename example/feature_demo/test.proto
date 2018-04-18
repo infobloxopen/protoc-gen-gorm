@@ -10,7 +10,7 @@ import "google/protobuf/timestamp.proto";
 option go_package = "github.com/infobloxopen/protoc-gen-gorm/example/feature_demo;example";
 
 // test_types is a message that serves as an example
-message test_types {
+message TestTypes {
   option (gorm.opts) = {ormable:true, table: "smorgasbord"};
   string api_only_string = 1 [(gorm.field).drop = true];
   repeated int32 numbers = 2;
@@ -24,9 +24,10 @@ message test_types {
   google.protobuf.Empty nothingness = 5;
   gormable_types.UUIDValue uuid = 6;
   google.protobuf.Timestamp created_at = 7;
+  uint32 type_with_id_id = 8;
 }
 
-message type_with_id {
+message TypeWithID {
   option (gorm.opts) = {
     ormable: true,
     include: [
@@ -34,11 +35,12 @@ message type_with_id {
       ]
     };
   string ip = 1 [(gorm.field) = {tags: "gorm:\"ip_addr\""}];
-  repeated test_types things = 3;
-  test_types a_nested_object = 4;
+  repeated TestTypes things = 3;
+  TestTypes a_nested_object = 4;
+  uint32 id = 5;
 }
 
-message multitenant_type_with_id {
+message MultitenantTypeWithID {
   option (gorm.opts) = {
     ormable: true,
     multi_tenant: true
@@ -47,7 +49,7 @@ message multitenant_type_with_id {
   string some_field = 2;
 }
 
-message multitenant_type_without_id {
+message MultitenantTypeWithoutID {
   option (gorm.opts) = {
     ormable: true,
     multi_tenant: true
@@ -55,11 +57,11 @@ message multitenant_type_without_id {
   string some_field = 1;
 }
 
-message api_only_type {
+message APIOnlyType {
   string contents = 1;
 }
 
-message type_becomes_empty {
+message TypeBecomesEmpty {
   option (gorm.opts).ormable = true;
-  api_only_type a_thing = 1;
+  APIOnlyType a_thing = 1;
 }

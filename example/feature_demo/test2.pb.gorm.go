@@ -19,7 +19,7 @@ var _ = math.Inf
 
 // IntPointORM no comment was provided for message type
 type IntPointORM struct {
-	ID uint32
+	Id uint32
 	X  int32
 	Y  int32
 }
@@ -33,7 +33,7 @@ func (IntPointORM) TableName() string {
 func ConvertIntPointToORM(from IntPoint) (IntPointORM, error) {
 	to := IntPointORM{}
 	var err error
-	to.ID = from.Id
+	to.Id = from.Id
 	to.X = from.X
 	to.Y = from.Y
 	return to, err
@@ -43,7 +43,7 @@ func ConvertIntPointToORM(from IntPoint) (IntPointORM, error) {
 func ConvertIntPointFromORM(from IntPointORM) (IntPoint, error) {
 	to := IntPoint{}
 	var err error
-	to.Id = from.ID
+	to.Id = from.Id
 	to.X = from.X
 	to.Y = from.Y
 	return to, err
