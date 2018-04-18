@@ -16,7 +16,7 @@ func (p *OrmPlugin) generateDefaultHandlers(file *generator.FileDescriptor) {
 		if message.Options != nil {
 			if opts := getMessageOptions(message); opts == nil || !*opts.Ormable {
 				continue
-			} else if opts.GetMultiTenant() {
+			} else if opts.GetMultiAccount() {
 				p.usingAuth = true
 			}
 		} else {
@@ -46,12 +46,12 @@ func (p *OrmPlugin) generateCreateHandler(message *generator.Descriptor) {
 	p.P(`if err != nil {`)
 	p.P(`return nil, err`)
 	p.P(`}`)
-	if opts := getMessageOptions(message); opts != nil && opts.GetMultiTenant() {
-		p.P("tenantID, tIDErr := auth.GetTenantID(ctx, nil)")
-		p.P("if tIDErr != nil {")
-		p.P("return nil, tIDErr")
+	if opts := getMessageOptions(message); opts != nil && opts.GetMultiAccount() {
+		p.P("accountID, err := auth.GetAccountID(ctx, nil)")
+		p.P("if err != nil {")
+		p.P("return nil, err")
 		p.P("}")
-		p.P("ormObj.TenantID = tenantID")
+		p.P("ormObj.AccountID = accountID")
 	}
 	p.P(`if err = db.Create(&ormObj).Error; err != nil {`)
 	p.P(`return nil, err`)
@@ -74,12 +74,12 @@ func (p *OrmPlugin) generateReadHandler(message *generator.Descriptor) {
 	p.P(`if err != nil {`)
 	p.P(`return nil, err`)
 	p.P(`}`)
-	if opts := getMessageOptions(message); opts != nil && opts.GetMultiTenant() {
-		p.P("tenantID, tIDErr := auth.GetTenantID(ctx, nil)")
-		p.P("if tIDErr != nil {")
-		p.P("return nil, tIDErr")
+	if opts := getMessageOptions(message); opts != nil && opts.GetMultiAccount() {
+		p.P("accountID, err := auth.GetAccountID(ctx, nil)")
+		p.P("if err != nil {")
+		p.P("return nil, err")
 		p.P("}")
-		p.P("ormParams.TenantID = tenantID")
+		p.P("ormParams.AccountID = accountID")
 	}
 	p.P(`ormResponse := `, typeName, `ORM{}`)
 	p.P(`if err = db.Set("gorm:auto_preload", true).Where(&ormParams).First(&ormResponse).Error; err != nil {`)
@@ -101,13 +101,13 @@ func (p *OrmPlugin) generateUpdateHandler(message *generator.Descriptor) {
 			break
 		}
 	}
-	isMultiTenant := false
-	if opts := getMessageOptions(message); opts != nil && opts.GetMultiTenant() {
-		isMultiTenant = true
+	isMultiAccount := false
+	if opts := getMessageOptions(message); opts != nil && opts.GetMultiAccount() {
+		isMultiAccount = true
 	}
 
-	if isMultiTenant && !hasIDField {
-		p.P(fmt.Sprintf("// Cannot autogen DefaultUpdate%s: this is a multi-tenant table without an \"id\" field in the message.\n", typeName))
+	if isMultiAccount && !hasIDField {
+		p.P(fmt.Sprintf("// Cannot autogen DefaultUpdate%s: this is a multi-account table without an \"id\" field in the message.\n", typeName))
 		return
 	}
 
@@ -117,7 +117,7 @@ func (p *OrmPlugin) generateUpdateHandler(message *generator.Descriptor) {
 	p.P(`if in == nil {`)
 	p.P(`return nil, errors.New("Nil argument to DefaultUpdate`, typeName, `")`)
 	p.P(`}`)
-	if isMultiTenant {
+	if isMultiAccount {
 		p.P(fmt.Sprintf("if exists, err := DefaultRead%s(ctx, &%s{Id: in.GetId()}, db); err != nil {",
 			typeName, typeName))
 		p.P("return nil, err")
@@ -150,12 +150,12 @@ func (p *OrmPlugin) generateDeleteHandler(message *generator.Descriptor) {
 	p.P(`if err != nil {`)
 	p.P(`return err`)
 	p.P(`}`)
-	if opts := getMessageOptions(message); opts != nil && opts.GetMultiTenant() {
-		p.P("tenantID, tIDErr := auth.GetTenantID(ctx, nil)")
-		p.P("if tIDErr != nil {")
-		p.P("return tIDErr")
+	if opts := getMessageOptions(message); opts != nil && opts.GetMultiAccount() {
+		p.P("accountID, err := auth.GetAccountID(ctx, nil)")
+		p.P("if err != nil {")
+		p.P("return err")
 		p.P("}")
-		p.P("ormObj.TenantID = tenantID")
+		p.P("ormObj.AccountID = accountID")
 	}
 	p.P(`err = db.Where(&ormObj).Delete(&`, typeName, `ORM{}).Error`)
 	p.P(`return err`)
@@ -174,12 +174,12 @@ func (p *OrmPlugin) generateListHandler(message *generator.Descriptor) {
 	p.P(`if err != nil {`)
 	p.P(`return nil, err`)
 	p.P(`}`)
-	if opts := getMessageOptions(message); opts != nil && opts.GetMultiTenant() {
-		p.P("tenantID, tIDErr := auth.GetTenantID(ctx, nil)")
-		p.P("if tIDErr != nil {")
-		p.P("return nil, tIDErr")
+	if opts := getMessageOptions(message); opts != nil && opts.GetMultiAccount() {
+		p.P("accountID, err := auth.GetAccountID(ctx, nil)")
+		p.P("if err != nil {")
+		p.P("return nil, err")
 		p.P("}")
-		p.P(`db = db.Where(&`, typeName, `ORM{TenantID: tenantID})`)
+		p.P(`db = db.Where(&`, typeName, `ORM{AccountID: accountID})`)
 	}
 	p.P(`if err := db.Set("gorm:auto_preload", true).Find(&ormResponse).Error; err != nil {`)
 	p.P(`return nil, err`)
@@ -271,9 +271,9 @@ func guessZeroValue(typeName string) string {
 
 func (p *OrmPlugin) removeChildAssociations(message *generator.Descriptor) bool {
 	typeName := p.TypeName(message)
-	usedTenantID := false
+	usedAccountID := false
 	if _, exists := typeNames[typeName]; !exists {
-		return usedTenantID
+		return usedAccountID
 	}
 	for _, field := range message.Field {
 		// Only looking at slices
@@ -309,7 +309,7 @@ func (p *OrmPlugin) removeChildAssociations(message *generator.Descriptor) bool 
 							break
 						}
 					}
-					if opts.GetMultiTenant() && k == "TenantID" {
+					if opts.GetMultiAccount() && k == "AccountID" {
 						childFKeyTypeName = "string"
 					}
 				}
@@ -332,13 +332,13 @@ func (p *OrmPlugin) removeChildAssociations(message *generator.Descriptor) bool 
 
 			p.P(`filterObj`, rawFieldType, `.`, k, ` = ormObj.`, v)
 		}
-		if opts := getMessageOptions(typeNames[rawFieldType]); opts != nil && opts.GetMultiTenant() {
-			p.P("tenantID, tIDErr := auth.GetTenantID(ctx, nil)")
-			p.P("if tIDErr != nil {")
-			p.P("return nil, tIDErr")
+		if opts := getMessageOptions(typeNames[rawFieldType]); opts != nil && opts.GetMultiAccount() {
+			p.P("accountID, err := auth.GetAccountID(ctx, nil)")
+			p.P("if err != nil {")
+			p.P("return nil, err")
 			p.P("}")
-			p.P(`filterObj`, rawFieldType, `.TenantID = tenantID`)
-			usedTenantID = true
+			p.P(`filterObj`, rawFieldType, `.AccountID = accountID`)
+			usedAccountID = true
 		}
 
 		p.P(`if err = db.Where(filterObj`, rawFieldType, `).Delete(`,
@@ -346,7 +346,7 @@ func (p *OrmPlugin) removeChildAssociations(message *generator.Descriptor) bool 
 		p.P(`return nil, err`)
 		p.P(`}`)
 	}
-	return usedTenantID
+	return usedAccountID
 }
 
 func (p *OrmPlugin) generateStrictUpdateHandler(message *generator.Descriptor) {
@@ -361,15 +361,15 @@ func (p *OrmPlugin) generateStrictUpdateHandler(message *generator.Descriptor) {
 	p.P(`if err != nil {`)
 	p.P(`return nil, err`)
 	p.P(`}`)
-	usedTenantID := p.removeChildAssociations(message)
-	if opts := getMessageOptions(message); opts != nil && opts.GetMultiTenant() {
-		if !usedTenantID {
-			p.P("tenantID, tIDErr := auth.GetTenantID(ctx, nil)")
-			p.P("if tIDErr != nil {")
-			p.P("return nil, tIDErr")
+	usedAccountID := p.removeChildAssociations(message)
+	if opts := getMessageOptions(message); opts != nil && opts.GetMultiAccount() {
+		if !usedAccountID {
+			p.P("accountID, err := auth.GetAccountID(ctx, nil)")
+			p.P("if err != nil {")
+			p.P("return nil, err")
 			p.P("}")
 		}
-		p.P(`db = db.Where(&`, typeName, `ORM{TenantID: tenantID})`)
+		p.P(`db = db.Where(&`, typeName, `ORM{AccountID: accountID})`)
 	}
 	p.P(`if err = db.Save(&ormObj).Error; err != nil {`)
 	p.P(`return nil, err`)

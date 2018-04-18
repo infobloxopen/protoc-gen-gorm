@@ -213,8 +213,8 @@ func (p *OrmPlugin) generateMessageHead(message *generator.Descriptor) {
 			}
 			p.P(generator.CamelCase(*field.Name), ` `, field.Type, ` `, tagString)
 		}
-		if opts.GetMultiTenant() {
-			p.P("TenantID string")
+		if opts.GetMultiAccount() {
+			p.P("AccountID string")
 		}
 	}
 }

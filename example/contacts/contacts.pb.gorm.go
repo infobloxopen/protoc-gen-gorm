@@ -36,7 +36,7 @@ var _ = math.Inf
 
 // ContactORM no comment was provided for message type
 type ContactORM struct {
-	TenantID     string
+	AccountID    string
 	Id           uint64
 	FirstName    string
 	MiddleName   string
@@ -83,11 +83,11 @@ func DefaultCreateContact(ctx context.Context, in *Contact, db *gorm.DB) (*Conta
 	if err != nil {
 		return nil, err
 	}
-	tenantID, tIDErr := auth.GetTenantID(ctx, nil)
-	if tIDErr != nil {
-		return nil, tIDErr
+	accountID, err := auth.GetAccountID(ctx, nil)
+	if err != nil {
+		return nil, err
 	}
-	ormObj.TenantID = tenantID
+	ormObj.AccountID = accountID
 	if err = db.Create(&ormObj).Error; err != nil {
 		return nil, err
 	}
@@ -104,11 +104,11 @@ func DefaultReadContact(ctx context.Context, in *Contact, db *gorm.DB) (*Contact
 	if err != nil {
 		return nil, err
 	}
-	tenantID, tIDErr := auth.GetTenantID(ctx, nil)
-	if tIDErr != nil {
-		return nil, tIDErr
+	accountID, err := auth.GetAccountID(ctx, nil)
+	if err != nil {
+		return nil, err
 	}
-	ormParams.TenantID = tenantID
+	ormParams.AccountID = accountID
 	ormResponse := ContactORM{}
 	if err = db.Set("gorm:auto_preload", true).Where(&ormParams).First(&ormResponse).Error; err != nil {
 		return nil, err
@@ -146,11 +146,11 @@ func DefaultDeleteContact(ctx context.Context, in *Contact, db *gorm.DB) error {
 	if err != nil {
 		return err
 	}
-	tenantID, tIDErr := auth.GetTenantID(ctx, nil)
-	if tIDErr != nil {
-		return tIDErr
+	accountID, err := auth.GetAccountID(ctx, nil)
+	if err != nil {
+		return err
 	}
-	ormObj.TenantID = tenantID
+	ormObj.AccountID = accountID
 	err = db.Where(&ormObj).Delete(&ContactORM{}).Error
 	return err
 }
@@ -162,11 +162,11 @@ func DefaultListContact(ctx context.Context, db *gorm.DB) ([]*Contact, error) {
 	if err != nil {
 		return nil, err
 	}
-	tenantID, tIDErr := auth.GetTenantID(ctx, nil)
-	if tIDErr != nil {
-		return nil, tIDErr
+	accountID, err := auth.GetAccountID(ctx, nil)
+	if err != nil {
+		return nil, err
 	}
-	db = db.Where(&ContactORM{TenantID: tenantID})
+	db = db.Where(&ContactORM{AccountID: accountID})
 	if err := db.Set("gorm:auto_preload", true).Find(&ormResponse).Error; err != nil {
 		return nil, err
 	}
@@ -190,11 +190,11 @@ func DefaultStrictUpdateContact(ctx context.Context, in *Contact, db *gorm.DB) (
 	if err != nil {
 		return nil, err
 	}
-	tenantID, tIDErr := auth.GetTenantID(ctx, nil)
-	if tIDErr != nil {
-		return nil, tIDErr
+	accountID, err := auth.GetAccountID(ctx, nil)
+	if err != nil {
+		return nil, err
 	}
-	db = db.Where(&ContactORM{TenantID: tenantID})
+	db = db.Where(&ContactORM{AccountID: accountID})
 	if err = db.Save(&ormObj).Error; err != nil {
 		return nil, err
 	}

@@ -40,19 +40,19 @@ message TypeWithID {
   uint32 id = 5;
 }
 
-message MultitenantTypeWithID {
+message MultiaccountTypeWithID {
   option (gorm.opts) = {
     ormable: true,
-    multi_tenant: true
+    multi_account: true
   };
   uint64 id = 1;
   string some_field = 2;
 }
 
-message MultitenantTypeWithoutID {
+message MultiaccountTypeWithoutID {
   option (gorm.opts) = {
     ormable: true,
-    multi_tenant: true
+    multi_account: true
   };
   string some_field = 1;
 }
