@@ -37,7 +37,7 @@ var _ = math.Inf
 // ContactORM no comment was provided for message type
 type ContactORM struct {
 	AccountID    string
-	ID           uint64
+	Id           uint64
 	FirstName    string
 	MiddleName   string
 	LastName     string
@@ -53,7 +53,7 @@ func (ContactORM) TableName() string {
 func ConvertContactToORM(from Contact) (ContactORM, error) {
 	to := ContactORM{}
 	var err error
-	to.ID = from.Id
+	to.Id = from.Id
 	to.FirstName = from.FirstName
 	to.MiddleName = from.MiddleName
 	to.LastName = from.LastName
@@ -65,7 +65,7 @@ func ConvertContactToORM(from Contact) (ContactORM, error) {
 func ConvertContactFromORM(from ContactORM) (Contact, error) {
 	to := Contact{}
 	var err error
-	to.Id = from.ID
+	to.Id = from.Id
 	to.FirstName = from.FirstName
 	to.MiddleName = from.MiddleName
 	to.LastName = from.LastName
