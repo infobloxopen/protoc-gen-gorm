@@ -13,7 +13,7 @@ option go_package = "github.com/infobloxopen/protoc-gen-gorm/example/contacts;co
 message Contact {
     option (gorm.opts) = {
       ormable: true,
-      multi_tenant: true
+      multi_account: true
     };
     uint64 id = 1;
     string first_name = 2;
