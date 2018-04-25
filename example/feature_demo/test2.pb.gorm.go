@@ -175,7 +175,7 @@ func (m *IntPointDefaultServer) Read(ctx context.Context, in *ReadIntPointReques
 
 // Update ...
 func (m *IntPointDefaultServer) Update(ctx context.Context, in *UpdateIntPointRequest) (*UpdateIntPointResponse, error) {
-	res, err := DefaultUpdateIntPoint(ctx, in.GetPayload(), m.DB)
+	res, err := DefaultStrictUpdateIntPoint(ctx, in.GetPayload(), m.DB)
 	if err != nil {
 		return nil, err
 	}
