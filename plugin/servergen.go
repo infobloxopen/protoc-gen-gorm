@@ -134,7 +134,7 @@ func (p *OrmPlugin) generateUpdateServerMethod(service *descriptor.ServiceDescri
 	p.generateMethodSignature(inType, outType, methodName, svcName)
 	follows, typeName := p.followsUpdateConventions(inType, outType)
 	if follows {
-		p.P(`res, err := DefaultUpdate`, typeName, `(ctx, in.GetPayload(), m.DB)`)
+		p.P(`res, err := DefaultStrictUpdate`, typeName, `(ctx, in.GetPayload(), m.DB)`)
 		p.P(`if err != nil {`)
 		p.P(`return nil, err`)
 		p.P(`}`)
