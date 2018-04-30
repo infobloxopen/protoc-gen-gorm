@@ -240,10 +240,12 @@ func (p *OrmPlugin) generateConvertFunctions(message *generator.Descriptor) {
 	typeName := p.TypeName(message)
 
 	///// To Orm
-	p.P(`// Convert`, typeName, `ToORM takes a pb object and returns an orm object`)
-	p.P(`func Convert`, typeName, `ToORM (from `,
-		typeName, `) (`, typeName, `ORM, error) {`)
+	p.P(`// ToORM adds a pb object function that returns an orm object`)
+	p.P(`func (m *`, typeName, `) ToOrm () (`, typeName, `ORM, error) {`)
 	p.P(`to := `, typeName, `ORM{}`)
+	p.P(`if prehook, ok := interface{}(m).(gtypes.WithBeforeToOrm); ok {`)
+	p.P(`prehook.BeforeToOrmHook(to)`)
+	p.P(`}`)
 	p.P(`var err error`)
 	for _, field := range message.Field {
 		// Checking if field is skipped
@@ -259,15 +261,21 @@ func (p *OrmPlugin) generateConvertFunctions(message *generator.Descriptor) {
 		}
 		p.generateFieldConversion(message, field, true)
 	}
+	p.P(`if posthook, ok := interface{}(m).(gtypes.WithAfterToOrm); ok {`)
+	p.P(`posthook.AfterToOrmHook(to)`)
+	p.P(`}`)
 	p.P(`return to, err`)
 	p.P(`}`)
 
 	p.P()
 	///// To Pb
-	p.P(`// Convert`, typeName, `FromORM takes an orm object and returns a pb object`)
-	p.P(`func Convert`, typeName, `FromORM (from `, typeName, `ORM) (`,
+	p.P(`// FromORM returns a pb object`)
+	p.P(`func (m *`, typeName, `ORM) ToPB () (`,
 		typeName, `, error) {`)
 	p.P(`to := `, typeName, `{}`)
+	p.P(`if prehook, ok := interface{}(m).(gtypes.WithBeforeToPB); ok {`)
+	p.P(`prehook.BeforeToPBHook(to)`)
+	p.P(`}`)
 	p.P(`var err error`)
 	for _, field := range message.Field {
 		// Checking if field is skipped
@@ -283,6 +291,9 @@ func (p *OrmPlugin) generateConvertFunctions(message *generator.Descriptor) {
 		}
 		p.generateFieldConversion(message, field, false)
 	}
+	p.P(`if posthook, ok := interface{}(m).(gtypes.WithAfterToPB); ok {`)
+	p.P(`posthook.AfterToPBHook(to)`)
+	p.P(`}`)
 	p.P(`return to, err`)
 	p.P(`}`)
 }
@@ -293,15 +304,15 @@ func (p *OrmPlugin) generateFieldConversion(message *generator.Descriptor, field
 	fieldType, _ := p.GoType(message, field)
 	if field.IsRepeated() { // Repeated Object ----------------------------------
 		if _, exists := convertibleTypes[strings.Trim(fieldType, "[]*")]; exists { // Repeated ORMable type
-			fieldType = strings.Trim(fieldType, "[]*")
-			dir := "From"
-			if toORM {
-				dir = "To"
-			}
+			//fieldType = strings.Trim(fieldType, "[]*")
 
-			p.P(`for _, v := range from.`, fieldName, ` {`)
+			p.P(`for _, v := range m.`, fieldName, ` {`)
 			p.P(`if v != nil {`)
-			p.P(`if temp`, fieldName, `, cErr := Convert`, fieldType, dir, `ORM (*v); cErr == nil {`)
+			if toORM {
+				p.P(`if temp`, fieldName, `, cErr := v.ToOrm(); cErr == nil {`)
+			} else {
+				p.P(`if temp`, fieldName, `, cErr := v.ToPB(); cErr == nil {`)
+			}
 			p.P(`to.`, fieldName, ` = append(to.`, fieldName, `, &temp`, fieldName, `)`)
 			p.P(`} else {`)
 			p.P(`return to, cErr`)
@@ -315,9 +326,9 @@ func (p *OrmPlugin) generateFieldConversion(message *generator.Descriptor, field
 		}
 	} else if *(field.Type) == typeEnum { // Singular Enum, which is an int32 ---
 		if toORM {
-			p.P(`to.`, fieldName, ` = int32(from.`, fieldName, `)`)
+			p.P(`to.`, fieldName, ` = int32(m.`, fieldName, `)`)
 		} else {
-			p.P(`to.`, fieldName, ` = `, fieldType, `(from.`, fieldName, `)`)
+			p.P(`to.`, fieldName, ` = `, fieldType, `(m.`, fieldName, `)`)
 		}
 	} else if *(field.Type) == typeMessage { // Singular Object -------------
 		//Check for WKTs
@@ -326,51 +337,51 @@ func (p *OrmPlugin) generateFieldConversion(message *generator.Descriptor, field
 		// Type is a WKT, convert to/from as ptr to base type
 		if _, exists := wellKnownTypes[coreType]; exists { // Singular WKT -----
 			if toORM {
-				p.P(`if from.`, fieldName, ` != nil {`)
-				p.P(`v := from.`, fieldName, `.Value`)
+				p.P(`if m.`, fieldName, ` != nil {`)
+				p.P(`v := m.`, fieldName, `.Value`)
 				p.P(`to.`, fieldName, ` = &v`)
 				p.P(`}`)
 			} else {
-				p.P(`if from.`, fieldName, ` != nil {`)
+				p.P(`if m.`, fieldName, ` != nil {`)
 				p.P(`to.`, fieldName, ` = &`, p.wktPkgName, ".", coreType,
-					`{Value: *from.`, fieldName, `}`)
+					`{Value: *m.`, fieldName, `}`)
 				p.P(`}`)
 			}
 		} else if coreType == protoTypeUUID { // Singular UUID type ------------
 			if toORM {
-				p.P(`if from.`, fieldName, ` != nil {`)
-				p.P(`tempUUID, uErr := uuid.FromString(from.`, fieldName, `.Value)`)
+				p.P(`if m.`, fieldName, ` != nil {`)
+				p.P(`tempUUID, uErr := uuid.FromString(m.`, fieldName, `.Value)`)
 				p.P(`if uErr != nil {`)
 				p.P(`return to, uErr`)
 				p.P(`}`)
 				p.P(`to.`, fieldName, ` = &tempUUID`)
 				p.P(`}`)
 			} else {
-				p.P(`if from.`, fieldName, ` != nil {`)
-				p.P(`to.`, fieldName, ` = &gtypes.UUIDValue{Value: from.`, fieldName, `.String()}`)
+				p.P(`if m.`, fieldName, ` != nil {`)
+				p.P(`to.`, fieldName, ` = &gtypes.UUIDValue{Value: m.`, fieldName, `.String()}`)
 				p.P(`}`)
 			}
 		} else if coreType == protoTypeTimestamp { // Singular WKT Timestamp ---
 			if toORM {
-				p.P(`if from.`, fieldName, ` != nil {`)
-				p.P(`if to.`, fieldName, `, err = ptypes.Timestamp(from.`, fieldName, `); err != nil {`)
+				p.P(`if m.`, fieldName, ` != nil {`)
+				p.P(`if to.`, fieldName, `, err = ptypes.Timestamp(m.`, fieldName, `); err != nil {`)
 				p.P(`return to, err`)
 				p.P(`}`)
 				p.P(`}`)
 			} else {
-				p.P(`if to.`, fieldName, `, err = ptypes.TimestampProto(from.`, fieldName, `); err != nil {`)
+				p.P(`if to.`, fieldName, `, err = ptypes.TimestampProto(m.`, fieldName, `); err != nil {`)
 				p.P(`return to, err`)
 				p.P(`}`)
 			}
 		} else if _, exists := convertibleTypes[strings.Trim(fieldType, "[]*")]; exists {
 			// Not a WKT, but a type we're building converters for
 			fieldType = strings.Trim(fieldType, "*")
-			dir := "From"
+			p.P(`if m.`, fieldName, ` != nil {`)
 			if toORM {
-				dir = "To"
+				p.P(`temp`, fieldType, `, err := m.`, fieldName, `.ToOrm ()`)
+			} else {
+				p.P(`temp`, fieldType, `, err := m.`, fieldName, `.ToPB ()`)
 			}
-			p.P(`if from.`, fieldName, ` != nil {`)
-			p.P(`temp`, fieldType, `, err := Convert`, fieldType, dir, `ORM (*from.`, fieldName, `)`)
 			p.P(`if err != nil {`)
 			p.P(`return to, err`)
 			p.P(`}`)
@@ -378,7 +389,7 @@ func (p *OrmPlugin) generateFieldConversion(message *generator.Descriptor, field
 			p.P(`}`)
 		}
 	} else { // Singular raw ----------------------------------------------------
-		p.P(`to.`, fieldName, ` = from.`, fieldName)
+		p.P(`to.`, fieldName, ` = m.`, fieldName)
 	}
 	return nil
 }

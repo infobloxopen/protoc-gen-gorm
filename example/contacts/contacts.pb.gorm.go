@@ -21,6 +21,7 @@ import errors "errors"
 
 import auth "github.com/infobloxopen/atlas-app-toolkit/mw/auth"
 import gorm "github.com/jinzhu/gorm"
+import gtypes "github.com/infobloxopen/protoc-gen-gorm/types"
 import ops "github.com/infobloxopen/atlas-app-toolkit/op/gorm"
 
 import fmt "fmt"
@@ -49,27 +50,39 @@ func (ContactORM) TableName() string {
 	return "contacts"
 }
 
-// ConvertContactToORM takes a pb object and returns an orm object
-func ConvertContactToORM(from Contact) (ContactORM, error) {
+// ToORM adds a pb object function that returns an orm object
+func (m *Contact) ToOrm() (ContactORM, error) {
 	to := ContactORM{}
+	if prehook, ok := interface{}(m).(gtypes.WithBeforeToOrm); ok {
+		prehook.BeforeToOrmHook(to)
+	}
 	var err error
-	to.Id = from.Id
-	to.FirstName = from.FirstName
-	to.MiddleName = from.MiddleName
-	to.LastName = from.LastName
-	to.EmailAddress = from.EmailAddress
+	to.Id = m.Id
+	to.FirstName = m.FirstName
+	to.MiddleName = m.MiddleName
+	to.LastName = m.LastName
+	to.EmailAddress = m.EmailAddress
+	if posthook, ok := interface{}(m).(gtypes.WithAfterToOrm); ok {
+		posthook.AfterToOrmHook(to)
+	}
 	return to, err
 }
 
-// ConvertContactFromORM takes an orm object and returns a pb object
-func ConvertContactFromORM(from ContactORM) (Contact, error) {
+// FromORM returns a pb object
+func (m *ContactORM) ToPB() (Contact, error) {
 	to := Contact{}
+	if prehook, ok := interface{}(m).(gtypes.WithBeforeToPB); ok {
+		prehook.BeforeToPBHook(to)
+	}
 	var err error
-	to.Id = from.Id
-	to.FirstName = from.FirstName
-	to.MiddleName = from.MiddleName
-	to.LastName = from.LastName
-	to.EmailAddress = from.EmailAddress
+	to.Id = m.Id
+	to.FirstName = m.FirstName
+	to.MiddleName = m.MiddleName
+	to.LastName = m.LastName
+	to.EmailAddress = m.EmailAddress
+	if posthook, ok := interface{}(m).(gtypes.WithAfterToPB); ok {
+		posthook.AfterToPBHook(to)
+	}
 	return to, err
 }
 
@@ -79,7 +92,7 @@ func DefaultCreateContact(ctx context.Context, in *Contact, db *gorm.DB) (*Conta
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultCreateContact")
 	}
-	ormObj, err := ConvertContactToORM(*in)
+	ormObj, err := in.ToOrm()
 	if err != nil {
 		return nil, err
 	}
@@ -91,7 +104,7 @@ func DefaultCreateContact(ctx context.Context, in *Contact, db *gorm.DB) (*Conta
 	if err = db.Create(&ormObj).Error; err != nil {
 		return nil, err
 	}
-	pbResponse, err := ConvertContactFromORM(ormObj)
+	pbResponse, err := ormObj.ToPB()
 	return &pbResponse, err
 }
 
@@ -100,7 +113,7 @@ func DefaultReadContact(ctx context.Context, in *Contact, db *gorm.DB) (*Contact
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultReadContact")
 	}
-	ormParams, err := ConvertContactToORM(*in)
+	ormParams, err := in.ToOrm()
 	if err != nil {
 		return nil, err
 	}
@@ -113,7 +126,7 @@ func DefaultReadContact(ctx context.Context, in *Contact, db *gorm.DB) (*Contact
 	if err = db.Set("gorm:auto_preload", true).Where(&ormParams).First(&ormResponse).Error; err != nil {
 		return nil, err
 	}
-	pbResponse, err := ConvertContactFromORM(ormResponse)
+	pbResponse, err := ormResponse.ToPB()
 	return &pbResponse, err
 }
 
@@ -127,14 +140,14 @@ func DefaultUpdateContact(ctx context.Context, in *Contact, db *gorm.DB) (*Conta
 	} else if exists == nil {
 		return nil, errors.New("Contact not found")
 	}
-	ormObj, err := ConvertContactToORM(*in)
+	ormObj, err := in.ToOrm()
 	if err != nil {
 		return nil, err
 	}
 	if err = db.Save(&ormObj).Error; err != nil {
 		return nil, err
 	}
-	pbResponse, err := ConvertContactFromORM(ormObj)
+	pbResponse, err := ormObj.ToPB()
 	return &pbResponse, err
 }
 
@@ -142,7 +155,7 @@ func DefaultDeleteContact(ctx context.Context, in *Contact, db *gorm.DB) error {
 	if in == nil {
 		return errors.New("Nil argument to DefaultDeleteContact")
 	}
-	ormObj, err := ConvertContactToORM(*in)
+	ormObj, err := in.ToOrm()
 	if err != nil {
 		return err
 	}
@@ -172,7 +185,7 @@ func DefaultListContact(ctx context.Context, db *gorm.DB) ([]*Contact, error) {
 	}
 	pbResponse := []*Contact{}
 	for _, responseEntry := range ormResponse {
-		temp, err := ConvertContactFromORM(responseEntry)
+		temp, err := responseEntry.ToPB()
 		if err != nil {
 			return nil, err
 		}
@@ -186,7 +199,7 @@ func DefaultStrictUpdateContact(ctx context.Context, in *Contact, db *gorm.DB) (
 	if in == nil {
 		return nil, fmt.Errorf("Nil argument to DefaultCascadedUpdateContact")
 	}
-	ormObj, err := ConvertContactToORM(*in)
+	ormObj, err := in.ToOrm()
 	if err != nil {
 		return nil, err
 	}
@@ -198,7 +211,7 @@ func DefaultStrictUpdateContact(ctx context.Context, in *Contact, db *gorm.DB) (
 	if err = db.Save(&ormObj).Error; err != nil {
 		return nil, err
 	}
-	pbResponse, err := ConvertContactFromORM(ormObj)
+	pbResponse, err := ormObj.ToPB()
 	if err != nil {
 		return nil, err
 	}
