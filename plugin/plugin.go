@@ -90,6 +90,7 @@ func (p *OrmPlugin) Generate(file *generator.FileDescriptor) {
 		p.generateMessages(msg)
 		p.generateConvertFunctions(msg)
 		p.generateHookInterfaces(msg)
+		p.generateGettersAndSetters(msg)
 	}
 
 	p.P()
@@ -159,11 +160,8 @@ func (p *OrmPlugin) generateMessages(message *generator.Descriptor) {
 				p.P("// Skipping type ", fieldType, ", not tagged as ormable")
 				continue
 			} else {
-				if field.IsRepeated() {
-					fieldType = fmt.Sprintf("[]*%sORM", strings.Trim(fieldType, "[]*"))
-				} else {
-					fieldType = fmt.Sprintf("*%sORM", strings.Trim(fieldType, "*"))
-				}
+				fieldType = fmt.Sprintf("%sORM", fieldType)
+
 				// Insert the foreign key if not present,
 				if tagString == "" {
 					tagString = fmt.Sprintf("`gorm:\"foreignkey:%sId\"`", typeName)
@@ -411,5 +409,63 @@ func (p *OrmPlugin) generateHookInterfaces(message *generator.Descriptor) {
 		p.P(desc[0], `(*`, desc[1], `)`)
 		p.P(`}`)
 		p.P()
+	}
+}
+
+func (p *OrmPlugin) generateGettersAndSetters(message *generator.Descriptor) {
+	typeName := p.TypeName(message)
+	opts := getMessageOptions(message)
+	if opts != nil {
+		for _, field := range opts.GetInclude() {
+			fieldName := generator.CamelCase(field.GetName())
+			fieldType := field.GetType()
+			p.P(`func (m *`, typeName, `ORM) Get`, fieldName, `() `, fieldType, `{`)
+			p.P(`return m.`, fieldName)
+			p.P(`}`)
+			p.P(`func (m *`, typeName, `ORM) Set`, fieldName, `(v `, fieldType, `) {`)
+			p.P(`m.`, fieldName, ` = v`)
+			p.P(`}`)
+		}
+	}
+	for _, field := range message.Field {
+		fieldName := generator.CamelCase(field.GetName())
+		fieldType, _ := p.GoType(message, field)
+		if field.Options != nil {
+			v, err := proto.GetExtension(field.Options, gorm.E_Field)
+			opts, valid := v.(*gorm.GormFieldOptions)
+			if err == nil && valid && opts != nil {
+				if opts.Drop != nil && *opts.Drop {
+					continue
+				}
+			}
+		}
+		if _, exists := convertibleTypes[strings.Trim(fieldType, "[]*")]; field.IsRepeated() && !exists {
+			continue
+		} else if *(field.Type) == typeEnum {
+			fieldType = "int32"
+		} else if *(field.Type) == typeMessage {
+			//Check for WKTs or fields of nonormable types
+			parts := strings.Split(fieldType, ".")
+			rawType := parts[len(parts)-1]
+			if v, exists := wellKnownTypes[rawType]; exists {
+				fieldType = v
+			} else if rawType == "Empty" {
+				continue
+			} else if rawType == protoTypeUUID {
+				fieldType = "*uuid.UUID"
+			} else if rawType == protoTypeTimestamp {
+				fieldType = "time.Time"
+			} else if _, exists := convertibleTypes[strings.Trim(fieldType, "[]*")]; !exists {
+				continue
+			} else {
+				fieldType = fmt.Sprintf("%sORM", fieldType)
+			}
+		}
+		p.P(`func (m *`, typeName, `ORM) Get`, fieldName, `() `, fieldType, `{`)
+		p.P(`return m.`, fieldName)
+		p.P(`}`)
+		p.P(`func (m *`, typeName, `ORM) Set`, fieldName, `(v `, fieldType, `) {`)
+		p.P(`m.`, fieldName, ` = v`)
+		p.P(`}`)
 	}
 }

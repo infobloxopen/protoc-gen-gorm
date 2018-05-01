@@ -148,6 +148,37 @@ type TestTypesWithAfterToPB interface {
 	AfterToPB(*TestTypes)
 }
 
+func (m *TestTypesORM) GetOptionalString() *string {
+	return m.OptionalString
+}
+func (m *TestTypesORM) SetOptionalString(v *string) {
+	m.OptionalString = v
+}
+func (m *TestTypesORM) GetBecomesInt() int32 {
+	return m.BecomesInt
+}
+func (m *TestTypesORM) SetBecomesInt(v int32) {
+	m.BecomesInt = v
+}
+func (m *TestTypesORM) GetUuid() *uuid.UUID {
+	return m.Uuid
+}
+func (m *TestTypesORM) SetUuid(v *uuid.UUID) {
+	m.Uuid = v
+}
+func (m *TestTypesORM) GetCreatedAt() time.Time {
+	return m.CreatedAt
+}
+func (m *TestTypesORM) SetCreatedAt(v time.Time) {
+	m.CreatedAt = v
+}
+func (m *TestTypesORM) GetTypeWithIdId() uint32 {
+	return m.TypeWithIdId
+}
+func (m *TestTypesORM) SetTypeWithIdId(v uint32) {
+	m.TypeWithIdId = v
+}
+
 // TypeWithIDORM no comment was provided for message type
 type TypeWithIDORM struct {
 	Uuid          int32           `gorm:"primary_key"`
@@ -251,6 +282,37 @@ type TypeWithIDWithAfterToPB interface {
 	AfterToPB(*TypeWithID)
 }
 
+func (m *TypeWithIDORM) GetUuid() int32 {
+	return m.Uuid
+}
+func (m *TypeWithIDORM) SetUuid(v int32) {
+	m.Uuid = v
+}
+func (m *TypeWithIDORM) GetIp() string {
+	return m.Ip
+}
+func (m *TypeWithIDORM) SetIp(v string) {
+	m.Ip = v
+}
+func (m *TypeWithIDORM) GetThings() []*TestTypesORM {
+	return m.Things
+}
+func (m *TypeWithIDORM) SetThings(v []*TestTypesORM) {
+	m.Things = v
+}
+func (m *TypeWithIDORM) GetANestedObject() *TestTypesORM {
+	return m.ANestedObject
+}
+func (m *TypeWithIDORM) SetANestedObject(v *TestTypesORM) {
+	m.ANestedObject = v
+}
+func (m *TypeWithIDORM) GetId() uint32 {
+	return m.Id
+}
+func (m *TypeWithIDORM) SetId(v uint32) {
+	m.Id = v
+}
+
 // MultiaccountTypeWithIDORM no comment was provided for message type
 type MultiaccountTypeWithIDORM struct {
 	AccountID string
@@ -316,6 +378,19 @@ type MultiaccountTypeWithIDWithAfterToPB interface {
 	AfterToPB(*MultiaccountTypeWithID)
 }
 
+func (m *MultiaccountTypeWithIDORM) GetId() uint64 {
+	return m.Id
+}
+func (m *MultiaccountTypeWithIDORM) SetId(v uint64) {
+	m.Id = v
+}
+func (m *MultiaccountTypeWithIDORM) GetSomeField() string {
+	return m.SomeField
+}
+func (m *MultiaccountTypeWithIDORM) SetSomeField(v string) {
+	m.SomeField = v
+}
+
 // MultiaccountTypeWithoutIDORM no comment was provided for message type
 type MultiaccountTypeWithoutIDORM struct {
 	AccountID string
@@ -376,6 +451,13 @@ type MultiaccountTypeWithoutIDWithBeforeToPB interface {
 // MultiaccountTypeWithoutIDAfterToPB called after default ToPB code
 type MultiaccountTypeWithoutIDWithAfterToPB interface {
 	AfterToPB(*MultiaccountTypeWithoutID)
+}
+
+func (m *MultiaccountTypeWithoutIDORM) GetSomeField() string {
+	return m.SomeField
+}
+func (m *MultiaccountTypeWithoutIDORM) SetSomeField(v string) {
+	m.SomeField = v
 }
 
 // TypeBecomesEmptyORM no comment was provided for message type

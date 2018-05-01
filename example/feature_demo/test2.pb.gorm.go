@@ -84,6 +84,25 @@ type IntPointWithAfterToPB interface {
 	AfterToPB(*IntPoint)
 }
 
+func (m *IntPointORM) GetId() uint32 {
+	return m.Id
+}
+func (m *IntPointORM) SetId(v uint32) {
+	m.Id = v
+}
+func (m *IntPointORM) GetX() int32 {
+	return m.X
+}
+func (m *IntPointORM) SetX(v int32) {
+	m.X = v
+}
+func (m *IntPointORM) GetY() int32 {
+	return m.Y
+}
+func (m *IntPointORM) SetY(v int32) {
+	m.Y = v
+}
+
 ////////////////////////// CURDL for objects
 // DefaultCreateIntPoint executes a basic gorm create call
 func DefaultCreateIntPoint(ctx context.Context, in *IntPoint, db *gorm.DB) (*IntPoint, error) {

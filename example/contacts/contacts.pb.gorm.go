@@ -108,6 +108,37 @@ type ContactWithAfterToPB interface {
 	AfterToPB(*Contact)
 }
 
+func (m *ContactORM) GetId() uint64 {
+	return m.Id
+}
+func (m *ContactORM) SetId(v uint64) {
+	m.Id = v
+}
+func (m *ContactORM) GetFirstName() string {
+	return m.FirstName
+}
+func (m *ContactORM) SetFirstName(v string) {
+	m.FirstName = v
+}
+func (m *ContactORM) GetMiddleName() string {
+	return m.MiddleName
+}
+func (m *ContactORM) SetMiddleName(v string) {
+	m.MiddleName = v
+}
+func (m *ContactORM) GetLastName() string {
+	return m.LastName
+}
+func (m *ContactORM) SetLastName(v string) {
+	m.LastName = v
+}
+func (m *ContactORM) GetEmailAddress() string {
+	return m.EmailAddress
+}
+func (m *ContactORM) SetEmailAddress(v string) {
+	m.EmailAddress = v
+}
+
 ////////////////////////// CURDL for objects
 // DefaultCreateContact executes a basic gorm create call
 func DefaultCreateContact(ctx context.Context, in *Contact, db *gorm.DB) (*Contact, error) {
