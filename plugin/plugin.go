@@ -89,6 +89,7 @@ func (p *OrmPlugin) Generate(file *generator.FileDescriptor) {
 		// Create the orm object definitions and the converter functions
 		p.generateMessages(msg)
 		p.generateConvertFunctions(msg)
+		p.generateHookInterfaces(msg)
 	}
 
 	p.P()
@@ -241,10 +242,10 @@ func (p *OrmPlugin) generateConvertFunctions(message *generator.Descriptor) {
 
 	///// To Orm
 	p.P(`// ToORM adds a pb object function that returns an orm object`)
-	p.P(`func (m *`, typeName, `) ToOrm () (`, typeName, `ORM, error) {`)
+	p.P(`func (m *`, typeName, `) ToORM () (`, typeName, `ORM, error) {`)
 	p.P(`to := `, typeName, `ORM{}`)
-	p.P(`if prehook, ok := interface{}(m).(gtypes.WithBeforeToOrm); ok {`)
-	p.P(`prehook.BeforeToOrmHook(to)`)
+	p.P(`if prehook, ok := interface{}(m).(`, typeName, `WithBeforeToORM); ok {`)
+	p.P(`prehook.BeforeToORM(to)`)
 	p.P(`}`)
 	p.P(`var err error`)
 	for _, field := range message.Field {
@@ -261,8 +262,8 @@ func (p *OrmPlugin) generateConvertFunctions(message *generator.Descriptor) {
 		}
 		p.generateFieldConversion(message, field, true)
 	}
-	p.P(`if posthook, ok := interface{}(m).(gtypes.WithAfterToOrm); ok {`)
-	p.P(`posthook.AfterToOrmHook(to)`)
+	p.P(`if posthook, ok := interface{}(m).(`, typeName, `WithAfterToORM); ok {`)
+	p.P(`posthook.AfterToORM(to)`)
 	p.P(`}`)
 	p.P(`return to, err`)
 	p.P(`}`)
@@ -273,8 +274,8 @@ func (p *OrmPlugin) generateConvertFunctions(message *generator.Descriptor) {
 	p.P(`func (m *`, typeName, `ORM) ToPB () (`,
 		typeName, `, error) {`)
 	p.P(`to := `, typeName, `{}`)
-	p.P(`if prehook, ok := interface{}(m).(gtypes.WithBeforeToPB); ok {`)
-	p.P(`prehook.BeforeToPBHook(to)`)
+	p.P(`if prehook, ok := interface{}(m).(`, typeName, `WithBeforeToPB); ok {`)
+	p.P(`prehook.BeforeToPB(to)`)
 	p.P(`}`)
 	p.P(`var err error`)
 	for _, field := range message.Field {
@@ -291,8 +292,8 @@ func (p *OrmPlugin) generateConvertFunctions(message *generator.Descriptor) {
 		}
 		p.generateFieldConversion(message, field, false)
 	}
-	p.P(`if posthook, ok := interface{}(m).(gtypes.WithAfterToPB); ok {`)
-	p.P(`posthook.AfterToPBHook(to)`)
+	p.P(`if posthook, ok := interface{}(m).(`, typeName, `WithAfterToPB); ok {`)
+	p.P(`posthook.AfterToPB(to)`)
 	p.P(`}`)
 	p.P(`return to, err`)
 	p.P(`}`)
@@ -309,7 +310,7 @@ func (p *OrmPlugin) generateFieldConversion(message *generator.Descriptor, field
 			p.P(`for _, v := range m.`, fieldName, ` {`)
 			p.P(`if v != nil {`)
 			if toORM {
-				p.P(`if temp`, fieldName, `, cErr := v.ToOrm(); cErr == nil {`)
+				p.P(`if temp`, fieldName, `, cErr := v.ToORM(); cErr == nil {`)
 			} else {
 				p.P(`if temp`, fieldName, `, cErr := v.ToPB(); cErr == nil {`)
 			}
@@ -378,7 +379,7 @@ func (p *OrmPlugin) generateFieldConversion(message *generator.Descriptor, field
 			fieldType = strings.Trim(fieldType, "*")
 			p.P(`if m.`, fieldName, ` != nil {`)
 			if toORM {
-				p.P(`temp`, fieldType, `, err := m.`, fieldName, `.ToOrm ()`)
+				p.P(`temp`, fieldType, `, err := m.`, fieldName, `.ToORM ()`)
 			} else {
 				p.P(`temp`, fieldType, `, err := m.`, fieldName, `.ToPB ()`)
 			}
@@ -392,4 +393,23 @@ func (p *OrmPlugin) generateFieldConversion(message *generator.Descriptor, field
 		p.P(`to.`, fieldName, ` = m.`, fieldName)
 	}
 	return nil
+}
+
+func (p *OrmPlugin) generateHookInterfaces(message *generator.Descriptor) {
+	typeName := p.TypeName(message)
+	p.P(`// The following are interfaces you can implement for special behavior during ORM/PB conversions`)
+	p.P(`// of type `, typeName, ` the arg will be the target, the caller the one being converted from`)
+	p.P()
+	for _, desc := range [][]string{
+		{"BeforeToORM", typeName + "ORM", " called before default ToORM code"},
+		{"AfterToORM", typeName + "ORM", " called after default ToORM code"},
+		{"BeforeToPB", typeName, " called before default ToPB code"},
+		{"AfterToPB", typeName, " called after default ToPB code"},
+	} {
+		p.P(`// `, typeName, desc[0], desc[2])
+		p.P(`type `, typeName, `With`, desc[0], ` interface {`)
+		p.P(desc[0], `(`, desc[1], `)`)
+		p.P(`}`)
+		p.P()
+	}
 }

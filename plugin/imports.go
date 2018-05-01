@@ -50,10 +50,10 @@ func (p *OrmPlugin) GenerateImports(file *generator.FileDescriptor) {
 		stdImports = append(stdImports, "context", "errors")
 		githubImports[p.gormPkgName] = "github.com/jinzhu/gorm"
 		githubImports[p.lftPkgName] = "github.com/infobloxopen/atlas-app-toolkit/op/gorm"
-		githubImports["gtypes"] = "github.com/infobloxopen/protoc-gen-gorm/types"
 	}
 	if p.usingUUID {
 		githubImports["uuid"] = "github.com/satori/go.uuid"
+		githubImports["gtypes"] = "github.com/infobloxopen/protoc-gen-gorm/types"
 	}
 	if p.usingTime {
 		stdImports = append(stdImports, "time")

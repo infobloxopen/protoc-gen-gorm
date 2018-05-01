@@ -7,7 +7,6 @@ import context "context"
 import errors "errors"
 
 import gorm "github.com/jinzhu/gorm"
-import gtypes "github.com/infobloxopen/protoc-gen-gorm/types"
 import ops "github.com/infobloxopen/atlas-app-toolkit/op/gorm"
 
 import fmt "fmt"
@@ -31,17 +30,17 @@ func (IntPointORM) TableName() string {
 }
 
 // ToORM adds a pb object function that returns an orm object
-func (m *IntPoint) ToOrm() (IntPointORM, error) {
+func (m *IntPoint) ToORM() (IntPointORM, error) {
 	to := IntPointORM{}
-	if prehook, ok := interface{}(m).(gtypes.WithBeforeToOrm); ok {
-		prehook.BeforeToOrmHook(to)
+	if prehook, ok := interface{}(m).(IntPointWithBeforeToORM); ok {
+		prehook.BeforeToORM(to)
 	}
 	var err error
 	to.Id = m.Id
 	to.X = m.X
 	to.Y = m.Y
-	if posthook, ok := interface{}(m).(gtypes.WithAfterToOrm); ok {
-		posthook.AfterToOrmHook(to)
+	if posthook, ok := interface{}(m).(IntPointWithAfterToORM); ok {
+		posthook.AfterToORM(to)
 	}
 	return to, err
 }
@@ -49,17 +48,40 @@ func (m *IntPoint) ToOrm() (IntPointORM, error) {
 // FromORM returns a pb object
 func (m *IntPointORM) ToPB() (IntPoint, error) {
 	to := IntPoint{}
-	if prehook, ok := interface{}(m).(gtypes.WithBeforeToPB); ok {
-		prehook.BeforeToPBHook(to)
+	if prehook, ok := interface{}(m).(IntPointWithBeforeToPB); ok {
+		prehook.BeforeToPB(to)
 	}
 	var err error
 	to.Id = m.Id
 	to.X = m.X
 	to.Y = m.Y
-	if posthook, ok := interface{}(m).(gtypes.WithAfterToPB); ok {
-		posthook.AfterToPBHook(to)
+	if posthook, ok := interface{}(m).(IntPointWithAfterToPB); ok {
+		posthook.AfterToPB(to)
 	}
 	return to, err
+}
+
+// The following are interfaces you can implement for special behavior during ORM/PB conversions
+// of type IntPoint the arg will be the target, the caller the one being converted from
+
+// IntPointBeforeToORM called before default ToORM code
+type IntPointWithBeforeToORM interface {
+	BeforeToORM(IntPointORM)
+}
+
+// IntPointAfterToORM called after default ToORM code
+type IntPointWithAfterToORM interface {
+	AfterToORM(IntPointORM)
+}
+
+// IntPointBeforeToPB called before default ToPB code
+type IntPointWithBeforeToPB interface {
+	BeforeToPB(IntPoint)
+}
+
+// IntPointAfterToPB called after default ToPB code
+type IntPointWithAfterToPB interface {
+	AfterToPB(IntPoint)
 }
 
 ////////////////////////// CURDL for objects
@@ -68,7 +90,7 @@ func DefaultCreateIntPoint(ctx context.Context, in *IntPoint, db *gorm.DB) (*Int
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultCreateIntPoint")
 	}
-	ormObj, err := in.ToOrm()
+	ormObj, err := in.ToORM()
 	if err != nil {
 		return nil, err
 	}
@@ -84,7 +106,7 @@ func DefaultReadIntPoint(ctx context.Context, in *IntPoint, db *gorm.DB) (*IntPo
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultReadIntPoint")
 	}
-	ormParams, err := in.ToOrm()
+	ormParams, err := in.ToORM()
 	if err != nil {
 		return nil, err
 	}
@@ -101,7 +123,7 @@ func DefaultUpdateIntPoint(ctx context.Context, in *IntPoint, db *gorm.DB) (*Int
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultUpdateIntPoint")
 	}
-	ormObj, err := in.ToOrm()
+	ormObj, err := in.ToORM()
 	if err != nil {
 		return nil, err
 	}
@@ -116,7 +138,7 @@ func DefaultDeleteIntPoint(ctx context.Context, in *IntPoint, db *gorm.DB) error
 	if in == nil {
 		return errors.New("Nil argument to DefaultDeleteIntPoint")
 	}
-	ormObj, err := in.ToOrm()
+	ormObj, err := in.ToORM()
 	if err != nil {
 		return err
 	}
@@ -150,7 +172,7 @@ func DefaultStrictUpdateIntPoint(ctx context.Context, in *IntPoint, db *gorm.DB)
 	if in == nil {
 		return nil, fmt.Errorf("Nil argument to DefaultCascadedUpdateIntPoint")
 	}
-	ormObj, err := in.ToOrm()
+	ormObj, err := in.ToORM()
 	if err != nil {
 		return nil, err
 	}

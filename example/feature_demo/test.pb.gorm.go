@@ -67,10 +67,10 @@ func (TestTypesORM) TableName() string {
 }
 
 // ToORM adds a pb object function that returns an orm object
-func (m *TestTypes) ToOrm() (TestTypesORM, error) {
+func (m *TestTypes) ToORM() (TestTypesORM, error) {
 	to := TestTypesORM{}
-	if prehook, ok := interface{}(m).(gtypes.WithBeforeToOrm); ok {
-		prehook.BeforeToOrmHook(to)
+	if prehook, ok := interface{}(m).(TestTypesWithBeforeToORM); ok {
+		prehook.BeforeToORM(to)
 	}
 	var err error
 	// Skipping field: ApiOnlyString
@@ -93,8 +93,8 @@ func (m *TestTypes) ToOrm() (TestTypesORM, error) {
 		}
 	}
 	to.TypeWithIdId = m.TypeWithIdId
-	if posthook, ok := interface{}(m).(gtypes.WithAfterToOrm); ok {
-		posthook.AfterToOrmHook(to)
+	if posthook, ok := interface{}(m).(TestTypesWithAfterToORM); ok {
+		posthook.AfterToORM(to)
 	}
 	return to, err
 }
@@ -102,8 +102,8 @@ func (m *TestTypes) ToOrm() (TestTypesORM, error) {
 // FromORM returns a pb object
 func (m *TestTypesORM) ToPB() (TestTypes, error) {
 	to := TestTypes{}
-	if prehook, ok := interface{}(m).(gtypes.WithBeforeToPB); ok {
-		prehook.BeforeToPBHook(to)
+	if prehook, ok := interface{}(m).(TestTypesWithBeforeToPB); ok {
+		prehook.BeforeToPB(to)
 	}
 	var err error
 	// Skipping field: ApiOnlyString
@@ -119,10 +119,33 @@ func (m *TestTypesORM) ToPB() (TestTypes, error) {
 		return to, err
 	}
 	to.TypeWithIdId = m.TypeWithIdId
-	if posthook, ok := interface{}(m).(gtypes.WithAfterToPB); ok {
-		posthook.AfterToPBHook(to)
+	if posthook, ok := interface{}(m).(TestTypesWithAfterToPB); ok {
+		posthook.AfterToPB(to)
 	}
 	return to, err
+}
+
+// The following are interfaces you can implement for special behavior during ORM/PB conversions
+// of type TestTypes the arg will be the target, the caller the one being converted from
+
+// TestTypesBeforeToORM called before default ToORM code
+type TestTypesWithBeforeToORM interface {
+	BeforeToORM(TestTypesORM)
+}
+
+// TestTypesAfterToORM called after default ToORM code
+type TestTypesWithAfterToORM interface {
+	AfterToORM(TestTypesORM)
+}
+
+// TestTypesBeforeToPB called before default ToPB code
+type TestTypesWithBeforeToPB interface {
+	BeforeToPB(TestTypes)
+}
+
+// TestTypesAfterToPB called after default ToPB code
+type TestTypesWithAfterToPB interface {
+	AfterToPB(TestTypes)
 }
 
 // TypeWithIDORM no comment was provided for message type
@@ -140,16 +163,16 @@ func (TypeWithIDORM) TableName() string {
 }
 
 // ToORM adds a pb object function that returns an orm object
-func (m *TypeWithID) ToOrm() (TypeWithIDORM, error) {
+func (m *TypeWithID) ToORM() (TypeWithIDORM, error) {
 	to := TypeWithIDORM{}
-	if prehook, ok := interface{}(m).(gtypes.WithBeforeToOrm); ok {
-		prehook.BeforeToOrmHook(to)
+	if prehook, ok := interface{}(m).(TypeWithIDWithBeforeToORM); ok {
+		prehook.BeforeToORM(to)
 	}
 	var err error
 	to.Ip = m.Ip
 	for _, v := range m.Things {
 		if v != nil {
-			if tempThings, cErr := v.ToOrm(); cErr == nil {
+			if tempThings, cErr := v.ToORM(); cErr == nil {
 				to.Things = append(to.Things, &tempThings)
 			} else {
 				return to, cErr
@@ -159,15 +182,15 @@ func (m *TypeWithID) ToOrm() (TypeWithIDORM, error) {
 		}
 	}
 	if m.ANestedObject != nil {
-		tempTestTypes, err := m.ANestedObject.ToOrm()
+		tempTestTypes, err := m.ANestedObject.ToORM()
 		if err != nil {
 			return to, err
 		}
 		to.ANestedObject = &tempTestTypes
 	}
 	to.Id = m.Id
-	if posthook, ok := interface{}(m).(gtypes.WithAfterToOrm); ok {
-		posthook.AfterToOrmHook(to)
+	if posthook, ok := interface{}(m).(TypeWithIDWithAfterToORM); ok {
+		posthook.AfterToORM(to)
 	}
 	return to, err
 }
@@ -175,8 +198,8 @@ func (m *TypeWithID) ToOrm() (TypeWithIDORM, error) {
 // FromORM returns a pb object
 func (m *TypeWithIDORM) ToPB() (TypeWithID, error) {
 	to := TypeWithID{}
-	if prehook, ok := interface{}(m).(gtypes.WithBeforeToPB); ok {
-		prehook.BeforeToPBHook(to)
+	if prehook, ok := interface{}(m).(TypeWithIDWithBeforeToPB); ok {
+		prehook.BeforeToPB(to)
 	}
 	var err error
 	to.Ip = m.Ip
@@ -199,10 +222,33 @@ func (m *TypeWithIDORM) ToPB() (TypeWithID, error) {
 		to.ANestedObject = &tempTestTypes
 	}
 	to.Id = m.Id
-	if posthook, ok := interface{}(m).(gtypes.WithAfterToPB); ok {
-		posthook.AfterToPBHook(to)
+	if posthook, ok := interface{}(m).(TypeWithIDWithAfterToPB); ok {
+		posthook.AfterToPB(to)
 	}
 	return to, err
+}
+
+// The following are interfaces you can implement for special behavior during ORM/PB conversions
+// of type TypeWithID the arg will be the target, the caller the one being converted from
+
+// TypeWithIDBeforeToORM called before default ToORM code
+type TypeWithIDWithBeforeToORM interface {
+	BeforeToORM(TypeWithIDORM)
+}
+
+// TypeWithIDAfterToORM called after default ToORM code
+type TypeWithIDWithAfterToORM interface {
+	AfterToORM(TypeWithIDORM)
+}
+
+// TypeWithIDBeforeToPB called before default ToPB code
+type TypeWithIDWithBeforeToPB interface {
+	BeforeToPB(TypeWithID)
+}
+
+// TypeWithIDAfterToPB called after default ToPB code
+type TypeWithIDWithAfterToPB interface {
+	AfterToPB(TypeWithID)
 }
 
 // MultiaccountTypeWithIDORM no comment was provided for message type
@@ -218,16 +264,16 @@ func (MultiaccountTypeWithIDORM) TableName() string {
 }
 
 // ToORM adds a pb object function that returns an orm object
-func (m *MultiaccountTypeWithID) ToOrm() (MultiaccountTypeWithIDORM, error) {
+func (m *MultiaccountTypeWithID) ToORM() (MultiaccountTypeWithIDORM, error) {
 	to := MultiaccountTypeWithIDORM{}
-	if prehook, ok := interface{}(m).(gtypes.WithBeforeToOrm); ok {
-		prehook.BeforeToOrmHook(to)
+	if prehook, ok := interface{}(m).(MultiaccountTypeWithIDWithBeforeToORM); ok {
+		prehook.BeforeToORM(to)
 	}
 	var err error
 	to.Id = m.Id
 	to.SomeField = m.SomeField
-	if posthook, ok := interface{}(m).(gtypes.WithAfterToOrm); ok {
-		posthook.AfterToOrmHook(to)
+	if posthook, ok := interface{}(m).(MultiaccountTypeWithIDWithAfterToORM); ok {
+		posthook.AfterToORM(to)
 	}
 	return to, err
 }
@@ -235,16 +281,39 @@ func (m *MultiaccountTypeWithID) ToOrm() (MultiaccountTypeWithIDORM, error) {
 // FromORM returns a pb object
 func (m *MultiaccountTypeWithIDORM) ToPB() (MultiaccountTypeWithID, error) {
 	to := MultiaccountTypeWithID{}
-	if prehook, ok := interface{}(m).(gtypes.WithBeforeToPB); ok {
-		prehook.BeforeToPBHook(to)
+	if prehook, ok := interface{}(m).(MultiaccountTypeWithIDWithBeforeToPB); ok {
+		prehook.BeforeToPB(to)
 	}
 	var err error
 	to.Id = m.Id
 	to.SomeField = m.SomeField
-	if posthook, ok := interface{}(m).(gtypes.WithAfterToPB); ok {
-		posthook.AfterToPBHook(to)
+	if posthook, ok := interface{}(m).(MultiaccountTypeWithIDWithAfterToPB); ok {
+		posthook.AfterToPB(to)
 	}
 	return to, err
+}
+
+// The following are interfaces you can implement for special behavior during ORM/PB conversions
+// of type MultiaccountTypeWithID the arg will be the target, the caller the one being converted from
+
+// MultiaccountTypeWithIDBeforeToORM called before default ToORM code
+type MultiaccountTypeWithIDWithBeforeToORM interface {
+	BeforeToORM(MultiaccountTypeWithIDORM)
+}
+
+// MultiaccountTypeWithIDAfterToORM called after default ToORM code
+type MultiaccountTypeWithIDWithAfterToORM interface {
+	AfterToORM(MultiaccountTypeWithIDORM)
+}
+
+// MultiaccountTypeWithIDBeforeToPB called before default ToPB code
+type MultiaccountTypeWithIDWithBeforeToPB interface {
+	BeforeToPB(MultiaccountTypeWithID)
+}
+
+// MultiaccountTypeWithIDAfterToPB called after default ToPB code
+type MultiaccountTypeWithIDWithAfterToPB interface {
+	AfterToPB(MultiaccountTypeWithID)
 }
 
 // MultiaccountTypeWithoutIDORM no comment was provided for message type
@@ -259,15 +328,15 @@ func (MultiaccountTypeWithoutIDORM) TableName() string {
 }
 
 // ToORM adds a pb object function that returns an orm object
-func (m *MultiaccountTypeWithoutID) ToOrm() (MultiaccountTypeWithoutIDORM, error) {
+func (m *MultiaccountTypeWithoutID) ToORM() (MultiaccountTypeWithoutIDORM, error) {
 	to := MultiaccountTypeWithoutIDORM{}
-	if prehook, ok := interface{}(m).(gtypes.WithBeforeToOrm); ok {
-		prehook.BeforeToOrmHook(to)
+	if prehook, ok := interface{}(m).(MultiaccountTypeWithoutIDWithBeforeToORM); ok {
+		prehook.BeforeToORM(to)
 	}
 	var err error
 	to.SomeField = m.SomeField
-	if posthook, ok := interface{}(m).(gtypes.WithAfterToOrm); ok {
-		posthook.AfterToOrmHook(to)
+	if posthook, ok := interface{}(m).(MultiaccountTypeWithoutIDWithAfterToORM); ok {
+		posthook.AfterToORM(to)
 	}
 	return to, err
 }
@@ -275,15 +344,38 @@ func (m *MultiaccountTypeWithoutID) ToOrm() (MultiaccountTypeWithoutIDORM, error
 // FromORM returns a pb object
 func (m *MultiaccountTypeWithoutIDORM) ToPB() (MultiaccountTypeWithoutID, error) {
 	to := MultiaccountTypeWithoutID{}
-	if prehook, ok := interface{}(m).(gtypes.WithBeforeToPB); ok {
-		prehook.BeforeToPBHook(to)
+	if prehook, ok := interface{}(m).(MultiaccountTypeWithoutIDWithBeforeToPB); ok {
+		prehook.BeforeToPB(to)
 	}
 	var err error
 	to.SomeField = m.SomeField
-	if posthook, ok := interface{}(m).(gtypes.WithAfterToPB); ok {
-		posthook.AfterToPBHook(to)
+	if posthook, ok := interface{}(m).(MultiaccountTypeWithoutIDWithAfterToPB); ok {
+		posthook.AfterToPB(to)
 	}
 	return to, err
+}
+
+// The following are interfaces you can implement for special behavior during ORM/PB conversions
+// of type MultiaccountTypeWithoutID the arg will be the target, the caller the one being converted from
+
+// MultiaccountTypeWithoutIDBeforeToORM called before default ToORM code
+type MultiaccountTypeWithoutIDWithBeforeToORM interface {
+	BeforeToORM(MultiaccountTypeWithoutIDORM)
+}
+
+// MultiaccountTypeWithoutIDAfterToORM called after default ToORM code
+type MultiaccountTypeWithoutIDWithAfterToORM interface {
+	AfterToORM(MultiaccountTypeWithoutIDORM)
+}
+
+// MultiaccountTypeWithoutIDBeforeToPB called before default ToPB code
+type MultiaccountTypeWithoutIDWithBeforeToPB interface {
+	BeforeToPB(MultiaccountTypeWithoutID)
+}
+
+// MultiaccountTypeWithoutIDAfterToPB called after default ToPB code
+type MultiaccountTypeWithoutIDWithAfterToPB interface {
+	AfterToPB(MultiaccountTypeWithoutID)
 }
 
 // TypeBecomesEmptyORM no comment was provided for message type
@@ -297,14 +389,14 @@ func (TypeBecomesEmptyORM) TableName() string {
 }
 
 // ToORM adds a pb object function that returns an orm object
-func (m *TypeBecomesEmpty) ToOrm() (TypeBecomesEmptyORM, error) {
+func (m *TypeBecomesEmpty) ToORM() (TypeBecomesEmptyORM, error) {
 	to := TypeBecomesEmptyORM{}
-	if prehook, ok := interface{}(m).(gtypes.WithBeforeToOrm); ok {
-		prehook.BeforeToOrmHook(to)
+	if prehook, ok := interface{}(m).(TypeBecomesEmptyWithBeforeToORM); ok {
+		prehook.BeforeToORM(to)
 	}
 	var err error
-	if posthook, ok := interface{}(m).(gtypes.WithAfterToOrm); ok {
-		posthook.AfterToOrmHook(to)
+	if posthook, ok := interface{}(m).(TypeBecomesEmptyWithAfterToORM); ok {
+		posthook.AfterToORM(to)
 	}
 	return to, err
 }
@@ -312,14 +404,37 @@ func (m *TypeBecomesEmpty) ToOrm() (TypeBecomesEmptyORM, error) {
 // FromORM returns a pb object
 func (m *TypeBecomesEmptyORM) ToPB() (TypeBecomesEmpty, error) {
 	to := TypeBecomesEmpty{}
-	if prehook, ok := interface{}(m).(gtypes.WithBeforeToPB); ok {
-		prehook.BeforeToPBHook(to)
+	if prehook, ok := interface{}(m).(TypeBecomesEmptyWithBeforeToPB); ok {
+		prehook.BeforeToPB(to)
 	}
 	var err error
-	if posthook, ok := interface{}(m).(gtypes.WithAfterToPB); ok {
-		posthook.AfterToPBHook(to)
+	if posthook, ok := interface{}(m).(TypeBecomesEmptyWithAfterToPB); ok {
+		posthook.AfterToPB(to)
 	}
 	return to, err
+}
+
+// The following are interfaces you can implement for special behavior during ORM/PB conversions
+// of type TypeBecomesEmpty the arg will be the target, the caller the one being converted from
+
+// TypeBecomesEmptyBeforeToORM called before default ToORM code
+type TypeBecomesEmptyWithBeforeToORM interface {
+	BeforeToORM(TypeBecomesEmptyORM)
+}
+
+// TypeBecomesEmptyAfterToORM called after default ToORM code
+type TypeBecomesEmptyWithAfterToORM interface {
+	AfterToORM(TypeBecomesEmptyORM)
+}
+
+// TypeBecomesEmptyBeforeToPB called before default ToPB code
+type TypeBecomesEmptyWithBeforeToPB interface {
+	BeforeToPB(TypeBecomesEmpty)
+}
+
+// TypeBecomesEmptyAfterToPB called after default ToPB code
+type TypeBecomesEmptyWithAfterToPB interface {
+	AfterToPB(TypeBecomesEmpty)
 }
 
 ////////////////////////// CURDL for objects
@@ -328,7 +443,7 @@ func DefaultCreateTestTypes(ctx context.Context, in *TestTypes, db *gorm.DB) (*T
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultCreateTestTypes")
 	}
-	ormObj, err := in.ToOrm()
+	ormObj, err := in.ToORM()
 	if err != nil {
 		return nil, err
 	}
@@ -344,7 +459,7 @@ func DefaultReadTestTypes(ctx context.Context, in *TestTypes, db *gorm.DB) (*Tes
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultReadTestTypes")
 	}
-	ormParams, err := in.ToOrm()
+	ormParams, err := in.ToORM()
 	if err != nil {
 		return nil, err
 	}
@@ -361,7 +476,7 @@ func DefaultUpdateTestTypes(ctx context.Context, in *TestTypes, db *gorm.DB) (*T
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultUpdateTestTypes")
 	}
-	ormObj, err := in.ToOrm()
+	ormObj, err := in.ToORM()
 	if err != nil {
 		return nil, err
 	}
@@ -376,7 +491,7 @@ func DefaultDeleteTestTypes(ctx context.Context, in *TestTypes, db *gorm.DB) err
 	if in == nil {
 		return errors.New("Nil argument to DefaultDeleteTestTypes")
 	}
-	ormObj, err := in.ToOrm()
+	ormObj, err := in.ToORM()
 	if err != nil {
 		return err
 	}
@@ -410,7 +525,7 @@ func DefaultStrictUpdateTestTypes(ctx context.Context, in *TestTypes, db *gorm.D
 	if in == nil {
 		return nil, fmt.Errorf("Nil argument to DefaultCascadedUpdateTestTypes")
 	}
-	ormObj, err := in.ToOrm()
+	ormObj, err := in.ToORM()
 	if err != nil {
 		return nil, err
 	}
@@ -429,7 +544,7 @@ func DefaultCreateTypeWithID(ctx context.Context, in *TypeWithID, db *gorm.DB) (
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultCreateTypeWithID")
 	}
-	ormObj, err := in.ToOrm()
+	ormObj, err := in.ToORM()
 	if err != nil {
 		return nil, err
 	}
@@ -445,7 +560,7 @@ func DefaultReadTypeWithID(ctx context.Context, in *TypeWithID, db *gorm.DB) (*T
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultReadTypeWithID")
 	}
-	ormParams, err := in.ToOrm()
+	ormParams, err := in.ToORM()
 	if err != nil {
 		return nil, err
 	}
@@ -462,7 +577,7 @@ func DefaultUpdateTypeWithID(ctx context.Context, in *TypeWithID, db *gorm.DB) (
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultUpdateTypeWithID")
 	}
-	ormObj, err := in.ToOrm()
+	ormObj, err := in.ToORM()
 	if err != nil {
 		return nil, err
 	}
@@ -477,7 +592,7 @@ func DefaultDeleteTypeWithID(ctx context.Context, in *TypeWithID, db *gorm.DB) e
 	if in == nil {
 		return errors.New("Nil argument to DefaultDeleteTypeWithID")
 	}
-	ormObj, err := in.ToOrm()
+	ormObj, err := in.ToORM()
 	if err != nil {
 		return err
 	}
@@ -511,7 +626,7 @@ func DefaultStrictUpdateTypeWithID(ctx context.Context, in *TypeWithID, db *gorm
 	if in == nil {
 		return nil, fmt.Errorf("Nil argument to DefaultCascadedUpdateTypeWithID")
 	}
-	ormObj, err := in.ToOrm()
+	ormObj, err := in.ToORM()
 	if err != nil {
 		return nil, err
 	}
@@ -538,7 +653,7 @@ func DefaultCreateMultiaccountTypeWithID(ctx context.Context, in *MultiaccountTy
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultCreateMultiaccountTypeWithID")
 	}
-	ormObj, err := in.ToOrm()
+	ormObj, err := in.ToORM()
 	if err != nil {
 		return nil, err
 	}
@@ -559,7 +674,7 @@ func DefaultReadMultiaccountTypeWithID(ctx context.Context, in *MultiaccountType
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultReadMultiaccountTypeWithID")
 	}
-	ormParams, err := in.ToOrm()
+	ormParams, err := in.ToORM()
 	if err != nil {
 		return nil, err
 	}
@@ -586,7 +701,7 @@ func DefaultUpdateMultiaccountTypeWithID(ctx context.Context, in *MultiaccountTy
 	} else if exists == nil {
 		return nil, errors.New("MultiaccountTypeWithID not found")
 	}
-	ormObj, err := in.ToOrm()
+	ormObj, err := in.ToORM()
 	if err != nil {
 		return nil, err
 	}
@@ -601,7 +716,7 @@ func DefaultDeleteMultiaccountTypeWithID(ctx context.Context, in *MultiaccountTy
 	if in == nil {
 		return errors.New("Nil argument to DefaultDeleteMultiaccountTypeWithID")
 	}
-	ormObj, err := in.ToOrm()
+	ormObj, err := in.ToORM()
 	if err != nil {
 		return err
 	}
@@ -645,7 +760,7 @@ func DefaultStrictUpdateMultiaccountTypeWithID(ctx context.Context, in *Multiacc
 	if in == nil {
 		return nil, fmt.Errorf("Nil argument to DefaultCascadedUpdateMultiaccountTypeWithID")
 	}
-	ormObj, err := in.ToOrm()
+	ormObj, err := in.ToORM()
 	if err != nil {
 		return nil, err
 	}
@@ -669,7 +784,7 @@ func DefaultCreateMultiaccountTypeWithoutID(ctx context.Context, in *Multiaccoun
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultCreateMultiaccountTypeWithoutID")
 	}
-	ormObj, err := in.ToOrm()
+	ormObj, err := in.ToORM()
 	if err != nil {
 		return nil, err
 	}
@@ -690,7 +805,7 @@ func DefaultReadMultiaccountTypeWithoutID(ctx context.Context, in *MultiaccountT
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultReadMultiaccountTypeWithoutID")
 	}
-	ormParams, err := in.ToOrm()
+	ormParams, err := in.ToORM()
 	if err != nil {
 		return nil, err
 	}
@@ -713,7 +828,7 @@ func DefaultDeleteMultiaccountTypeWithoutID(ctx context.Context, in *Multiaccoun
 	if in == nil {
 		return errors.New("Nil argument to DefaultDeleteMultiaccountTypeWithoutID")
 	}
-	ormObj, err := in.ToOrm()
+	ormObj, err := in.ToORM()
 	if err != nil {
 		return err
 	}
@@ -757,7 +872,7 @@ func DefaultStrictUpdateMultiaccountTypeWithoutID(ctx context.Context, in *Multi
 	if in == nil {
 		return nil, fmt.Errorf("Nil argument to DefaultCascadedUpdateMultiaccountTypeWithoutID")
 	}
-	ormObj, err := in.ToOrm()
+	ormObj, err := in.ToORM()
 	if err != nil {
 		return nil, err
 	}
@@ -781,7 +896,7 @@ func DefaultCreateTypeBecomesEmpty(ctx context.Context, in *TypeBecomesEmpty, db
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultCreateTypeBecomesEmpty")
 	}
-	ormObj, err := in.ToOrm()
+	ormObj, err := in.ToORM()
 	if err != nil {
 		return nil, err
 	}
@@ -797,7 +912,7 @@ func DefaultReadTypeBecomesEmpty(ctx context.Context, in *TypeBecomesEmpty, db *
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultReadTypeBecomesEmpty")
 	}
-	ormParams, err := in.ToOrm()
+	ormParams, err := in.ToORM()
 	if err != nil {
 		return nil, err
 	}
@@ -814,7 +929,7 @@ func DefaultUpdateTypeBecomesEmpty(ctx context.Context, in *TypeBecomesEmpty, db
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultUpdateTypeBecomesEmpty")
 	}
-	ormObj, err := in.ToOrm()
+	ormObj, err := in.ToORM()
 	if err != nil {
 		return nil, err
 	}
@@ -829,7 +944,7 @@ func DefaultDeleteTypeBecomesEmpty(ctx context.Context, in *TypeBecomesEmpty, db
 	if in == nil {
 		return errors.New("Nil argument to DefaultDeleteTypeBecomesEmpty")
 	}
-	ormObj, err := in.ToOrm()
+	ormObj, err := in.ToORM()
 	if err != nil {
 		return err
 	}
@@ -863,7 +978,7 @@ func DefaultStrictUpdateTypeBecomesEmpty(ctx context.Context, in *TypeBecomesEmp
 	if in == nil {
 		return nil, fmt.Errorf("Nil argument to DefaultCascadedUpdateTypeBecomesEmpty")
 	}
-	ormObj, err := in.ToOrm()
+	ormObj, err := in.ToORM()
 	if err != nil {
 		return nil, err
 	}
