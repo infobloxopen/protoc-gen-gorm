@@ -29,24 +29,59 @@ func (IntPointORM) TableName() string {
 	return "int_points"
 }
 
-// ConvertIntPointToORM takes a pb object and returns an orm object
-func ConvertIntPointToORM(from IntPoint) (IntPointORM, error) {
+// ToORM adds a pb object function that returns an orm object
+func (m *IntPoint) ToORM() (IntPointORM, error) {
 	to := IntPointORM{}
+	if prehook, ok := interface{}(m).(IntPointWithBeforeToORM); ok {
+		prehook.BeforeToORM(to)
+	}
 	var err error
-	to.Id = from.Id
-	to.X = from.X
-	to.Y = from.Y
+	to.Id = m.Id
+	to.X = m.X
+	to.Y = m.Y
+	if posthook, ok := interface{}(m).(IntPointWithAfterToORM); ok {
+		posthook.AfterToORM(to)
+	}
 	return to, err
 }
 
-// ConvertIntPointFromORM takes an orm object and returns a pb object
-func ConvertIntPointFromORM(from IntPointORM) (IntPoint, error) {
+// FromORM returns a pb object
+func (m *IntPointORM) ToPB() (IntPoint, error) {
 	to := IntPoint{}
+	if prehook, ok := interface{}(m).(IntPointWithBeforeToPB); ok {
+		prehook.BeforeToPB(to)
+	}
 	var err error
-	to.Id = from.Id
-	to.X = from.X
-	to.Y = from.Y
+	to.Id = m.Id
+	to.X = m.X
+	to.Y = m.Y
+	if posthook, ok := interface{}(m).(IntPointWithAfterToPB); ok {
+		posthook.AfterToPB(to)
+	}
 	return to, err
+}
+
+// The following are interfaces you can implement for special behavior during ORM/PB conversions
+// of type IntPoint the arg will be the target, the caller the one being converted from
+
+// IntPointBeforeToORM called before default ToORM code
+type IntPointWithBeforeToORM interface {
+	BeforeToORM(IntPointORM)
+}
+
+// IntPointAfterToORM called after default ToORM code
+type IntPointWithAfterToORM interface {
+	AfterToORM(IntPointORM)
+}
+
+// IntPointBeforeToPB called before default ToPB code
+type IntPointWithBeforeToPB interface {
+	BeforeToPB(IntPoint)
+}
+
+// IntPointAfterToPB called after default ToPB code
+type IntPointWithAfterToPB interface {
+	AfterToPB(IntPoint)
 }
 
 ////////////////////////// CURDL for objects
@@ -55,14 +90,14 @@ func DefaultCreateIntPoint(ctx context.Context, in *IntPoint, db *gorm.DB) (*Int
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultCreateIntPoint")
 	}
-	ormObj, err := ConvertIntPointToORM(*in)
+	ormObj, err := in.ToORM()
 	if err != nil {
 		return nil, err
 	}
 	if err = db.Create(&ormObj).Error; err != nil {
 		return nil, err
 	}
-	pbResponse, err := ConvertIntPointFromORM(ormObj)
+	pbResponse, err := ormObj.ToPB()
 	return &pbResponse, err
 }
 
@@ -71,7 +106,7 @@ func DefaultReadIntPoint(ctx context.Context, in *IntPoint, db *gorm.DB) (*IntPo
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultReadIntPoint")
 	}
-	ormParams, err := ConvertIntPointToORM(*in)
+	ormParams, err := in.ToORM()
 	if err != nil {
 		return nil, err
 	}
@@ -79,7 +114,7 @@ func DefaultReadIntPoint(ctx context.Context, in *IntPoint, db *gorm.DB) (*IntPo
 	if err = db.Set("gorm:auto_preload", true).Where(&ormParams).First(&ormResponse).Error; err != nil {
 		return nil, err
 	}
-	pbResponse, err := ConvertIntPointFromORM(ormResponse)
+	pbResponse, err := ormResponse.ToPB()
 	return &pbResponse, err
 }
 
@@ -88,14 +123,14 @@ func DefaultUpdateIntPoint(ctx context.Context, in *IntPoint, db *gorm.DB) (*Int
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultUpdateIntPoint")
 	}
-	ormObj, err := ConvertIntPointToORM(*in)
+	ormObj, err := in.ToORM()
 	if err != nil {
 		return nil, err
 	}
 	if err = db.Save(&ormObj).Error; err != nil {
 		return nil, err
 	}
-	pbResponse, err := ConvertIntPointFromORM(ormObj)
+	pbResponse, err := ormObj.ToPB()
 	return &pbResponse, err
 }
 
@@ -103,7 +138,7 @@ func DefaultDeleteIntPoint(ctx context.Context, in *IntPoint, db *gorm.DB) error
 	if in == nil {
 		return errors.New("Nil argument to DefaultDeleteIntPoint")
 	}
-	ormObj, err := ConvertIntPointToORM(*in)
+	ormObj, err := in.ToORM()
 	if err != nil {
 		return err
 	}
@@ -123,7 +158,7 @@ func DefaultListIntPoint(ctx context.Context, db *gorm.DB) ([]*IntPoint, error) 
 	}
 	pbResponse := []*IntPoint{}
 	for _, responseEntry := range ormResponse {
-		temp, err := ConvertIntPointFromORM(responseEntry)
+		temp, err := responseEntry.ToPB()
 		if err != nil {
 			return nil, err
 		}
@@ -137,14 +172,14 @@ func DefaultStrictUpdateIntPoint(ctx context.Context, in *IntPoint, db *gorm.DB)
 	if in == nil {
 		return nil, fmt.Errorf("Nil argument to DefaultCascadedUpdateIntPoint")
 	}
-	ormObj, err := ConvertIntPointToORM(*in)
+	ormObj, err := in.ToORM()
 	if err != nil {
 		return nil, err
 	}
 	if err = db.Save(&ormObj).Error; err != nil {
 		return nil, err
 	}
-	pbResponse, err := ConvertIntPointFromORM(ormObj)
+	pbResponse, err := ormObj.ToPB()
 	if err != nil {
 		return nil, err
 	}
