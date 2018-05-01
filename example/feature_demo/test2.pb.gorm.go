@@ -33,14 +33,14 @@ func (IntPointORM) TableName() string {
 func (m *IntPoint) ToORM() (IntPointORM, error) {
 	to := IntPointORM{}
 	if prehook, ok := interface{}(m).(IntPointWithBeforeToORM); ok {
-		prehook.BeforeToORM(to)
+		prehook.BeforeToORM(&to)
 	}
 	var err error
 	to.Id = m.Id
 	to.X = m.X
 	to.Y = m.Y
 	if posthook, ok := interface{}(m).(IntPointWithAfterToORM); ok {
-		posthook.AfterToORM(to)
+		posthook.AfterToORM(&to)
 	}
 	return to, err
 }
@@ -49,14 +49,14 @@ func (m *IntPoint) ToORM() (IntPointORM, error) {
 func (m *IntPointORM) ToPB() (IntPoint, error) {
 	to := IntPoint{}
 	if prehook, ok := interface{}(m).(IntPointWithBeforeToPB); ok {
-		prehook.BeforeToPB(to)
+		prehook.BeforeToPB(&to)
 	}
 	var err error
 	to.Id = m.Id
 	to.X = m.X
 	to.Y = m.Y
 	if posthook, ok := interface{}(m).(IntPointWithAfterToPB); ok {
-		posthook.AfterToPB(to)
+		posthook.AfterToPB(&to)
 	}
 	return to, err
 }
@@ -66,22 +66,22 @@ func (m *IntPointORM) ToPB() (IntPoint, error) {
 
 // IntPointBeforeToORM called before default ToORM code
 type IntPointWithBeforeToORM interface {
-	BeforeToORM(IntPointORM)
+	BeforeToORM(*IntPointORM)
 }
 
 // IntPointAfterToORM called after default ToORM code
 type IntPointWithAfterToORM interface {
-	AfterToORM(IntPointORM)
+	AfterToORM(*IntPointORM)
 }
 
 // IntPointBeforeToPB called before default ToPB code
 type IntPointWithBeforeToPB interface {
-	BeforeToPB(IntPoint)
+	BeforeToPB(*IntPoint)
 }
 
 // IntPointAfterToPB called after default ToPB code
 type IntPointWithAfterToPB interface {
-	AfterToPB(IntPoint)
+	AfterToPB(*IntPoint)
 }
 
 ////////////////////////// CURDL for objects

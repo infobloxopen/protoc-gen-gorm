@@ -53,7 +53,7 @@ func (ContactORM) TableName() string {
 func (m *Contact) ToORM() (ContactORM, error) {
 	to := ContactORM{}
 	if prehook, ok := interface{}(m).(ContactWithBeforeToORM); ok {
-		prehook.BeforeToORM(to)
+		prehook.BeforeToORM(&to)
 	}
 	var err error
 	to.Id = m.Id
@@ -62,7 +62,7 @@ func (m *Contact) ToORM() (ContactORM, error) {
 	to.LastName = m.LastName
 	to.EmailAddress = m.EmailAddress
 	if posthook, ok := interface{}(m).(ContactWithAfterToORM); ok {
-		posthook.AfterToORM(to)
+		posthook.AfterToORM(&to)
 	}
 	return to, err
 }
@@ -71,7 +71,7 @@ func (m *Contact) ToORM() (ContactORM, error) {
 func (m *ContactORM) ToPB() (Contact, error) {
 	to := Contact{}
 	if prehook, ok := interface{}(m).(ContactWithBeforeToPB); ok {
-		prehook.BeforeToPB(to)
+		prehook.BeforeToPB(&to)
 	}
 	var err error
 	to.Id = m.Id
@@ -80,7 +80,7 @@ func (m *ContactORM) ToPB() (Contact, error) {
 	to.LastName = m.LastName
 	to.EmailAddress = m.EmailAddress
 	if posthook, ok := interface{}(m).(ContactWithAfterToPB); ok {
-		posthook.AfterToPB(to)
+		posthook.AfterToPB(&to)
 	}
 	return to, err
 }
@@ -90,22 +90,22 @@ func (m *ContactORM) ToPB() (Contact, error) {
 
 // ContactBeforeToORM called before default ToORM code
 type ContactWithBeforeToORM interface {
-	BeforeToORM(ContactORM)
+	BeforeToORM(*ContactORM)
 }
 
 // ContactAfterToORM called after default ToORM code
 type ContactWithAfterToORM interface {
-	AfterToORM(ContactORM)
+	AfterToORM(*ContactORM)
 }
 
 // ContactBeforeToPB called before default ToPB code
 type ContactWithBeforeToPB interface {
-	BeforeToPB(Contact)
+	BeforeToPB(*Contact)
 }
 
 // ContactAfterToPB called after default ToPB code
 type ContactWithAfterToPB interface {
-	AfterToPB(Contact)
+	AfterToPB(*Contact)
 }
 
 ////////////////////////// CURDL for objects

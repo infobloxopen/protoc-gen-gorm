@@ -245,7 +245,7 @@ func (p *OrmPlugin) generateConvertFunctions(message *generator.Descriptor) {
 	p.P(`func (m *`, typeName, `) ToORM () (`, typeName, `ORM, error) {`)
 	p.P(`to := `, typeName, `ORM{}`)
 	p.P(`if prehook, ok := interface{}(m).(`, typeName, `WithBeforeToORM); ok {`)
-	p.P(`prehook.BeforeToORM(to)`)
+	p.P(`prehook.BeforeToORM(&to)`)
 	p.P(`}`)
 	p.P(`var err error`)
 	for _, field := range message.Field {
@@ -263,7 +263,7 @@ func (p *OrmPlugin) generateConvertFunctions(message *generator.Descriptor) {
 		p.generateFieldConversion(message, field, true)
 	}
 	p.P(`if posthook, ok := interface{}(m).(`, typeName, `WithAfterToORM); ok {`)
-	p.P(`posthook.AfterToORM(to)`)
+	p.P(`posthook.AfterToORM(&to)`)
 	p.P(`}`)
 	p.P(`return to, err`)
 	p.P(`}`)
@@ -275,7 +275,7 @@ func (p *OrmPlugin) generateConvertFunctions(message *generator.Descriptor) {
 		typeName, `, error) {`)
 	p.P(`to := `, typeName, `{}`)
 	p.P(`if prehook, ok := interface{}(m).(`, typeName, `WithBeforeToPB); ok {`)
-	p.P(`prehook.BeforeToPB(to)`)
+	p.P(`prehook.BeforeToPB(&to)`)
 	p.P(`}`)
 	p.P(`var err error`)
 	for _, field := range message.Field {
@@ -293,7 +293,7 @@ func (p *OrmPlugin) generateConvertFunctions(message *generator.Descriptor) {
 		p.generateFieldConversion(message, field, false)
 	}
 	p.P(`if posthook, ok := interface{}(m).(`, typeName, `WithAfterToPB); ok {`)
-	p.P(`posthook.AfterToPB(to)`)
+	p.P(`posthook.AfterToPB(&to)`)
 	p.P(`}`)
 	p.P(`return to, err`)
 	p.P(`}`)
@@ -408,7 +408,7 @@ func (p *OrmPlugin) generateHookInterfaces(message *generator.Descriptor) {
 	} {
 		p.P(`// `, typeName, desc[0], desc[2])
 		p.P(`type `, typeName, `With`, desc[0], ` interface {`)
-		p.P(desc[0], `(`, desc[1], `)`)
+		p.P(desc[0], `(*`, desc[1], `)`)
 		p.P(`}`)
 		p.P()
 	}

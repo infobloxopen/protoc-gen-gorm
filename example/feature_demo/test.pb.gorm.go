@@ -70,7 +70,7 @@ func (TestTypesORM) TableName() string {
 func (m *TestTypes) ToORM() (TestTypesORM, error) {
 	to := TestTypesORM{}
 	if prehook, ok := interface{}(m).(TestTypesWithBeforeToORM); ok {
-		prehook.BeforeToORM(to)
+		prehook.BeforeToORM(&to)
 	}
 	var err error
 	// Skipping field: ApiOnlyString
@@ -94,7 +94,7 @@ func (m *TestTypes) ToORM() (TestTypesORM, error) {
 	}
 	to.TypeWithIdId = m.TypeWithIdId
 	if posthook, ok := interface{}(m).(TestTypesWithAfterToORM); ok {
-		posthook.AfterToORM(to)
+		posthook.AfterToORM(&to)
 	}
 	return to, err
 }
@@ -103,7 +103,7 @@ func (m *TestTypes) ToORM() (TestTypesORM, error) {
 func (m *TestTypesORM) ToPB() (TestTypes, error) {
 	to := TestTypes{}
 	if prehook, ok := interface{}(m).(TestTypesWithBeforeToPB); ok {
-		prehook.BeforeToPB(to)
+		prehook.BeforeToPB(&to)
 	}
 	var err error
 	// Skipping field: ApiOnlyString
@@ -120,7 +120,7 @@ func (m *TestTypesORM) ToPB() (TestTypes, error) {
 	}
 	to.TypeWithIdId = m.TypeWithIdId
 	if posthook, ok := interface{}(m).(TestTypesWithAfterToPB); ok {
-		posthook.AfterToPB(to)
+		posthook.AfterToPB(&to)
 	}
 	return to, err
 }
@@ -130,22 +130,22 @@ func (m *TestTypesORM) ToPB() (TestTypes, error) {
 
 // TestTypesBeforeToORM called before default ToORM code
 type TestTypesWithBeforeToORM interface {
-	BeforeToORM(TestTypesORM)
+	BeforeToORM(*TestTypesORM)
 }
 
 // TestTypesAfterToORM called after default ToORM code
 type TestTypesWithAfterToORM interface {
-	AfterToORM(TestTypesORM)
+	AfterToORM(*TestTypesORM)
 }
 
 // TestTypesBeforeToPB called before default ToPB code
 type TestTypesWithBeforeToPB interface {
-	BeforeToPB(TestTypes)
+	BeforeToPB(*TestTypes)
 }
 
 // TestTypesAfterToPB called after default ToPB code
 type TestTypesWithAfterToPB interface {
-	AfterToPB(TestTypes)
+	AfterToPB(*TestTypes)
 }
 
 // TypeWithIDORM no comment was provided for message type
@@ -166,7 +166,7 @@ func (TypeWithIDORM) TableName() string {
 func (m *TypeWithID) ToORM() (TypeWithIDORM, error) {
 	to := TypeWithIDORM{}
 	if prehook, ok := interface{}(m).(TypeWithIDWithBeforeToORM); ok {
-		prehook.BeforeToORM(to)
+		prehook.BeforeToORM(&to)
 	}
 	var err error
 	to.Ip = m.Ip
@@ -190,7 +190,7 @@ func (m *TypeWithID) ToORM() (TypeWithIDORM, error) {
 	}
 	to.Id = m.Id
 	if posthook, ok := interface{}(m).(TypeWithIDWithAfterToORM); ok {
-		posthook.AfterToORM(to)
+		posthook.AfterToORM(&to)
 	}
 	return to, err
 }
@@ -199,7 +199,7 @@ func (m *TypeWithID) ToORM() (TypeWithIDORM, error) {
 func (m *TypeWithIDORM) ToPB() (TypeWithID, error) {
 	to := TypeWithID{}
 	if prehook, ok := interface{}(m).(TypeWithIDWithBeforeToPB); ok {
-		prehook.BeforeToPB(to)
+		prehook.BeforeToPB(&to)
 	}
 	var err error
 	to.Ip = m.Ip
@@ -223,7 +223,7 @@ func (m *TypeWithIDORM) ToPB() (TypeWithID, error) {
 	}
 	to.Id = m.Id
 	if posthook, ok := interface{}(m).(TypeWithIDWithAfterToPB); ok {
-		posthook.AfterToPB(to)
+		posthook.AfterToPB(&to)
 	}
 	return to, err
 }
@@ -233,22 +233,22 @@ func (m *TypeWithIDORM) ToPB() (TypeWithID, error) {
 
 // TypeWithIDBeforeToORM called before default ToORM code
 type TypeWithIDWithBeforeToORM interface {
-	BeforeToORM(TypeWithIDORM)
+	BeforeToORM(*TypeWithIDORM)
 }
 
 // TypeWithIDAfterToORM called after default ToORM code
 type TypeWithIDWithAfterToORM interface {
-	AfterToORM(TypeWithIDORM)
+	AfterToORM(*TypeWithIDORM)
 }
 
 // TypeWithIDBeforeToPB called before default ToPB code
 type TypeWithIDWithBeforeToPB interface {
-	BeforeToPB(TypeWithID)
+	BeforeToPB(*TypeWithID)
 }
 
 // TypeWithIDAfterToPB called after default ToPB code
 type TypeWithIDWithAfterToPB interface {
-	AfterToPB(TypeWithID)
+	AfterToPB(*TypeWithID)
 }
 
 // MultiaccountTypeWithIDORM no comment was provided for message type
@@ -267,13 +267,13 @@ func (MultiaccountTypeWithIDORM) TableName() string {
 func (m *MultiaccountTypeWithID) ToORM() (MultiaccountTypeWithIDORM, error) {
 	to := MultiaccountTypeWithIDORM{}
 	if prehook, ok := interface{}(m).(MultiaccountTypeWithIDWithBeforeToORM); ok {
-		prehook.BeforeToORM(to)
+		prehook.BeforeToORM(&to)
 	}
 	var err error
 	to.Id = m.Id
 	to.SomeField = m.SomeField
 	if posthook, ok := interface{}(m).(MultiaccountTypeWithIDWithAfterToORM); ok {
-		posthook.AfterToORM(to)
+		posthook.AfterToORM(&to)
 	}
 	return to, err
 }
@@ -282,13 +282,13 @@ func (m *MultiaccountTypeWithID) ToORM() (MultiaccountTypeWithIDORM, error) {
 func (m *MultiaccountTypeWithIDORM) ToPB() (MultiaccountTypeWithID, error) {
 	to := MultiaccountTypeWithID{}
 	if prehook, ok := interface{}(m).(MultiaccountTypeWithIDWithBeforeToPB); ok {
-		prehook.BeforeToPB(to)
+		prehook.BeforeToPB(&to)
 	}
 	var err error
 	to.Id = m.Id
 	to.SomeField = m.SomeField
 	if posthook, ok := interface{}(m).(MultiaccountTypeWithIDWithAfterToPB); ok {
-		posthook.AfterToPB(to)
+		posthook.AfterToPB(&to)
 	}
 	return to, err
 }
@@ -298,22 +298,22 @@ func (m *MultiaccountTypeWithIDORM) ToPB() (MultiaccountTypeWithID, error) {
 
 // MultiaccountTypeWithIDBeforeToORM called before default ToORM code
 type MultiaccountTypeWithIDWithBeforeToORM interface {
-	BeforeToORM(MultiaccountTypeWithIDORM)
+	BeforeToORM(*MultiaccountTypeWithIDORM)
 }
 
 // MultiaccountTypeWithIDAfterToORM called after default ToORM code
 type MultiaccountTypeWithIDWithAfterToORM interface {
-	AfterToORM(MultiaccountTypeWithIDORM)
+	AfterToORM(*MultiaccountTypeWithIDORM)
 }
 
 // MultiaccountTypeWithIDBeforeToPB called before default ToPB code
 type MultiaccountTypeWithIDWithBeforeToPB interface {
-	BeforeToPB(MultiaccountTypeWithID)
+	BeforeToPB(*MultiaccountTypeWithID)
 }
 
 // MultiaccountTypeWithIDAfterToPB called after default ToPB code
 type MultiaccountTypeWithIDWithAfterToPB interface {
-	AfterToPB(MultiaccountTypeWithID)
+	AfterToPB(*MultiaccountTypeWithID)
 }
 
 // MultiaccountTypeWithoutIDORM no comment was provided for message type
@@ -331,12 +331,12 @@ func (MultiaccountTypeWithoutIDORM) TableName() string {
 func (m *MultiaccountTypeWithoutID) ToORM() (MultiaccountTypeWithoutIDORM, error) {
 	to := MultiaccountTypeWithoutIDORM{}
 	if prehook, ok := interface{}(m).(MultiaccountTypeWithoutIDWithBeforeToORM); ok {
-		prehook.BeforeToORM(to)
+		prehook.BeforeToORM(&to)
 	}
 	var err error
 	to.SomeField = m.SomeField
 	if posthook, ok := interface{}(m).(MultiaccountTypeWithoutIDWithAfterToORM); ok {
-		posthook.AfterToORM(to)
+		posthook.AfterToORM(&to)
 	}
 	return to, err
 }
@@ -345,12 +345,12 @@ func (m *MultiaccountTypeWithoutID) ToORM() (MultiaccountTypeWithoutIDORM, error
 func (m *MultiaccountTypeWithoutIDORM) ToPB() (MultiaccountTypeWithoutID, error) {
 	to := MultiaccountTypeWithoutID{}
 	if prehook, ok := interface{}(m).(MultiaccountTypeWithoutIDWithBeforeToPB); ok {
-		prehook.BeforeToPB(to)
+		prehook.BeforeToPB(&to)
 	}
 	var err error
 	to.SomeField = m.SomeField
 	if posthook, ok := interface{}(m).(MultiaccountTypeWithoutIDWithAfterToPB); ok {
-		posthook.AfterToPB(to)
+		posthook.AfterToPB(&to)
 	}
 	return to, err
 }
@@ -360,22 +360,22 @@ func (m *MultiaccountTypeWithoutIDORM) ToPB() (MultiaccountTypeWithoutID, error)
 
 // MultiaccountTypeWithoutIDBeforeToORM called before default ToORM code
 type MultiaccountTypeWithoutIDWithBeforeToORM interface {
-	BeforeToORM(MultiaccountTypeWithoutIDORM)
+	BeforeToORM(*MultiaccountTypeWithoutIDORM)
 }
 
 // MultiaccountTypeWithoutIDAfterToORM called after default ToORM code
 type MultiaccountTypeWithoutIDWithAfterToORM interface {
-	AfterToORM(MultiaccountTypeWithoutIDORM)
+	AfterToORM(*MultiaccountTypeWithoutIDORM)
 }
 
 // MultiaccountTypeWithoutIDBeforeToPB called before default ToPB code
 type MultiaccountTypeWithoutIDWithBeforeToPB interface {
-	BeforeToPB(MultiaccountTypeWithoutID)
+	BeforeToPB(*MultiaccountTypeWithoutID)
 }
 
 // MultiaccountTypeWithoutIDAfterToPB called after default ToPB code
 type MultiaccountTypeWithoutIDWithAfterToPB interface {
-	AfterToPB(MultiaccountTypeWithoutID)
+	AfterToPB(*MultiaccountTypeWithoutID)
 }
 
 // TypeBecomesEmptyORM no comment was provided for message type
@@ -392,11 +392,11 @@ func (TypeBecomesEmptyORM) TableName() string {
 func (m *TypeBecomesEmpty) ToORM() (TypeBecomesEmptyORM, error) {
 	to := TypeBecomesEmptyORM{}
 	if prehook, ok := interface{}(m).(TypeBecomesEmptyWithBeforeToORM); ok {
-		prehook.BeforeToORM(to)
+		prehook.BeforeToORM(&to)
 	}
 	var err error
 	if posthook, ok := interface{}(m).(TypeBecomesEmptyWithAfterToORM); ok {
-		posthook.AfterToORM(to)
+		posthook.AfterToORM(&to)
 	}
 	return to, err
 }
@@ -405,11 +405,11 @@ func (m *TypeBecomesEmpty) ToORM() (TypeBecomesEmptyORM, error) {
 func (m *TypeBecomesEmptyORM) ToPB() (TypeBecomesEmpty, error) {
 	to := TypeBecomesEmpty{}
 	if prehook, ok := interface{}(m).(TypeBecomesEmptyWithBeforeToPB); ok {
-		prehook.BeforeToPB(to)
+		prehook.BeforeToPB(&to)
 	}
 	var err error
 	if posthook, ok := interface{}(m).(TypeBecomesEmptyWithAfterToPB); ok {
-		posthook.AfterToPB(to)
+		posthook.AfterToPB(&to)
 	}
 	return to, err
 }
@@ -419,22 +419,22 @@ func (m *TypeBecomesEmptyORM) ToPB() (TypeBecomesEmpty, error) {
 
 // TypeBecomesEmptyBeforeToORM called before default ToORM code
 type TypeBecomesEmptyWithBeforeToORM interface {
-	BeforeToORM(TypeBecomesEmptyORM)
+	BeforeToORM(*TypeBecomesEmptyORM)
 }
 
 // TypeBecomesEmptyAfterToORM called after default ToORM code
 type TypeBecomesEmptyWithAfterToORM interface {
-	AfterToORM(TypeBecomesEmptyORM)
+	AfterToORM(*TypeBecomesEmptyORM)
 }
 
 // TypeBecomesEmptyBeforeToPB called before default ToPB code
 type TypeBecomesEmptyWithBeforeToPB interface {
-	BeforeToPB(TypeBecomesEmpty)
+	BeforeToPB(*TypeBecomesEmpty)
 }
 
 // TypeBecomesEmptyAfterToPB called after default ToPB code
 type TypeBecomesEmptyWithAfterToPB interface {
-	AfterToPB(TypeBecomesEmpty)
+	AfterToPB(*TypeBecomesEmpty)
 }
 
 ////////////////////////// CURDL for objects
