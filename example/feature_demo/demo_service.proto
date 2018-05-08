@@ -53,7 +53,10 @@ message DeleteIntPointRequest {
     uint32 id = 1;
 }
 
-// By convention, on DELETE no response is expected
+// By convention, on DELETE no response data is given, so either a
+// google.protobuf.empty, or an empty struct is sufficient
+message DeleteIntPointResponse {
+}
 
 message ListIntPointResponse {
     // Note repeated field and plural name 'results'
@@ -67,13 +70,15 @@ message Something {
 service IntPoint {
   // This option tells protoc-gen-gorm to generate the calls and stubs
   option (gorm.server).autogen = true;
-  // The convention names are Create/Read/Update/List/Delete. Since no type is
-  // specified, only one set of CURDL operations can be defined in each service
+  // The convention requires the rpc names have Create/Read/Update/List/Delete
+  // as a prefix. The type is inferred from the response (except for delete),
+  // so multiple objects can have CURDL handlers in the same service, provided
+  // they are given unique suffixes
   rpc Create ( CreateIntPointRequest ) returns ( CreateIntPointResponse ) {}
   rpc Read ( ReadIntPointRequest ) returns ( ReadIntPointResponse ) {}
   rpc Update ( UpdateIntPointRequest ) returns ( UpdateIntPointResponse ) {}
   rpc List ( google.protobuf.Empty ) returns ( ListIntPointResponse ) {}
-  rpc Delete ( DeleteIntPointRequest ) returns  ( google.protobuf.Empty ) {
+  rpc Delete ( DeleteIntPointRequest ) returns  ( DeleteIntPointResponse ) {
       // This option is required because the type/table can't be inferred
       // by the return type
       option (gorm.method).object_type = "int_point";

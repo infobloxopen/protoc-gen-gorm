@@ -228,8 +228,8 @@ func (m *IntPointDefaultServer) List(ctx context.Context, in *google_protobuf2.E
 }
 
 // Delete ...
-func (m *IntPointDefaultServer) Delete(ctx context.Context, in *DeleteIntPointRequest) (*google_protobuf2.Empty, error) {
-	return &google_protobuf2.Empty{}, DefaultDeleteIntPoint(ctx, &IntPoint{Id: in.GetId()}, m.DB)
+func (m *IntPointDefaultServer) Delete(ctx context.Context, in *DeleteIntPointRequest) (*DeleteIntPointResponse, error) {
+	return &DeleteIntPointResponse{}, DefaultDeleteIntPoint(ctx, &IntPoint{Id: in.GetId()}, m.DB)
 }
 
 // CustomMethod ...
