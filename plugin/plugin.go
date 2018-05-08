@@ -203,7 +203,7 @@ func (p *OrmPlugin) generateMessageHead(message *generator.Descriptor) {
 	} else {
 		comment = fmt.Sprintf(" %s no comment provided", typeNameOrm)
 	}
-	p.P(`//`, comment)
+	p.P(`//`, strings.Replace(comment, "\n", "\n//", -1))
 	p.P(`type `, typeNameOrm, ` struct {`)
 	// Checking for any ORM only fields specified by option (gorm.opts).include
 	if opts := getMessageOptions(message); opts != nil {
