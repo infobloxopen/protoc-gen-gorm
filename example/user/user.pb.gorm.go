@@ -21,7 +21,7 @@ import errors "errors"
 import time "time"
 
 import gorm "github.com/jinzhu/gorm"
-import ops "github.com/infobloxopen/atlas-app-toolkit/op/gorm"
+import ops "github.com/infobloxopen/atlas-app-toolkit/gorm"
 import ptypes "github.com/golang/protobuf/ptypes"
 
 import fmt "fmt"
