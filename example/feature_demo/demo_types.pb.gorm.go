@@ -67,7 +67,8 @@ func (TestTypesORM) TableName() string {
 	return "test_types"
 }
 
-// ToORM adds a pb object function that returns an orm object
+// ToORM runs the BeforeToORM hook if present, converts the fields of this
+// object to ORM format, runs the AfterToORM hook, then returns the ORM object
 func (m *TestTypes) ToORM(ctx context.Context) (TestTypesORM, error) {
 	to := TestTypesORM{}
 	var err error
@@ -102,7 +103,8 @@ func (m *TestTypes) ToORM(ctx context.Context) (TestTypesORM, error) {
 	return to, err
 }
 
-// FromORM returns a pb object
+// ToPB runs the BeforeToPB hook if present, converts the fields of this
+// object to PB format, runs the AfterToPB hook, then returns the PB object
 func (m *TestTypesORM) ToPB(ctx context.Context) (TestTypes, error) {
 	to := TestTypes{}
 	var err error
@@ -167,7 +169,8 @@ func (TypeWithIDORM) TableName() string {
 	return "type_with_ids"
 }
 
-// ToORM adds a pb object function that returns an orm object
+// ToORM runs the BeforeToORM hook if present, converts the fields of this
+// object to ORM format, runs the AfterToORM hook, then returns the ORM object
 func (m *TypeWithID) ToORM(ctx context.Context) (TypeWithIDORM, error) {
 	to := TypeWithIDORM{}
 	var err error
@@ -202,7 +205,8 @@ func (m *TypeWithID) ToORM(ctx context.Context) (TypeWithIDORM, error) {
 	return to, err
 }
 
-// FromORM returns a pb object
+// ToPB runs the BeforeToPB hook if present, converts the fields of this
+// object to PB format, runs the AfterToPB hook, then returns the PB object
 func (m *TypeWithIDORM) ToPB(ctx context.Context) (TypeWithID, error) {
 	to := TypeWithID{}
 	var err error
@@ -272,7 +276,8 @@ func (MultiaccountTypeWithIDORM) TableName() string {
 	return "multiaccount_type_with_ids"
 }
 
-// ToORM adds a pb object function that returns an orm object
+// ToORM runs the BeforeToORM hook if present, converts the fields of this
+// object to ORM format, runs the AfterToORM hook, then returns the ORM object
 func (m *MultiaccountTypeWithID) ToORM(ctx context.Context) (MultiaccountTypeWithIDORM, error) {
 	to := MultiaccountTypeWithIDORM{}
 	var err error
@@ -289,7 +294,8 @@ func (m *MultiaccountTypeWithID) ToORM(ctx context.Context) (MultiaccountTypeWit
 	return to, err
 }
 
-// FromORM returns a pb object
+// ToPB runs the BeforeToPB hook if present, converts the fields of this
+// object to PB format, runs the AfterToPB hook, then returns the PB object
 func (m *MultiaccountTypeWithIDORM) ToPB(ctx context.Context) (MultiaccountTypeWithID, error) {
 	to := MultiaccountTypeWithID{}
 	var err error
@@ -340,7 +346,8 @@ func (MultiaccountTypeWithoutIDORM) TableName() string {
 	return "multiaccount_type_without_ids"
 }
 
-// ToORM adds a pb object function that returns an orm object
+// ToORM runs the BeforeToORM hook if present, converts the fields of this
+// object to ORM format, runs the AfterToORM hook, then returns the ORM object
 func (m *MultiaccountTypeWithoutID) ToORM(ctx context.Context) (MultiaccountTypeWithoutIDORM, error) {
 	to := MultiaccountTypeWithoutIDORM{}
 	var err error
@@ -356,7 +363,8 @@ func (m *MultiaccountTypeWithoutID) ToORM(ctx context.Context) (MultiaccountType
 	return to, err
 }
 
-// FromORM returns a pb object
+// ToPB runs the BeforeToPB hook if present, converts the fields of this
+// object to PB format, runs the AfterToPB hook, then returns the PB object
 func (m *MultiaccountTypeWithoutIDORM) ToPB(ctx context.Context) (MultiaccountTypeWithoutID, error) {
 	to := MultiaccountTypeWithoutID{}
 	var err error

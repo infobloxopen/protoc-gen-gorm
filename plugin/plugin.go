@@ -241,7 +241,8 @@ func (p *OrmPlugin) generateConvertFunctions(message *generator.Descriptor) {
 	typeName := p.TypeName(message)
 
 	///// To Orm
-	p.P(`// ToORM adds a pb object function that returns an orm object`)
+	p.P(`// ToORM runs the BeforeToORM hook if present, converts the fields of this`)
+	p.P(`// object to ORM format, runs the AfterToORM hook, then returns the ORM object`)
 	p.P(`func (m *`, typeName, `) ToORM (ctx context.Context) (`, typeName, `ORM, error) {`)
 	p.P(`to := `, typeName, `ORM{}`)
 	p.P(`var err error`)
@@ -272,7 +273,8 @@ func (p *OrmPlugin) generateConvertFunctions(message *generator.Descriptor) {
 
 	p.P()
 	///// To Pb
-	p.P(`// FromORM returns a pb object`)
+	p.P(`// ToPB runs the BeforeToPB hook if present, converts the fields of this`)
+	p.P(`// object to PB format, runs the AfterToPB hook, then returns the PB object`)
 	p.P(`func (m *`, typeName, `ORM) ToPB (ctx context.Context) (`,
 		typeName, `, error) {`)
 	p.P(`to := `, typeName, `{}`)

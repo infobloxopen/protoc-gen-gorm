@@ -30,7 +30,8 @@ func (IntPointORM) TableName() string {
 	return "int_points"
 }
 
-// ToORM adds a pb object function that returns an orm object
+// ToORM runs the BeforeToORM hook if present, converts the fields of this
+// object to ORM format, runs the AfterToORM hook, then returns the ORM object
 func (m *IntPoint) ToORM(ctx context.Context) (IntPointORM, error) {
 	to := IntPointORM{}
 	var err error
@@ -48,7 +49,8 @@ func (m *IntPoint) ToORM(ctx context.Context) (IntPointORM, error) {
 	return to, err
 }
 
-// FromORM returns a pb object
+// ToPB runs the BeforeToPB hook if present, converts the fields of this
+// object to PB format, runs the AfterToPB hook, then returns the PB object
 func (m *IntPointORM) ToPB(ctx context.Context) (IntPoint, error) {
 	to := IntPoint{}
 	var err error

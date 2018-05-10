@@ -54,7 +54,8 @@ func (UserORM) TableName() string {
 	return "users"
 }
 
-// ToORM adds a pb object function that returns an orm object
+// ToORM runs the BeforeToORM hook if present, converts the fields of this
+// object to ORM format, runs the AfterToORM hook, then returns the ORM object
 func (m *User) ToORM(ctx context.Context) (UserORM, error) {
 	to := UserORM{}
 	var err error
@@ -130,7 +131,8 @@ func (m *User) ToORM(ctx context.Context) (UserORM, error) {
 	return to, err
 }
 
-// FromORM returns a pb object
+// ToPB runs the BeforeToPB hook if present, converts the fields of this
+// object to PB format, runs the AfterToPB hook, then returns the PB object
 func (m *UserORM) ToPB(ctx context.Context) (User, error) {
 	to := User{}
 	var err error
@@ -236,7 +238,8 @@ func (EmailORM) TableName() string {
 	return "emails"
 }
 
-// ToORM adds a pb object function that returns an orm object
+// ToORM runs the BeforeToORM hook if present, converts the fields of this
+// object to ORM format, runs the AfterToORM hook, then returns the ORM object
 func (m *Email) ToORM(ctx context.Context) (EmailORM, error) {
 	to := EmailORM{}
 	var err error
@@ -254,7 +257,8 @@ func (m *Email) ToORM(ctx context.Context) (EmailORM, error) {
 	return to, err
 }
 
-// FromORM returns a pb object
+// ToPB runs the BeforeToPB hook if present, converts the fields of this
+// object to PB format, runs the AfterToPB hook, then returns the PB object
 func (m *EmailORM) ToPB(ctx context.Context) (Email, error) {
 	to := Email{}
 	var err error
@@ -308,7 +312,8 @@ func (AddressORM) TableName() string {
 	return "addresses"
 }
 
-// ToORM adds a pb object function that returns an orm object
+// ToORM runs the BeforeToORM hook if present, converts the fields of this
+// object to ORM format, runs the AfterToORM hook, then returns the ORM object
 func (m *Address) ToORM(ctx context.Context) (AddressORM, error) {
 	to := AddressORM{}
 	var err error
@@ -327,7 +332,8 @@ func (m *Address) ToORM(ctx context.Context) (AddressORM, error) {
 	return to, err
 }
 
-// FromORM returns a pb object
+// ToPB runs the BeforeToPB hook if present, converts the fields of this
+// object to PB format, runs the AfterToPB hook, then returns the PB object
 func (m *AddressORM) ToPB(ctx context.Context) (Address, error) {
 	to := Address{}
 	var err error
@@ -382,7 +388,8 @@ func (LanguageORM) TableName() string {
 	return "languages"
 }
 
-// ToORM adds a pb object function that returns an orm object
+// ToORM runs the BeforeToORM hook if present, converts the fields of this
+// object to ORM format, runs the AfterToORM hook, then returns the ORM object
 func (m *Language) ToORM(ctx context.Context) (LanguageORM, error) {
 	to := LanguageORM{}
 	var err error
@@ -400,7 +407,8 @@ func (m *Language) ToORM(ctx context.Context) (LanguageORM, error) {
 	return to, err
 }
 
-// FromORM returns a pb object
+// ToPB runs the BeforeToPB hook if present, converts the fields of this
+// object to PB format, runs the AfterToPB hook, then returns the PB object
 func (m *LanguageORM) ToPB(ctx context.Context) (Language, error) {
 	to := Language{}
 	var err error
@@ -455,7 +463,8 @@ func (CreditCardORM) TableName() string {
 	return "credit_cards"
 }
 
-// ToORM adds a pb object function that returns an orm object
+// ToORM runs the BeforeToORM hook if present, converts the fields of this
+// object to ORM format, runs the AfterToORM hook, then returns the ORM object
 func (m *CreditCard) ToORM(ctx context.Context) (CreditCardORM, error) {
 	to := CreditCardORM{}
 	var err error
@@ -482,7 +491,8 @@ func (m *CreditCard) ToORM(ctx context.Context) (CreditCardORM, error) {
 	return to, err
 }
 
-// FromORM returns a pb object
+// ToPB runs the BeforeToPB hook if present, converts the fields of this
+// object to PB format, runs the AfterToPB hook, then returns the PB object
 func (m *CreditCardORM) ToPB(ctx context.Context) (CreditCard, error) {
 	to := CreditCard{}
 	var err error
