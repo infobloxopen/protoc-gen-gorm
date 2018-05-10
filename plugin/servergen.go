@@ -25,6 +25,7 @@ func (p *OrmPlugin) generateDefaultServer(file *generator.FileDescriptor) {
 				p.P(`}`)
 				for _, method := range service.GetMethod() {
 					methodName := generator.CamelCase(method.GetName())
+					p.generateInterface(service, method)
 					if strings.HasPrefix(methodName, "Create") {
 						p.generateCreateServerMethod(service, method)
 					} else if strings.HasPrefix(methodName, "Read") {
@@ -246,6 +247,14 @@ func (p *OrmPlugin) followsListConventions(inType generator.Object, outType gene
 	return false, ""
 }
 
+func (p *OrmPlugin) generateInterface(service *descriptor.ServiceDescriptorProto, method *descriptor.MethodDescriptorProto) {
+	inType, outType, methodName, svcName := p.getMethodProps(service, method)
+	p.P(`type `, svcName, methodName, `CustomHandler interface {`)
+	p.P(`Custom`, methodName, `(context.Context, *`, p.TypeName(inType), `) (*`,
+		p.TypeName(outType), `, error)`)
+	p.P(`}`)
+}
+
 func (p *OrmPlugin) generateMethodStub(service *descriptor.ServiceDescriptorProto, method *descriptor.MethodDescriptorProto) {
 	inType, outType, methodName, svcName := p.getMethodProps(service, method)
 	p.generateMethodSignature(inType, outType, methodName, svcName)
@@ -256,6 +265,9 @@ func (p *OrmPlugin) generateMethodSignature(inType, outType generator.Object, me
 	p.P(`// `, methodName, ` ...`)
 	p.P(`func (m *`, svcName, `DefaultServer) `, methodName, ` (ctx context.Context, in *`,
 		p.TypeName(inType), `) (*`, p.TypeName(outType), `, error) {`)
+	p.P(`if custom, ok := interface{}(m).(`, svcName, methodName, `CustomHandler); ok {`)
+	p.P(`return custom.Custom`, methodName, `(ctx, in)`)
+	p.P(`}`)
 }
 
 func (p OrmPlugin) generateEmptyBody(outType generator.Object) {

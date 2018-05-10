@@ -55,12 +55,14 @@ func (UserORM) TableName() string {
 }
 
 // ToORM adds a pb object function that returns an orm object
-func (m *User) ToORM() (UserORM, error) {
+func (m *User) ToORM(ctx context.Context) (UserORM, error) {
 	to := UserORM{}
-	if prehook, ok := interface{}(m).(UserWithBeforeToORM); ok {
-		prehook.BeforeToORM(&to)
-	}
 	var err error
+	if prehook, ok := interface{}(m).(UserWithBeforeToORM); ok {
+		if err = prehook.BeforeToORM(ctx, &to); err != nil {
+			return to, err
+		}
+	}
 	to.Id = m.Id
 	if m.CreatedAt != nil {
 		if to.CreatedAt, err = ptypes.Timestamp(m.CreatedAt); err != nil {
@@ -80,7 +82,7 @@ func (m *User) ToORM() (UserORM, error) {
 	// Skipping field: Age
 	to.Num = m.Num
 	if m.CreditCard != nil {
-		tempCreditCard, err := m.CreditCard.ToORM()
+		tempCreditCard, err := m.CreditCard.ToORM(ctx)
 		if err != nil {
 			return to, err
 		}
@@ -88,7 +90,7 @@ func (m *User) ToORM() (UserORM, error) {
 	}
 	for _, v := range m.Emails {
 		if v != nil {
-			if tempEmails, cErr := v.ToORM(); cErr == nil {
+			if tempEmails, cErr := v.ToORM(ctx); cErr == nil {
 				to.Emails = append(to.Emails, &tempEmails)
 			} else {
 				return to, cErr
@@ -98,14 +100,14 @@ func (m *User) ToORM() (UserORM, error) {
 		}
 	}
 	if m.BillingAddress != nil {
-		tempAddress, err := m.BillingAddress.ToORM()
+		tempAddress, err := m.BillingAddress.ToORM(ctx)
 		if err != nil {
 			return to, err
 		}
 		to.BillingAddress = &tempAddress
 	}
 	if m.ShippingAddress != nil {
-		tempAddress, err := m.ShippingAddress.ToORM()
+		tempAddress, err := m.ShippingAddress.ToORM(ctx)
 		if err != nil {
 			return to, err
 		}
@@ -113,7 +115,7 @@ func (m *User) ToORM() (UserORM, error) {
 	}
 	for _, v := range m.Languages {
 		if v != nil {
-			if tempLanguages, cErr := v.ToORM(); cErr == nil {
+			if tempLanguages, cErr := v.ToORM(ctx); cErr == nil {
 				to.Languages = append(to.Languages, &tempLanguages)
 			} else {
 				return to, cErr
@@ -123,18 +125,20 @@ func (m *User) ToORM() (UserORM, error) {
 		}
 	}
 	if posthook, ok := interface{}(m).(UserWithAfterToORM); ok {
-		posthook.AfterToORM(&to)
+		err = posthook.AfterToORM(ctx, &to)
 	}
 	return to, err
 }
 
 // FromORM returns a pb object
-func (m *UserORM) ToPB() (User, error) {
+func (m *UserORM) ToPB(ctx context.Context) (User, error) {
 	to := User{}
-	if prehook, ok := interface{}(m).(UserWithBeforeToPB); ok {
-		prehook.BeforeToPB(&to)
-	}
 	var err error
+	if prehook, ok := interface{}(m).(UserWithBeforeToPB); ok {
+		if err = prehook.BeforeToPB(ctx, &to); err != nil {
+			return to, err
+		}
+	}
 	to.Id = m.Id
 	if to.CreatedAt, err = ptypes.TimestampProto(m.CreatedAt); err != nil {
 		return to, err
@@ -148,7 +152,7 @@ func (m *UserORM) ToPB() (User, error) {
 	// Skipping field: Age
 	to.Num = m.Num
 	if m.CreditCard != nil {
-		tempCreditCard, err := m.CreditCard.ToPB()
+		tempCreditCard, err := m.CreditCard.ToPB(ctx)
 		if err != nil {
 			return to, err
 		}
@@ -156,7 +160,7 @@ func (m *UserORM) ToPB() (User, error) {
 	}
 	for _, v := range m.Emails {
 		if v != nil {
-			if tempEmails, cErr := v.ToPB(); cErr == nil {
+			if tempEmails, cErr := v.ToPB(ctx); cErr == nil {
 				to.Emails = append(to.Emails, &tempEmails)
 			} else {
 				return to, cErr
@@ -166,14 +170,14 @@ func (m *UserORM) ToPB() (User, error) {
 		}
 	}
 	if m.BillingAddress != nil {
-		tempAddress, err := m.BillingAddress.ToPB()
+		tempAddress, err := m.BillingAddress.ToPB(ctx)
 		if err != nil {
 			return to, err
 		}
 		to.BillingAddress = &tempAddress
 	}
 	if m.ShippingAddress != nil {
-		tempAddress, err := m.ShippingAddress.ToPB()
+		tempAddress, err := m.ShippingAddress.ToPB(ctx)
 		if err != nil {
 			return to, err
 		}
@@ -181,7 +185,7 @@ func (m *UserORM) ToPB() (User, error) {
 	}
 	for _, v := range m.Languages {
 		if v != nil {
-			if tempLanguages, cErr := v.ToPB(); cErr == nil {
+			if tempLanguages, cErr := v.ToPB(ctx); cErr == nil {
 				to.Languages = append(to.Languages, &tempLanguages)
 			} else {
 				return to, cErr
@@ -191,7 +195,7 @@ func (m *UserORM) ToPB() (User, error) {
 		}
 	}
 	if posthook, ok := interface{}(m).(UserWithAfterToPB); ok {
-		posthook.AfterToPB(&to)
+		err = posthook.AfterToPB(ctx, &to)
 	}
 	return to, err
 }
@@ -201,22 +205,22 @@ func (m *UserORM) ToPB() (User, error) {
 
 // UserBeforeToORM called before default ToORM code
 type UserWithBeforeToORM interface {
-	BeforeToORM(*UserORM)
+	BeforeToORM(context.Context, *UserORM) error
 }
 
 // UserAfterToORM called after default ToORM code
 type UserWithAfterToORM interface {
-	AfterToORM(*UserORM)
+	AfterToORM(context.Context, *UserORM) error
 }
 
 // UserBeforeToPB called before default ToPB code
 type UserWithBeforeToPB interface {
-	BeforeToPB(*User)
+	BeforeToPB(context.Context, *User) error
 }
 
 // UserAfterToPB called after default ToPB code
 type UserWithAfterToPB interface {
-	AfterToPB(*User)
+	AfterToPB(context.Context, *User) error
 }
 
 // EmailORM no comment was provided for message type
@@ -233,33 +237,37 @@ func (EmailORM) TableName() string {
 }
 
 // ToORM adds a pb object function that returns an orm object
-func (m *Email) ToORM() (EmailORM, error) {
+func (m *Email) ToORM(ctx context.Context) (EmailORM, error) {
 	to := EmailORM{}
-	if prehook, ok := interface{}(m).(EmailWithBeforeToORM); ok {
-		prehook.BeforeToORM(&to)
-	}
 	var err error
+	if prehook, ok := interface{}(m).(EmailWithBeforeToORM); ok {
+		if err = prehook.BeforeToORM(ctx, &to); err != nil {
+			return to, err
+		}
+	}
 	to.Id = m.Id
 	to.Email = m.Email
 	to.Subscribed = m.Subscribed
 	if posthook, ok := interface{}(m).(EmailWithAfterToORM); ok {
-		posthook.AfterToORM(&to)
+		err = posthook.AfterToORM(ctx, &to)
 	}
 	return to, err
 }
 
 // FromORM returns a pb object
-func (m *EmailORM) ToPB() (Email, error) {
+func (m *EmailORM) ToPB(ctx context.Context) (Email, error) {
 	to := Email{}
-	if prehook, ok := interface{}(m).(EmailWithBeforeToPB); ok {
-		prehook.BeforeToPB(&to)
-	}
 	var err error
+	if prehook, ok := interface{}(m).(EmailWithBeforeToPB); ok {
+		if err = prehook.BeforeToPB(ctx, &to); err != nil {
+			return to, err
+		}
+	}
 	to.Id = m.Id
 	to.Email = m.Email
 	to.Subscribed = m.Subscribed
 	if posthook, ok := interface{}(m).(EmailWithAfterToPB); ok {
-		posthook.AfterToPB(&to)
+		err = posthook.AfterToPB(ctx, &to)
 	}
 	return to, err
 }
@@ -269,22 +277,22 @@ func (m *EmailORM) ToPB() (Email, error) {
 
 // EmailBeforeToORM called before default ToORM code
 type EmailWithBeforeToORM interface {
-	BeforeToORM(*EmailORM)
+	BeforeToORM(context.Context, *EmailORM) error
 }
 
 // EmailAfterToORM called after default ToORM code
 type EmailWithAfterToORM interface {
-	AfterToORM(*EmailORM)
+	AfterToORM(context.Context, *EmailORM) error
 }
 
 // EmailBeforeToPB called before default ToPB code
 type EmailWithBeforeToPB interface {
-	BeforeToPB(*Email)
+	BeforeToPB(context.Context, *Email) error
 }
 
 // EmailAfterToPB called after default ToPB code
 type EmailWithAfterToPB interface {
-	AfterToPB(*Email)
+	AfterToPB(context.Context, *Email) error
 }
 
 // AddressORM no comment was provided for message type
@@ -301,35 +309,39 @@ func (AddressORM) TableName() string {
 }
 
 // ToORM adds a pb object function that returns an orm object
-func (m *Address) ToORM() (AddressORM, error) {
+func (m *Address) ToORM(ctx context.Context) (AddressORM, error) {
 	to := AddressORM{}
-	if prehook, ok := interface{}(m).(AddressWithBeforeToORM); ok {
-		prehook.BeforeToORM(&to)
-	}
 	var err error
+	if prehook, ok := interface{}(m).(AddressWithBeforeToORM); ok {
+		if err = prehook.BeforeToORM(ctx, &to); err != nil {
+			return to, err
+		}
+	}
 	to.Id = m.Id
 	to.Address_1 = m.Address_1
 	to.Address_2 = m.Address_2
 	to.Post = m.Post
 	if posthook, ok := interface{}(m).(AddressWithAfterToORM); ok {
-		posthook.AfterToORM(&to)
+		err = posthook.AfterToORM(ctx, &to)
 	}
 	return to, err
 }
 
 // FromORM returns a pb object
-func (m *AddressORM) ToPB() (Address, error) {
+func (m *AddressORM) ToPB(ctx context.Context) (Address, error) {
 	to := Address{}
-	if prehook, ok := interface{}(m).(AddressWithBeforeToPB); ok {
-		prehook.BeforeToPB(&to)
-	}
 	var err error
+	if prehook, ok := interface{}(m).(AddressWithBeforeToPB); ok {
+		if err = prehook.BeforeToPB(ctx, &to); err != nil {
+			return to, err
+		}
+	}
 	to.Id = m.Id
 	to.Address_1 = m.Address_1
 	to.Address_2 = m.Address_2
 	to.Post = m.Post
 	if posthook, ok := interface{}(m).(AddressWithAfterToPB); ok {
-		posthook.AfterToPB(&to)
+		err = posthook.AfterToPB(ctx, &to)
 	}
 	return to, err
 }
@@ -339,22 +351,22 @@ func (m *AddressORM) ToPB() (Address, error) {
 
 // AddressBeforeToORM called before default ToORM code
 type AddressWithBeforeToORM interface {
-	BeforeToORM(*AddressORM)
+	BeforeToORM(context.Context, *AddressORM) error
 }
 
 // AddressAfterToORM called after default ToORM code
 type AddressWithAfterToORM interface {
-	AfterToORM(*AddressORM)
+	AfterToORM(context.Context, *AddressORM) error
 }
 
 // AddressBeforeToPB called before default ToPB code
 type AddressWithBeforeToPB interface {
-	BeforeToPB(*Address)
+	BeforeToPB(context.Context, *Address) error
 }
 
 // AddressAfterToPB called after default ToPB code
 type AddressWithAfterToPB interface {
-	AfterToPB(*Address)
+	AfterToPB(context.Context, *Address) error
 }
 
 // LanguageORM no comment was provided for message type
@@ -371,33 +383,37 @@ func (LanguageORM) TableName() string {
 }
 
 // ToORM adds a pb object function that returns an orm object
-func (m *Language) ToORM() (LanguageORM, error) {
+func (m *Language) ToORM(ctx context.Context) (LanguageORM, error) {
 	to := LanguageORM{}
-	if prehook, ok := interface{}(m).(LanguageWithBeforeToORM); ok {
-		prehook.BeforeToORM(&to)
-	}
 	var err error
+	if prehook, ok := interface{}(m).(LanguageWithBeforeToORM); ok {
+		if err = prehook.BeforeToORM(ctx, &to); err != nil {
+			return to, err
+		}
+	}
 	to.Id = m.Id
 	to.Name = m.Name
 	to.Code = m.Code
 	if posthook, ok := interface{}(m).(LanguageWithAfterToORM); ok {
-		posthook.AfterToORM(&to)
+		err = posthook.AfterToORM(ctx, &to)
 	}
 	return to, err
 }
 
 // FromORM returns a pb object
-func (m *LanguageORM) ToPB() (Language, error) {
+func (m *LanguageORM) ToPB(ctx context.Context) (Language, error) {
 	to := Language{}
-	if prehook, ok := interface{}(m).(LanguageWithBeforeToPB); ok {
-		prehook.BeforeToPB(&to)
-	}
 	var err error
+	if prehook, ok := interface{}(m).(LanguageWithBeforeToPB); ok {
+		if err = prehook.BeforeToPB(ctx, &to); err != nil {
+			return to, err
+		}
+	}
 	to.Id = m.Id
 	to.Name = m.Name
 	to.Code = m.Code
 	if posthook, ok := interface{}(m).(LanguageWithAfterToPB); ok {
-		posthook.AfterToPB(&to)
+		err = posthook.AfterToPB(ctx, &to)
 	}
 	return to, err
 }
@@ -407,22 +423,22 @@ func (m *LanguageORM) ToPB() (Language, error) {
 
 // LanguageBeforeToORM called before default ToORM code
 type LanguageWithBeforeToORM interface {
-	BeforeToORM(*LanguageORM)
+	BeforeToORM(context.Context, *LanguageORM) error
 }
 
 // LanguageAfterToORM called after default ToORM code
 type LanguageWithAfterToORM interface {
-	AfterToORM(*LanguageORM)
+	AfterToORM(context.Context, *LanguageORM) error
 }
 
 // LanguageBeforeToPB called before default ToPB code
 type LanguageWithBeforeToPB interface {
-	BeforeToPB(*Language)
+	BeforeToPB(context.Context, *Language) error
 }
 
 // LanguageAfterToPB called after default ToPB code
 type LanguageWithAfterToPB interface {
-	AfterToPB(*Language)
+	AfterToPB(context.Context, *Language) error
 }
 
 // CreditCardORM no comment was provided for message type
@@ -440,12 +456,14 @@ func (CreditCardORM) TableName() string {
 }
 
 // ToORM adds a pb object function that returns an orm object
-func (m *CreditCard) ToORM() (CreditCardORM, error) {
+func (m *CreditCard) ToORM(ctx context.Context) (CreditCardORM, error) {
 	to := CreditCardORM{}
-	if prehook, ok := interface{}(m).(CreditCardWithBeforeToORM); ok {
-		prehook.BeforeToORM(&to)
-	}
 	var err error
+	if prehook, ok := interface{}(m).(CreditCardWithBeforeToORM); ok {
+		if err = prehook.BeforeToORM(ctx, &to); err != nil {
+			return to, err
+		}
+	}
 	to.Id = m.Id
 	if m.CreatedAt != nil {
 		if to.CreatedAt, err = ptypes.Timestamp(m.CreatedAt); err != nil {
@@ -459,18 +477,20 @@ func (m *CreditCard) ToORM() (CreditCardORM, error) {
 	}
 	to.Number = m.Number
 	if posthook, ok := interface{}(m).(CreditCardWithAfterToORM); ok {
-		posthook.AfterToORM(&to)
+		err = posthook.AfterToORM(ctx, &to)
 	}
 	return to, err
 }
 
 // FromORM returns a pb object
-func (m *CreditCardORM) ToPB() (CreditCard, error) {
+func (m *CreditCardORM) ToPB(ctx context.Context) (CreditCard, error) {
 	to := CreditCard{}
-	if prehook, ok := interface{}(m).(CreditCardWithBeforeToPB); ok {
-		prehook.BeforeToPB(&to)
-	}
 	var err error
+	if prehook, ok := interface{}(m).(CreditCardWithBeforeToPB); ok {
+		if err = prehook.BeforeToPB(ctx, &to); err != nil {
+			return to, err
+		}
+	}
 	to.Id = m.Id
 	if to.CreatedAt, err = ptypes.TimestampProto(m.CreatedAt); err != nil {
 		return to, err
@@ -480,7 +500,7 @@ func (m *CreditCardORM) ToPB() (CreditCard, error) {
 	}
 	to.Number = m.Number
 	if posthook, ok := interface{}(m).(CreditCardWithAfterToPB); ok {
-		posthook.AfterToPB(&to)
+		err = posthook.AfterToPB(ctx, &to)
 	}
 	return to, err
 }
@@ -490,22 +510,22 @@ func (m *CreditCardORM) ToPB() (CreditCard, error) {
 
 // CreditCardBeforeToORM called before default ToORM code
 type CreditCardWithBeforeToORM interface {
-	BeforeToORM(*CreditCardORM)
+	BeforeToORM(context.Context, *CreditCardORM) error
 }
 
 // CreditCardAfterToORM called after default ToORM code
 type CreditCardWithAfterToORM interface {
-	AfterToORM(*CreditCardORM)
+	AfterToORM(context.Context, *CreditCardORM) error
 }
 
 // CreditCardBeforeToPB called before default ToPB code
 type CreditCardWithBeforeToPB interface {
-	BeforeToPB(*CreditCard)
+	BeforeToPB(context.Context, *CreditCard) error
 }
 
 // CreditCardAfterToPB called after default ToPB code
 type CreditCardWithAfterToPB interface {
-	AfterToPB(*CreditCard)
+	AfterToPB(context.Context, *CreditCard) error
 }
 
 ////////////////////////// CURDL for objects
@@ -514,14 +534,14 @@ func DefaultCreateUser(ctx context.Context, in *User, db *gorm.DB) (*User, error
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultCreateUser")
 	}
-	ormObj, err := in.ToORM()
+	ormObj, err := in.ToORM(ctx)
 	if err != nil {
 		return nil, err
 	}
 	if err = db.Create(&ormObj).Error; err != nil {
 		return nil, err
 	}
-	pbResponse, err := ormObj.ToPB()
+	pbResponse, err := ormObj.ToPB(ctx)
 	return &pbResponse, err
 }
 
@@ -530,7 +550,7 @@ func DefaultReadUser(ctx context.Context, in *User, db *gorm.DB) (*User, error) 
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultReadUser")
 	}
-	ormParams, err := in.ToORM()
+	ormParams, err := in.ToORM(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -538,7 +558,7 @@ func DefaultReadUser(ctx context.Context, in *User, db *gorm.DB) (*User, error) 
 	if err = db.Set("gorm:auto_preload", true).Where(&ormParams).First(&ormResponse).Error; err != nil {
 		return nil, err
 	}
-	pbResponse, err := ormResponse.ToPB()
+	pbResponse, err := ormResponse.ToPB(ctx)
 	return &pbResponse, err
 }
 
@@ -547,14 +567,14 @@ func DefaultUpdateUser(ctx context.Context, in *User, db *gorm.DB) (*User, error
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultUpdateUser")
 	}
-	ormObj, err := in.ToORM()
+	ormObj, err := in.ToORM(ctx)
 	if err != nil {
 		return nil, err
 	}
 	if err = db.Save(&ormObj).Error; err != nil {
 		return nil, err
 	}
-	pbResponse, err := ormObj.ToPB()
+	pbResponse, err := ormObj.ToPB(ctx)
 	return &pbResponse, err
 }
 
@@ -562,7 +582,7 @@ func DefaultDeleteUser(ctx context.Context, in *User, db *gorm.DB) error {
 	if in == nil {
 		return errors.New("Nil argument to DefaultDeleteUser")
 	}
-	ormObj, err := in.ToORM()
+	ormObj, err := in.ToORM(ctx)
 	if err != nil {
 		return err
 	}
@@ -582,7 +602,7 @@ func DefaultListUser(ctx context.Context, db *gorm.DB) ([]*User, error) {
 	}
 	pbResponse := []*User{}
 	for _, responseEntry := range ormResponse {
-		temp, err := responseEntry.ToPB()
+		temp, err := responseEntry.ToPB(ctx)
 		if err != nil {
 			return nil, err
 		}
@@ -596,7 +616,7 @@ func DefaultStrictUpdateUser(ctx context.Context, in *User, db *gorm.DB) (*User,
 	if in == nil {
 		return nil, fmt.Errorf("Nil argument to DefaultCascadedUpdateUser")
 	}
-	ormObj, err := in.ToORM()
+	ormObj, err := in.ToORM(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -619,7 +639,7 @@ func DefaultStrictUpdateUser(ctx context.Context, in *User, db *gorm.DB) (*User,
 	if err = db.Save(&ormObj).Error; err != nil {
 		return nil, err
 	}
-	pbResponse, err := ormObj.ToPB()
+	pbResponse, err := ormObj.ToPB(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -631,14 +651,14 @@ func DefaultCreateEmail(ctx context.Context, in *Email, db *gorm.DB) (*Email, er
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultCreateEmail")
 	}
-	ormObj, err := in.ToORM()
+	ormObj, err := in.ToORM(ctx)
 	if err != nil {
 		return nil, err
 	}
 	if err = db.Create(&ormObj).Error; err != nil {
 		return nil, err
 	}
-	pbResponse, err := ormObj.ToPB()
+	pbResponse, err := ormObj.ToPB(ctx)
 	return &pbResponse, err
 }
 
@@ -647,7 +667,7 @@ func DefaultReadEmail(ctx context.Context, in *Email, db *gorm.DB) (*Email, erro
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultReadEmail")
 	}
-	ormParams, err := in.ToORM()
+	ormParams, err := in.ToORM(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -655,7 +675,7 @@ func DefaultReadEmail(ctx context.Context, in *Email, db *gorm.DB) (*Email, erro
 	if err = db.Set("gorm:auto_preload", true).Where(&ormParams).First(&ormResponse).Error; err != nil {
 		return nil, err
 	}
-	pbResponse, err := ormResponse.ToPB()
+	pbResponse, err := ormResponse.ToPB(ctx)
 	return &pbResponse, err
 }
 
@@ -664,14 +684,14 @@ func DefaultUpdateEmail(ctx context.Context, in *Email, db *gorm.DB) (*Email, er
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultUpdateEmail")
 	}
-	ormObj, err := in.ToORM()
+	ormObj, err := in.ToORM(ctx)
 	if err != nil {
 		return nil, err
 	}
 	if err = db.Save(&ormObj).Error; err != nil {
 		return nil, err
 	}
-	pbResponse, err := ormObj.ToPB()
+	pbResponse, err := ormObj.ToPB(ctx)
 	return &pbResponse, err
 }
 
@@ -679,7 +699,7 @@ func DefaultDeleteEmail(ctx context.Context, in *Email, db *gorm.DB) error {
 	if in == nil {
 		return errors.New("Nil argument to DefaultDeleteEmail")
 	}
-	ormObj, err := in.ToORM()
+	ormObj, err := in.ToORM(ctx)
 	if err != nil {
 		return err
 	}
@@ -699,7 +719,7 @@ func DefaultListEmail(ctx context.Context, db *gorm.DB) ([]*Email, error) {
 	}
 	pbResponse := []*Email{}
 	for _, responseEntry := range ormResponse {
-		temp, err := responseEntry.ToPB()
+		temp, err := responseEntry.ToPB(ctx)
 		if err != nil {
 			return nil, err
 		}
@@ -713,14 +733,14 @@ func DefaultStrictUpdateEmail(ctx context.Context, in *Email, db *gorm.DB) (*Ema
 	if in == nil {
 		return nil, fmt.Errorf("Nil argument to DefaultCascadedUpdateEmail")
 	}
-	ormObj, err := in.ToORM()
+	ormObj, err := in.ToORM(ctx)
 	if err != nil {
 		return nil, err
 	}
 	if err = db.Save(&ormObj).Error; err != nil {
 		return nil, err
 	}
-	pbResponse, err := ormObj.ToPB()
+	pbResponse, err := ormObj.ToPB(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -732,14 +752,14 @@ func DefaultCreateAddress(ctx context.Context, in *Address, db *gorm.DB) (*Addre
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultCreateAddress")
 	}
-	ormObj, err := in.ToORM()
+	ormObj, err := in.ToORM(ctx)
 	if err != nil {
 		return nil, err
 	}
 	if err = db.Create(&ormObj).Error; err != nil {
 		return nil, err
 	}
-	pbResponse, err := ormObj.ToPB()
+	pbResponse, err := ormObj.ToPB(ctx)
 	return &pbResponse, err
 }
 
@@ -748,7 +768,7 @@ func DefaultReadAddress(ctx context.Context, in *Address, db *gorm.DB) (*Address
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultReadAddress")
 	}
-	ormParams, err := in.ToORM()
+	ormParams, err := in.ToORM(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -756,7 +776,7 @@ func DefaultReadAddress(ctx context.Context, in *Address, db *gorm.DB) (*Address
 	if err = db.Set("gorm:auto_preload", true).Where(&ormParams).First(&ormResponse).Error; err != nil {
 		return nil, err
 	}
-	pbResponse, err := ormResponse.ToPB()
+	pbResponse, err := ormResponse.ToPB(ctx)
 	return &pbResponse, err
 }
 
@@ -765,14 +785,14 @@ func DefaultUpdateAddress(ctx context.Context, in *Address, db *gorm.DB) (*Addre
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultUpdateAddress")
 	}
-	ormObj, err := in.ToORM()
+	ormObj, err := in.ToORM(ctx)
 	if err != nil {
 		return nil, err
 	}
 	if err = db.Save(&ormObj).Error; err != nil {
 		return nil, err
 	}
-	pbResponse, err := ormObj.ToPB()
+	pbResponse, err := ormObj.ToPB(ctx)
 	return &pbResponse, err
 }
 
@@ -780,7 +800,7 @@ func DefaultDeleteAddress(ctx context.Context, in *Address, db *gorm.DB) error {
 	if in == nil {
 		return errors.New("Nil argument to DefaultDeleteAddress")
 	}
-	ormObj, err := in.ToORM()
+	ormObj, err := in.ToORM(ctx)
 	if err != nil {
 		return err
 	}
@@ -800,7 +820,7 @@ func DefaultListAddress(ctx context.Context, db *gorm.DB) ([]*Address, error) {
 	}
 	pbResponse := []*Address{}
 	for _, responseEntry := range ormResponse {
-		temp, err := responseEntry.ToPB()
+		temp, err := responseEntry.ToPB(ctx)
 		if err != nil {
 			return nil, err
 		}
@@ -814,14 +834,14 @@ func DefaultStrictUpdateAddress(ctx context.Context, in *Address, db *gorm.DB) (
 	if in == nil {
 		return nil, fmt.Errorf("Nil argument to DefaultCascadedUpdateAddress")
 	}
-	ormObj, err := in.ToORM()
+	ormObj, err := in.ToORM(ctx)
 	if err != nil {
 		return nil, err
 	}
 	if err = db.Save(&ormObj).Error; err != nil {
 		return nil, err
 	}
-	pbResponse, err := ormObj.ToPB()
+	pbResponse, err := ormObj.ToPB(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -833,14 +853,14 @@ func DefaultCreateLanguage(ctx context.Context, in *Language, db *gorm.DB) (*Lan
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultCreateLanguage")
 	}
-	ormObj, err := in.ToORM()
+	ormObj, err := in.ToORM(ctx)
 	if err != nil {
 		return nil, err
 	}
 	if err = db.Create(&ormObj).Error; err != nil {
 		return nil, err
 	}
-	pbResponse, err := ormObj.ToPB()
+	pbResponse, err := ormObj.ToPB(ctx)
 	return &pbResponse, err
 }
 
@@ -849,7 +869,7 @@ func DefaultReadLanguage(ctx context.Context, in *Language, db *gorm.DB) (*Langu
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultReadLanguage")
 	}
-	ormParams, err := in.ToORM()
+	ormParams, err := in.ToORM(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -857,7 +877,7 @@ func DefaultReadLanguage(ctx context.Context, in *Language, db *gorm.DB) (*Langu
 	if err = db.Set("gorm:auto_preload", true).Where(&ormParams).First(&ormResponse).Error; err != nil {
 		return nil, err
 	}
-	pbResponse, err := ormResponse.ToPB()
+	pbResponse, err := ormResponse.ToPB(ctx)
 	return &pbResponse, err
 }
 
@@ -866,14 +886,14 @@ func DefaultUpdateLanguage(ctx context.Context, in *Language, db *gorm.DB) (*Lan
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultUpdateLanguage")
 	}
-	ormObj, err := in.ToORM()
+	ormObj, err := in.ToORM(ctx)
 	if err != nil {
 		return nil, err
 	}
 	if err = db.Save(&ormObj).Error; err != nil {
 		return nil, err
 	}
-	pbResponse, err := ormObj.ToPB()
+	pbResponse, err := ormObj.ToPB(ctx)
 	return &pbResponse, err
 }
 
@@ -881,7 +901,7 @@ func DefaultDeleteLanguage(ctx context.Context, in *Language, db *gorm.DB) error
 	if in == nil {
 		return errors.New("Nil argument to DefaultDeleteLanguage")
 	}
-	ormObj, err := in.ToORM()
+	ormObj, err := in.ToORM(ctx)
 	if err != nil {
 		return err
 	}
@@ -901,7 +921,7 @@ func DefaultListLanguage(ctx context.Context, db *gorm.DB) ([]*Language, error) 
 	}
 	pbResponse := []*Language{}
 	for _, responseEntry := range ormResponse {
-		temp, err := responseEntry.ToPB()
+		temp, err := responseEntry.ToPB(ctx)
 		if err != nil {
 			return nil, err
 		}
@@ -915,14 +935,14 @@ func DefaultStrictUpdateLanguage(ctx context.Context, in *Language, db *gorm.DB)
 	if in == nil {
 		return nil, fmt.Errorf("Nil argument to DefaultCascadedUpdateLanguage")
 	}
-	ormObj, err := in.ToORM()
+	ormObj, err := in.ToORM(ctx)
 	if err != nil {
 		return nil, err
 	}
 	if err = db.Save(&ormObj).Error; err != nil {
 		return nil, err
 	}
-	pbResponse, err := ormObj.ToPB()
+	pbResponse, err := ormObj.ToPB(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -934,14 +954,14 @@ func DefaultCreateCreditCard(ctx context.Context, in *CreditCard, db *gorm.DB) (
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultCreateCreditCard")
 	}
-	ormObj, err := in.ToORM()
+	ormObj, err := in.ToORM(ctx)
 	if err != nil {
 		return nil, err
 	}
 	if err = db.Create(&ormObj).Error; err != nil {
 		return nil, err
 	}
-	pbResponse, err := ormObj.ToPB()
+	pbResponse, err := ormObj.ToPB(ctx)
 	return &pbResponse, err
 }
 
@@ -950,7 +970,7 @@ func DefaultReadCreditCard(ctx context.Context, in *CreditCard, db *gorm.DB) (*C
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultReadCreditCard")
 	}
-	ormParams, err := in.ToORM()
+	ormParams, err := in.ToORM(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -958,7 +978,7 @@ func DefaultReadCreditCard(ctx context.Context, in *CreditCard, db *gorm.DB) (*C
 	if err = db.Set("gorm:auto_preload", true).Where(&ormParams).First(&ormResponse).Error; err != nil {
 		return nil, err
 	}
-	pbResponse, err := ormResponse.ToPB()
+	pbResponse, err := ormResponse.ToPB(ctx)
 	return &pbResponse, err
 }
 
@@ -967,14 +987,14 @@ func DefaultUpdateCreditCard(ctx context.Context, in *CreditCard, db *gorm.DB) (
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultUpdateCreditCard")
 	}
-	ormObj, err := in.ToORM()
+	ormObj, err := in.ToORM(ctx)
 	if err != nil {
 		return nil, err
 	}
 	if err = db.Save(&ormObj).Error; err != nil {
 		return nil, err
 	}
-	pbResponse, err := ormObj.ToPB()
+	pbResponse, err := ormObj.ToPB(ctx)
 	return &pbResponse, err
 }
 
@@ -982,7 +1002,7 @@ func DefaultDeleteCreditCard(ctx context.Context, in *CreditCard, db *gorm.DB) e
 	if in == nil {
 		return errors.New("Nil argument to DefaultDeleteCreditCard")
 	}
-	ormObj, err := in.ToORM()
+	ormObj, err := in.ToORM(ctx)
 	if err != nil {
 		return err
 	}
@@ -1002,7 +1022,7 @@ func DefaultListCreditCard(ctx context.Context, db *gorm.DB) ([]*CreditCard, err
 	}
 	pbResponse := []*CreditCard{}
 	for _, responseEntry := range ormResponse {
-		temp, err := responseEntry.ToPB()
+		temp, err := responseEntry.ToPB(ctx)
 		if err != nil {
 			return nil, err
 		}
@@ -1016,14 +1036,14 @@ func DefaultStrictUpdateCreditCard(ctx context.Context, in *CreditCard, db *gorm
 	if in == nil {
 		return nil, fmt.Errorf("Nil argument to DefaultCascadedUpdateCreditCard")
 	}
-	ormObj, err := in.ToORM()
+	ormObj, err := in.ToORM(ctx)
 	if err != nil {
 		return nil, err
 	}
 	if err = db.Save(&ormObj).Error; err != nil {
 		return nil, err
 	}
-	pbResponse, err := ormObj.ToPB()
+	pbResponse, err := ormObj.ToPB(ctx)
 	if err != nil {
 		return nil, err
 	}

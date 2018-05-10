@@ -31,33 +31,37 @@ func (IntPointORM) TableName() string {
 }
 
 // ToORM adds a pb object function that returns an orm object
-func (m *IntPoint) ToORM() (IntPointORM, error) {
+func (m *IntPoint) ToORM(ctx context.Context) (IntPointORM, error) {
 	to := IntPointORM{}
-	if prehook, ok := interface{}(m).(IntPointWithBeforeToORM); ok {
-		prehook.BeforeToORM(&to)
-	}
 	var err error
+	if prehook, ok := interface{}(m).(IntPointWithBeforeToORM); ok {
+		if err = prehook.BeforeToORM(ctx, &to); err != nil {
+			return to, err
+		}
+	}
 	to.Id = m.Id
 	to.X = m.X
 	to.Y = m.Y
 	if posthook, ok := interface{}(m).(IntPointWithAfterToORM); ok {
-		posthook.AfterToORM(&to)
+		err = posthook.AfterToORM(ctx, &to)
 	}
 	return to, err
 }
 
 // FromORM returns a pb object
-func (m *IntPointORM) ToPB() (IntPoint, error) {
+func (m *IntPointORM) ToPB(ctx context.Context) (IntPoint, error) {
 	to := IntPoint{}
-	if prehook, ok := interface{}(m).(IntPointWithBeforeToPB); ok {
-		prehook.BeforeToPB(&to)
-	}
 	var err error
+	if prehook, ok := interface{}(m).(IntPointWithBeforeToPB); ok {
+		if err = prehook.BeforeToPB(ctx, &to); err != nil {
+			return to, err
+		}
+	}
 	to.Id = m.Id
 	to.X = m.X
 	to.Y = m.Y
 	if posthook, ok := interface{}(m).(IntPointWithAfterToPB); ok {
-		posthook.AfterToPB(&to)
+		err = posthook.AfterToPB(ctx, &to)
 	}
 	return to, err
 }
@@ -67,22 +71,22 @@ func (m *IntPointORM) ToPB() (IntPoint, error) {
 
 // IntPointBeforeToORM called before default ToORM code
 type IntPointWithBeforeToORM interface {
-	BeforeToORM(*IntPointORM)
+	BeforeToORM(context.Context, *IntPointORM) error
 }
 
 // IntPointAfterToORM called after default ToORM code
 type IntPointWithAfterToORM interface {
-	AfterToORM(*IntPointORM)
+	AfterToORM(context.Context, *IntPointORM) error
 }
 
 // IntPointBeforeToPB called before default ToPB code
 type IntPointWithBeforeToPB interface {
-	BeforeToPB(*IntPoint)
+	BeforeToPB(context.Context, *IntPoint) error
 }
 
 // IntPointAfterToPB called after default ToPB code
 type IntPointWithAfterToPB interface {
-	AfterToPB(*IntPoint)
+	AfterToPB(context.Context, *IntPoint) error
 }
 
 ////////////////////////// CURDL for objects
@@ -91,14 +95,14 @@ func DefaultCreateIntPoint(ctx context.Context, in *IntPoint, db *gorm.DB) (*Int
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultCreateIntPoint")
 	}
-	ormObj, err := in.ToORM()
+	ormObj, err := in.ToORM(ctx)
 	if err != nil {
 		return nil, err
 	}
 	if err = db.Create(&ormObj).Error; err != nil {
 		return nil, err
 	}
-	pbResponse, err := ormObj.ToPB()
+	pbResponse, err := ormObj.ToPB(ctx)
 	return &pbResponse, err
 }
 
@@ -107,7 +111,7 @@ func DefaultReadIntPoint(ctx context.Context, in *IntPoint, db *gorm.DB) (*IntPo
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultReadIntPoint")
 	}
-	ormParams, err := in.ToORM()
+	ormParams, err := in.ToORM(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -115,7 +119,7 @@ func DefaultReadIntPoint(ctx context.Context, in *IntPoint, db *gorm.DB) (*IntPo
 	if err = db.Set("gorm:auto_preload", true).Where(&ormParams).First(&ormResponse).Error; err != nil {
 		return nil, err
 	}
-	pbResponse, err := ormResponse.ToPB()
+	pbResponse, err := ormResponse.ToPB(ctx)
 	return &pbResponse, err
 }
 
@@ -124,14 +128,14 @@ func DefaultUpdateIntPoint(ctx context.Context, in *IntPoint, db *gorm.DB) (*Int
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultUpdateIntPoint")
 	}
-	ormObj, err := in.ToORM()
+	ormObj, err := in.ToORM(ctx)
 	if err != nil {
 		return nil, err
 	}
 	if err = db.Save(&ormObj).Error; err != nil {
 		return nil, err
 	}
-	pbResponse, err := ormObj.ToPB()
+	pbResponse, err := ormObj.ToPB(ctx)
 	return &pbResponse, err
 }
 
@@ -139,7 +143,7 @@ func DefaultDeleteIntPoint(ctx context.Context, in *IntPoint, db *gorm.DB) error
 	if in == nil {
 		return errors.New("Nil argument to DefaultDeleteIntPoint")
 	}
-	ormObj, err := in.ToORM()
+	ormObj, err := in.ToORM(ctx)
 	if err != nil {
 		return err
 	}
@@ -159,7 +163,7 @@ func DefaultListIntPoint(ctx context.Context, db *gorm.DB) ([]*IntPoint, error) 
 	}
 	pbResponse := []*IntPoint{}
 	for _, responseEntry := range ormResponse {
-		temp, err := responseEntry.ToPB()
+		temp, err := responseEntry.ToPB(ctx)
 		if err != nil {
 			return nil, err
 		}
@@ -173,14 +177,14 @@ func DefaultStrictUpdateIntPoint(ctx context.Context, in *IntPoint, db *gorm.DB)
 	if in == nil {
 		return nil, fmt.Errorf("Nil argument to DefaultCascadedUpdateIntPoint")
 	}
-	ormObj, err := in.ToORM()
+	ormObj, err := in.ToORM(ctx)
 	if err != nil {
 		return nil, err
 	}
 	if err = db.Save(&ormObj).Error; err != nil {
 		return nil, err
 	}
-	pbResponse, err := ormObj.ToPB()
+	pbResponse, err := ormObj.ToPB(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -190,9 +194,15 @@ func DefaultStrictUpdateIntPoint(ctx context.Context, in *IntPoint, db *gorm.DB)
 type IntPointDefaultServer struct {
 	DB *gorm.DB
 }
+type IntPointCreateCustomHandler interface {
+	CustomCreate(context.Context, *CreateIntPointRequest) (*CreateIntPointResponse, error)
+}
 
 // Create ...
 func (m *IntPointDefaultServer) Create(ctx context.Context, in *CreateIntPointRequest) (*CreateIntPointResponse, error) {
+	if custom, ok := interface{}(m).(IntPointCreateCustomHandler); ok {
+		return custom.CustomCreate(ctx, in)
+	}
 	res, err := DefaultCreateIntPoint(ctx, in.GetPayload(), m.DB)
 	if err != nil {
 		return nil, err
@@ -200,8 +210,15 @@ func (m *IntPointDefaultServer) Create(ctx context.Context, in *CreateIntPointRe
 	return &CreateIntPointResponse{Result: res}, nil
 }
 
+type IntPointReadCustomHandler interface {
+	CustomRead(context.Context, *ReadIntPointRequest) (*ReadIntPointResponse, error)
+}
+
 // Read ...
 func (m *IntPointDefaultServer) Read(ctx context.Context, in *ReadIntPointRequest) (*ReadIntPointResponse, error) {
+	if custom, ok := interface{}(m).(IntPointReadCustomHandler); ok {
+		return custom.CustomRead(ctx, in)
+	}
 	res, err := DefaultReadIntPoint(ctx, &IntPoint{Id: in.GetId()}, m.DB)
 	if err != nil {
 		return nil, err
@@ -209,8 +226,15 @@ func (m *IntPointDefaultServer) Read(ctx context.Context, in *ReadIntPointReques
 	return &ReadIntPointResponse{Result: res}, nil
 }
 
+type IntPointUpdateCustomHandler interface {
+	CustomUpdate(context.Context, *UpdateIntPointRequest) (*UpdateIntPointResponse, error)
+}
+
 // Update ...
 func (m *IntPointDefaultServer) Update(ctx context.Context, in *UpdateIntPointRequest) (*UpdateIntPointResponse, error) {
+	if custom, ok := interface{}(m).(IntPointUpdateCustomHandler); ok {
+		return custom.CustomUpdate(ctx, in)
+	}
 	res, err := DefaultStrictUpdateIntPoint(ctx, in.GetPayload(), m.DB)
 	if err != nil {
 		return nil, err
@@ -218,8 +242,15 @@ func (m *IntPointDefaultServer) Update(ctx context.Context, in *UpdateIntPointRe
 	return &UpdateIntPointResponse{Result: res}, nil
 }
 
+type IntPointListCustomHandler interface {
+	CustomList(context.Context, *google_protobuf2.Empty) (*ListIntPointResponse, error)
+}
+
 // List ...
 func (m *IntPointDefaultServer) List(ctx context.Context, in *google_protobuf2.Empty) (*ListIntPointResponse, error) {
+	if custom, ok := interface{}(m).(IntPointListCustomHandler); ok {
+		return custom.CustomList(ctx, in)
+	}
 	res, err := DefaultListIntPoint(ctx, m.DB)
 	if err != nil {
 		return nil, err
@@ -227,17 +258,38 @@ func (m *IntPointDefaultServer) List(ctx context.Context, in *google_protobuf2.E
 	return &ListIntPointResponse{Results: res}, nil
 }
 
+type IntPointDeleteCustomHandler interface {
+	CustomDelete(context.Context, *DeleteIntPointRequest) (*DeleteIntPointResponse, error)
+}
+
 // Delete ...
 func (m *IntPointDefaultServer) Delete(ctx context.Context, in *DeleteIntPointRequest) (*DeleteIntPointResponse, error) {
+	if custom, ok := interface{}(m).(IntPointDeleteCustomHandler); ok {
+		return custom.CustomDelete(ctx, in)
+	}
 	return &DeleteIntPointResponse{}, DefaultDeleteIntPoint(ctx, &IntPoint{Id: in.GetId()}, m.DB)
+}
+
+type IntPointCustomMethodCustomHandler interface {
+	CustomCustomMethod(context.Context, *google_protobuf2.Empty) (*google_protobuf2.Empty, error)
 }
 
 // CustomMethod ...
 func (m *IntPointDefaultServer) CustomMethod(ctx context.Context, in *google_protobuf2.Empty) (*google_protobuf2.Empty, error) {
+	if custom, ok := interface{}(m).(IntPointCustomMethodCustomHandler); ok {
+		return custom.CustomCustomMethod(ctx, in)
+	}
 	return &google_protobuf2.Empty{}, nil
+}
+
+type IntPointCreateSomethingCustomHandler interface {
+	CustomCreateSomething(context.Context, *Something) (*Something, error)
 }
 
 // CreateSomething ...
 func (m *IntPointDefaultServer) CreateSomething(ctx context.Context, in *Something) (*Something, error) {
+	if custom, ok := interface{}(m).(IntPointCreateSomethingCustomHandler); ok {
+		return custom.CustomCreateSomething(ctx, in)
+	}
 	return &Something{}, nil
 }
