@@ -7,7 +7,7 @@ import context "context"
 import errors "errors"
 
 import gorm "github.com/jinzhu/gorm"
-import ops "github.com/infobloxopen/atlas-app-toolkit/op/gorm"
+import ops "github.com/infobloxopen/atlas-app-toolkit/gorm"
 
 import fmt "fmt"
 import math "math"

@@ -32,10 +32,10 @@ import context "context"
 import errors "errors"
 import time "time"
 
-import auth "github.com/infobloxopen/atlas-app-toolkit/mw/auth"
+import auth "github.com/infobloxopen/atlas-app-toolkit/auth"
 import gorm "github.com/jinzhu/gorm"
 import gtypes "github.com/infobloxopen/protoc-gen-gorm/types"
-import ops "github.com/infobloxopen/atlas-app-toolkit/op/gorm"
+import ops "github.com/infobloxopen/atlas-app-toolkit/gorm"
 import ptypes "github.com/golang/protobuf/ptypes"
 import uuid "github.com/satori/go.uuid"
 
