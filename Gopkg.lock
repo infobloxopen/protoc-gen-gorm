@@ -44,7 +44,6 @@
   packages = [
     "jsonpb",
     "proto",
-    "protoc-gen-go/descriptor",
     "ptypes",
     "ptypes/any",
     "ptypes/duration",
@@ -77,7 +76,6 @@
 [[projects]]
   name = "github.com/grpc-ecosystem/grpc-gateway"
   packages = [
-    "protoc-gen-swagger/options",
     "runtime",
     "runtime/internal",
     "utilities"
@@ -94,13 +92,13 @@
 [[projects]]
   name = "github.com/infobloxopen/atlas-app-toolkit"
   packages = [
-    "gw",
-    "mw/auth",
-    "op",
-    "op/gorm"
+    "auth",
+    "gateway",
+    "gorm",
+    "query"
   ]
-  revision = "2fde752676ad546628535aedf8106b2579624bc8"
-  version = "v0.2.0"
+  revision = "15c62e35fecc14720fcfc0df37ca46338af14ceb"
+  version = "v0.4.0"
 
 [[projects]]
   branch = "master"
@@ -135,12 +133,6 @@
   name = "github.com/jinzhu/inflection"
   packages = ["."]
   revision = "04140366298a54a039076d798123ffa108fff46c"
-
-[[projects]]
-  name = "github.com/lyft/protoc-gen-validate"
-  packages = ["validate"]
-  revision = "8e6aaf55f4954f1ef9d3ee2e8f5a50e79cc04f8f"
-  version = "v0.0.5"
 
 [[projects]]
   name = "github.com/opentracing/opentracing-go"
@@ -219,7 +211,6 @@
   branch = "master"
   name = "google.golang.org/genproto"
   packages = [
-    "googleapis/api/annotations",
     "googleapis/rpc/code",
     "googleapis/rpc/status"
   ]
@@ -258,6 +249,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "d77ddf9073956a028c07502c6eaa3e4785452ca3b79826af218d91ab85dca850"
+  inputs-digest = "ea4c8294f46384e51197b7c6812af8c89171e4a94b9276303cf39b3310d8ba13"
   solver-name = "gps-cdcl"
   solver-version = 1
