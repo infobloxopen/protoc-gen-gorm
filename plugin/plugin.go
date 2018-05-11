@@ -229,7 +229,7 @@ func (p *OrmPlugin) generateTableNameFunction(message *generator.Descriptor) {
 	p.P(`func (`, typeName, `ORM) TableName() string {`)
 
 	tableName := inflection.Plural(jgorm.ToDBName(message.GetName()))
-	if opts := getMessageOptions(message); opts == nil {
+	if opts := getMessageOptions(message); opts != nil && opts.Table != nil {
 		tableName = opts.GetTable()
 	}
 	p.P(`return "`, tableName, `"`)
