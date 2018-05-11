@@ -1,0 +1,155 @@
+syntax = "proto3";
+
+package infoblox.api;
+
+option go_package = "github.com/infobloxopen/atlas-app-toolkit/query;query";
+
+// SortCriteria represents sort criteria
+message SortCriteria {
+    // Tag is a JSON tag.
+    string tag = 1;
+    // Order is a sort order.
+    enum Order {
+        // ascending sort order
+        ASC = 0;
+        // descending sort order
+        DESC = 1;
+    }
+    Order order = 2;
+}
+
+// Sorting represents list of sort criterias.
+message Sorting {
+    repeated SortCriteria criterias = 1;
+}
+
+// FieldSelection represents a group of fields for some object.
+// Main use case for if is to store information about object fields that
+// need to be ratained prior to sending object as a response
+message FieldSelection {
+    map<string, Field> fields = 1;
+}
+
+// Field represents a single field for an object.
+// It contains fields name and also may contain a group of sub-fields for cases
+// when a fields represents some structure.
+message Field {
+    string name = 1;
+    map<string, Field> subs = 2;
+}
+
+// Filtering represents filtering expression.
+// root could be either LogicalOperator or one of the supported conditions.
+message Filtering {
+    oneof root {
+        LogicalOperator operator = 1;
+        StringCondition string_condition = 2;
+        NumberCondition number_condition = 3;
+        NullCondition null_condition = 4;
+    }
+}
+
+// LogicalOperator represents binary logical operator, either AND or OR depending on type.
+// left and right are respectively left and right operands of the operator, could be
+// either LogicalOperator or one of the supported conditions.
+// is_negative is set to true if the operator is negated.
+message LogicalOperator {
+    oneof left {
+        LogicalOperator left_operator = 1;
+        StringCondition left_string_condition = 2;
+        NumberCondition left_number_condition = 3;
+        NullCondition left_null_condition = 4;
+    }
+    oneof right {
+        LogicalOperator right_operator = 5;
+        StringCondition right_string_condition = 6;
+        NumberCondition right_number_condition = 7;
+        NullCondition right_null_condition = 8;
+    }
+    enum Type {
+        AND = 0;
+        OR = 1;
+    }
+    Type type = 9;
+    bool is_negative = 10;
+}
+
+// StringCondition represents a condition with a string literal, e.g. field == 'string'.
+// field_path is a reference to a value of a resource.
+// value is the string literal.
+// type is a type of the condition.
+// is_negative is set to true if the condition is negated.
+message StringCondition {
+    repeated string field_path = 1;
+    string value = 2;
+    enum Type {
+        EQ = 0;
+        MATCH = 1;
+    }
+    Type type = 3;
+    bool is_negative = 4;
+}
+
+// NumberCondition represents a condition with a number literal, e.g. field > 3.
+// field_path is a reference to a value of a resource.
+// value is the number literal.
+// type is a type of the condition.
+// is_negative is set to true if the condition is negated.
+message NumberCondition {
+    repeated string field_path = 1;
+    double value = 2;
+    enum Type {
+        EQ = 0;
+        GT = 1;
+        GE = 2;
+        LT = 3;
+        LE = 4;
+    }
+    Type type = 3;
+    bool is_negative = 4;
+}
+
+// NullCondition represents a condition with a null literal, e.g. field == null.
+// field_path is a reference to a value of a resource.
+// is_negative is set to true if the condition is negated.
+message NullCondition {
+    repeated string field_path = 1;
+    bool is_negative = 2;
+}
+
+// Pagination represents both server-driven and client-driven pagination request.
+// Server-driven pagination is a model in which the server returns some
+// amount of data along with an token indicating there is more data
+// and where subsequent queries can get the next page of data.
+// Client-driven pagination is a model in which rows are addressable by
+// offset and page size (limit).
+message Pagination {
+    // The service-defined string used to identify a page of resources.
+    // A null value indicates the first page.
+    string page_token = 1;
+    // The integer index of the offset into a collection of resources.
+    // If omitted or null the value is assumed to be "0".
+    int32 offset = 2;
+    // The integer number of resources to be returned in the response.
+    // The service may impose maximum value.
+    // If omitted the service may impose a default value.
+    int32 limit = 3;
+}
+
+// PageInfo represents both server-driven and client-driven pagination response.
+// Server-driven pagination is a model in which the server returns some
+// amount of data along with an token indicating there is more data
+// and where subsequent queries can get the next page of data.
+// Client-driven pagination is a model in which rows are addressable by
+// offset and page size (limit).
+message PageInfo {
+    // The service response should contain a string to indicate
+    // the next page of resources.
+    // A null value indicates no more pages.
+    string page_token = 1;
+    // The service may optionally include the total number of resources being paged.
+    int32 size = 2;
+    // The service may optionally include the offset of the next page of resources.
+    // A null value indicates no more pages.
+    int32 offset = 3;
+}
