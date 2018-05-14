@@ -13,8 +13,8 @@ message User {
   option (gorm.opts) = {
     ormable: true,
     include: [
-    {type: "int32", name: "billing_address_id"},
-    {type: "int32", name: "shipping_address_id"}
+    {type: "int32", name: "BillingAddressId"},
+    {type: "int32", name: "ShippingAddressId"}
     ]
   };
   int32 id = 1;
@@ -25,17 +25,16 @@ message User {
   uint32 age = 5 [(gorm.field).drop = true]; // synthetic field
   uint32 num = 6;
   CreditCard credit_card = 7; // has one
-  repeated Email emails =8; // has many
+  repeated Email emails =8 [(gorm.field).has_many = {position_field: "Position"}]; // has many
   Address billing_address = 9; // belongs to
   Address shipping_address = 10; // belongs to
-  repeated Language languages = 11
-    [(gorm.field).tags = "gorm:\"many2many:user_languages\""]; // many2many
+  repeated Language languages = 11;
+    // [(gorm.field).tags = "gorm:\"many2many:user_languages\""]; // many2many
 }
 
 message Email {
   option (gorm.opts) = {
     ormable: true,
-    include: [{type: "int32", name: "user_id"}]
   };
   int32 id = 1;
   string email = 2;
@@ -53,7 +52,6 @@ message Address {
 message Language {
   option (gorm.opts) = {
     ormable: true,
-    include: [{type: "int32", name: "user_id"}]
     };
   int32 id = 1;
   string name = 2;
@@ -63,7 +61,6 @@ message Language {
 message CreditCard {
   option (gorm.opts) = {
     ormable: true,
-    include: [{type: "int32", name: "user_id"}]
   };
   int32 id = 1;
   google.protobuf.Timestamp created_at = 2;

@@ -54,7 +54,7 @@ message TypeWithID {
   option (gorm.opts) = {
     ormable: true,
     include: [
-      {type: "int32", name: "secret_int", tags: "gorm:\"-\""}
+      {type: "int32", name: "secret_int", tag: {ignore: true}}
       ]
     };
   // any field named 'id' is assumed by gorm to be the primary key for the
@@ -62,7 +62,7 @@ message TypeWithID {
   uint32 id = 1;
   // The field option also allows arbitrary tag setting, such as informing
   // gorm of a primary key, different column names or different types in the db
-  string ip = 2 [(gorm.field) = {tags: "gorm:\"column:ip_addr\""}];
+  string ip = 2 [(gorm.field) = {tag: {column: "ip_addr"}}];
   // A default has-many relationship, will error on generation if no FK field,
   // convention {typename}_id, is present. These FK fields will be automatically
   // populated on create and update.
