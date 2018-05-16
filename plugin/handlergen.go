@@ -217,7 +217,7 @@ func (p *OrmPlugin) generateStrictUpdateHandler(message *generator.Descriptor) {
 		p.P("return nil, err")
 		p.P("}")
 	}
-	p.removeChildAssociations(ormableTypes[typeName])
+	p.removeChildAssociations(message)
 	if multiAccount {
 		p.P(`db = db.Where(&`, typeName, `ORM{AccountID: accountID})`)
 	}
@@ -235,10 +235,10 @@ func (p *OrmPlugin) generateStrictUpdateHandler(message *generator.Descriptor) {
 }
 
 func (p *OrmPlugin) setupOrderedHasMany(message *generator.Descriptor) {
-	ormable := ormableTypes[p.TypeName(message)]
+	ormable := p.getOrmable(p.TypeName(message))
 	for fieldName, field := range ormable.Fields {
-		if field.Options != nil && field.Options.GetHasMany().GetPositionField() != "" {
-			positionField := field.Options.GetHasMany().GetPositionField()
+		if field.GetHasMany().GetPositionField() != "" {
+			positionField := field.GetHasMany().GetPositionField()
 			p.P(`for i, e := range `, `ormObj.`, fieldName, `{`)
 			p.P(`e.`, positionField, ` = i`)
 			p.P(`}`)
@@ -247,10 +247,10 @@ func (p *OrmPlugin) setupOrderedHasMany(message *generator.Descriptor) {
 }
 
 func (p *OrmPlugin) sortOrderedHasMany(message *generator.Descriptor) {
-	ormable := ormableTypes[p.TypeName(message)]
+	ormable := p.getOrmable(p.TypeName(message))
 	for fieldName, field := range ormable.Fields {
-		if field.Options != nil && field.Options.GetHasMany().GetPositionField() != "" {
-			positionField := field.Options.GetHasMany().GetPositionField()
+		if field.GetHasMany().GetPositionField() != "" {
+			positionField := field.GetHasMany().GetPositionField()
 			p.P(`db = db.Preload("`, fieldName, `", func(db *gorm.DB) *gorm.DB {`)
 			p.P(`return db.Order("`, jgorm.ToDBName(positionField), `")`)
 			p.P(`})`)
@@ -258,34 +258,26 @@ func (p *OrmPlugin) sortOrderedHasMany(message *generator.Descriptor) {
 	}
 }
 
-func (p *OrmPlugin) removeChildAssociations(ormable *OrmableType) {
+func (p *OrmPlugin) removeChildAssociations(message *generator.Descriptor) {
+	ormable := p.getOrmable(p.TypeName(message))
 	for fieldName, field := range ormable.Fields {
-		if field.Options != nil && field.Options.GetHasMany() != nil {
-			p.P(`filter`, fieldName, ` := `, strings.Trim(field.Type, "[]*"), `{}`)
-			assocKeyName := field.Options.GetHasMany().GetAssociationForeignkey()
-			zeroValue := p.guessZeroValue(ormable.Fields[assocKeyName].Type)
-			p.P(`if ormObj.`, assocKeyName, ` == `, zeroValue, `{`)
-			p.P(`return nil, errors.New("Can't do overwriting update with no `, assocKeyName, ` value for `, ormable.Name, `")`)
-			p.P(`}`)
-			foreignKeyName := field.Options.GetHasMany().GetForeignkey()
-			p.P(`filter`, fieldName, `.`, foreignKeyName, ` = `, `ormObj.`, assocKeyName)
-			if ormable.MultiAccount {
-				p.P(`filter`, fieldName, `.`, `AccountID`, ` = accountID`)
+		if field.GetHasMany() != nil || field.GetHasOne() != nil {
+			var assocKeyName, foreignKeyName string
+			switch {
+			case field.GetHasMany() != nil:
+				assocKeyName = field.GetHasMany().GetAssociationForeignkey()
+				foreignKeyName = field.GetHasMany().GetForeignkey()
+			case field.GetHasOne() != nil:
+				assocKeyName = field.GetHasOne().GetAssociationForeignkey()
+				foreignKeyName = field.GetHasOne().GetForeignkey()
 			}
-			p.P(`if err = db.Where(filter`, fieldName, `).Delete(`, strings.Trim(field.Type, "[]*"), `{}).Error; err != nil {`)
-			p.P(`return nil, err`)
-			p.P(`}`)
-		}
-		if field.Options != nil && field.Options.GetHasOne() != nil {
 			p.P(`filter`, fieldName, ` := `, strings.Trim(field.Type, "[]*"), `{}`)
-			assocKeyName := field.Options.GetHasOne().GetAssociationForeignkey()
 			zeroValue := p.guessZeroValue(ormable.Fields[assocKeyName].Type)
 			p.P(`if ormObj.`, assocKeyName, ` == `, zeroValue, `{`)
 			p.P(`return nil, errors.New("Can't do overwriting update with no `, assocKeyName, ` value for `, ormable.Name, `")`)
 			p.P(`}`)
-			foreignKeyName := field.Options.GetHasOne().GetForeignkey()
 			p.P(`filter`, fieldName, `.`, foreignKeyName, ` = `, `ormObj.`, assocKeyName)
-			if ormable.MultiAccount {
+			if getMessageOptions(message).GetMultiAccount() {
 				p.P(`filter`, fieldName, `.`, `AccountID`, ` = accountID`)
 			}
 			p.P(`if err = db.Where(filter`, fieldName, `).Delete(`, strings.Trim(field.Type, "[]*"), `{}).Error; err != nil {`)

@@ -34,6 +34,18 @@ message ExtraField {
   optional GormTag tag = 3;
 }
 
+// Field level specifications
+extend google.protobuf.FieldOptions {
+    optional GormFieldOptions field = 52119;
+}
+
+message GormFieldOptions {
+    optional GormTag tag = 1;
+    optional bool drop = 2;
+    optional HasOneOptions has_one = 3;
+    optional HasManyOptions has_many = 4;
+}
+
 message GormTag {
     optional string column = 1;
     optional string type = 2;
@@ -51,27 +63,18 @@ message GormTag {
     optional bool ignore = 14;
 }
 
-message HasManyOptions {
-    optional string foreignkey = 1;
-    optional string association_foreignkey = 2;
-    optional string position_field = 3;
-}
-
 message HasOneOptions {
     optional string foreignkey = 1;
-    optional string association_foreignkey = 2;
+    optional GormTag foreignkey_tag = 2;
+    optional string association_foreignkey = 3;
 }
 
-message GormFieldOptions {
-    optional GormTag tag = 1;
-    optional bool drop = 2;
-    optional HasManyOptions has_many = 3;
-    optional HasOneOptions has_one = 4;
-}
-
-// Field level specifications
-extend google.protobuf.FieldOptions {
-    optional GormFieldOptions field = 52119;
+message HasManyOptions {
+    optional string foreignkey = 1;
+    optional GormTag foreignkey_tag = 2;
+    optional string association_foreignkey = 3;
+    optional string position_field = 4;
+    optional GormTag position_field_tag = 5;
 }
 
 // To be used in (leiu of) the interceptor

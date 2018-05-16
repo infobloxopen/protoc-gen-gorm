@@ -70,7 +70,7 @@ func (p *OrmPlugin) followsCreateConventions(inType generator.Object, outType ge
 		if field.GetName() == "payload" {
 			gType, _ := p.GoType(inMsg, field)
 			inTypeName = strings.TrimPrefix(gType, "*")
-			if _, exists := convertibleTypes[inTypeName]; exists {
+			if p.isOrmable(inTypeName) {
 				typeOrmable = true
 			}
 		}
@@ -119,7 +119,7 @@ func (p *OrmPlugin) followsReadConventions(inType generator.Object, outType gene
 		if field.GetName() == "result" {
 			gType, _ := p.GoType(inMsg, field)
 			outTypeName = strings.TrimPrefix(gType, "*")
-			if _, exists := convertibleTypes[outTypeName]; exists {
+			if p.isOrmable(outTypeName) {
 				typeOrmable = true
 			}
 		}
@@ -155,7 +155,7 @@ func (p *OrmPlugin) followsUpdateConventions(inType generator.Object, outType ge
 		if field.GetName() == "payload" {
 			gType, _ := p.GoType(inMsg, field)
 			inTypeName = strings.TrimPrefix(gType, "*")
-			if _, exists := convertibleTypes[inTypeName]; exists {
+			if p.isOrmable(inTypeName) {
 				typeOrmable = true
 			}
 		}
@@ -203,7 +203,7 @@ func (p *OrmPlugin) followsDeleteConventions(inType generator.Object, outType ge
 		typeName = generator.CamelCase(opts.GetObjectType())
 	}
 	var typeOrmable bool
-	if _, exists := convertibleTypes[typeName]; exists {
+	if p.isOrmable(typeName) {
 		typeOrmable = true
 	}
 	if hasID && typeOrmable {
@@ -236,7 +236,7 @@ func (p *OrmPlugin) followsListConventions(inType generator.Object, outType gene
 		if field.GetName() == "results" {
 			gType, _ := p.GoType(outMsg, field)
 			outTypeName = strings.TrimPrefix(gType, "[]*")
-			if _, exists := convertibleTypes[outTypeName]; exists {
+			if p.isOrmable(outTypeName) {
 				typeOrmable = true
 			}
 		}

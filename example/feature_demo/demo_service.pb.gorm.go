@@ -89,7 +89,6 @@ type IntPointWithAfterToPB interface {
 	AfterToPB(context.Context, *IntPoint) error
 }
 
-////////////////////////// CURDL for objects
 // DefaultCreateIntPoint executes a basic gorm create call
 func DefaultCreateIntPoint(ctx context.Context, in *IntPoint, db *gorm.DB) (*IntPoint, error) {
 	if in == nil {
