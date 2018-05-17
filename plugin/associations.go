@@ -26,13 +26,13 @@ func (p *OrmPlugin) parseAssociations(msg *generator.Descriptor) {
 			if field.IsRepeated() {
 				// if fieldOpts.GetManyToMany() != nil {
 				// }
-				p.parseHasMany(typeName, ormable, childOrmable, fieldOpts)
+				p.parseHasMany(typeName, ormable, fieldName, childOrmable, fieldOpts)
 				fieldType = fmt.Sprintf("[]*%s", childOrmable.Name)
 
 			} else {
 				// if fieldOpts.GetBelongsTo() != nil {
 				// }
-				p.parseHasOne(typeName, ormable, childOrmable, fieldOpts)
+				p.parseHasOne(typeName, ormable, fieldName, childOrmable, fieldOpts)
 				fieldType = fmt.Sprintf("*%s", childOrmable.Name)
 			}
 			ormable.Fields[fieldName] = &Field{Type: fieldType, GormFieldOptions: fieldOpts}
@@ -40,7 +40,7 @@ func (p *OrmPlugin) parseAssociations(msg *generator.Descriptor) {
 	}
 }
 
-func (p *OrmPlugin) parseHasMany(typeName string, parent *OrmableType, child *OrmableType, opts *gorm.GormFieldOptions) {
+func (p *OrmPlugin) parseHasMany(typeName string, parent *OrmableType, fieldName string, child *OrmableType, opts *gorm.GormFieldOptions) {
 	hasMany := opts.GetHasMany()
 	if hasMany == nil {
 		hasMany = &gorm.HasManyOptions{}
@@ -61,7 +61,7 @@ func (p *OrmPlugin) parseHasMany(typeName string, parent *OrmableType, child *Or
 	foreignKey := &Field{Type: assocKey.Type, GormFieldOptions: &gorm.GormFieldOptions{Tag: hasMany.GetForeignkeyTag()}}
 	var foreignKeyName string
 	if foreignKeyName = hasMany.GetForeignkey(); foreignKeyName == "" {
-		foreignKeyName = fmt.Sprintf(typeName + assocKeyName)
+		foreignKeyName = fmt.Sprintf(fieldName + typeName + assocKeyName)
 	}
 	hasMany.Foreignkey = &foreignKeyName
 	if exField, ok := child.Fields[foreignKeyName]; !ok {
@@ -84,7 +84,7 @@ func (p *OrmPlugin) parseHasMany(typeName string, parent *OrmableType, child *Or
 	}
 }
 
-func (p *OrmPlugin) parseHasOne(typeName string, parent *OrmableType, child *OrmableType, opts *gorm.GormFieldOptions) {
+func (p *OrmPlugin) parseHasOne(typeName string, parent *OrmableType, fieldName string, child *OrmableType, opts *gorm.GormFieldOptions) {
 	hasOne := opts.GetHasOne()
 	if hasOne == nil {
 		hasOne = &gorm.HasOneOptions{}
@@ -105,7 +105,7 @@ func (p *OrmPlugin) parseHasOne(typeName string, parent *OrmableType, child *Orm
 	foreignKey := &Field{Type: assocKey.Type, GormFieldOptions: &gorm.GormFieldOptions{Tag: hasOne.GetForeignkeyTag()}}
 	var foreignKeyName string
 	if foreignKeyName = generator.CamelCase(hasOne.GetForeignkey()); foreignKeyName == "" {
-		foreignKeyName = fmt.Sprintf(typeName + assocKeyName)
+		foreignKeyName = fmt.Sprintf(fieldName + typeName + assocKeyName)
 	}
 	hasOne.Foreignkey = &foreignKeyName
 	if exField, ok := child.Fields[foreignKeyName]; !ok {

@@ -96,6 +96,11 @@ func (p *OrmPlugin) Generate(file *generator.FileDescriptor) {
 		typeName := generator.CamelCaseSlice(msg.TypeName())
 		if p.isOrmable(typeName) {
 			p.parseAssociations(msg)
+		}
+	}
+	for _, msg := range file.Messages() {
+		typeName := generator.CamelCaseSlice(msg.TypeName())
+		if p.isOrmable(typeName) {
 			p.generateOrmable(msg)
 			p.generateTableNameFunction(msg)
 			p.generateConvertFunctions(msg)
