@@ -236,7 +236,8 @@ func (p *OrmPlugin) generateStrictUpdateHandler(message *generator.Descriptor) {
 
 func (p *OrmPlugin) setupOrderedHasMany(message *generator.Descriptor) {
 	ormable := p.getOrmable(p.TypeName(message))
-	for fieldName, field := range ormable.Fields {
+	for _, fieldName := range p.getSortedFieldNames(ormable.Fields) {
+		field := ormable.Fields[fieldName]
 		if field.GetHasMany().GetPositionField() != "" {
 			positionField := field.GetHasMany().GetPositionField()
 			p.P(`for i, e := range `, `ormObj.`, fieldName, `{`)
@@ -248,7 +249,8 @@ func (p *OrmPlugin) setupOrderedHasMany(message *generator.Descriptor) {
 
 func (p *OrmPlugin) sortOrderedHasMany(message *generator.Descriptor) {
 	ormable := p.getOrmable(p.TypeName(message))
-	for fieldName, field := range ormable.Fields {
+	for _, fieldName := range p.getSortedFieldNames(ormable.Fields) {
+		field := ormable.Fields[fieldName]
 		if field.GetHasMany().GetPositionField() != "" {
 			positionField := field.GetHasMany().GetPositionField()
 			p.P(`db = db.Preload("`, fieldName, `", func(db *gorm.DB) *gorm.DB {`)
@@ -260,7 +262,8 @@ func (p *OrmPlugin) sortOrderedHasMany(message *generator.Descriptor) {
 
 func (p *OrmPlugin) removeChildAssociations(message *generator.Descriptor) {
 	ormable := p.getOrmable(p.TypeName(message))
-	for fieldName, field := range ormable.Fields {
+	for _, fieldName := range p.getSortedFieldNames(ormable.Fields) {
+		field := ormable.Fields[fieldName]
 		if field.GetHasMany() != nil || field.GetHasOne() != nil {
 			var assocKeyName, foreignKeyName string
 			switch {

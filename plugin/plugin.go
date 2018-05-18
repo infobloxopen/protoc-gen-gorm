@@ -2,6 +2,7 @@ package plugin
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/gogo/protobuf/protoc-gen-gogo/descriptor"
@@ -177,10 +178,20 @@ func (p *OrmPlugin) getOrmable(typeName string) *OrmableType {
 	}
 }
 
+func (p *OrmPlugin) getSortedFieldNames(fields map[string]*Field) []string {
+	var keys []string
+	for k := range fields {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	return keys
+}
+
 func (p *OrmPlugin) generateOrmable(message *generator.Descriptor) {
 	ormable := p.getOrmable(p.TypeName(message))
 	p.P(`type `, ormable.Name, ` struct {`)
-	for fieldName, field := range ormable.Fields {
+	for _, fieldName := range p.getSortedFieldNames(ormable.Fields) {
+		field := ormable.Fields[fieldName]
 		p.P(fieldName, ` `, field.Type, p.renderGormTag(field))
 	}
 	p.P(`}`)
