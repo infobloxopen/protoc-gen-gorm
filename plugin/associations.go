@@ -26,13 +26,13 @@ func (p *OrmPlugin) parseAssociations(msg *generator.Descriptor) {
 			if field.IsRepeated() {
 				// if fieldOpts.GetManyToMany() != nil {
 				// }
-				p.parseHasMany(typeName, ormable, fieldName, childOrmable, fieldOpts)
+				p.parseHasMany(msg, ormable, fieldName, fieldType, childOrmable, fieldOpts)
 				fieldType = fmt.Sprintf("[]*%s", childOrmable.Name)
 
 			} else {
 				// if fieldOpts.GetBelongsTo() != nil {
 				// }
-				p.parseHasOne(typeName, ormable, fieldName, childOrmable, fieldOpts)
+				p.parseHasOne(msg, ormable, fieldName, fieldType, childOrmable, fieldOpts)
 				fieldType = fmt.Sprintf("*%s", childOrmable.Name)
 			}
 			ormable.Fields[fieldName] = &Field{Type: fieldType, GormFieldOptions: fieldOpts}
@@ -40,7 +40,25 @@ func (p *OrmPlugin) parseAssociations(msg *generator.Descriptor) {
 	}
 }
 
-func (p *OrmPlugin) parseHasMany(typeName string, parent *OrmableType, fieldName string, child *OrmableType, opts *gorm.GormFieldOptions) {
+func (p *OrmPlugin) countHasAssociationDimension(msg *generator.Descriptor, typeName string) int {
+	dim := 0
+	for _, field := range msg.GetField() {
+		fieldOpts := getFieldOptions(field)
+		if fieldOpts.GetDrop() {
+			continue
+		}
+		fieldType, _ := p.GoType(msg, field)
+		// if fieldOpts.GetManyToMany() == nil && fieldOpts.GetBelongsTo() == nil {
+		if strings.Trim(typeName, "[]*") == strings.Trim(fieldType, "[]*") {
+			dim++
+		}
+		// }
+	}
+	return dim
+}
+
+func (p *OrmPlugin) parseHasMany(msg *generator.Descriptor, parent *OrmableType, fieldName string, fieldType string, child *OrmableType, opts *gorm.GormFieldOptions) {
+	typeName := generator.CamelCaseSlice(msg.TypeName())
 	hasMany := opts.GetHasMany()
 	if hasMany == nil {
 		hasMany = &gorm.HasManyOptions{}
@@ -61,7 +79,11 @@ func (p *OrmPlugin) parseHasMany(typeName string, parent *OrmableType, fieldName
 	foreignKey := &Field{Type: assocKey.Type, GormFieldOptions: &gorm.GormFieldOptions{Tag: hasMany.GetForeignkeyTag()}}
 	var foreignKeyName string
 	if foreignKeyName = hasMany.GetForeignkey(); foreignKeyName == "" {
-		foreignKeyName = fmt.Sprintf(fieldName + typeName + assocKeyName)
+		if p.countHasAssociationDimension(msg, fieldType) == 1 {
+			foreignKeyName = fmt.Sprintf(typeName + assocKeyName)
+		} else {
+			foreignKeyName = fmt.Sprintf(fieldName + typeName + assocKeyName)
+		}
 	}
 	hasMany.Foreignkey = &foreignKeyName
 	if exField, ok := child.Fields[foreignKeyName]; !ok {
@@ -84,7 +106,8 @@ func (p *OrmPlugin) parseHasMany(typeName string, parent *OrmableType, fieldName
 	}
 }
 
-func (p *OrmPlugin) parseHasOne(typeName string, parent *OrmableType, fieldName string, child *OrmableType, opts *gorm.GormFieldOptions) {
+func (p *OrmPlugin) parseHasOne(msg *generator.Descriptor, parent *OrmableType, fieldName string, fieldType string, child *OrmableType, opts *gorm.GormFieldOptions) {
+	typeName := generator.CamelCaseSlice(msg.TypeName())
 	hasOne := opts.GetHasOne()
 	if hasOne == nil {
 		hasOne = &gorm.HasOneOptions{}
@@ -105,7 +128,11 @@ func (p *OrmPlugin) parseHasOne(typeName string, parent *OrmableType, fieldName 
 	foreignKey := &Field{Type: assocKey.Type, GormFieldOptions: &gorm.GormFieldOptions{Tag: hasOne.GetForeignkeyTag()}}
 	var foreignKeyName string
 	if foreignKeyName = generator.CamelCase(hasOne.GetForeignkey()); foreignKeyName == "" {
-		foreignKeyName = fmt.Sprintf(fieldName + typeName + assocKeyName)
+		if p.countHasAssociationDimension(msg, fieldType) == 1 {
+			foreignKeyName = fmt.Sprintf(typeName + assocKeyName)
+		} else {
+			foreignKeyName = fmt.Sprintf(fieldName + typeName + assocKeyName)
+		}
 	}
 	hasOne.Foreignkey = &foreignKeyName
 	if exField, ok := child.Fields[foreignKeyName]; !ok {
