@@ -53,7 +53,6 @@ type TestTypesORM struct {
 	ANestedObjectTypeWithIDId uint32
 	BecomesInt                int32
 	CreatedAt                 time.Time
-	Numbers                   []int32
 	OptionalString            *string
 	ThingsTypeWithIDId        uint32
 	TypeWithIdId              uint32

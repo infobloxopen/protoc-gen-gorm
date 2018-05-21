@@ -125,6 +125,9 @@ func (p *OrmPlugin) parseBasicFields(msg *generator.Descriptor) {
 		fieldType, _ := p.GoType(msg, field)
 		if *(field.Type) == typeEnum {
 			fieldType = "int32"
+		} else if *(field.Type) != typeMessage && field.IsRepeated() {
+			// Not implemented yet
+			continue
 		} else if *(field.Type) == typeMessage {
 			//Check for WKTs or fields of nonormable types
 			parts := strings.Split(fieldType, ".")
