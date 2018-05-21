@@ -62,7 +62,7 @@ func (p *OrmPlugin) parseHasMany(msg *generator.Descriptor, parent *OrmableType,
 	hasMany := opts.GetHasMany()
 	if hasMany == nil {
 		hasMany = &gorm.HasManyOptions{}
-		opts.HasMany = hasMany
+		opts.Association = &gorm.GormFieldOptions_HasMany{hasMany}
 	}
 	var assocKey *Field
 	var assocKeyName string
@@ -111,7 +111,7 @@ func (p *OrmPlugin) parseHasOne(msg *generator.Descriptor, parent *OrmableType, 
 	hasOne := opts.GetHasOne()
 	if hasOne == nil {
 		hasOne = &gorm.HasOneOptions{}
-		opts.HasOne = hasOne
+		opts.Association = &gorm.GormFieldOptions_HasOne{hasOne}
 	}
 	var assocKey *Field
 	var assocKeyName string

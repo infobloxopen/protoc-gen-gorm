@@ -42,8 +42,10 @@ extend google.protobuf.FieldOptions {
 message GormFieldOptions {
     optional GormTag tag = 1;
     optional bool drop = 2;
-    optional HasOneOptions has_one = 3;
-    optional HasManyOptions has_many = 4;
+    oneof association {
+        HasOneOptions has_one = 3;
+        HasManyOptions has_many = 4;
+    }
 }
 
 message GormTag {
