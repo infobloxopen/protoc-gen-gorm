@@ -158,3 +158,17 @@ func (p *OrmPlugin) findPrimaryKey(ormable *OrmableType) (string, *Field) {
 	p.Fail("Primary key cannot be found in", ormable.Name, ".")
 	return "", nil
 }
+
+func (p *OrmPlugin) hasPrimaryKey(ormable *OrmableType) bool {
+	for _, field := range ormable.Fields {
+		if field.GetTag().GetPrimaryKey() {
+			return true
+		}
+	}
+	for fieldName, _ := range ormable.Fields {
+		if strings.ToLower(fieldName) == "id" {
+			return true
+		}
+	}
+	return false
+}

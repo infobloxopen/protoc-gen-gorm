@@ -635,32 +635,11 @@ func DefaultDeleteUser(ctx context.Context, in *User, db *gorm.DB) error {
 	if err != nil {
 		return err
 	}
+	if ormObj.Id == 0 {
+		return errors.New("A non-zero ID value is required for a delete call")
+	}
 	err = db.Where(&ormObj).Delete(&UserORM{}).Error
 	return err
-}
-
-// DefaultListUser executes a gorm list call
-func DefaultListUser(ctx context.Context, db *gorm.DB) ([]*User, error) {
-	ormResponse := []UserORM{}
-	db, err := ops.ApplyCollectionOperators(db, ctx)
-	if err != nil {
-		return nil, err
-	}
-	db = db.Preload("Tasks", func(db *gorm.DB) *gorm.DB {
-		return db.Order("priority")
-	})
-	if err := db.Set("gorm:auto_preload", true).Find(&ormResponse).Error; err != nil {
-		return nil, err
-	}
-	pbResponse := []*User{}
-	for _, responseEntry := range ormResponse {
-		temp, err := responseEntry.ToPB(ctx)
-		if err != nil {
-			return nil, err
-		}
-		pbResponse = append(pbResponse, &temp)
-	}
-	return pbResponse, nil
 }
 
 // DefaultStrictUpdateUser clears first level 1:many children and then executes a gorm update call
@@ -707,6 +686,30 @@ func DefaultStrictUpdateUser(ctx context.Context, in *User, db *gorm.DB) (*User,
 		return nil, err
 	}
 	return &pbResponse, nil
+}
+
+// DefaultListUser executes a gorm list call
+func DefaultListUser(ctx context.Context, db *gorm.DB) ([]*User, error) {
+	ormResponse := []UserORM{}
+	db, err := ops.ApplyCollectionOperators(db, ctx)
+	if err != nil {
+		return nil, err
+	}
+	db = db.Preload("Tasks", func(db *gorm.DB) *gorm.DB {
+		return db.Order("priority")
+	})
+	if err := db.Set("gorm:auto_preload", true).Find(&ormResponse).Error; err != nil {
+		return nil, err
+	}
+	pbResponse := []*User{}
+	for _, responseEntry := range ormResponse {
+		temp, err := responseEntry.ToPB(ctx)
+		if err != nil {
+			return nil, err
+		}
+		pbResponse = append(pbResponse, &temp)
+	}
+	return pbResponse, nil
 }
 
 // DefaultCreateEmail executes a basic gorm create call
@@ -766,8 +769,30 @@ func DefaultDeleteEmail(ctx context.Context, in *Email, db *gorm.DB) error {
 	if err != nil {
 		return err
 	}
+	if ormObj.Id == 0 {
+		return errors.New("A non-zero ID value is required for a delete call")
+	}
 	err = db.Where(&ormObj).Delete(&EmailORM{}).Error
 	return err
+}
+
+// DefaultStrictUpdateEmail clears first level 1:many children and then executes a gorm update call
+func DefaultStrictUpdateEmail(ctx context.Context, in *Email, db *gorm.DB) (*Email, error) {
+	if in == nil {
+		return nil, fmt.Errorf("Nil argument to DefaultCascadedUpdateEmail")
+	}
+	ormObj, err := in.ToORM(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if err = db.Save(&ormObj).Error; err != nil {
+		return nil, err
+	}
+	pbResponse, err := ormObj.ToPB(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return &pbResponse, nil
 }
 
 // DefaultListEmail executes a gorm list call
@@ -789,25 +814,6 @@ func DefaultListEmail(ctx context.Context, db *gorm.DB) ([]*Email, error) {
 		pbResponse = append(pbResponse, &temp)
 	}
 	return pbResponse, nil
-}
-
-// DefaultStrictUpdateEmail clears first level 1:many children and then executes a gorm update call
-func DefaultStrictUpdateEmail(ctx context.Context, in *Email, db *gorm.DB) (*Email, error) {
-	if in == nil {
-		return nil, fmt.Errorf("Nil argument to DefaultCascadedUpdateEmail")
-	}
-	ormObj, err := in.ToORM(ctx)
-	if err != nil {
-		return nil, err
-	}
-	if err = db.Save(&ormObj).Error; err != nil {
-		return nil, err
-	}
-	pbResponse, err := ormObj.ToPB(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return &pbResponse, nil
 }
 
 // DefaultCreateAddress executes a basic gorm create call
@@ -867,8 +873,30 @@ func DefaultDeleteAddress(ctx context.Context, in *Address, db *gorm.DB) error {
 	if err != nil {
 		return err
 	}
+	if ormObj.Id == 0 {
+		return errors.New("A non-zero ID value is required for a delete call")
+	}
 	err = db.Where(&ormObj).Delete(&AddressORM{}).Error
 	return err
+}
+
+// DefaultStrictUpdateAddress clears first level 1:many children and then executes a gorm update call
+func DefaultStrictUpdateAddress(ctx context.Context, in *Address, db *gorm.DB) (*Address, error) {
+	if in == nil {
+		return nil, fmt.Errorf("Nil argument to DefaultCascadedUpdateAddress")
+	}
+	ormObj, err := in.ToORM(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if err = db.Save(&ormObj).Error; err != nil {
+		return nil, err
+	}
+	pbResponse, err := ormObj.ToPB(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return &pbResponse, nil
 }
 
 // DefaultListAddress executes a gorm list call
@@ -890,25 +918,6 @@ func DefaultListAddress(ctx context.Context, db *gorm.DB) ([]*Address, error) {
 		pbResponse = append(pbResponse, &temp)
 	}
 	return pbResponse, nil
-}
-
-// DefaultStrictUpdateAddress clears first level 1:many children and then executes a gorm update call
-func DefaultStrictUpdateAddress(ctx context.Context, in *Address, db *gorm.DB) (*Address, error) {
-	if in == nil {
-		return nil, fmt.Errorf("Nil argument to DefaultCascadedUpdateAddress")
-	}
-	ormObj, err := in.ToORM(ctx)
-	if err != nil {
-		return nil, err
-	}
-	if err = db.Save(&ormObj).Error; err != nil {
-		return nil, err
-	}
-	pbResponse, err := ormObj.ToPB(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return &pbResponse, nil
 }
 
 // DefaultCreateLanguage executes a basic gorm create call
@@ -968,8 +977,30 @@ func DefaultDeleteLanguage(ctx context.Context, in *Language, db *gorm.DB) error
 	if err != nil {
 		return err
 	}
+	if ormObj.Id == 0 {
+		return errors.New("A non-zero ID value is required for a delete call")
+	}
 	err = db.Where(&ormObj).Delete(&LanguageORM{}).Error
 	return err
+}
+
+// DefaultStrictUpdateLanguage clears first level 1:many children and then executes a gorm update call
+func DefaultStrictUpdateLanguage(ctx context.Context, in *Language, db *gorm.DB) (*Language, error) {
+	if in == nil {
+		return nil, fmt.Errorf("Nil argument to DefaultCascadedUpdateLanguage")
+	}
+	ormObj, err := in.ToORM(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if err = db.Save(&ormObj).Error; err != nil {
+		return nil, err
+	}
+	pbResponse, err := ormObj.ToPB(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return &pbResponse, nil
 }
 
 // DefaultListLanguage executes a gorm list call
@@ -991,25 +1022,6 @@ func DefaultListLanguage(ctx context.Context, db *gorm.DB) ([]*Language, error) 
 		pbResponse = append(pbResponse, &temp)
 	}
 	return pbResponse, nil
-}
-
-// DefaultStrictUpdateLanguage clears first level 1:many children and then executes a gorm update call
-func DefaultStrictUpdateLanguage(ctx context.Context, in *Language, db *gorm.DB) (*Language, error) {
-	if in == nil {
-		return nil, fmt.Errorf("Nil argument to DefaultCascadedUpdateLanguage")
-	}
-	ormObj, err := in.ToORM(ctx)
-	if err != nil {
-		return nil, err
-	}
-	if err = db.Save(&ormObj).Error; err != nil {
-		return nil, err
-	}
-	pbResponse, err := ormObj.ToPB(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return &pbResponse, nil
 }
 
 // DefaultCreateCreditCard executes a basic gorm create call
@@ -1069,8 +1081,30 @@ func DefaultDeleteCreditCard(ctx context.Context, in *CreditCard, db *gorm.DB) e
 	if err != nil {
 		return err
 	}
+	if ormObj.Id == 0 {
+		return errors.New("A non-zero ID value is required for a delete call")
+	}
 	err = db.Where(&ormObj).Delete(&CreditCardORM{}).Error
 	return err
+}
+
+// DefaultStrictUpdateCreditCard clears first level 1:many children and then executes a gorm update call
+func DefaultStrictUpdateCreditCard(ctx context.Context, in *CreditCard, db *gorm.DB) (*CreditCard, error) {
+	if in == nil {
+		return nil, fmt.Errorf("Nil argument to DefaultCascadedUpdateCreditCard")
+	}
+	ormObj, err := in.ToORM(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if err = db.Save(&ormObj).Error; err != nil {
+		return nil, err
+	}
+	pbResponse, err := ormObj.ToPB(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return &pbResponse, nil
 }
 
 // DefaultListCreditCard executes a gorm list call
@@ -1094,25 +1128,6 @@ func DefaultListCreditCard(ctx context.Context, db *gorm.DB) ([]*CreditCard, err
 	return pbResponse, nil
 }
 
-// DefaultStrictUpdateCreditCard clears first level 1:many children and then executes a gorm update call
-func DefaultStrictUpdateCreditCard(ctx context.Context, in *CreditCard, db *gorm.DB) (*CreditCard, error) {
-	if in == nil {
-		return nil, fmt.Errorf("Nil argument to DefaultCascadedUpdateCreditCard")
-	}
-	ormObj, err := in.ToORM(ctx)
-	if err != nil {
-		return nil, err
-	}
-	if err = db.Save(&ormObj).Error; err != nil {
-		return nil, err
-	}
-	pbResponse, err := ormObj.ToPB(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return &pbResponse, nil
-}
-
 // DefaultCreateTask executes a basic gorm create call
 func DefaultCreateTask(ctx context.Context, in *Task, db *gorm.DB) (*Task, error) {
 	if in == nil {
@@ -1127,51 +1142,6 @@ func DefaultCreateTask(ctx context.Context, in *Task, db *gorm.DB) (*Task, error
 	}
 	pbResponse, err := ormObj.ToPB(ctx)
 	return &pbResponse, err
-}
-
-// DefaultReadTask executes a basic gorm read call
-func DefaultReadTask(ctx context.Context, in *Task, db *gorm.DB) (*Task, error) {
-	if in == nil {
-		return nil, errors.New("Nil argument to DefaultReadTask")
-	}
-	ormParams, err := in.ToORM(ctx)
-	if err != nil {
-		return nil, err
-	}
-	ormResponse := TaskORM{}
-	if err = db.Set("gorm:auto_preload", true).Where(&ormParams).First(&ormResponse).Error; err != nil {
-		return nil, err
-	}
-	pbResponse, err := ormResponse.ToPB(ctx)
-	return &pbResponse, err
-}
-
-// DefaultUpdateTask executes a basic gorm update call
-func DefaultUpdateTask(ctx context.Context, in *Task, db *gorm.DB) (*Task, error) {
-	if in == nil {
-		return nil, errors.New("Nil argument to DefaultUpdateTask")
-	}
-	ormObj, err := in.ToORM(ctx)
-	if err != nil {
-		return nil, err
-	}
-	if err = db.Save(&ormObj).Error; err != nil {
-		return nil, err
-	}
-	pbResponse, err := ormObj.ToPB(ctx)
-	return &pbResponse, err
-}
-
-func DefaultDeleteTask(ctx context.Context, in *Task, db *gorm.DB) error {
-	if in == nil {
-		return errors.New("Nil argument to DefaultDeleteTask")
-	}
-	ormObj, err := in.ToORM(ctx)
-	if err != nil {
-		return err
-	}
-	err = db.Where(&ormObj).Delete(&TaskORM{}).Error
-	return err
 }
 
 // DefaultListTask executes a gorm list call
@@ -1193,23 +1163,4 @@ func DefaultListTask(ctx context.Context, db *gorm.DB) ([]*Task, error) {
 		pbResponse = append(pbResponse, &temp)
 	}
 	return pbResponse, nil
-}
-
-// DefaultStrictUpdateTask clears first level 1:many children and then executes a gorm update call
-func DefaultStrictUpdateTask(ctx context.Context, in *Task, db *gorm.DB) (*Task, error) {
-	if in == nil {
-		return nil, fmt.Errorf("Nil argument to DefaultCascadedUpdateTask")
-	}
-	ormObj, err := in.ToORM(ctx)
-	if err != nil {
-		return nil, err
-	}
-	if err = db.Save(&ormObj).Error; err != nil {
-		return nil, err
-	}
-	pbResponse, err := ormObj.ToPB(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return &pbResponse, nil
 }
