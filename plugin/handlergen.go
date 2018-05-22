@@ -23,11 +23,13 @@ func (p *OrmPlugin) generateDefaultHandlers(file *generator.FileDescriptor) {
 		p.lftPkgName = "ops"
 
 		p.generateCreateHandler(message)
-		p.generateReadHandler(message)
-		p.generateUpdateHandler(message)
-		p.generateDeleteHandler(message)
+		if p.hasPrimaryKey(p.getOrmable(p.TypeName(message))) {
+			p.generateReadHandler(message)
+			p.generateUpdateHandler(message)
+			p.generateDeleteHandler(message)
+			p.generateStrictUpdateHandler(message)
+		}
 		p.generateListHandler(message)
-		p.generateStrictUpdateHandler(message)
 	}
 }
 
@@ -157,6 +159,11 @@ func (p *OrmPlugin) generateDeleteHandler(message *generator.Descriptor) {
 		p.P("}")
 		p.P("ormObj.AccountID = accountID")
 	}
+	ormable := p.getOrmable(typeName)
+	pkName, pk := p.findPrimaryKey(ormable)
+	p.P(`if ormObj.`, pkName, ` == `, p.guessZeroValue(pk.Type), `{`)
+	p.P(`return errors.New("A non-zero ID value is required for a delete call")`)
+	p.P(`}`)
 	p.P(`err = db.Where(&ormObj).Delete(&`, typeName, `ORM{}).Error`)
 	p.P(`return err`)
 	p.P(`}`)

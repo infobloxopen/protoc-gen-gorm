@@ -411,51 +411,6 @@ func DefaultCreateTestTypes(ctx context.Context, in *TestTypes, db *gorm.DB) (*T
 	return &pbResponse, err
 }
 
-// DefaultReadTestTypes executes a basic gorm read call
-func DefaultReadTestTypes(ctx context.Context, in *TestTypes, db *gorm.DB) (*TestTypes, error) {
-	if in == nil {
-		return nil, errors.New("Nil argument to DefaultReadTestTypes")
-	}
-	ormParams, err := in.ToORM(ctx)
-	if err != nil {
-		return nil, err
-	}
-	ormResponse := TestTypesORM{}
-	if err = db.Set("gorm:auto_preload", true).Where(&ormParams).First(&ormResponse).Error; err != nil {
-		return nil, err
-	}
-	pbResponse, err := ormResponse.ToPB(ctx)
-	return &pbResponse, err
-}
-
-// DefaultUpdateTestTypes executes a basic gorm update call
-func DefaultUpdateTestTypes(ctx context.Context, in *TestTypes, db *gorm.DB) (*TestTypes, error) {
-	if in == nil {
-		return nil, errors.New("Nil argument to DefaultUpdateTestTypes")
-	}
-	ormObj, err := in.ToORM(ctx)
-	if err != nil {
-		return nil, err
-	}
-	if err = db.Save(&ormObj).Error; err != nil {
-		return nil, err
-	}
-	pbResponse, err := ormObj.ToPB(ctx)
-	return &pbResponse, err
-}
-
-func DefaultDeleteTestTypes(ctx context.Context, in *TestTypes, db *gorm.DB) error {
-	if in == nil {
-		return errors.New("Nil argument to DefaultDeleteTestTypes")
-	}
-	ormObj, err := in.ToORM(ctx)
-	if err != nil {
-		return err
-	}
-	err = db.Where(&ormObj).Delete(&TestTypesORM{}).Error
-	return err
-}
-
 // DefaultListTestTypes executes a gorm list call
 func DefaultListTestTypes(ctx context.Context, db *gorm.DB) ([]*TestTypes, error) {
 	ormResponse := []TestTypesORM{}
@@ -475,25 +430,6 @@ func DefaultListTestTypes(ctx context.Context, db *gorm.DB) ([]*TestTypes, error
 		pbResponse = append(pbResponse, &temp)
 	}
 	return pbResponse, nil
-}
-
-// DefaultStrictUpdateTestTypes clears first level 1:many children and then executes a gorm update call
-func DefaultStrictUpdateTestTypes(ctx context.Context, in *TestTypes, db *gorm.DB) (*TestTypes, error) {
-	if in == nil {
-		return nil, fmt.Errorf("Nil argument to DefaultCascadedUpdateTestTypes")
-	}
-	ormObj, err := in.ToORM(ctx)
-	if err != nil {
-		return nil, err
-	}
-	if err = db.Save(&ormObj).Error; err != nil {
-		return nil, err
-	}
-	pbResponse, err := ormObj.ToPB(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return &pbResponse, nil
 }
 
 // DefaultCreateTypeWithID executes a basic gorm create call
@@ -553,29 +489,11 @@ func DefaultDeleteTypeWithID(ctx context.Context, in *TypeWithID, db *gorm.DB) e
 	if err != nil {
 		return err
 	}
+	if ormObj.Id == 0 {
+		return errors.New("A non-zero ID value is required for a delete call")
+	}
 	err = db.Where(&ormObj).Delete(&TypeWithIDORM{}).Error
 	return err
-}
-
-// DefaultListTypeWithID executes a gorm list call
-func DefaultListTypeWithID(ctx context.Context, db *gorm.DB) ([]*TypeWithID, error) {
-	ormResponse := []TypeWithIDORM{}
-	db, err := ops.ApplyCollectionOperators(db, ctx)
-	if err != nil {
-		return nil, err
-	}
-	if err := db.Set("gorm:auto_preload", true).Find(&ormResponse).Error; err != nil {
-		return nil, err
-	}
-	pbResponse := []*TypeWithID{}
-	for _, responseEntry := range ormResponse {
-		temp, err := responseEntry.ToPB(ctx)
-		if err != nil {
-			return nil, err
-		}
-		pbResponse = append(pbResponse, &temp)
-	}
-	return pbResponse, nil
 }
 
 // DefaultStrictUpdateTypeWithID clears first level 1:many children and then executes a gorm update call
@@ -611,6 +529,27 @@ func DefaultStrictUpdateTypeWithID(ctx context.Context, in *TypeWithID, db *gorm
 		return nil, err
 	}
 	return &pbResponse, nil
+}
+
+// DefaultListTypeWithID executes a gorm list call
+func DefaultListTypeWithID(ctx context.Context, db *gorm.DB) ([]*TypeWithID, error) {
+	ormResponse := []TypeWithIDORM{}
+	db, err := ops.ApplyCollectionOperators(db, ctx)
+	if err != nil {
+		return nil, err
+	}
+	if err := db.Set("gorm:auto_preload", true).Find(&ormResponse).Error; err != nil {
+		return nil, err
+	}
+	pbResponse := []*TypeWithID{}
+	for _, responseEntry := range ormResponse {
+		temp, err := responseEntry.ToPB(ctx)
+		if err != nil {
+			return nil, err
+		}
+		pbResponse = append(pbResponse, &temp)
+	}
+	return pbResponse, nil
 }
 
 // DefaultCreateMultiaccountTypeWithID executes a basic gorm create call
@@ -690,8 +629,35 @@ func DefaultDeleteMultiaccountTypeWithID(ctx context.Context, in *MultiaccountTy
 		return err
 	}
 	ormObj.AccountID = accountID
+	if ormObj.Id == 0 {
+		return errors.New("A non-zero ID value is required for a delete call")
+	}
 	err = db.Where(&ormObj).Delete(&MultiaccountTypeWithIDORM{}).Error
 	return err
+}
+
+// DefaultStrictUpdateMultiaccountTypeWithID clears first level 1:many children and then executes a gorm update call
+func DefaultStrictUpdateMultiaccountTypeWithID(ctx context.Context, in *MultiaccountTypeWithID, db *gorm.DB) (*MultiaccountTypeWithID, error) {
+	if in == nil {
+		return nil, fmt.Errorf("Nil argument to DefaultCascadedUpdateMultiaccountTypeWithID")
+	}
+	ormObj, err := in.ToORM(ctx)
+	if err != nil {
+		return nil, err
+	}
+	accountID, err := auth.GetAccountID(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+	db = db.Where(&MultiaccountTypeWithIDORM{AccountID: accountID})
+	if err = db.Save(&ormObj).Error; err != nil {
+		return nil, err
+	}
+	pbResponse, err := ormObj.ToPB(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return &pbResponse, nil
 }
 
 // DefaultListMultiaccountTypeWithID executes a gorm list call
@@ -720,30 +686,6 @@ func DefaultListMultiaccountTypeWithID(ctx context.Context, db *gorm.DB) ([]*Mul
 	return pbResponse, nil
 }
 
-// DefaultStrictUpdateMultiaccountTypeWithID clears first level 1:many children and then executes a gorm update call
-func DefaultStrictUpdateMultiaccountTypeWithID(ctx context.Context, in *MultiaccountTypeWithID, db *gorm.DB) (*MultiaccountTypeWithID, error) {
-	if in == nil {
-		return nil, fmt.Errorf("Nil argument to DefaultCascadedUpdateMultiaccountTypeWithID")
-	}
-	ormObj, err := in.ToORM(ctx)
-	if err != nil {
-		return nil, err
-	}
-	accountID, err := auth.GetAccountID(ctx, nil)
-	if err != nil {
-		return nil, err
-	}
-	db = db.Where(&MultiaccountTypeWithIDORM{AccountID: accountID})
-	if err = db.Save(&ormObj).Error; err != nil {
-		return nil, err
-	}
-	pbResponse, err := ormObj.ToPB(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return &pbResponse, nil
-}
-
 // DefaultCreateMultiaccountTypeWithoutID executes a basic gorm create call
 func DefaultCreateMultiaccountTypeWithoutID(ctx context.Context, in *MultiaccountTypeWithoutID, db *gorm.DB) (*MultiaccountTypeWithoutID, error) {
 	if in == nil {
@@ -763,47 +705,6 @@ func DefaultCreateMultiaccountTypeWithoutID(ctx context.Context, in *Multiaccoun
 	}
 	pbResponse, err := ormObj.ToPB(ctx)
 	return &pbResponse, err
-}
-
-// DefaultReadMultiaccountTypeWithoutID executes a basic gorm read call
-func DefaultReadMultiaccountTypeWithoutID(ctx context.Context, in *MultiaccountTypeWithoutID, db *gorm.DB) (*MultiaccountTypeWithoutID, error) {
-	if in == nil {
-		return nil, errors.New("Nil argument to DefaultReadMultiaccountTypeWithoutID")
-	}
-	ormParams, err := in.ToORM(ctx)
-	if err != nil {
-		return nil, err
-	}
-	accountID, err := auth.GetAccountID(ctx, nil)
-	if err != nil {
-		return nil, err
-	}
-	ormParams.AccountID = accountID
-	ormResponse := MultiaccountTypeWithoutIDORM{}
-	if err = db.Set("gorm:auto_preload", true).Where(&ormParams).First(&ormResponse).Error; err != nil {
-		return nil, err
-	}
-	pbResponse, err := ormResponse.ToPB(ctx)
-	return &pbResponse, err
-}
-
-// Cannot autogen DefaultUpdateMultiaccountTypeWithoutID: this is a multi-account table without an "id" field in the message.
-
-func DefaultDeleteMultiaccountTypeWithoutID(ctx context.Context, in *MultiaccountTypeWithoutID, db *gorm.DB) error {
-	if in == nil {
-		return errors.New("Nil argument to DefaultDeleteMultiaccountTypeWithoutID")
-	}
-	ormObj, err := in.ToORM(ctx)
-	if err != nil {
-		return err
-	}
-	accountID, err := auth.GetAccountID(ctx, nil)
-	if err != nil {
-		return err
-	}
-	ormObj.AccountID = accountID
-	err = db.Where(&ormObj).Delete(&MultiaccountTypeWithoutIDORM{}).Error
-	return err
 }
 
 // DefaultListMultiaccountTypeWithoutID executes a gorm list call
@@ -830,28 +731,4 @@ func DefaultListMultiaccountTypeWithoutID(ctx context.Context, db *gorm.DB) ([]*
 		pbResponse = append(pbResponse, &temp)
 	}
 	return pbResponse, nil
-}
-
-// DefaultStrictUpdateMultiaccountTypeWithoutID clears first level 1:many children and then executes a gorm update call
-func DefaultStrictUpdateMultiaccountTypeWithoutID(ctx context.Context, in *MultiaccountTypeWithoutID, db *gorm.DB) (*MultiaccountTypeWithoutID, error) {
-	if in == nil {
-		return nil, fmt.Errorf("Nil argument to DefaultCascadedUpdateMultiaccountTypeWithoutID")
-	}
-	ormObj, err := in.ToORM(ctx)
-	if err != nil {
-		return nil, err
-	}
-	accountID, err := auth.GetAccountID(ctx, nil)
-	if err != nil {
-		return nil, err
-	}
-	db = db.Where(&MultiaccountTypeWithoutIDORM{AccountID: accountID})
-	if err = db.Save(&ormObj).Error; err != nil {
-		return nil, err
-	}
-	pbResponse, err := ormObj.ToPB(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return &pbResponse, nil
 }

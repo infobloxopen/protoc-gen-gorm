@@ -124,7 +124,7 @@ func (p *OrmPlugin) followsReadConventions(inType generator.Object, outType gene
 			}
 		}
 	}
-	if hasID && typeOrmable {
+	if hasID && typeOrmable && p.hasPrimaryKey(p.getOrmable(outTypeName)) {
 		return true, outTypeName
 	}
 	return false, ""
@@ -167,7 +167,7 @@ func (p *OrmPlugin) followsUpdateConventions(inType generator.Object, outType ge
 			outTypeName = strings.TrimPrefix(gType, "*")
 		}
 	}
-	if inTypeName == outTypeName && typeOrmable {
+	if inTypeName == outTypeName && typeOrmable && p.hasPrimaryKey(p.getOrmable(outTypeName)) {
 		return true, inTypeName
 	}
 	return false, ""
@@ -206,7 +206,7 @@ func (p *OrmPlugin) followsDeleteConventions(inType generator.Object, outType ge
 	if p.isOrmable(typeName) {
 		typeOrmable = true
 	}
-	if hasID && typeOrmable {
+	if hasID && typeOrmable && p.hasPrimaryKey(p.getOrmable(typeName)) {
 		return true, typeName
 	}
 	return false, ""

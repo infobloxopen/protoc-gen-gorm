@@ -146,8 +146,30 @@ func DefaultDeleteIntPoint(ctx context.Context, in *IntPoint, db *gorm.DB) error
 	if err != nil {
 		return err
 	}
+	if ormObj.Id == 0 {
+		return errors.New("A non-zero ID value is required for a delete call")
+	}
 	err = db.Where(&ormObj).Delete(&IntPointORM{}).Error
 	return err
+}
+
+// DefaultStrictUpdateIntPoint clears first level 1:many children and then executes a gorm update call
+func DefaultStrictUpdateIntPoint(ctx context.Context, in *IntPoint, db *gorm.DB) (*IntPoint, error) {
+	if in == nil {
+		return nil, fmt.Errorf("Nil argument to DefaultCascadedUpdateIntPoint")
+	}
+	ormObj, err := in.ToORM(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if err = db.Save(&ormObj).Error; err != nil {
+		return nil, err
+	}
+	pbResponse, err := ormObj.ToPB(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return &pbResponse, nil
 }
 
 // DefaultListIntPoint executes a gorm list call
@@ -169,25 +191,6 @@ func DefaultListIntPoint(ctx context.Context, db *gorm.DB) ([]*IntPoint, error) 
 		pbResponse = append(pbResponse, &temp)
 	}
 	return pbResponse, nil
-}
-
-// DefaultStrictUpdateIntPoint clears first level 1:many children and then executes a gorm update call
-func DefaultStrictUpdateIntPoint(ctx context.Context, in *IntPoint, db *gorm.DB) (*IntPoint, error) {
-	if in == nil {
-		return nil, fmt.Errorf("Nil argument to DefaultCascadedUpdateIntPoint")
-	}
-	ormObj, err := in.ToORM(ctx)
-	if err != nil {
-		return nil, err
-	}
-	if err = db.Save(&ormObj).Error; err != nil {
-		return nil, err
-	}
-	pbResponse, err := ormObj.ToPB(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return &pbResponse, nil
 }
 
 type IntPointDefaultServer struct {
