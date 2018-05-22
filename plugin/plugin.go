@@ -222,7 +222,7 @@ func (p *OrmPlugin) renderGormTag(field *Field) string {
 			res += "unique;"
 		}
 		if tag.Default != nil {
-			res += fmt.Sprintf("column:%s;", tag.GetDefault())
+			res += fmt.Sprintf("default:%s;", tag.GetDefault())
 		}
 		if tag.GetNotNull() {
 			res += "not null;"
