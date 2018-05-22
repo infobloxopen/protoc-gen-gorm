@@ -17,8 +17,6 @@ import google_protobuf2 "github.com/golang/protobuf/ptypes/empty"
 var _ = fmt.Errorf
 var _ = math.Inf
 
-// IntPointORM is a basic message type representing a single cartesian point
-// that we want to store in a database
 type IntPointORM struct {
 	Id uint32
 	X  int32
@@ -91,7 +89,6 @@ type IntPointWithAfterToPB interface {
 	AfterToPB(context.Context, *IntPoint) error
 }
 
-////////////////////////// CURDL for objects
 // DefaultCreateIntPoint executes a basic gorm create call
 func DefaultCreateIntPoint(ctx context.Context, in *IntPoint, db *gorm.DB) (*IntPoint, error) {
 	if in == nil {

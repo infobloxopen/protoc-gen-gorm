@@ -2,21 +2,15 @@ package plugin
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/protoc-gen-gogo/descriptor"
 	"github.com/gogo/protobuf/protoc-gen-gogo/generator"
-	"github.com/infobloxopen/protoc-gen-gorm/options"
+	gorm "github.com/infobloxopen/protoc-gen-gorm/options"
 	jgorm "github.com/jinzhu/gorm"
 	"github.com/jinzhu/inflection"
 )
-
-// ORMable types, only for existence checks
-var convertibleTypes = make(map[string]struct{})
-
-// All message objects
-var typeNames = make(map[string]*generator.Descriptor)
 
 const (
 	typeMessage = 11
@@ -38,16 +32,31 @@ var wellKnownTypes = map[string]string{
 	//  "BytesValue" : "*[]byte",
 }
 
+type OrmableType struct {
+	Name   string
+	Fields map[string]*Field
+}
+
+type Field struct {
+	Type string
+	*gorm.GormFieldOptions
+}
+
+func NewOrmableType() *OrmableType {
+	return &OrmableType{Fields: make(map[string]*Field)}
+}
+
 // OrmPlugin implements the plugin interface and creates GORM code from .protos
 type OrmPlugin struct {
 	*generator.Generator
-	wktPkgName  string
-	gormPkgName string
-	lftPkgName  string // 'Locally Famous Types', used for collection operators
-	usingUUID   bool
-	usingTime   bool
-	usingAuth   bool
-	usingGRPC   bool
+	wktPkgName   string
+	gormPkgName  string
+	lftPkgName   string // 'Locally Famous Types', used for collection operators
+	usingUUID    bool
+	usingTime    bool
+	usingAuth    bool
+	usingGRPC    bool
+	ormableTypes map[string]*OrmableType
 }
 
 // Name identifies the plugin
@@ -65,67 +74,60 @@ func (p *OrmPlugin) Init(g *generator.Generator) {
 // except for the imports, by calling the generator's methods P, In, and Out.
 func (p *OrmPlugin) Generate(file *generator.FileDescriptor) {
 	p.resetImports()
+	p.ormableTypes = make(map[string]*OrmableType)
 	// Preload just the types we'll be creating
 	for _, msg := range file.Messages() {
 		// We don't want to bother with the MapEntry stuff
-		if msg.DescriptorProto.GetOptions().GetMapEntry() {
+		if msg.GetOptions().GetMapEntry() {
 			continue
 		}
-		unlintedTypeName := generator.CamelCaseSlice(msg.TypeName())
-		typeNames[unlintedTypeName] = msg
-		if opts := getMessageOptions(msg); opts != nil && *opts.Ormable {
-			convertibleTypes[unlintedTypeName] = struct{}{}
+		typeName := generator.CamelCaseSlice(msg.TypeName())
+		if getMessageOptions(msg).GetOrmable() {
+			ormable := NewOrmableType()
+			p.ormableTypes[typeName] = ormable
 		}
 	}
 	for _, msg := range file.Messages() {
-		// We don't want to bother with the MapEntry stuff
-		if msg.DescriptorProto.GetOptions().GetMapEntry() {
-			continue
+		typeName := generator.CamelCaseSlice(msg.TypeName())
+		if p.isOrmable(typeName) {
+			p.parseBasicFields(msg)
 		}
-		unlintedTypeName := generator.CamelCaseSlice(msg.TypeName())
-		if _, exists := convertibleTypes[unlintedTypeName]; !exists {
-			continue
-		}
-		// Create the orm object definitions and the converter functions
-		p.generateMessages(msg)
-		p.generateConvertFunctions(msg)
-		p.generateHookInterfaces(msg)
 	}
-
-	p.P()
-	p.P(`////////////////////////// CURDL for objects`)
+	for _, msg := range file.Messages() {
+		typeName := generator.CamelCaseSlice(msg.TypeName())
+		if p.isOrmable(typeName) {
+			p.parseAssociations(msg)
+		}
+	}
+	for _, msg := range file.Messages() {
+		typeName := generator.CamelCaseSlice(msg.TypeName())
+		if p.isOrmable(typeName) {
+			p.generateOrmable(msg)
+			p.generateTableNameFunction(msg)
+			p.generateConvertFunctions(msg)
+			p.generateHookInterfaces(msg)
+		}
+	}
 	p.generateDefaultHandlers(file)
-	p.P()
-
 	p.generateDefaultServer(file)
 }
 
-func (p *OrmPlugin) generateMessages(message *generator.Descriptor) {
-	typeName := p.TypeName(message)
-	p.generateMessageHead(message)
-	for _, field := range message.Field {
-		fieldName := generator.CamelCase(field.GetName())
-		fieldType, _ := p.GoType(message, field)
-		var tagString string
-		if field.Options != nil {
-			v, err := proto.GetExtension(field.Options, gorm.E_Field)
-			opts, valid := v.(*gorm.GormFieldOptions)
-			if err == nil && valid && opts != nil {
-				if opts.Drop != nil && *opts.Drop {
-					p.P(`// Skipping field from proto option: `, fieldName)
-					continue
-				}
-				tags := v.(*gorm.GormFieldOptions).Tags
-				if tags != nil {
-					tagString = fmt.Sprintf("`%s`", *tags)
-				}
-			}
-		}
-		if _, exists := convertibleTypes[strings.Trim(fieldType, "[]*")]; field.IsRepeated() && !exists {
-			p.P(`// The non-ORMable repeated field "`, fieldName, `" can't be included`)
+func (p *OrmPlugin) parseBasicFields(msg *generator.Descriptor) {
+	typeName := generator.CamelCaseSlice(msg.TypeName())
+	ormable := p.getOrmable(typeName)
+	ormable.Name = fmt.Sprintf("%sORM", typeName)
+	for _, field := range msg.GetField() {
+		fieldOpts := getFieldOptions(field)
+		if fieldOpts.GetDrop() {
 			continue
-		} else if *(field.Type) == typeEnum {
+		}
+		fieldName := generator.CamelCase(field.GetName())
+		fieldType, _ := p.GoType(msg, field)
+		if *(field.Type) == typeEnum {
 			fieldType = "int32"
+		} else if *(field.Type) != typeMessage && field.IsRepeated() {
+			// Not implemented yet
+			continue
 		} else if *(field.Type) == typeMessage {
 			//Check for WKTs or fields of nonormable types
 			parts := strings.Split(fieldType, ".")
@@ -134,90 +136,143 @@ func (p *OrmPlugin) generateMessages(message *generator.Descriptor) {
 				p.RecordTypeUse(".google.protobuf.StringValue")
 				p.wktPkgName = strings.Trim(parts[0], "*")
 				fieldType = v
-			} else if rawType == "Empty" {
-				p.P("// Empty type has no ORM equivalency")
-				continue
 			} else if rawType == protoTypeUUID {
 				fieldType = "*uuid.UUID"
 				p.usingUUID = true
-				if tagString == "" {
-					tagString = "`sql:\"type:uuid\"`"
-				} else if strings.Contains(strings.ToLower(tagString), "sql:") &&
-					!strings.Contains(strings.ToLower(tagString), "type:") { // sql tag already there
-
-					index := strings.Index(tagString, "sql:")
-					tagString = fmt.Sprintf("%stype:uuid;%s", tagString[:index+6],
-						tagString[index+6:])
-				} else { // no sql tag yet
-					tagString = fmt.Sprintf("`sql:\"type:uuid\" %s", tagString[1:])
-				}
-
 			} else if rawType == protoTypeTimestamp {
 				p.usingTime = true
 				fieldType = "time.Time"
-			} else if _, exists := convertibleTypes[strings.Trim(fieldType, "[]*")]; !exists {
-				p.P("// Skipping type ", fieldType, ", not tagged as ormable")
-				continue
 			} else {
-				if field.IsRepeated() {
-					fieldType = fmt.Sprintf("[]*%sORM", strings.Trim(fieldType, "[]*"))
-				} else {
-					fieldType = fmt.Sprintf("*%sORM", strings.Trim(fieldType, "*"))
-				}
-				// Insert the foreign key if not present,
-				if tagString == "" {
-					tagString = fmt.Sprintf("`gorm:\"foreignkey:%sId\"`", typeName)
-				} else if !strings.Contains(strings.ToLower(tagString), "foreignkey") {
-					if strings.Contains(strings.ToLower(tagString), "gorm:") { // gorm tag already there
-						index := strings.Index(tagString, "gorm:")
-						tagString = fmt.Sprintf("%sforeignkey:%sId;%s", tagString[:index+6],
-							typeName, tagString[index+6:])
-					} else { // no gorm tag yet
-						tagString = fmt.Sprintf("`gorm:\"foreignkey:%sId\" %s", typeName, tagString[1:])
-					}
-				}
+				continue
 			}
 		}
-		p.P(fieldName, " ", fieldType, tagString)
+		ormable.Fields[fieldName] = &Field{Type: fieldType, GormFieldOptions: fieldOpts}
 	}
-	p.P(`}`)
-
-	p.generateTableNameFunction(message)
+	if getMessageOptions(msg).GetMultiAccount() {
+		if accID, ok := ormable.Fields["AccountID"]; !ok {
+			ormable.Fields["AccountID"] = &Field{Type: "string"}
+		} else {
+			if accID.Type != "string" {
+				p.Fail("Cannot include AccountID field into", ormable.Name, "as it already exists there with a different type.")
+			}
+		}
+	}
+	for _, field := range getMessageOptions(msg).GetInclude() {
+		fieldName := generator.CamelCase(field.GetName())
+		if _, ok := ormable.Fields[fieldName]; !ok {
+			ormable.Fields[fieldName] = &Field{Type: field.GetType(), GormFieldOptions: &gorm.GormFieldOptions{Tag: field.GetTag()}}
+		} else {
+			p.Fail("Cannot include", fieldName, "field into", ormable.Name, "as it aready exists there.")
+		}
+	}
 }
 
-// generateMessageComment pulls from the proto file comment or creates a
-// default comment if none is present there, and writes the signature and
-// fields from the proto file options
-func (p *OrmPlugin) generateMessageHead(message *generator.Descriptor) {
-	typeName := p.TypeName(message)
-	typeNameOrm := fmt.Sprintf("%sORM", typeName)
-	// Check for a comment, generate a default if none is provided
-	comment := p.Comments(message.Path())
-	commentStart := strings.Split(strings.Trim(comment, " "), " ")[0]
-	if generator.CamelCase(commentStart) == typeName || commentStart == typeNameOrm {
-		comment = strings.Replace(comment, commentStart, typeNameOrm, 1)
-	} else if len(comment) == 0 {
-		comment = fmt.Sprintf(" %s no comment was provided for message type", typeNameOrm)
-	} else if len(strings.Replace(comment, " ", "", -1)) > 0 {
-		comment = fmt.Sprintf(" %s %s", typeNameOrm, comment)
+func (p *OrmPlugin) isOrmable(typeName string) bool {
+	_, ok := p.ormableTypes[strings.Trim(typeName, "[]*")]
+	return ok
+}
+
+func (p *OrmPlugin) getOrmable(typeName string) *OrmableType {
+	if ormable, ok := p.ormableTypes[strings.Trim(typeName, "[]*")]; ok {
+		return ormable
 	} else {
-		comment = fmt.Sprintf(" %s no comment provided", typeNameOrm)
+		p.Fail(typeName, "is not ormable.")
+		return nil
 	}
-	p.P(`//`, strings.Replace(comment, "\n", "\n//", -1))
-	p.P(`type `, typeNameOrm, ` struct {`)
-	// Checking for any ORM only fields specified by option (gorm.opts).include
-	if opts := getMessageOptions(message); opts != nil {
-		for _, field := range opts.Include {
-			tagString := ""
-			if field.Tags != nil {
-				tagString = fmt.Sprintf("`%s`", field.GetTags())
+}
+
+func (p *OrmPlugin) getSortedFieldNames(fields map[string]*Field) []string {
+	var keys []string
+	for k := range fields {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	return keys
+}
+
+func (p *OrmPlugin) generateOrmable(message *generator.Descriptor) {
+	ormable := p.getOrmable(p.TypeName(message))
+	p.P(`type `, ormable.Name, ` struct {`)
+	for _, fieldName := range p.getSortedFieldNames(ormable.Fields) {
+		field := ormable.Fields[fieldName]
+		p.P(fieldName, ` `, field.Type, p.renderGormTag(field))
+	}
+	p.P(`}`)
+}
+
+func (p *OrmPlugin) renderGormTag(field *Field) string {
+	res := ""
+	if tag := field.GetTag(); tag != nil {
+		if tag.Column != nil {
+			res += fmt.Sprintf("column:%s;", tag.GetColumn())
+		}
+		if tag.Type != nil {
+			res += fmt.Sprintf("type:%s;", string(tag.GetType()))
+		}
+		if tag.Size_ != nil {
+			res += fmt.Sprintf("size:%s;", string(tag.GetSize_()))
+		}
+		if tag.Precision != nil {
+			res += fmt.Sprintf("precision:%s;", string(tag.GetPrecision()))
+		}
+		if tag.GetPrimaryKey() {
+			res += "primary_key;"
+		}
+		if tag.GetUnique() {
+			res += "unique;"
+		}
+		if tag.Default != nil {
+			res += fmt.Sprintf("default:%s;", tag.GetDefault())
+		}
+		if tag.GetNotNull() {
+			res += "not null;"
+		}
+		if tag.GetAutoIncrement() {
+			res += "auto_increment;"
+		}
+		if tag.Index != nil {
+			if tag.GetIndex() == "" {
+				res += "index;"
+			} else {
+				res += fmt.Sprintf("index:%s;", tag.GetIndex())
 			}
-			p.P(generator.CamelCase(*field.Name), ` `, field.Type, ` `, tagString)
 		}
-		if opts.GetMultiAccount() {
-			p.P("AccountID string")
+		if tag.UniqueIndex != nil {
+			if tag.GetUniqueIndex() == "" {
+				res += "unique_index;"
+			} else {
+				res += fmt.Sprintf("unique_index:%s;", tag.GetUniqueIndex())
+			}
+		}
+		if tag.GetEmbedded() {
+			res += "embedded;"
+		}
+		if tag.EmbeddedPrefix != nil {
+			res += fmt.Sprintf("embedded_prefix:%s;", tag.GetEmbeddedPrefix())
+		}
+		if tag.GetIgnore() {
+			res += "-;"
 		}
 	}
+	if hasMany := field.GetHasMany(); hasMany != nil {
+		if hasMany.Foreignkey != nil {
+			res += fmt.Sprintf("foreignkey:%s;", hasMany.GetForeignkey())
+		}
+		if hasMany.AssociationForeignkey != nil {
+			res += fmt.Sprintf("association_foreignkey:%s;", hasMany.GetAssociationForeignkey())
+		}
+	} else if hasOne := field.GetHasOne(); hasOne != nil {
+		if hasOne.Foreignkey != nil {
+			res += fmt.Sprintf("foreignkey:%s;", hasOne.GetForeignkey())
+		}
+		if hasOne.AssociationForeignkey != nil {
+			res += fmt.Sprintf("association_foreignkey:%s;", hasOne.GetAssociationForeignkey())
+		}
+	}
+	if res == "" {
+		return ""
+	}
+	return fmt.Sprintf("`gorm:\"%s\"`", strings.TrimRight(res, ";"))
 }
 
 // generateTableNameFunction the function to set the gorm table name
@@ -251,17 +306,10 @@ func (p *OrmPlugin) generateConvertFunctions(message *generator.Descriptor) {
 	p.P(`return to, err`)
 	p.P(`}`)
 	p.P(`}`)
-	for _, field := range message.Field {
+	for _, field := range message.GetField() {
 		// Checking if field is skipped
-		if field.Options != nil {
-			v, err := proto.GetExtension(field.Options, gorm.E_Field)
-			opts, valid := v.(*gorm.GormFieldOptions)
-			if err == nil && valid && opts != nil {
-				if opts.Drop != nil && *opts.Drop {
-					p.P(`// Skipping field: `, generator.CamelCase(field.GetName()))
-					continue
-				}
-			}
+		if getFieldOptions(field).GetDrop() {
+			continue
 		}
 		p.generateFieldConversion(message, field, true)
 	}
@@ -284,17 +332,10 @@ func (p *OrmPlugin) generateConvertFunctions(message *generator.Descriptor) {
 	p.P(`return to, err`)
 	p.P(`}`)
 	p.P(`}`)
-	for _, field := range message.Field {
+	for _, field := range message.GetField() {
 		// Checking if field is skipped
-		if field.Options != nil {
-			v, err := proto.GetExtension(field.Options, gorm.E_Field)
-			opts, valid := v.(*gorm.GormFieldOptions)
-			if err == nil && valid && opts != nil {
-				if opts.Drop != nil && *opts.Drop {
-					p.P(`// Skipping field: `, generator.CamelCase(field.GetName()))
-					continue
-				}
-			}
+		if getFieldOptions(field).GetDrop() {
+			continue
 		}
 		p.generateFieldConversion(message, field, false)
 	}
@@ -310,7 +351,7 @@ func (p *OrmPlugin) generateFieldConversion(message *generator.Descriptor, field
 	fieldName := generator.CamelCase(field.GetName())
 	fieldType, _ := p.GoType(message, field)
 	if field.IsRepeated() { // Repeated Object ----------------------------------
-		if _, exists := convertibleTypes[strings.Trim(fieldType, "[]*")]; exists { // Repeated ORMable type
+		if p.isOrmable(fieldType) { // Repeated ORMable type
 			//fieldType = strings.Trim(fieldType, "[]*")
 
 			p.P(`for _, v := range m.`, fieldName, ` {`)
@@ -380,7 +421,7 @@ func (p *OrmPlugin) generateFieldConversion(message *generator.Descriptor, field
 				p.P(`return to, err`)
 				p.P(`}`)
 			}
-		} else if _, exists := convertibleTypes[strings.Trim(fieldType, "[]*")]; exists {
+		} else if p.isOrmable(fieldType) {
 			// Not a WKT, but a type we're building converters for
 			fieldType = strings.Trim(fieldType, "*")
 			p.P(`if m.`, fieldName, ` != nil {`)
