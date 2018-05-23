@@ -23,9 +23,9 @@ message User {
     CreditCard credit_card = 7; // has one
     repeated Email emails = 8; // has many
     repeated Task tasks = 9 [(gorm.field).has_many = {position_field: "priority"}];
-    // Address billing_address = 9 [(gorm.field).belongs_to = {}];
-    // Address shipping_address = 10 [(gorm.field).belongs_to = {}];
-    // repeated Language languages = 11 [(gorm.field).many_to_many = {}];;
+    Address billing_address = 10 [(gorm.field).belongs_to = {}];
+    Address shipping_address = 11 [(gorm.field).belongs_to = {}];
+    // repeated Language languages = 12 [(gorm.field).many_to_many = {}];;
 }
 
 message Email {
