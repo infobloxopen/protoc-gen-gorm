@@ -6,9 +6,8 @@ import (
 )
 
 func main() {
-	response := command.GeneratePlugin(command.Read(), &plugin.OrmPlugin{}, ".pb.gorm.go")
-	for _, file := range response.GetFile() {
-		file.Content = plugin.CleanImports(file.Content)
-	}
+	plugin := &plugin.OrmPlugin{}
+	response := command.GeneratePlugin(command.Read(), plugin, ".pb.gorm.go")
+	plugin.CleanFiles(response)
 	command.Write(response)
 }
