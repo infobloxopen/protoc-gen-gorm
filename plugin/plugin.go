@@ -55,8 +55,8 @@ type OrmPlugin struct {
 	usingUUID    bool
 	usingTime    bool
 	usingAuth    bool
-	usingGRPC    bool
 	ormableTypes map[string]*OrmableType
+	EmptyFiles   []string
 }
 
 // Name identifies the plugin
@@ -110,6 +110,9 @@ func (p *OrmPlugin) Generate(file *generator.FileDescriptor) {
 	}
 	p.generateDefaultHandlers(file)
 	p.generateDefaultServer(file)
+	if len(p.ormableTypes) == 0 {
+		p.EmptyFiles = append(p.EmptyFiles, file.GetName())
+	}
 }
 
 func (p *OrmPlugin) parseBasicFields(msg *generator.Descriptor) {
