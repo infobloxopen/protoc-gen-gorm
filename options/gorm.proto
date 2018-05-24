@@ -44,7 +44,9 @@ message GormFieldOptions {
     optional bool drop = 2;
     oneof association {
         HasOneOptions has_one = 3;
-        HasManyOptions has_many = 4;
+        BelongsToOptions belongs_to = 4;
+        HasManyOptions has_many = 5;
+        ManyToManyOptions many_to_many = 6;
     }
 }
 
@@ -71,6 +73,12 @@ message HasOneOptions {
     optional string association_foreignkey = 3;
 }
 
+message BelongsToOptions {
+    optional string foreignkey = 1;
+    optional GormTag foreignkey_tag = 2;
+    optional string association_foreignkey = 3;
+}
+
 message HasManyOptions {
     optional string foreignkey = 1;
     optional GormTag foreignkey_tag = 2;
@@ -78,6 +86,15 @@ message HasManyOptions {
     optional string position_field = 4;
     optional GormTag position_field_tag = 5;
 }
+
+message ManyToManyOptions {
+    optional string jointable = 1;
+    optional string foreignkey = 2;
+    optional string jointable_foreignkey = 3;
+    optional string association_foreignkey = 4;
+    optional string association_jointable_foreignkey = 5;
+}
+
 
 // To be used in (leiu of) the interceptor
 extend google.protobuf.ServiceOptions {

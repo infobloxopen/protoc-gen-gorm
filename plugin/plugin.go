@@ -254,19 +254,26 @@ func (p *OrmPlugin) renderGormTag(field *Field) string {
 			res += "-;"
 		}
 	}
-	if hasMany := field.GetHasMany(); hasMany != nil {
-		if hasMany.Foreignkey != nil {
-			res += fmt.Sprintf("foreignkey:%s;", hasMany.GetForeignkey())
-		}
-		if hasMany.AssociationForeignkey != nil {
-			res += fmt.Sprintf("association_foreignkey:%s;", hasMany.GetAssociationForeignkey())
-		}
-	} else if hasOne := field.GetHasOne(); hasOne != nil {
+	if hasOne := field.GetHasOne(); hasOne != nil {
 		if hasOne.Foreignkey != nil {
 			res += fmt.Sprintf("foreignkey:%s;", hasOne.GetForeignkey())
 		}
 		if hasOne.AssociationForeignkey != nil {
 			res += fmt.Sprintf("association_foreignkey:%s;", hasOne.GetAssociationForeignkey())
+		}
+	} else if belongsTo := field.GetBelongsTo(); belongsTo != nil {
+		if belongsTo.Foreignkey != nil {
+			res += fmt.Sprintf("foreignkey:%s;", belongsTo.GetForeignkey())
+		}
+		if belongsTo.AssociationForeignkey != nil {
+			res += fmt.Sprintf("association_foreignkey:%s;", belongsTo.GetAssociationForeignkey())
+		}
+	} else if hasMany := field.GetHasMany(); hasMany != nil {
+		if hasMany.Foreignkey != nil {
+			res += fmt.Sprintf("foreignkey:%s;", hasMany.GetForeignkey())
+		}
+		if hasMany.AssociationForeignkey != nil {
+			res += fmt.Sprintf("association_foreignkey:%s;", hasMany.GetAssociationForeignkey())
 		}
 	}
 	if res == "" {

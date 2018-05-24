@@ -18,22 +18,25 @@ func (p *OrmPlugin) parseAssociations(msg *generator.Descriptor) {
 		}
 		fieldName := generator.CamelCase(field.GetName())
 		fieldType, _ := p.GoType(msg, field)
+		fieldType = strings.Trim(fieldType, "[]*")
 		if p.isOrmable(fieldType) {
 			if fieldOpts == nil {
 				fieldOpts = &gorm.GormFieldOptions{}
 			}
-			childOrmable := p.getOrmable(fieldType)
+			assocOrmable := p.getOrmable(fieldType)
 			if field.IsRepeated() {
 				// if fieldOpts.GetManyToMany() != nil {
 				// }
-				p.parseHasMany(msg, ormable, fieldName, fieldType, childOrmable, fieldOpts)
-				fieldType = fmt.Sprintf("[]*%s", childOrmable.Name)
+				p.parseHasMany(msg, ormable, fieldName, fieldType, assocOrmable, fieldOpts)
+				fieldType = fmt.Sprintf("[]*%s", assocOrmable.Name)
 
 			} else {
-				// if fieldOpts.GetBelongsTo() != nil {
-				// }
-				p.parseHasOne(msg, ormable, fieldName, fieldType, childOrmable, fieldOpts)
-				fieldType = fmt.Sprintf("*%s", childOrmable.Name)
+				if fieldOpts.GetBelongsTo() != nil {
+					p.parseBelongsTo(msg, ormable, fieldName, fieldType, assocOrmable, fieldOpts)
+				} else {
+					p.parseHasOne(msg, ormable, fieldName, fieldType, assocOrmable, fieldOpts)
+				}
+				fieldType = fmt.Sprintf("*%s", assocOrmable.Name)
 			}
 			ormable.Fields[fieldName] = &Field{Type: fieldType, GormFieldOptions: fieldOpts}
 		}
@@ -48,11 +51,28 @@ func (p *OrmPlugin) countHasAssociationDimension(msg *generator.Descriptor, type
 			continue
 		}
 		fieldType, _ := p.GoType(msg, field)
-		// if fieldOpts.GetManyToMany() == nil && fieldOpts.GetBelongsTo() == nil {
-		if strings.Trim(typeName, "[]*") == strings.Trim(fieldType, "[]*") {
-			dim++
+		if fieldOpts.GetManyToMany() == nil && fieldOpts.GetBelongsTo() == nil {
+			if strings.Trim(typeName, "[]*") == strings.Trim(fieldType, "[]*") {
+				dim++
+			}
 		}
-		// }
+	}
+	return dim
+}
+
+func (p *OrmPlugin) countBelongsToAssociationDimension(msg *generator.Descriptor, typeName string) int {
+	dim := 0
+	for _, field := range msg.GetField() {
+		fieldOpts := getFieldOptions(field)
+		if fieldOpts.GetDrop() {
+			continue
+		}
+		fieldType, _ := p.GoType(msg, field)
+		if fieldOpts.GetBelongsTo() != nil {
+			if strings.Trim(typeName, "[]*") == strings.Trim(fieldType, "[]*") {
+				dim++
+			}
+		}
 	}
 	return dim
 }
@@ -135,6 +155,43 @@ func (p *OrmPlugin) parseHasOne(msg *generator.Descriptor, parent *OrmableType, 
 		}
 	}
 	hasOne.Foreignkey = &foreignKeyName
+	if exField, ok := child.Fields[foreignKeyName]; !ok {
+		child.Fields[foreignKeyName] = foreignKey
+	} else {
+		if exField.Type != foreignKey.Type {
+			p.Fail("Cannot include", foreignKeyName, "field into", child.Name, "as it already exists there with a different type.")
+		}
+	}
+}
+
+func (p *OrmPlugin) parseBelongsTo(msg *generator.Descriptor, child *OrmableType, fieldName string, fieldType string, parent *OrmableType, opts *gorm.GormFieldOptions) {
+	belongsTo := opts.GetBelongsTo()
+	if belongsTo == nil {
+		belongsTo = &gorm.BelongsToOptions{}
+		opts.Association = &gorm.GormFieldOptions_BelongsTo{belongsTo}
+	}
+	var assocKey *Field
+	var assocKeyName string
+	if assocKeyName = generator.CamelCase(belongsTo.GetAssociationForeignkey()); assocKeyName == "" {
+		assocKeyName, assocKey = p.findPrimaryKey(parent)
+	} else {
+		var ok bool
+		assocKey, ok = parent.Fields[assocKeyName]
+		if !ok {
+			p.Fail("Missing", assocKeyName, "field in", parent.Name, ".")
+		}
+	}
+	belongsTo.AssociationForeignkey = &assocKeyName
+	foreignKey := &Field{Type: assocKey.Type, GormFieldOptions: &gorm.GormFieldOptions{Tag: belongsTo.GetForeignkeyTag()}}
+	var foreignKeyName string
+	if foreignKeyName = generator.CamelCase(belongsTo.GetForeignkey()); foreignKeyName == "" {
+		if p.countBelongsToAssociationDimension(msg, fieldType) == 1 {
+			foreignKeyName = fmt.Sprintf(fieldType + assocKeyName)
+		} else {
+			foreignKeyName = fmt.Sprintf(fieldName + assocKeyName)
+		}
+	}
+	belongsTo.Foreignkey = &foreignKeyName
 	if exField, ok := child.Fields[foreignKeyName]; !ok {
 		child.Fields[foreignKeyName] = foreignKey
 	} else {
