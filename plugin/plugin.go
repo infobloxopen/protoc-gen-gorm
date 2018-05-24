@@ -165,6 +165,7 @@ func (p *OrmPlugin) parseBasicFields(msg *generator.Descriptor) {
 					fieldType = "*gormpq.Jsonb"
 				} else {
 					// Potential TODO: add types we want to use in other/default DB engine
+					continue
 				}
 			} else {
 				continue
