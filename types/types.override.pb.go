@@ -1,7 +1,27 @@
 package types
 
-// XXX_WellKnownType is a hack -- please don't make a pattern out of this!
-// This is used to trick certain toolsets to treat this field like a WKT StringValue.
-// See https://github.com/golang/protobuf/blob/70c277a8a150a8e069492e6600926300405c2884/jsonpb/jsonpb.go#L157
-// and https://github.com/golang/protobuf/blob/70c277a8a150a8e069492e6600926300405c2884/jsonpb/jsonpb.go#L191
-func (*UUIDValue) XXX_WellKnownType() string { return "StringValue" }
+import (
+	"github.com/golang/protobuf/jsonpb"
+)
+
+// MarshalJSONPB overloads UUIDValue's standard PB -> JSON conversion
+func (m *UUIDValue) MarshalJSONPB(*jsonpb.Marshaler) ([]byte, error) {
+	return []byte(m.Value), nil
+}
+
+// UnmarshalJSONPB overloads UUIDValue's standard JSON -> PB conversion
+func (m *UUIDValue) UnmarshalJSONPB(_ *jsonpb.Unmarshaler, data []byte) error {
+	m.Value = string(data)
+	return nil
+}
+
+// MarshalJSONPB overloads JSONValue's standard PB -> JSON conversion
+func (m *JSONValue) MarshalJSONPB(*jsonpb.Marshaler) ([]byte, error) {
+	return []byte(m.Value), nil
+}
+
+// UnmarshalJSONPB overloads JSONValue's standard JSON -> PB conversion
+func (m *JSONValue) UnmarshalJSONPB(_ *jsonpb.Unmarshaler, data []byte) error {
+	m.Value = string(data)
+	return nil
+}

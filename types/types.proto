@@ -6,3 +6,7 @@ option go_package = "github.com/infobloxopen/protoc-gen-gorm/types;types";
 message UUIDValue {
   string value = 1;
 }
+
+message JSONValue {
+  string value = 1;
+}
