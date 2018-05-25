@@ -5,6 +5,9 @@ import (
 	"strings"
 
 	"github.com/gogo/protobuf/protoc-gen-gogo/generator"
+	jgorm "github.com/jinzhu/gorm"
+	"github.com/jinzhu/inflection"
+
 	gorm "github.com/infobloxopen/protoc-gen-gorm/options"
 )
 
@@ -25,11 +28,12 @@ func (p *OrmPlugin) parseAssociations(msg *generator.Descriptor) {
 			}
 			assocOrmable := p.getOrmable(fieldType)
 			if field.IsRepeated() {
-				// if fieldOpts.GetManyToMany() != nil {
-				// }
-				p.parseHasMany(msg, ormable, fieldName, fieldType, assocOrmable, fieldOpts)
+				if fieldOpts.GetManyToMany() != nil {
+					p.parseManyToMany(msg, ormable, fieldName, fieldType, assocOrmable, fieldOpts)
+				} else {
+					p.parseHasMany(msg, ormable, fieldName, fieldType, assocOrmable, fieldOpts)
+				}
 				fieldType = fmt.Sprintf("[]*%s", assocOrmable.Name)
-
 			} else {
 				if fieldOpts.GetBelongsTo() != nil {
 					p.parseBelongsTo(msg, ormable, fieldName, fieldType, assocOrmable, fieldOpts)
@@ -69,6 +73,23 @@ func (p *OrmPlugin) countBelongsToAssociationDimension(msg *generator.Descriptor
 		}
 		fieldType, _ := p.GoType(msg, field)
 		if fieldOpts.GetBelongsTo() != nil {
+			if strings.Trim(typeName, "[]*") == strings.Trim(fieldType, "[]*") {
+				dim++
+			}
+		}
+	}
+	return dim
+}
+
+func (p *OrmPlugin) countManyToManyAssociationDimension(msg *generator.Descriptor, typeName string) int {
+	dim := 0
+	for _, field := range msg.GetField() {
+		fieldOpts := getFieldOptions(field)
+		if fieldOpts.GetDrop() {
+			continue
+		}
+		fieldType, _ := p.GoType(msg, field)
+		if fieldOpts.GetManyToMany() != nil {
 			if strings.Trim(typeName, "[]*") == strings.Trim(fieldType, "[]*") {
 				dim++
 			}
@@ -199,6 +220,66 @@ func (p *OrmPlugin) parseBelongsTo(msg *generator.Descriptor, child *OrmableType
 			p.Fail("Cannot include", foreignKeyName, "field into", child.Name, "as it already exists there with a different type.")
 		}
 	}
+}
+
+func (p *OrmPlugin) parseManyToMany(msg *generator.Descriptor, ormable *OrmableType, fieldName string, fieldType string, assoc *OrmableType, opts *gorm.GormFieldOptions) {
+	typeName := generator.CamelCaseSlice(msg.TypeName())
+	mtm := opts.GetManyToMany()
+	if mtm == nil {
+		mtm = &gorm.ManyToManyOptions{}
+		opts.Association = &gorm.GormFieldOptions_ManyToMany{mtm}
+	}
+
+	var foreignKey *Field
+	var foreignKeyName string
+	if foreignKeyName = generator.CamelCase(mtm.GetForeignkey()); foreignKeyName == "" {
+		foreignKeyName, foreignKey = p.findPrimaryKey(ormable)
+	} else {
+		var ok bool
+		foreignKey, ok = ormable.Fields[foreignKeyName]
+		if !ok {
+			p.Fail("Missing", foreignKeyName, "field in", ormable.Name, ".")
+		}
+	}
+	mtm.Foreignkey = &foreignKeyName
+	var assocKey *Field
+	var assocKeyName string
+	if assocKeyName = generator.CamelCase(mtm.GetAssociationForeignkey()); assocKeyName == "" {
+		assocKeyName, assocKey = p.findPrimaryKey(assoc)
+	} else {
+		var ok bool
+		assocKey, ok = assoc.Fields[assocKeyName]
+		if !ok {
+			p.Fail("Missing", assocKeyName, "field in", assoc.Name, ".")
+		}
+	}
+	mtm.AssociationForeignkey = &assocKeyName
+	if foreignKey.Type != assocKey.Type {
+		p.Fail("Type mismatch of foreignkey and association foreignkey in", ormable.Name, fieldName, "association.")
+	}
+	var jt string
+	if jt = generator.CamelCase(mtm.GetJointable()); jt == "" {
+		if p.countManyToManyAssociationDimension(msg, fieldType) == 1 && typeName != fieldType {
+			jt = jgorm.ToDBName(typeName + fieldType)
+		} else {
+			jt = jgorm.ToDBName(typeName + inflection.Singular(fieldName))
+		}
+	}
+	mtm.Jointable = &jt
+	var jtForeignKey string
+	if jtForeignKey = generator.CamelCase(mtm.GetJointableForeignkey()); jtForeignKey == "" {
+		jtForeignKey = jgorm.ToDBName(typeName + foreignKeyName)
+	}
+	mtm.JointableForeignkey = &jtForeignKey
+	var jtAssocForeignKey string
+	if jtAssocForeignKey = generator.CamelCase(mtm.GetAssociationJointableForeignkey()); jtAssocForeignKey == "" {
+		if typeName == fieldType {
+			jtAssocForeignKey = jgorm.ToDBName(inflection.Singular(fieldName) + assocKeyName)
+		} else {
+			jtAssocForeignKey = jgorm.ToDBName(fieldType + assocKeyName)
+		}
+	}
+	mtm.AssociationJointableForeignkey = &jtAssocForeignKey
 }
 
 func (p *OrmPlugin) findPrimaryKey(ormable *OrmableType) (string, *Field) {

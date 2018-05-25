@@ -7,9 +7,10 @@ import (
 
 	"github.com/gogo/protobuf/protoc-gen-gogo/descriptor"
 	"github.com/gogo/protobuf/protoc-gen-gogo/generator"
-	gorm "github.com/infobloxopen/protoc-gen-gorm/options"
 	jgorm "github.com/jinzhu/gorm"
 	"github.com/jinzhu/inflection"
+
+	gorm "github.com/infobloxopen/protoc-gen-gorm/options"
 )
 
 const (
@@ -277,6 +278,22 @@ func (p *OrmPlugin) renderGormTag(field *Field) string {
 		}
 		if hasMany.AssociationForeignkey != nil {
 			res += fmt.Sprintf("association_foreignkey:%s;", hasMany.GetAssociationForeignkey())
+		}
+	} else if mtm := field.GetManyToMany(); mtm != nil {
+		if mtm.Jointable != nil {
+			res += fmt.Sprintf("many2many:%s;", mtm.GetJointable())
+		}
+		if mtm.Foreignkey != nil {
+			res += fmt.Sprintf("foreignkey:%s;", mtm.GetForeignkey())
+		}
+		if mtm.AssociationForeignkey != nil {
+			res += fmt.Sprintf("association_foreignkey:%s;", mtm.GetAssociationForeignkey())
+		}
+		if mtm.JointableForeignkey != nil {
+			res += fmt.Sprintf("jointable_foreignkey:%s;", mtm.GetJointableForeignkey())
+		}
+		if mtm.AssociationJointableForeignkey != nil {
+			res += fmt.Sprintf("association_jointable_foreignkey:%s;", mtm.GetAssociationJointableForeignkey())
 		}
 	}
 	if res == "" {
