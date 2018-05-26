@@ -2,31 +2,51 @@ package example
 
 import (
 	"reflect"
+	"strings"
 	"testing"
 	"time"
 
+	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/ptypes"
+	"github.com/golang/protobuf/ptypes/timestamp"
 	"github.com/golang/protobuf/ptypes/wrappers"
-	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/infobloxopen/protoc-gen-gorm/types"
 )
 
-func TestUnmarshalTypes(t *testing.T) {
-	ts, _ := ptypes.TimestampProto(time.Date(2009, 11, 17, 20, 34, 58, 651387237, time.UTC))
-	marshaller := &runtime.JSONPb{OrigName: true, EmitDefaults: true}
+func TestSuccessfulUnmarshalTypes(t *testing.T) {
+	unmarshaler := &jsonpb.Unmarshaler{}
 	for in, expected := range map[string]TestTypes{
 		`{}`: {},
 		`{"api_only_string":"important text"}`:            {ApiOnlyString: "important text"},
+		`{"numbers":null}`:                                {},
+		`{"numbers":[]}`:                                  {Numbers: []int32{}},
 		`{"numbers":[1,2,3,4]}`:                           {Numbers: []int32{1, 2, 3, 4}},
+		`{"optional_string":null}`:                        {},
+		`{"optional_string":""}`:                          {OptionalString: &wrappers.StringValue{Value: ""}},
 		`{"optional_string":"something real"}`:            {OptionalString: &wrappers.StringValue{Value: "something real"}},
-		`{"becomes_int":"GOOD"}`:                          {BecomesInt: 1},
-		`{"uuid":"123abc-unchecked-uuid"}`:                {Uuid: &types.UUIDValue{Value: "123abc-unchecked-uuid"}},
-		`{"created_at":"2009-11-17T20:34:58.651387237Z"}`: {CreatedAt: ts},
+		`{"becomes_int":"UNKNOWN"}`:                       {},
+		`{"becomes_int":"GOOD"}`:                          {BecomesInt: TestTypes_GOOD},
+		`{"becomes_int":"BAD"}`:                           {BecomesInt: TestTypes_BAD},
+		`{"uuid":"6ba7b810-9dad-11d1-80b4-00c04fd430c8"}`: {Uuid: &types.UUIDValue{Value: "6ba7b810-9dad-11d1-80b4-00c04fd430c8"}},
+		`{"created_at":"2009-11-17T20:34:58.651387237Z"}`: {CreatedAt: MustTimestampProto(time.Date(2009, 11, 17, 20, 34, 58, 651387237, time.UTC))},
 		`{"type_with_id_id":4}`:                           {TypeWithIdId: 4},
 		`{"json_field":{"top":[{"something":1},2]}}`:      {JsonField: &types.JSONValue{Value: `{"top":[{"something":1},2]}`}},
+		`{"json_field":
+  {"top":
+    [
+      {"something":1}
+      ,2
+    ]
+  }
+}`: {JsonField: &types.JSONValue{Value: `{"top":
+    [
+      {"something":1}
+      ,2
+    ]
+  }`}},
 	} {
 		tt := &TestTypes{}
-		err := marshaller.Unmarshal([]byte(in), tt)
+		err := unmarshaler.Unmarshal(strings.NewReader(in), tt)
 		if err != nil {
 			t.Error(err.Error())
 		}
@@ -37,21 +57,44 @@ func TestUnmarshalTypes(t *testing.T) {
 	}
 }
 
-func TestMarshalTypes(t *testing.T) {
-	ts, _ := ptypes.TimestampProto(time.Date(2009, 11, 17, 20, 34, 58, 651387237, time.UTC))
-	marshaller := &runtime.JSONPb{OrigName: true, EmitDefaults: true}
-	for expected, in := range map[string]TestTypes{
-		`{"api_only_string":"","numbers":[],"optional_string":null,"becomes_int":"UNKNOWN","nothingness":null,"uuid":null,"created_at":null,"type_with_id_id":0,"json_field":null}`:                             {},
-		`{"api_only_string":"Something","numbers":[],"optional_string":null,"becomes_int":"UNKNOWN","nothingness":null,"uuid":null,"created_at":null,"type_with_id_id":0,"json_field":null}`:                    {ApiOnlyString: "Something"},
-		`{"api_only_string":"","numbers":[0,1,2,3],"optional_string":null,"becomes_int":"UNKNOWN","nothingness":null,"uuid":null,"created_at":null,"type_with_id_id":0,"json_field":null}`:                      {Numbers: []int32{0, 1, 2, 3}},
-		`{"api_only_string":"","numbers":[],"optional_string":"Not nothing","becomes_int":"UNKNOWN","nothingness":null,"uuid":null,"created_at":null,"type_with_id_id":0,"json_field":null}`:                    {OptionalString: &wrappers.StringValue{Value: "Not nothing"}},
-		`{"api_only_string":"","numbers":[],"optional_string":null,"becomes_int":"GOOD","nothingness":null,"uuid":null,"created_at":null,"type_with_id_id":0,"json_field":null}`:                                {BecomesInt: 1},
-		`{"api_only_string":"","numbers":[],"optional_string":null,"becomes_int":"UNKNOWN","nothingness":null,"uuid":"123abc-unchecked-uuid","created_at":null,"type_with_id_id":0,"json_field":null}`:          {Uuid: &types.UUIDValue{Value: "123abc-unchecked-uuid"}},
-		`{"api_only_string":"","numbers":[],"optional_string":null,"becomes_int":"UNKNOWN","nothingness":null,"uuid":null,"created_at":"2009-11-17T20:34:58.651387237Z","type_with_id_id":0,"json_field":null}`: {CreatedAt: ts},
-		`{"api_only_string":"","numbers":[],"optional_string":null,"becomes_int":"UNKNOWN","nothingness":null,"uuid":null,"created_at":null,"type_with_id_id":2,"json_field":null}`:                             {TypeWithIdId: 2},
-		`{"api_only_string":"","numbers":[],"optional_string":null,"becomes_int":"UNKNOWN","nothingness":null,"uuid":null,"created_at":null,"type_with_id_id":0,"json_field":{"text":[]}}`:                      {JsonField: &types.JSONValue{Value: `{"text":[]}`}},
+func TestBrokenUnmarshalTypes(t *testing.T) {
+	unmarshaler := &jsonpb.Unmarshaler{}
+	for in, expected := range map[string]string{
+		// A subset of possible broken inputs
+		`{"}`: "unexpected EOF",
+		`{"becomes_int":"NOT_AN_ENUM_VALUE"}`:       "unknown value \"NOT_AN_ENUM_VALUE\" for enum example.TestTypesStatus",
+		`{"numbers":[1,2,3,4,]}`:                    "invalid character ']' looking for beginning of value",
+		`{"json_field":{"top":{"something":1},2]}}`: "invalid character '2' looking for beginning of object key string",
+		`{"type_with_id_id":"4"}`:                   "json: cannot unmarshal string into Go value of type uint32",
+		`{"uuid":""}`:                               "invalid uuid '' does not match accepted format",
+		`{"uuid":"   6ba7b810-9dad-11d1-80b4-00c04fd430c8"}`: "invalid uuid '   6ba7b810-9dad-11d1-80b4-00c04fd430c8' does not match accepted format",
 	} {
-		out, err := marshaller.Marshal(&in)
+		err := unmarshaler.Unmarshal(strings.NewReader(in), &TestTypes{})
+		if err == nil || err.Error() != expected {
+			if err == nil {
+				t.Errorf("Expected error %q, but got no error", expected)
+			} else {
+				t.Errorf("Expected error %q, but got %q", expected, err.Error())
+			}
+		}
+	}
+}
+
+func TestMarshalTypes(t *testing.T) {
+	// Will marshal with snake_case names and default values included
+	marshaler := &jsonpb.Marshaler{OrigName: true, EmitDefaults: true}
+	for expected, in := range map[string]TestTypes{
+		`{"api_only_string":"","numbers":[],"optional_string":null,"becomes_int":"UNKNOWN","nothingness":null,"uuid":null,"created_at":null,"type_with_id_id":0,"json_field":null}`:                                   {},
+		`{"api_only_string":"Something","numbers":[],"optional_string":null,"becomes_int":"UNKNOWN","nothingness":null,"uuid":null,"created_at":null,"type_with_id_id":0,"json_field":null}`:                          {ApiOnlyString: "Something"},
+		`{"api_only_string":"","numbers":[0,1,2,3],"optional_string":null,"becomes_int":"UNKNOWN","nothingness":null,"uuid":null,"created_at":null,"type_with_id_id":0,"json_field":null}`:                            {Numbers: []int32{0, 1, 2, 3}},
+		`{"api_only_string":"","numbers":[],"optional_string":"Not nothing","becomes_int":"UNKNOWN","nothingness":null,"uuid":null,"created_at":null,"type_with_id_id":0,"json_field":null}`:                          {OptionalString: &wrappers.StringValue{Value: "Not nothing"}},
+		`{"api_only_string":"","numbers":[],"optional_string":null,"becomes_int":"GOOD","nothingness":null,"uuid":null,"created_at":null,"type_with_id_id":0,"json_field":null}`:                                      {BecomesInt: TestTypes_GOOD},
+		`{"api_only_string":"","numbers":[],"optional_string":null,"becomes_int":"UNKNOWN","nothingness":null,"uuid":"6ba7b810-9dad-11d1-80b4-00c04fd430c8","created_at":null,"type_with_id_id":0,"json_field":null}`: {Uuid: &types.UUIDValue{Value: "6ba7b810-9dad-11d1-80b4-00c04fd430c8"}},
+		`{"api_only_string":"","numbers":[],"optional_string":null,"becomes_int":"UNKNOWN","nothingness":null,"uuid":null,"created_at":"2009-11-17T20:34:58.651387237Z","type_with_id_id":0,"json_field":null}`:       {CreatedAt: MustTimestampProto(time.Date(2009, 11, 17, 20, 34, 58, 651387237, time.UTC))},
+		`{"api_only_string":"","numbers":[],"optional_string":null,"becomes_int":"UNKNOWN","nothingness":null,"uuid":null,"created_at":null,"type_with_id_id":2,"json_field":null}`:                                   {TypeWithIdId: 2},
+		`{"api_only_string":"","numbers":[],"optional_string":null,"becomes_int":"UNKNOWN","nothingness":null,"uuid":null,"created_at":null,"type_with_id_id":0,"json_field":{"text":[]}}`:                            {JsonField: &types.JSONValue{Value: `{"text":[]}`}},
+	} {
+		out, err := marshaler.MarshalToString(&in)
 		if err != nil {
 			t.Error(err.Error())
 		}
@@ -60,5 +103,37 @@ func TestMarshalTypes(t *testing.T) {
 				expected, out)
 		}
 	}
+}
 
+func TestMarshalTypesOmitEmpty(t *testing.T) {
+	// Will marshal with snake_case names, but not default values
+	marshaller := &jsonpb.Marshaler{OrigName: true}
+	for expected, in := range map[string]TestTypes{
+		`{}`: {},
+		`{"api_only_string":"Something"}`:                 {ApiOnlyString: "Something"},
+		`{"numbers":[0,1,2,3]}`:                           {Numbers: []int32{0, 1, 2, 3}},
+		`{"optional_string":"Not nothing"}`:               {OptionalString: &wrappers.StringValue{Value: "Not nothing"}},
+		`{"becomes_int":"GOOD"}`:                          {BecomesInt: 1},
+		`{"uuid":"6ba7b810-9dad-11d1-80b4-00c04fd430c8"}`: {Uuid: &types.UUIDValue{Value: "6ba7b810-9dad-11d1-80b4-00c04fd430c8"}},
+		`{"created_at":"2009-11-17T20:34:58.651387237Z"}`: {CreatedAt: MustTimestampProto(time.Date(2009, 11, 17, 20, 34, 58, 651387237, time.UTC))},
+		`{"type_with_id_id":2}`:                           {TypeWithIdId: 2},
+		`{"json_field":{"text":[]}}`:                      {JsonField: &types.JSONValue{Value: `{"text":[]}`}},
+	} {
+		out, err := marshaller.MarshalToString(&in)
+		if err != nil {
+			t.Error(err.Error())
+		}
+		if string(out) != expected {
+			t.Errorf("Expected marshaled output '%s' did not match actual output '%s'",
+				expected, out)
+		}
+	}
+}
+
+func MustTimestampProto(t time.Time) *timestamp.Timestamp {
+	ts, err := ptypes.TimestampProto(t)
+	if err != nil {
+		panic(err)
+	}
+	return ts
 }

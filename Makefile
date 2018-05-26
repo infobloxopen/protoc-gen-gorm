@@ -25,6 +25,6 @@ example: default
 		example/user/user.proto
 
 test: example
-	go test ./...
+	go test -v ./...
 	go build ./example/user
 	go build ./example/feature_demo

@@ -58,14 +58,20 @@ generated implementation will call basic CRUD handlers.
 - For other methods `return &MethodResponse{}, nil` stub is generated.
 
 For CRUD methods to be generated correctly you need to follow specific conventions:
-- Ormable Type should be wrapped in Request/Response messages under `payload`,
-`result` or `results` fields according to the method type.
-- Read and Delete methods should have an `id` field in Request message.
-- For the Delete method pass `(gorm.method).object_type` option to indicate
-which Ormable Type it's related to.
+- Request messages for Create and Update methods should have an Ormable Type
+  in a field named `payload`, for Read and Delete methods an `id` field is
+  required. Nothing is required in the List request.
+- Response messages for Create, Read, and Update require an Ormable Type in a
+  field named `result` and for List a repeated Ormable Type named `results`.
+- Delete methods require the `(gorm.method).object_type` option to indicate
+  which Ormable Type it should delete, and has no response type requirements.
 
 If conventions are not met stubs are generated for CRUD methods. As seen in the
 [feature_demo/demo_service](example/feature_demo/demo_service.proto) example.
+
+To leverage DB specific features, specify the DB engine during generation using
+the `--gorm_out="engine={postgres,...}:{path}"`. Currently only Postgres has
+special type support, any other choice will behave as default.
 
 ### Examples
 
@@ -93,6 +99,10 @@ Within the proto files, the following types are supported:
  `google.protobuf.Timestamp` maps to `time.Time` type at the ORM level
 - custom wrapper type `gorm.types.UUIDValue`, which wraps a string and converts to
   a `uuid.UUID` type at the ORM level, from https://github.com/satori/go.uuid
+- custom wrapper type `gorm.types.JSONValue`, which wraps a string in protobuf
+  containing arbitrary JSON and converts to `postgres.Jsonb` GORM type
+  (https://github.com/jinzhu/gorm/blob/master/dialects/postgres/postgres.go#L59)
+  if Postgres is the selected DB engine, otherwise it is currently dropped.
 
 ### Limitations
 
