@@ -40,9 +40,9 @@ type UserORM struct {
 	CreatedAt         time.Time
 	CreditCard        *CreditCardORM `gorm:"foreignkey:UserId;association_foreignkey:Id"`
 	Emails            []*EmailORM    `gorm:"foreignkey:UserId;association_foreignkey:Id"`
-	Friends           []*UserORM     `gorm:"many2many:user_friend;foreignkey:Id;association_foreignkey:Id;jointable_foreignkey:user_id;association_jointable_foreignkey:friend_id"`
+	Friends           []*UserORM     `gorm:"many2many:user_friends;foreignkey:Id;association_foreignkey:Id;jointable_foreignkey:user_id;association_jointable_foreignkey:friend_id"`
 	Id                int32
-	Languages         []*LanguageORM `gorm:"many2many:user_language;foreignkey:Id;association_foreignkey:Id;jointable_foreignkey:user_id;association_jointable_foreignkey:language_id"`
+	Languages         []*LanguageORM `gorm:"many2many:user_languages;foreignkey:Id;association_foreignkey:Id;jointable_foreignkey:user_id;association_jointable_foreignkey:language_id"`
 	Num               uint32
 	ShippingAddress   *AddressORM `gorm:"foreignkey:ShippingAddressId;association_foreignkey:Id"`
 	ShippingAddressId int32

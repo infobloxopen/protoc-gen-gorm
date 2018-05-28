@@ -260,9 +260,9 @@ func (p *OrmPlugin) parseManyToMany(msg *generator.Descriptor, ormable *OrmableT
 	var jt string
 	if jt = generator.CamelCase(mtm.GetJointable()); jt == "" {
 		if p.countManyToManyAssociationDimension(msg, fieldType) == 1 && typeName != fieldType {
-			jt = jgorm.ToDBName(typeName + fieldType)
+			jt = jgorm.ToDBName(typeName + inflection.Plural(fieldType))
 		} else {
-			jt = jgorm.ToDBName(typeName + inflection.Singular(fieldName))
+			jt = jgorm.ToDBName(typeName + inflection.Plural(fieldName))
 		}
 	}
 	mtm.Jointable = &jt
