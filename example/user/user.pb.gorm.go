@@ -40,7 +40,9 @@ type UserORM struct {
 	CreatedAt         time.Time
 	CreditCard        *CreditCardORM `gorm:"foreignkey:UserId;association_foreignkey:Id"`
 	Emails            []*EmailORM    `gorm:"foreignkey:UserId;association_foreignkey:Id"`
+	Friends           []*UserORM     `gorm:"many2many:user_friends;foreignkey:Id;association_foreignkey:Id;jointable_foreignkey:user_id;association_jointable_foreignkey:friend_id"`
 	Id                int32
+	Languages         []*LanguageORM `gorm:"many2many:user_languages;foreignkey:Id;association_foreignkey:Id;jointable_foreignkey:user_id;association_jointable_foreignkey:language_id"`
 	Num               uint32
 	ShippingAddress   *AddressORM `gorm:"foreignkey:ShippingAddressId;association_foreignkey:Id"`
 	ShippingAddressId int32
@@ -123,6 +125,28 @@ func (m *User) ToORM(ctx context.Context) (UserORM, error) {
 		}
 		to.ShippingAddress = &tempAddress
 	}
+	for _, v := range m.Languages {
+		if v != nil {
+			if tempLanguages, cErr := v.ToORM(ctx); cErr == nil {
+				to.Languages = append(to.Languages, &tempLanguages)
+			} else {
+				return to, cErr
+			}
+		} else {
+			to.Languages = append(to.Languages, nil)
+		}
+	}
+	for _, v := range m.Friends {
+		if v != nil {
+			if tempFriends, cErr := v.ToORM(ctx); cErr == nil {
+				to.Friends = append(to.Friends, &tempFriends)
+			} else {
+				return to, cErr
+			}
+		} else {
+			to.Friends = append(to.Friends, nil)
+		}
+	}
 	if posthook, ok := interface{}(m).(UserWithAfterToORM); ok {
 		err = posthook.AfterToORM(ctx, &to)
 	}
@@ -192,6 +216,28 @@ func (m *UserORM) ToPB(ctx context.Context) (User, error) {
 			return to, err
 		}
 		to.ShippingAddress = &tempAddress
+	}
+	for _, v := range m.Languages {
+		if v != nil {
+			if tempLanguages, cErr := v.ToPB(ctx); cErr == nil {
+				to.Languages = append(to.Languages, &tempLanguages)
+			} else {
+				return to, cErr
+			}
+		} else {
+			to.Languages = append(to.Languages, nil)
+		}
+	}
+	for _, v := range m.Friends {
+		if v != nil {
+			if tempFriends, cErr := v.ToPB(ctx); cErr == nil {
+				to.Friends = append(to.Friends, &tempFriends)
+			} else {
+				return to, cErr
+			}
+		} else {
+			to.Friends = append(to.Friends, nil)
+		}
 	}
 	if posthook, ok := interface{}(m).(UserWithAfterToPB); ok {
 		err = posthook.AfterToPB(ctx, &to)
