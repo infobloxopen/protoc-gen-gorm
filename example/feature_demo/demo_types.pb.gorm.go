@@ -34,6 +34,7 @@ import time "time"
 
 import auth "github.com/infobloxopen/atlas-app-toolkit/auth"
 import gorm "github.com/jinzhu/gorm"
+import gormpq "github.com/jinzhu/gorm/dialects/postgres"
 import gtypes "github.com/infobloxopen/protoc-gen-gorm/types"
 import ops "github.com/infobloxopen/atlas-app-toolkit/gorm"
 import ptypes "github.com/golang/protobuf/ptypes"
@@ -53,6 +54,7 @@ type TestTypesORM struct {
 	ANestedObjectTypeWithIDId uint32
 	BecomesInt                int32
 	CreatedAt                 time.Time
+	JsonField                 *gormpq.Jsonb
 	OptionalString            *string
 	ThingsTypeWithIDId        uint32
 	TypeWithIdId              uint32
@@ -93,6 +95,9 @@ func (m *TestTypes) ToORM(ctx context.Context) (TestTypesORM, error) {
 		}
 	}
 	to.TypeWithIdId = m.TypeWithIdId
+	if m.JsonField != nil {
+		to.JsonField = &gormpq.Jsonb{[]byte(m.JsonField.Value)}
+	}
 	if posthook, ok := interface{}(m).(TestTypesWithAfterToORM); ok {
 		err = posthook.AfterToORM(ctx, &to)
 	}
@@ -121,6 +126,9 @@ func (m *TestTypesORM) ToPB(ctx context.Context) (TestTypes, error) {
 		return to, err
 	}
 	to.TypeWithIdId = m.TypeWithIdId
+	if m.JsonField != nil {
+		to.JsonField = &gtypes.JSONValue{Value: string(m.JsonField.RawMessage)}
+	}
 	if posthook, ok := interface{}(m).(TestTypesWithAfterToPB); ok {
 		err = posthook.AfterToPB(ctx, &to)
 	}

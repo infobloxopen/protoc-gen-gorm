@@ -1,7 +1,53 @@
 package types
 
-// XXX_WellKnownType is a hack -- please don't make a pattern out of this!
-// This is used to trick certain toolsets to treat this field like a WKT StringValue.
-// See https://github.com/golang/protobuf/blob/70c277a8a150a8e069492e6600926300405c2884/jsonpb/jsonpb.go#L157
-// and https://github.com/golang/protobuf/blob/70c277a8a150a8e069492e6600926300405c2884/jsonpb/jsonpb.go#L191
-func (*UUIDValue) XXX_WellKnownType() string { return "StringValue" }
+import (
+	"fmt"
+	"regexp"
+	"strings"
+
+	"github.com/golang/protobuf/jsonpb"
+)
+
+// This Regex should match valid UUID format, in 8-4-4-4-12 or straight 32 byte format
+var validChars = regexp.MustCompile("^[0-9a-f]{8}-?[0-9a-f]{4}-?[1-5][0-9a-f]{3}-?[89ab][0-9a-f]{3}-?[0-9a-f]{12}$")
+
+// MarshalJSONPB overloads UUIDValue's standard PB -> JSON conversion
+func (m *UUIDValue) MarshalJSONPB(*jsonpb.Marshaler) ([]byte, error) {
+	if len(m.Value) == 0 {
+		return []byte("null"), nil
+	}
+	return []byte(fmt.Sprintf(`%q`, m.Value)), nil
+}
+
+// UnmarshalJSONPB overloads UUIDValue's standard JSON -> PB conversion. If
+// data is null, can't create nil object, but will marshal as null later
+func (m *UUIDValue) UnmarshalJSONPB(_ *jsonpb.Unmarshaler, data []byte) error {
+	if string(data) == "null" {
+		m.Value = ""
+		return nil
+	}
+	m.Value = strings.Trim(string(data), `"`)
+	if !validChars.Match([]byte(m.Value)) {
+		return fmt.Errorf(`invalid uuid '%s' does not match accepted format`, m.Value)
+	}
+	return nil
+}
+
+// MarshalJSONPB overloads JSONValue's standard PB -> JSON conversion
+func (m *JSONValue) MarshalJSONPB(*jsonpb.Marshaler) ([]byte, error) {
+	if len(m.Value) == 0 {
+		return []byte("null"), nil
+	}
+	return []byte(m.Value), nil
+}
+
+// UnmarshalJSONPB overloads JSONValue's standard JSON -> PB conversion. If
+// data is null, can't create nil object, but will marshal as null later
+func (m *JSONValue) UnmarshalJSONPB(_ *jsonpb.Unmarshaler, data []byte) error {
+	if string(data) == "null" {
+		m.Value = ""
+		return nil
+	}
+	m.Value = string(data)
+	return nil
+}
