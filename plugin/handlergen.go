@@ -119,15 +119,21 @@ func (p *OrmPlugin) generateUpdateHandler(message *generator.Descriptor) {
 	p.P(`return nil, errors.New("Nil argument to DefaultUpdate`, typeName, `")`)
 	p.P(`}`)
 	if isMultiAccount {
-		p.P(fmt.Sprintf("if exists, err := DefaultRead%s(ctx, &%s{Id: in.GetId()}, db); err != nil {",
-			typeName, typeName))
+		p.P("accountID, err := auth.GetAccountID(ctx, nil)")
+		p.P("if err != nil {")
 		p.P("return nil, err")
-		p.P("} else if exists == nil {")
-		p.P(fmt.Sprintf("return nil, errors.New(\"%s not found\")", typeName))
 		p.P("}")
 	}
-
+	p.P(fmt.Sprintf("if exists, err := DefaultRead%s(ctx, &%s{Id: in.GetId()}, db); err != nil {",
+		typeName, typeName))
+	p.P("return nil, err")
+	p.P("} else if exists == nil {")
+	p.P(fmt.Sprintf("return nil, errors.New(\"%s not found\")", typeName))
+	p.P("}")
 	p.P(`ormObj, err := in.ToORM(ctx)`)
+	if isMultiAccount {
+		p.P("ormObj.AccountID = accountID")
+	}
 	p.P(`if err != nil {`)
 	p.P(`return nil, err`)
 	p.P(`}`)
@@ -222,6 +228,20 @@ func (p *OrmPlugin) generateStrictUpdateHandler(message *generator.Descriptor) {
 		p.P("accountID, err := auth.GetAccountID(ctx, nil)")
 		p.P("if err != nil {")
 		p.P("return nil, err")
+		p.P("}")
+		p.P(fmt.Sprintf("if exists, err := DefaultRead%s(ctx, &%s{Id: in.Id}, db); err != nil {",
+			typeName, typeName))
+		p.P("return nil, err")
+		p.P("} else if exists == nil {")
+		p.P(fmt.Sprintf("return nil, errors.New(\"%s not found\")", typeName))
+		p.P("}")
+		p.P("ormObj.AccountID = accountID")
+	} else {
+		p.P(fmt.Sprintf("if exists, err := DefaultRead%s(ctx, &%s{Id: in.GetId()}, db); err != nil {",
+			typeName, typeName))
+		p.P("return nil, err")
+		p.P("} else if exists == nil {")
+		p.P(fmt.Sprintf("return nil, errors.New(\"%s not found\")", typeName))
 		p.P("}")
 	}
 	p.removeChildAssociations(message)

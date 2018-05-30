@@ -691,6 +691,11 @@ func DefaultUpdateUser(ctx context.Context, in *User, db *gorm.DB) (*User, error
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultUpdateUser")
 	}
+	if exists, err := DefaultReadUser(ctx, &User{Id: in.GetId()}, db); err != nil {
+		return nil, err
+	} else if exists == nil {
+		return nil, errors.New("User not found")
+	}
 	ormObj, err := in.ToORM(ctx)
 	if err != nil {
 		return nil, err
@@ -728,6 +733,11 @@ func DefaultStrictUpdateUser(ctx context.Context, in *User, db *gorm.DB) (*User,
 	ormObj, err := in.ToORM(ctx)
 	if err != nil {
 		return nil, err
+	}
+	if exists, err := DefaultReadUser(ctx, &User{Id: in.GetId()}, db); err != nil {
+		return nil, err
+	} else if exists == nil {
+		return nil, errors.New("User not found")
 	}
 	filterCreditCard := CreditCardORM{}
 	if ormObj.Id == 0 {
@@ -828,6 +838,11 @@ func DefaultUpdateEmail(ctx context.Context, in *Email, db *gorm.DB) (*Email, er
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultUpdateEmail")
 	}
+	if exists, err := DefaultReadEmail(ctx, &Email{Id: in.GetId()}, db); err != nil {
+		return nil, err
+	} else if exists == nil {
+		return nil, errors.New("Email not found")
+	}
 	ormObj, err := in.ToORM(ctx)
 	if err != nil {
 		return nil, err
@@ -862,6 +877,11 @@ func DefaultStrictUpdateEmail(ctx context.Context, in *Email, db *gorm.DB) (*Ema
 	ormObj, err := in.ToORM(ctx)
 	if err != nil {
 		return nil, err
+	}
+	if exists, err := DefaultReadEmail(ctx, &Email{Id: in.GetId()}, db); err != nil {
+		return nil, err
+	} else if exists == nil {
+		return nil, errors.New("Email not found")
 	}
 	if err = db.Save(&ormObj).Error; err != nil {
 		return nil, err
@@ -932,6 +952,11 @@ func DefaultUpdateAddress(ctx context.Context, in *Address, db *gorm.DB) (*Addre
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultUpdateAddress")
 	}
+	if exists, err := DefaultReadAddress(ctx, &Address{Id: in.GetId()}, db); err != nil {
+		return nil, err
+	} else if exists == nil {
+		return nil, errors.New("Address not found")
+	}
 	ormObj, err := in.ToORM(ctx)
 	if err != nil {
 		return nil, err
@@ -966,6 +991,11 @@ func DefaultStrictUpdateAddress(ctx context.Context, in *Address, db *gorm.DB) (
 	ormObj, err := in.ToORM(ctx)
 	if err != nil {
 		return nil, err
+	}
+	if exists, err := DefaultReadAddress(ctx, &Address{Id: in.GetId()}, db); err != nil {
+		return nil, err
+	} else if exists == nil {
+		return nil, errors.New("Address not found")
 	}
 	if err = db.Save(&ormObj).Error; err != nil {
 		return nil, err
@@ -1036,6 +1066,11 @@ func DefaultUpdateLanguage(ctx context.Context, in *Language, db *gorm.DB) (*Lan
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultUpdateLanguage")
 	}
+	if exists, err := DefaultReadLanguage(ctx, &Language{Id: in.GetId()}, db); err != nil {
+		return nil, err
+	} else if exists == nil {
+		return nil, errors.New("Language not found")
+	}
 	ormObj, err := in.ToORM(ctx)
 	if err != nil {
 		return nil, err
@@ -1070,6 +1105,11 @@ func DefaultStrictUpdateLanguage(ctx context.Context, in *Language, db *gorm.DB)
 	ormObj, err := in.ToORM(ctx)
 	if err != nil {
 		return nil, err
+	}
+	if exists, err := DefaultReadLanguage(ctx, &Language{Id: in.GetId()}, db); err != nil {
+		return nil, err
+	} else if exists == nil {
+		return nil, errors.New("Language not found")
 	}
 	if err = db.Save(&ormObj).Error; err != nil {
 		return nil, err
@@ -1140,6 +1180,11 @@ func DefaultUpdateCreditCard(ctx context.Context, in *CreditCard, db *gorm.DB) (
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultUpdateCreditCard")
 	}
+	if exists, err := DefaultReadCreditCard(ctx, &CreditCard{Id: in.GetId()}, db); err != nil {
+		return nil, err
+	} else if exists == nil {
+		return nil, errors.New("CreditCard not found")
+	}
 	ormObj, err := in.ToORM(ctx)
 	if err != nil {
 		return nil, err
@@ -1174,6 +1219,11 @@ func DefaultStrictUpdateCreditCard(ctx context.Context, in *CreditCard, db *gorm
 	ormObj, err := in.ToORM(ctx)
 	if err != nil {
 		return nil, err
+	}
+	if exists, err := DefaultReadCreditCard(ctx, &CreditCard{Id: in.GetId()}, db); err != nil {
+		return nil, err
+	} else if exists == nil {
+		return nil, errors.New("CreditCard not found")
 	}
 	if err = db.Save(&ormObj).Error; err != nil {
 		return nil, err

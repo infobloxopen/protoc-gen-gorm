@@ -127,6 +127,11 @@ func DefaultUpdateIntPoint(ctx context.Context, in *IntPoint, db *gorm.DB) (*Int
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultUpdateIntPoint")
 	}
+	if exists, err := DefaultReadIntPoint(ctx, &IntPoint{Id: in.GetId()}, db); err != nil {
+		return nil, err
+	} else if exists == nil {
+		return nil, errors.New("IntPoint not found")
+	}
 	ormObj, err := in.ToORM(ctx)
 	if err != nil {
 		return nil, err
@@ -161,6 +166,11 @@ func DefaultStrictUpdateIntPoint(ctx context.Context, in *IntPoint, db *gorm.DB)
 	ormObj, err := in.ToORM(ctx)
 	if err != nil {
 		return nil, err
+	}
+	if exists, err := DefaultReadIntPoint(ctx, &IntPoint{Id: in.GetId()}, db); err != nil {
+		return nil, err
+	} else if exists == nil {
+		return nil, errors.New("IntPoint not found")
 	}
 	if err = db.Save(&ormObj).Error; err != nil {
 		return nil, err
