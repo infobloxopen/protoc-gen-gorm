@@ -98,7 +98,7 @@
     "query",
     "rpc/errdetails"
   ]
-  revision = "06ca2893e8cfdab5895bfdd19f249989ad7f3c9f"
+  revision = "e3ff3181cdfee2edbb70f5219c87b5afbb5c5659"
   version = "v0.5.0"
 
 [[projects]]
