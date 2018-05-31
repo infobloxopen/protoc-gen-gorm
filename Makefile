@@ -1,7 +1,15 @@
 GOPATH ?= $(HOME)/go
 SRCPATH := $(patsubst %/,%,$(GOPATH))/src
 
-default: build install
+default: vendor build install
+
+.PHONY: vendor
+vendor:
+	@dep ensure -vendor-only
+
+.PHONY: vendor-update
+vendor-update:
+	@dep ensure
 
 build:
 	protoc -I. -I$(SRCPATH) -I./vendor \
