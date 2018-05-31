@@ -119,6 +119,10 @@ func (p *OrmPlugin) generateUpdateHandler(message *generator.Descriptor) {
 	p.P(`return nil, errors.New("Nil argument to DefaultUpdate`, typeName, `")`)
 	p.P(`}`)
 	if isMultiAccount {
+		p.P("accountID, err := auth.GetAccountID(ctx, nil)")
+		p.P("if err != nil {")
+		p.P("return nil, err")
+		p.P("}")
 		p.P(fmt.Sprintf("if exists, err := DefaultRead%s(ctx, &%s{Id: in.GetId()}, db); err != nil {",
 			typeName, typeName))
 		p.P("return nil, err")
@@ -131,6 +135,10 @@ func (p *OrmPlugin) generateUpdateHandler(message *generator.Descriptor) {
 	p.P(`if err != nil {`)
 	p.P(`return nil, err`)
 	p.P(`}`)
+	if isMultiAccount {
+		p.P(`ormObj.AccountID = accountID`)
+		p.P(`db = db.Where(&`, typeName, `ORM{AccountID: accountID})`)
+	}
 	p.setupOrderedHasMany(message)
 	p.P(`if err = db.Save(&ormObj).Error; err != nil {`)
 	p.P(`return nil, err`)
@@ -226,6 +234,7 @@ func (p *OrmPlugin) generateStrictUpdateHandler(message *generator.Descriptor) {
 	}
 	p.removeChildAssociations(message)
 	if multiAccount {
+		p.P(`ormObj.AccountID = accountID`)
 		p.P(`db = db.Where(&`, typeName, `ORM{AccountID: accountID})`)
 	}
 	p.setupOrderedHasMany(message)
