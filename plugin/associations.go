@@ -230,33 +230,28 @@ func (p *OrmPlugin) parseManyToMany(msg *generator.Descriptor, ormable *OrmableT
 		opts.Association = &gorm.GormFieldOptions_ManyToMany{mtm}
 	}
 
-	var foreignKey *Field
 	var foreignKeyName string
 	if foreignKeyName = generator.CamelCase(mtm.GetForeignkey()); foreignKeyName == "" {
-		foreignKeyName, foreignKey = p.findPrimaryKey(ormable)
+		foreignKeyName, _ = p.findPrimaryKey(ormable)
 	} else {
 		var ok bool
-		foreignKey, ok = ormable.Fields[foreignKeyName]
+		_, ok = ormable.Fields[foreignKeyName]
 		if !ok {
 			p.Fail("Missing", foreignKeyName, "field in", ormable.Name, ".")
 		}
 	}
 	mtm.Foreignkey = &foreignKeyName
-	var assocKey *Field
 	var assocKeyName string
 	if assocKeyName = generator.CamelCase(mtm.GetAssociationForeignkey()); assocKeyName == "" {
-		assocKeyName, assocKey = p.findPrimaryKey(assoc)
+		assocKeyName, _ = p.findPrimaryKey(assoc)
 	} else {
 		var ok bool
-		assocKey, ok = assoc.Fields[assocKeyName]
+		_, ok = assoc.Fields[assocKeyName]
 		if !ok {
 			p.Fail("Missing", assocKeyName, "field in", assoc.Name, ".")
 		}
 	}
 	mtm.AssociationForeignkey = &assocKeyName
-	if foreignKey.Type != assocKey.Type {
-		p.Fail("Type mismatch of foreignkey and association foreignkey in", ormable.Name, fieldName, "association.")
-	}
 	var jt string
 	if jt = generator.CamelCase(mtm.GetJointable()); jt == "" {
 		if p.countManyToManyAssociationDimension(msg, fieldType) == 1 && typeName != fieldType {
