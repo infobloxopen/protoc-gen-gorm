@@ -132,13 +132,13 @@ func (p *OrmPlugin) generateUpdateHandler(message *generator.Descriptor) {
 	}
 
 	p.P(`ormObj, err := in.ToORM(ctx)`)
+	p.P(`if err != nil {`)
+	p.P(`return nil, err`)
+	p.P(`}`)
 	if isMultiAccount {
 		p.P(`ormObj.AccountID = accountID`)
 		p.P(`db = db.Where(&`, typeName, `ORM{AccountID: accountID})`)
 	}
-	p.P(`if err != nil {`)
-	p.P(`return nil, err`)
-	p.P(`}`)
 	p.setupOrderedHasMany(message)
 	p.P(`if err = db.Save(&ormObj).Error; err != nil {`)
 	p.P(`return nil, err`)

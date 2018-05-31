@@ -618,11 +618,11 @@ func DefaultUpdateMultiaccountTypeWithID(ctx context.Context, in *MultiaccountTy
 		return nil, errors.New("MultiaccountTypeWithID not found")
 	}
 	ormObj, err := in.ToORM(ctx)
-	ormObj.AccountID = accountID
-	db = db.Where(&MultiaccountTypeWithIDORM{AccountID: accountID})
 	if err != nil {
 		return nil, err
 	}
+	ormObj.AccountID = accountID
+	db = db.Where(&MultiaccountTypeWithIDORM{AccountID: accountID})
 	if err = db.Save(&ormObj).Error; err != nil {
 		return nil, err
 	}
