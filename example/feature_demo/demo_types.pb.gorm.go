@@ -608,12 +608,18 @@ func DefaultUpdateMultiaccountTypeWithID(ctx context.Context, in *MultiaccountTy
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultUpdateMultiaccountTypeWithID")
 	}
+	accountID, err := auth.GetAccountID(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
 	if exists, err := DefaultReadMultiaccountTypeWithID(ctx, &MultiaccountTypeWithID{Id: in.GetId()}, db); err != nil {
 		return nil, err
 	} else if exists == nil {
 		return nil, errors.New("MultiaccountTypeWithID not found")
 	}
 	ormObj, err := in.ToORM(ctx)
+	ormObj.AccountID = accountID
+	db = db.Where(&MultiaccountTypeWithIDORM{AccountID: accountID})
 	if err != nil {
 		return nil, err
 	}
@@ -657,6 +663,7 @@ func DefaultStrictUpdateMultiaccountTypeWithID(ctx context.Context, in *Multiacc
 	if err != nil {
 		return nil, err
 	}
+	ormObj.AccountID = accountID
 	db = db.Where(&MultiaccountTypeWithIDORM{AccountID: accountID})
 	if err = db.Save(&ormObj).Error; err != nil {
 		return nil, err
