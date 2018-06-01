@@ -10,26 +10,19 @@ import (
 
 func (p *OrmPlugin) generateDefaultHandlers(file *generator.FileDescriptor) {
 	for _, message := range file.Messages() {
-		if message.Options != nil {
-			if opts := getMessageOptions(message); opts == nil || !*opts.Ormable {
-				continue
-			} else if opts.GetMultiAccount() {
-				p.usingAuth = true
-			}
-		} else {
-			continue
-		}
-		p.gormPkgName = "gorm"
-		p.lftPkgName = "ops"
+		if getMessageOptions(message).GetOrmable() {
+			p.gormPkgName = "gorm"
+			p.lftPkgName = "ops"
 
-		p.generateCreateHandler(message)
-		if p.hasPrimaryKey(p.getOrmable(p.TypeName(message))) {
-			p.generateReadHandler(message)
-			p.generateUpdateHandler(message)
-			p.generateDeleteHandler(message)
-			p.generateStrictUpdateHandler(message)
+			p.generateCreateHandler(message)
+			if p.hasPrimaryKey(p.getOrmable(p.TypeName(message))) {
+				p.generateReadHandler(message)
+				p.generateUpdateHandler(message)
+				p.generateDeleteHandler(message)
+				p.generateStrictUpdateHandler(message)
+			}
+			p.generateListHandler(message)
 		}
-		p.generateListHandler(message)
 	}
 }
 
@@ -45,13 +38,6 @@ func (p *OrmPlugin) generateCreateHandler(message *generator.Descriptor) {
 	p.P(`if err != nil {`)
 	p.P(`return nil, err`)
 	p.P(`}`)
-	if opts := getMessageOptions(message); opts != nil && opts.GetMultiAccount() {
-		p.P("accountID, err := auth.GetAccountID(ctx, nil)")
-		p.P("if err != nil {")
-		p.P("return nil, err")
-		p.P("}")
-		p.P("ormObj.AccountID = accountID")
-	}
 	p.setupOrderedHasMany(message)
 	p.P(`if err = db.Create(&ormObj).Error; err != nil {`)
 	p.P(`return nil, err`)
@@ -75,13 +61,6 @@ func (p *OrmPlugin) generateReadHandler(message *generator.Descriptor) {
 	p.P(`if err != nil {`)
 	p.P(`return nil, err`)
 	p.P(`}`)
-	if opts := getMessageOptions(message); opts != nil && opts.GetMultiAccount() {
-		p.P("accountID, err := auth.GetAccountID(ctx, nil)")
-		p.P("if err != nil {")
-		p.P("return nil, err")
-		p.P("}")
-		p.P("ormParams.AccountID = accountID")
-	}
 	p.sortOrderedHasMany(message)
 	p.generatePreloading(ormable)
 	p.P(`ormResponse := `, ormable.Name, `{}`)
@@ -162,19 +141,12 @@ func (p *OrmPlugin) generateDeleteHandler(message *generator.Descriptor) {
 	p.P(`if err != nil {`)
 	p.P(`return err`)
 	p.P(`}`)
-	if opts := getMessageOptions(message); opts != nil && opts.GetMultiAccount() {
-		p.P("accountID, err := auth.GetAccountID(ctx, nil)")
-		p.P("if err != nil {")
-		p.P("return err")
-		p.P("}")
-		p.P("ormObj.AccountID = accountID")
-	}
 	ormable := p.getOrmable(typeName)
 	pkName, pk := p.findPrimaryKey(ormable)
 	p.P(`if ormObj.`, pkName, ` == `, p.guessZeroValue(pk.Type), `{`)
 	p.P(`return errors.New("A non-zero ID value is required for a delete call")`)
 	p.P(`}`)
-	p.P(`err = db.Where(&ormObj).Delete(&`, typeName, `ORM{}).Error`)
+	p.P(`err = db.Where(&ormObj).Delete(&`, ormable.Name, `{}).Error`)
 	p.P(`return err`)
 	p.P(`}`)
 	p.P()
@@ -192,13 +164,12 @@ func (p *OrmPlugin) generateListHandler(message *generator.Descriptor) {
 	p.P(`if err != nil {`)
 	p.P(`return nil, err`)
 	p.P(`}`)
-	if opts := getMessageOptions(message); opts != nil && opts.GetMultiAccount() {
-		p.P("accountID, err := auth.GetAccountID(ctx, nil)")
-		p.P("if err != nil {")
-		p.P("return nil, err")
-		p.P("}")
-		p.P(`db = db.Where(&`, ormable.Name, `{AccountID: accountID})`)
-	}
+	p.P(`in := `, typeName, `{}`)
+	p.P(`ormParams, err := in.ToORM(ctx)`)
+	p.P(`if err != nil {`)
+	p.P(`return nil, err`)
+	p.P(`}`)
+	p.P(`db = db.Where(&ormParams)`)
 	p.sortOrderedHasMany(message)
 	p.generatePreloading(ormable)
 	p.P(`if err := db.Find(&ormResponse).Error; err != nil {`)
@@ -219,7 +190,6 @@ func (p *OrmPlugin) generateListHandler(message *generator.Descriptor) {
 
 func (p *OrmPlugin) generateStrictUpdateHandler(message *generator.Descriptor) {
 	typeName := p.TypeName(message)
-	multiAccount := getMessageOptions(message).GetMultiAccount()
 	p.P(`// DefaultStrictUpdate`, typeName, ` clears first level 1:many children and then executes a gorm update call`)
 	p.P(`func DefaultStrictUpdate`, typeName, `(ctx context.Context, in *`,
 		typeName, `, db *`, p.gormPkgName, `.DB) (*`, typeName, `, error) {`)
@@ -230,16 +200,9 @@ func (p *OrmPlugin) generateStrictUpdateHandler(message *generator.Descriptor) {
 	p.P(`if err != nil {`)
 	p.P(`return nil, err`)
 	p.P(`}`)
-	if multiAccount {
-		p.P("accountID, err := auth.GetAccountID(ctx, nil)")
-		p.P("if err != nil {")
-		p.P("return nil, err")
-		p.P("}")
-	}
 	p.removeChildAssociations(message)
-	if multiAccount {
-		p.P(`ormObj.AccountID = accountID`)
-		p.P(`db = db.Where(&`, typeName, `ORM{AccountID: accountID})`)
+	if getMessageOptions(message).GetMultiAccount() {
+		p.P(`db = db.Where(&`, typeName, `ORM{AccountID: ormObj.AccountID})`)
 	}
 	p.setupOrderedHasMany(message)
 	p.P(`if err = db.Save(&ormObj).Error; err != nil {`)
@@ -258,7 +221,7 @@ func (p *OrmPlugin) generatePreloading(ormable *OrmableType) {
 	var assocList []string
 	for _, fieldName := range p.getSortedFieldNames(ormable.Fields) {
 		field := ormable.Fields[fieldName]
-		if field.GetAssociation() != nil {
+		if field.GetAssociation() != nil && field.GetHasMany().GetPositionField() == "" {
 			assocList = append(assocList, fieldName)
 		}
 	}
@@ -318,7 +281,7 @@ func (p *OrmPlugin) removeChildAssociations(message *generator.Descriptor) {
 			p.P(`}`)
 			p.P(`filter`, fieldName, `.`, foreignKeyName, ` = `, `ormObj.`, assocKeyName)
 			if getMessageOptions(message).GetMultiAccount() {
-				p.P(`filter`, fieldName, `.`, `AccountID`, ` = accountID`)
+				p.P(`filter.AccountID = ormObj.AccountID`)
 			}
 			p.P(`if err = db.Where(filter`, fieldName, `).Delete(`, strings.Trim(field.Type, "[]*"), `{}).Error; err != nil {`)
 			p.P(`return nil, err`)

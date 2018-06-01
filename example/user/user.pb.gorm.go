@@ -678,7 +678,7 @@ func DefaultReadUser(ctx context.Context, in *User, db *gorm.DB) (*User, error) 
 	db = db.Preload("Tasks", func(db *gorm.DB) *gorm.DB {
 		return db.Order("priority")
 	})
-	db = db.Preload("BillingAddress").Preload("CreditCard").Preload("Emails").Preload("Friends").Preload("Languages").Preload("ShippingAddress").Preload("Tasks")
+	db = db.Preload("BillingAddress").Preload("CreditCard").Preload("Emails").Preload("Friends").Preload("Languages").Preload("ShippingAddress")
 	ormResponse := UserORM{}
 	if err = db.Where(&ormParams).First(&ormResponse).Error; err != nil {
 		return nil, err
@@ -774,10 +774,16 @@ func DefaultListUser(ctx context.Context, db *gorm.DB) ([]*User, error) {
 	if err != nil {
 		return nil, err
 	}
+	in := User{}
+	ormParams, err := in.ToORM(ctx)
+	if err != nil {
+		return nil, err
+	}
+	db = db.Where(&ormParams)
 	db = db.Preload("Tasks", func(db *gorm.DB) *gorm.DB {
 		return db.Order("priority")
 	})
-	db = db.Preload("BillingAddress").Preload("CreditCard").Preload("Emails").Preload("Friends").Preload("Languages").Preload("ShippingAddress").Preload("Tasks")
+	db = db.Preload("BillingAddress").Preload("CreditCard").Preload("Emails").Preload("Friends").Preload("Languages").Preload("ShippingAddress")
 	if err := db.Find(&ormResponse).Error; err != nil {
 		return nil, err
 	}
@@ -882,6 +888,12 @@ func DefaultListEmail(ctx context.Context, db *gorm.DB) ([]*Email, error) {
 	if err != nil {
 		return nil, err
 	}
+	in := Email{}
+	ormParams, err := in.ToORM(ctx)
+	if err != nil {
+		return nil, err
+	}
+	db = db.Where(&ormParams)
 	if err := db.Find(&ormResponse).Error; err != nil {
 		return nil, err
 	}
@@ -986,6 +998,12 @@ func DefaultListAddress(ctx context.Context, db *gorm.DB) ([]*Address, error) {
 	if err != nil {
 		return nil, err
 	}
+	in := Address{}
+	ormParams, err := in.ToORM(ctx)
+	if err != nil {
+		return nil, err
+	}
+	db = db.Where(&ormParams)
 	if err := db.Find(&ormResponse).Error; err != nil {
 		return nil, err
 	}
@@ -1090,6 +1108,12 @@ func DefaultListLanguage(ctx context.Context, db *gorm.DB) ([]*Language, error) 
 	if err != nil {
 		return nil, err
 	}
+	in := Language{}
+	ormParams, err := in.ToORM(ctx)
+	if err != nil {
+		return nil, err
+	}
+	db = db.Where(&ormParams)
 	if err := db.Find(&ormResponse).Error; err != nil {
 		return nil, err
 	}
@@ -1194,6 +1218,12 @@ func DefaultListCreditCard(ctx context.Context, db *gorm.DB) ([]*CreditCard, err
 	if err != nil {
 		return nil, err
 	}
+	in := CreditCard{}
+	ormParams, err := in.ToORM(ctx)
+	if err != nil {
+		return nil, err
+	}
+	db = db.Where(&ormParams)
 	if err := db.Find(&ormResponse).Error; err != nil {
 		return nil, err
 	}
@@ -1231,6 +1261,12 @@ func DefaultListTask(ctx context.Context, db *gorm.DB) ([]*Task, error) {
 	if err != nil {
 		return nil, err
 	}
+	in := Task{}
+	ormParams, err := in.ToORM(ctx)
+	if err != nil {
+		return nil, err
+	}
+	db = db.Where(&ormParams)
 	if err := db.Find(&ormResponse).Error; err != nil {
 		return nil, err
 	}
