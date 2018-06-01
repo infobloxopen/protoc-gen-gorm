@@ -280,7 +280,7 @@ func (p *OrmPlugin) removeChildAssociations(message *generator.Descriptor) {
 			p.P(`return nil, errors.New("Can't do overwriting update with no `, assocKeyName, ` value for `, ormable.Name, `")`)
 			p.P(`}`)
 			p.P(`filter`, fieldName, `.`, foreignKeyName, ` = `, `ormObj.`, assocKeyName)
-			if getMessageOptions(message).GetMultiAccount() {
+			if _, ok := p.getOrmable(strings.TrimSuffix(field.Type, "ORM")).Fields["AccountID"]; ok {
 				p.P(`filter`, fieldName, `.AccountID = ormObj.AccountID`)
 			}
 			p.P(`if err = db.Where(filter`, fieldName, `).Delete(`, strings.Trim(field.Type, "[]*"), `{}).Error; err != nil {`)
