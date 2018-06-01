@@ -1,0 +1,981 @@
+package: pdp
+
+import:
+  - net/url
+  - strconv
+  - strings
+  - github.com/google/uuid
+
+errors:
+- id: externalError
+  fields:
+  - id: err
+    type: error
+  msg: "%s"
+  args:
+  - field: err
+
+- id: multiError
+  fields:
+  - id: errs
+    type: "[]error"
+  msg: "multiple errors: %s"
+  args:
+  - snippet:
+      result: msg
+      code: |
+        msgs := make([]string, len(e.errs))
+        for i, err := range e.errs {
+        	msgs[i] = err.Error()
+        }
+        msg := strings.Join(msgs, ", ")
+
+- id: missingAttributeError
+  msg: "Missing attribute"
+
+- id: MissingValueError
+  desc: "indicates that content doesn't have desired value"
+  msg: "Missing value"
+
+- id: unknownTypeStringCastError
+  fields:
+  - id: t
+    type: Type
+  msg: "Unknown type id %q"
+  args:
+  - field: t
+
+- id: invalidTypeStringCastError
+  fields:
+  - id: t
+    type: Type
+  msg: "Can't convert string to value of %q type"
+  args:
+  - field: t
+
+- id: notImplementedStringCastError
+  fields:
+  - id: t
+    type: Type
+  msg: "Conversion from string to value of %q type hasn't been implemented"
+  args:
+  - field: t
+
+- id: invalidBooleanStringCastError
+  fields:
+  - id: s
+    type: string
+  - id: err
+    type: error
+  msg: "Can't treat %q as boolean (%s)"
+  args:
+  - field: s
+  - field: err
+
+- id: invalidIntegerStringCastError
+  fields:
+  - id: s
+    type: string
+  - id: err
+    type: error
+  msg: "Can't treat %q as integer (%s)"
+  args:
+  - field: s
+  - field: err
+
+- id: invalidFloatStringCastError
+  fields:
+  - id: s
+    type: string
+  - id: err
+    type: error
+  msg: "Can't treat %q as float (%s)"
+  args:
+  - field: s
+  - field: err
+
+- id: invalidAddressStringCastError
+  fields:
+  - id: s
+    type: string
+  msg: "Can't treat %q as IP address"
+  args:
+  - field: s
+
+- id: invalidNetworkStringCastError
+  fields:
+  - id: s
+    type: string
+  - id: err
+    type: error
+  msg: "Can't treat %q as network address (%s)"
+  args:
+  - field: s
+  - field: err
+
+- id: invalidAddressNetworkStringCastError
+  fields:
+  - id: s
+    type: string
+  - id: err
+    type: error
+  msg: "Can't treat %q as address or network (%s)"
+  args:
+  - field: s
+  - field: err
+
+- id: invalidDomainNameStringCastError
+  fields:
+  - id: s
+    type: string
+  - id: err
+    type: error
+  msg: "Can't treat %q as domain name (%s)"
+  args:
+  - field: s
+  - field: err
+
+- id: attributeValueTypeError
+  fields:
+  - id: expected
+    type: Type
+  - id: actual
+    type: Type
+  msg: "Expected %q value but got %q"
+  args:
+  - field: expected
+  - field: actual
+
+- id: attributeValueFlagsTypeError
+  fields:
+  - id: t
+    type: Type
+  msg: "Expected flags value but got %q"
+  args:
+  - field: t
+
+- id: attributeValueFlagsBitsError
+  fields:
+  - id: t
+    type: Type
+  - id: expected
+    type: int
+  - id: actual
+    type: int
+  msg: "Expected %d bits flags value but got %q value with %d positions"
+  args:
+  - field: expected
+  - field: t
+  - field: actual
+
+- id: duplicateAttributeValueError
+  fields:
+  - id: ID
+    type: string
+  - id: t
+    type: Type
+  - id: curr
+    type: AttributeValue
+  - id: prev
+    type: AttributeValue
+  msg: "Duplicate attribute %q of type %q in request %s - %s"
+  args:
+  - field: ID
+  - field: t
+  - expr: e.curr.describe()
+  - expr: e.prev.describe()
+
+- id: unknownTypeSerializationError
+  fields:
+  - id: t
+    type: Type
+  msg: "Unknown type id %q"
+  args:
+  - field: t
+
+- id: invalidTypeSerializationError
+  fields:
+  - id: t
+    type: Type
+  msg: "Can't serialize value of %q type"
+  args:
+  - field: t
+
+- id: notMatchingTypeRebindError
+  fields:
+  - id: actual
+    type: Type
+  - id: expected
+    type: Type
+  msg: "Can't rebind value to type %q as it doesn't match original type %q"
+  args:
+  - field: expected
+  - field: actual
+
+- id: unknownMetaType
+  fields:
+  - id: t
+    type: Type
+  msg: "Unknown metatype %T of type %q"
+  args:
+  - field: t
+  - field: t
+
+- id: assignmentTypeMismatch
+  fields:
+  - id: a
+    type: Attribute
+  - id: t
+    type: Type
+  msg: "Can't assign %q value to attribute %q of type %q"
+  args:
+  - field: t
+  - field: a.id
+  - field: a.t
+
+- id: mapperArgumentTypeError
+  fields:
+  - id: actual
+    type: Type
+  msg: "Expected %s, %s or %s as argument but got %s"
+  args:
+  - expr: TypeString
+  - expr: TypeSetOfStrings
+  - expr: TypeListOfStrings
+  - field: actual
+
+- id: flagsMapperRCAArgumentTypeError
+  fields:
+  - id: t
+    type: Type
+  msg: "Expected flags type for the mapper algorithm but got %q"
+  args:
+  - field: t
+
+- id: UntaggedPolicyModificationError
+  desc: "indicates attempt to modify incrementally a policy which has no tag"
+  msg: "Can't modify policies with no tag"
+
+- id: MissingPolicyTagError
+  desc: "indicates that update has no tag to match policy before modification"
+  msg: "Update has no previous policy tag"
+
+- id: PolicyTagsNotMatchError
+  desc: "indicates that update tag doesn't match policy before modification"
+  fields:
+  - id: cntTag
+    type: "*uuid.UUID"
+  - id: updTag
+    type: "*uuid.UUID"
+  msg: "Update tag %s doesn't match policies tag %s"
+  args:
+  - expr: e.updTag.String()
+  - expr: e.cntTag.String()
+
+- id: emptyPathModificationError
+  msg: "Can't modify items by empty path"
+
+- id: invalidRootPolicyItemTypeError
+  fields:
+  - id: item
+    type: interface{}
+  msg: "Expected policy or policy set as new root policy but got %T"
+  args:
+  - field: item
+
+- id: hiddenRootPolicyAppendError
+  msg: "Can't append hidden policy to as root policy"
+
+- id: invalidRootPolicyError
+  fields:
+  - id: actual
+    type: string
+  - id: expected
+    type: string
+  msg: "Root policy is %q but got %q as first path element"
+  args:
+  - field: expected
+  - field: actual
+
+- id: hiddenPolicySetModificationError
+  msg: "Can't modify hidden policy set"
+
+- id: invalidPolicySetItemTypeError
+  fields:
+  - id: item
+    type: interface{}
+  msg: "Expected policy or policy set to append but got %T"
+  args:
+  - field: item
+
+- id: tooShortPathPolicySetModificationError
+  msg: "Path to item to delete is too short"
+
+- id: missingPolicySetChildError
+  fields:
+  - id: ID
+    type: string
+  msg: "Policy set has no child policy or policy set with id %q"
+  args:
+  - field: ID
+
+- id: hiddenPolicyAppendError
+  msg: "Can't append hidden policy or policy set"
+
+- id: policyTransactionTagsNotMatchError
+  fields:
+  - id: tTag
+    type: uuid.UUID
+  - id: uTag
+    type: uuid.UUID
+  msg: "Update tag %s doesn't match policies transaction tag %s"
+  args:
+  - expr: e.uTag.String()
+  - expr: e.tTag.String()
+
+- id: failedPolicyTransactionError
+  fields:
+  - id: t
+    type: uuid.UUID
+  - id: err
+    type: error
+  msg: "Can't operate with failed transaction on policies %s. Previous failure %s"
+  args:
+  - field: t
+  - field: err
+
+- id: unknownPolicyUpdateOperationError
+  fields:
+  - id: op
+    type: int
+  msg: "Unknown operation %d"
+  args:
+  - field: op
+
+- id: hiddenPolicyModificationError
+  msg: "Can't modify hidden policy"
+
+- id: tooLongPathPolicyModificationError
+  fields:
+  - id: path
+    type: "[]string"
+  msg: "Trailing path \"%s\""
+  args:
+  - expr: strings.Join(e.path, "/")
+
+- id: tooShortPathPolicyModificationError
+  msg: "Path to item to delete is too short"
+
+- id: invalidPolicyItemTypeError
+  fields:
+  - id: item
+    type: interface{}
+  msg: "Expected rule to append but got %T"
+  args:
+  - field: item
+
+- id: hiddenRuleAppendError
+  msg: "Can't append hidden rule"
+
+- id: missingPolicyChildError
+  fields:
+  - id: ID
+    type: string
+  msg: "Policy has no rule with id %q"
+  args:
+  - field: ID
+
+- id: MissingContentError
+  desc: "indicates that there is no desired content"
+  fields:
+  - id: ID
+    type: string
+  msg: "Missing content %s"
+  args:
+  - field: ID
+
+- id: invalidContentStorageItem
+  fields:
+  - id: ID
+    type: string
+  - id: v
+    type: interface{}
+  msg: "Invalid value at %s (expected *LocalContent but got %T)"
+  args:
+  - field: ID
+  - field: v
+
+- id: MissingContentItemError
+  desc: "indicates that content doesn't have desired item"
+  fields:
+  - id: ID
+    type: string
+  msg: "Missing content item %q"
+  args:
+  - field: ID
+
+- id: invalidContentItemError
+  fields:
+  - id: v
+    type: interface{}
+  msg: "Invalid value (expected *ContentItem but got %T)"
+  args:
+  - field: v
+
+- id: invalidContentItemTypeError
+  fields:
+  - id: expected
+    type: Type
+  - id: actual
+    type: Type
+  msg: "Invalid conent item type. Expected %q but got %q"
+  args:
+  - field: expected
+  - field: actual
+
+- id: invalidSelectorPathError
+  fields:
+  - id: expected
+    type: Signature
+  - id: actual
+    type: "[]Expression"
+  msg: "Invalid selector path. Expected %s path but got %s"
+  args:
+  - field: expected
+  - snippet:
+      result: actual
+      code: |
+        actual := "nothing"
+        if len(e.actual) > 0 {
+        	strs := make([]string, len(e.actual))
+        	for i, e := range e.actual {
+        		strs[i] = e.GetResultType().String()
+        	}
+        	actual = strings.Join(strs, "/")
+        }
+
+- id: networkMapKeyValueTypeError
+  fields:
+  - id: t
+    type: Type
+  msg: "Expected %q or %q as network map key but got %q"
+  args:
+  - expr: TypeAddress
+  - expr: TypeNetwork
+  - field: t
+
+- id: mapContentSubitemError
+  msg: "Not a map of the content"
+
+- id: invalidContentModificationError
+  msg: "Can't modify non-mapping content item"
+
+- id: missingPathContentModificationError
+  msg: "Missing path for content item change"
+
+- id: tooLongPathContentModificationError
+  fields:
+  - id: expected
+    type: Signature
+  - id: actual
+    type: "[]AttributeValue"
+  msg: "Too long modification path. Expected %s path but got %s"
+  args:
+  - field: expected
+  - snippet:
+      result: actual
+      code: |
+        actStrs := make([]string, len(e.actual))
+        for i, e := range e.actual {
+        	actStrs[i] = strconv.Quote(e.GetResultType().String())
+        }
+        actual := strings.Join(actStrs, "/")
+
+- id: invalidContentValueModificationError
+  msg: "Can't modify final content value"
+
+- id: UntaggedContentModificationError
+  desc: "indicates attempt to modify incrementally a content which has no tag"
+  fields:
+  - id: ID
+    type: string
+  msg: "Can't modify content %q with no tag"
+  args:
+  - field: ID
+
+- id: MissingContentTagError
+  desc: "indicates that update has no tag to match content before modification"
+  msg: "Update has no previous content tag"
+
+- id: ContentTagsNotMatchError
+  desc: "indicates that update tag doesn't match content before modification"
+  fields:
+  - id: ID
+    type: string
+  - id: cntTag
+    type: "*uuid.UUID"
+  - id: updTag
+    type: "*uuid.UUID"
+  msg: "Update tag %s doesn't match content %q tag %s"
+  args:
+  - expr: e.cntTag.String()
+  - field: ID
+  - expr: e.updTag.String()
+
+- id: unknownContentUpdateOperationError
+  fields:
+  - id: op
+    type: int
+  msg: "Unknown operation %d"
+  args:
+  - field: op
+
+- id: failedContentTransactionError
+  fields:
+  - id: id
+    type: string
+  - id: t
+    type: uuid.UUID
+  - id: err
+    type: error
+  msg: "Can't operate with failed transaction on content %q tagged %s. Previous failure %s"
+  args:
+  - field: id
+  - field: t
+  - field: err
+
+- id: contentTransactionIDNotMatchError
+  fields:
+  - id: tID
+    type: string
+  - id: uID
+    type: string
+  msg: "Update content ID %q doesn't match transaction content ID %q"
+  args:
+  - field: uID
+  - field: tID
+
+- id: contentTransactionTagsNotMatchError
+  fields:
+  - id: id
+    type: string
+  - id: tTag
+    type: uuid.UUID
+  - id: uTag
+    type: uuid.UUID
+  msg: "Update tag %s doesn't match content %q transaction tag %s"
+  args:
+  - expr: e.uTag.String()
+  - field: id
+  - expr: e.tTag.String()
+
+- id: tooShortRawPathContentModificationError
+  msg: "Expected at least content item ID in path but got nothing"
+
+- id: tooLongRawPathContentModificationError
+  fields:
+  - id: expected
+    type: Signature
+  - id: actual
+    type: "[]string"
+  msg: "Too long modification path. Expected %s path but got %s"
+  args:
+  - field: expected
+  - snippet:
+      result: actual
+      code: |
+        actStrs := make([]string, len(e.actual))
+        for i, s := range e.actual {
+        	actStrs[i] = strconv.Quote(s)
+        }
+        actual := strings.Join(actStrs, "/")
+
+- id: invalidContentUpdateDataError
+  fields:
+  - id: v
+    type: interface{}
+  msg: "Expected content update data but got %T"
+  args:
+  - field: v
+
+- id: invalidContentUpdateResultTypeError
+  fields:
+  - id: actual
+    type: Type
+  - id: expected
+    type: Type
+  msg: "Expected %q as a result type but got %q"
+  args:
+  - field: expected
+  - field: actual
+
+- id: invalidContentUpdateKeysError
+  fields:
+  - id: start
+    type: int
+  - id: actual
+    type: Signature
+  - id: expected
+    type: Signature
+  msg: "Expected %s path after position %d but got %s"
+  args:
+  - field: expected
+  - field: start
+  - field: actual
+
+- id: unknownContentItemResultTypeError
+  fields:
+  - id: t
+    type: Type
+  msg: "Unknown result type for content item: %q"
+  args:
+  - field: t
+
+- id: invalidContentItemResultTypeError
+  fields:
+  - id: t
+    type: Type
+  msg: "Invalid result type for content item: %q"
+  args:
+  - field: t
+
+- id: invalidContentKeyTypeError
+  fields:
+  - id: t
+    type: Type
+  - id: expected
+    type: TypeSet
+  msg: "Invalid key type for content item: %q (expected %s)"
+  args:
+  - field: t
+  - snippet:
+      result: s
+      code: |
+        names := make([]string, len(e.expected))
+        i := 0
+        for t := range e.expected {
+                names[i] = strconv.Quote(t.String())
+                i++
+        }
+        s := strings.Join(names, ", ")
+
+- id: invalidContentStringMapError
+  fields:
+  - id: value
+    type: interface{}
+  msg: "Expected string map but got %T"
+  args:
+  - field: value
+
+- id: invalidContentNetworkMapError
+  fields:
+  - id: value
+    type: interface{}
+  msg: "Expected network map but got %T"
+  args:
+  - field: value
+
+- id: invalidContentDomainMapError
+  fields:
+  - id: value
+    type: interface{}
+  msg: "Expected domain map but got %T"
+  args:
+  - field: value
+
+- id: invalidContentValueError
+  fields:
+  - id: value
+    type: interface{}
+  msg: "Expected value but got %T"
+  args:
+  - field: value
+
+- id: invalidContentValueTypeError
+  fields:
+  - id: value
+    type: interface{}
+  - id: expected
+    type: Type
+  msg: "Expected value of type %q but got %T"
+  args:
+  - field: expected
+  - field: value
+
+- id: invalidContentStringFlags8MapValueError
+  fields:
+  - id: value
+    type: ContentValue
+  msg: "Expected uint8 value for string map but got %T"
+  args:
+  - field: value.value
+
+- id: invalidContentStringFlags16MapValueError
+  fields:
+  - id: value
+    type: ContentValue
+  msg: "Expected uint16 value for string map but got %T"
+  args:
+  - field: value.value
+
+- id: invalidContentStringFlags32MapValueError
+  fields:
+  - id: value
+    type: ContentValue
+  msg: "Expected uint32 value for string map but got %T"
+  args:
+  - field: value.value
+
+- id: invalidContentStringFlags64MapValueError
+  fields:
+  - id: value
+    type: ContentValue
+  msg: "Expected uint64 value for string map but got %T"
+  args:
+  - field: value.value
+
+- id: invalidContentNetworkFlags8MapValueError
+  fields:
+  - id: value
+    type: ContentValue
+  msg: "Expected uint8 value for network map but got %T"
+  args:
+  - field: value.value
+
+- id: invalidContentNetworkFlags16MapValueError
+  fields:
+  - id: value
+    type: ContentValue
+  msg: "Expected uint16 value for network map but got %T"
+  args:
+  - field: value.value
+
+- id: invalidContentNetworkFlags32MapValueError
+  fields:
+  - id: value
+    type: ContentValue
+  msg: "Expected uint32 value for network map but got %T"
+  args:
+  - field: value.value
+
+- id: invalidContentNetworkFlags64MapValueError
+  fields:
+  - id: value
+    type: ContentValue
+  msg: "Expected uint64 value for network map but got %T"
+  args:
+  - field: value.value
+
+- id: invalidContentDomainFlags8MapValueError
+  fields:
+  - id: value
+    type: ContentValue
+  msg: "Expected uint8 value for domain map but got %T"
+  args:
+  - field: value.value
+
+- id: invalidContentDomainFlags16MapValueError
+  fields:
+  - id: value
+    type: ContentValue
+  msg: "Expected uint16 value for domain map but got %T"
+  args:
+  - field: value.value
+
+- id: invalidContentDomainFlags32MapValueError
+  fields:
+  - id: value
+    type: ContentValue
+  msg: "Expected uint32 value for domain map but got %T"
+  args:
+  - field: value.value
+
+- id: invalidContentDomainFlags64MapValueError
+  fields:
+  - id: value
+    type: ContentValue
+  msg: "Expected uint64 value for domain map but got %T"
+  args:
+  - field: value.value
+
+- id: integerDivideByZeroError
+  msg: "Integer divisor has a value of 0"
+
+- id: floatDivideByZeroError
+  msg: "Float divisor has a value of 0"
+
+- id: floatNanError
+  msg: "Float result has a value of NaN"
+
+- id: floatInfError
+  msg: "Float result has a value of Inf"
+
+- id: ReadOnlySymbolsChangeError
+  desc: "indicates attempt to modify read-only symbol table"
+  msg: "Can't put symbol to read-only table"
+
+- id: nilTypeError
+  msg: "Can't put nil type into custom types symbol table"
+
+- id: builtinCustomTypeError
+  fields:
+  - id: t
+    type: Type
+  msg: "Can't put built-in type %q into custom types symbol table"
+  args:
+  - field: t
+
+- id: duplicateCustomTypeError
+  fields:
+  - id: n
+    type: Type
+  - id: p
+    type: Type
+  msg: "Can't put type %q into symbol table as it already contains %q"
+  args:
+  - field: n
+  - field: p
+
+- id: duplicatesBuiltinTypeError
+  fields:
+  - id: name
+    type: string
+  msg: "Can't create flags type %q. The name is taken by a built-in types"
+  args:
+  - field: name
+
+- id: duplicateFlagName
+  fields:
+  - id: name
+    type: string
+  - id: flag
+    type: string
+  - id: i
+    type: int
+  - id: j
+    type: int
+  msg: "Can't create flags type %q. Flag %q at %d position duplicates flag at %d"
+  args:
+  - field: name
+  - field: flag
+  - field: i
+  - field: j
+
+- id: noTypedAttributeError
+  fields:
+  - id: a
+    type: Attribute
+  msg: "Attribute %q has no type"
+  args:
+  - field: a.id
+
+- id: undefinedAttributeTypeError
+  fields:
+  - id: a
+    type: Attribute
+  msg: "Attribute %q has type %q"
+  args:
+  - field: a.id
+  - expr: TypeUndefined
+
+- id: unknownAttributeTypeError
+  fields:
+  - id: a
+    type: Attribute
+  msg: "Attribute %q has unknown type %q"
+  args:
+  - field: a.id
+  - field: a.t
+
+- id: duplicateAttributeError
+  fields:
+  - id: a
+    type: Attribute
+  msg: "Can't put attribute %q into symbol table as it already contains one with the same id"
+  args:
+  - field: a.id
+
+- id: noFlagsDefinedError
+  fields:
+  - id: name
+    type: string
+  - id: n
+    type: int
+  msg: "Required at least one flag to define flags type %q got %d"
+  args:
+  - field: name
+  - field: n
+
+- id: tooManyFlagsDefinedError
+  fields:
+  - id: name
+    type: string
+  - id: n
+    type: int
+  msg: "Required no more than 64 flags to define flags type %q got %d"
+  args:
+  - field: name
+  - field: n
+
+- id: listOfStringsTypeError
+  fields:
+  - id: t
+    type: Type
+  msg: "Can't convert %q to %q"
+  args:
+  - field: t
+  - expr: TypeListOfStrings
+
+- id: unsupportedSelectorSchemeError
+  fields:
+  - id: uri
+    type: "*url.URL"
+  msg: "Unsupported selector scheme %q"
+  args:
+  - field: uri.Scheme
+
+- id: disabledSelectorError
+  fields:
+  - id: s
+    type: Selector
+  msg: "Selector for %q is disabled"
+  args:
+  - field: s.Scheme()
+
+- id: marshalInvalidDepthError
+  fields:
+  - id: t
+    type: int
+  msg: "Expecting depth >= 0, got %d"
+  args:
+  - field: t
+
+- id: invalidHeaderError
+  fields:
+  - id: head
+    type: interface{}
+  msg: "Invalid marshaled format for head interface %v+"
+  args:
+    - field: head
+
+- id: nonMarshableError
+  fields:
+  - id: s
+    type: string
+  msg: "Ecountered non-marshalable node \"%s\""
+  args:
+    - field: s
+
+- id: nilRootError
+  fields:
+  msg: "Storage root is nil"
+  args:
+
+- id: PathNotFoundError
+  desc: "indicates a non-existent path when traversing path"
+  fields:
+  - id: path
+    type: "[]string"
+  msg: "Path %v not found"
+  args:
+    - field: path

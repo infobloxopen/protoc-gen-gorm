@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package infoblox.rpc;
+
+option go_package = "github.com/infobloxopen/atlas-app-toolkit/rpc/errdetails;errdetails";
+
+// TargetInfo is a default representation of error details that conforms
+// REST API Syntax Specification
+message TargetInfo {
+    // The status code is an enumerated error code,
+    // which should be an enum value of [google.rpc.Code][google.rpc.Code]
+    int32 code = 1;
+    // The message is a human-readable non-localized message
+    string message = 2;
+    // The target is a resource name
+    string target = 3;
+}
