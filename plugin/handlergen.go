@@ -64,6 +64,7 @@ func (p *OrmPlugin) generateCreateHandler(message *generator.Descriptor) {
 
 func (p *OrmPlugin) generateReadHandler(message *generator.Descriptor) {
 	typeName := p.TypeName(message)
+	ormable := p.getOrmable(typeName)
 	p.P(`// DefaultRead`, typeName, ` executes a basic gorm read call`)
 	p.P(`func DefaultRead`, typeName, `(ctx context.Context, in *`,
 		typeName, `, db *`, p.gormPkgName, `.DB) (*`, typeName, `, error) {`)
@@ -81,9 +82,10 @@ func (p *OrmPlugin) generateReadHandler(message *generator.Descriptor) {
 		p.P("}")
 		p.P("ormParams.AccountID = accountID")
 	}
-	p.P(`ormResponse := `, typeName, `ORM{}`)
 	p.sortOrderedHasMany(message)
-	p.P(`if err = db.Set("gorm:auto_preload", true).Where(&ormParams).First(&ormResponse).Error; err != nil {`)
+	p.generatePreloading(ormable)
+	p.P(`ormResponse := `, ormable.Name, `{}`)
+	p.P(`if err = db.Where(&ormParams).First(&ormResponse).Error; err != nil {`)
 	p.P(`return nil, err`)
 	p.P(`}`)
 	p.P(`pbResponse, err := ormResponse.ToPB(ctx)`)
@@ -180,11 +182,12 @@ func (p *OrmPlugin) generateDeleteHandler(message *generator.Descriptor) {
 
 func (p *OrmPlugin) generateListHandler(message *generator.Descriptor) {
 	typeName := p.TypeName(message)
+	ormable := p.getOrmable(typeName)
 
 	p.P(`// DefaultList`, typeName, ` executes a gorm list call`)
 	p.P(`func DefaultList`, typeName, `(ctx context.Context, db *`, p.gormPkgName,
 		`.DB) ([]*`, typeName, `, error) {`)
-	p.P(`ormResponse := []`, typeName, `ORM{}`)
+	p.P(`ormResponse := []`, ormable.Name, `{}`)
 	p.P(`db, err := `, p.lftPkgName, `.ApplyCollectionOperators(db, ctx)`)
 	p.P(`if err != nil {`)
 	p.P(`return nil, err`)
@@ -194,10 +197,11 @@ func (p *OrmPlugin) generateListHandler(message *generator.Descriptor) {
 		p.P("if err != nil {")
 		p.P("return nil, err")
 		p.P("}")
-		p.P(`db = db.Where(&`, typeName, `ORM{AccountID: accountID})`)
+		p.P(`db = db.Where(&`, ormable.Name, `{AccountID: accountID})`)
 	}
 	p.sortOrderedHasMany(message)
-	p.P(`if err := db.Set("gorm:auto_preload", true).Find(&ormResponse).Error; err != nil {`)
+	p.generatePreloading(ormable)
+	p.P(`if err := db.Find(&ormResponse).Error; err != nil {`)
 	p.P(`return nil, err`)
 	p.P(`}`)
 	p.P(`pbResponse := []*`, typeName, `{}`)
@@ -248,6 +252,23 @@ func (p *OrmPlugin) generateStrictUpdateHandler(message *generator.Descriptor) {
 	p.P(`return &pbResponse, nil`)
 	p.P(`}`)
 	p.P()
+}
+
+func (p *OrmPlugin) generatePreloading(ormable *OrmableType) {
+	var assocList []string
+	for _, fieldName := range p.getSortedFieldNames(ormable.Fields) {
+		field := ormable.Fields[fieldName]
+		if field.GetAssociation() != nil {
+			assocList = append(assocList, fieldName)
+		}
+	}
+	if len(assocList) != 0 {
+		preload := ""
+		for _, assoc := range assocList {
+			preload += fmt.Sprintf(`.Preload("%s")`, assoc)
+		}
+		p.P(`db = db`, preload)
+	}
 }
 
 func (p *OrmPlugin) setupOrderedHasMany(message *generator.Descriptor) {

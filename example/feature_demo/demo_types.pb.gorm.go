@@ -426,7 +426,7 @@ func DefaultListTestTypes(ctx context.Context, db *gorm.DB) ([]*TestTypes, error
 	if err != nil {
 		return nil, err
 	}
-	if err := db.Set("gorm:auto_preload", true).Find(&ormResponse).Error; err != nil {
+	if err := db.Find(&ormResponse).Error; err != nil {
 		return nil, err
 	}
 	pbResponse := []*TestTypes{}
@@ -465,8 +465,9 @@ func DefaultReadTypeWithID(ctx context.Context, in *TypeWithID, db *gorm.DB) (*T
 	if err != nil {
 		return nil, err
 	}
+	db = db.Preload("ANestedObject").Preload("Things")
 	ormResponse := TypeWithIDORM{}
-	if err = db.Set("gorm:auto_preload", true).Where(&ormParams).First(&ormResponse).Error; err != nil {
+	if err = db.Where(&ormParams).First(&ormResponse).Error; err != nil {
 		return nil, err
 	}
 	pbResponse, err := ormResponse.ToPB(ctx)
@@ -546,7 +547,8 @@ func DefaultListTypeWithID(ctx context.Context, db *gorm.DB) ([]*TypeWithID, err
 	if err != nil {
 		return nil, err
 	}
-	if err := db.Set("gorm:auto_preload", true).Find(&ormResponse).Error; err != nil {
+	db = db.Preload("ANestedObject").Preload("Things")
+	if err := db.Find(&ormResponse).Error; err != nil {
 		return nil, err
 	}
 	pbResponse := []*TypeWithID{}
@@ -596,7 +598,7 @@ func DefaultReadMultiaccountTypeWithID(ctx context.Context, in *MultiaccountType
 	}
 	ormParams.AccountID = accountID
 	ormResponse := MultiaccountTypeWithIDORM{}
-	if err = db.Set("gorm:auto_preload", true).Where(&ormParams).First(&ormResponse).Error; err != nil {
+	if err = db.Where(&ormParams).First(&ormResponse).Error; err != nil {
 		return nil, err
 	}
 	pbResponse, err := ormResponse.ToPB(ctx)
@@ -687,7 +689,7 @@ func DefaultListMultiaccountTypeWithID(ctx context.Context, db *gorm.DB) ([]*Mul
 		return nil, err
 	}
 	db = db.Where(&MultiaccountTypeWithIDORM{AccountID: accountID})
-	if err := db.Set("gorm:auto_preload", true).Find(&ormResponse).Error; err != nil {
+	if err := db.Find(&ormResponse).Error; err != nil {
 		return nil, err
 	}
 	pbResponse := []*MultiaccountTypeWithID{}
@@ -734,7 +736,7 @@ func DefaultListMultiaccountTypeWithoutID(ctx context.Context, db *gorm.DB) ([]*
 		return nil, err
 	}
 	db = db.Where(&MultiaccountTypeWithoutIDORM{AccountID: accountID})
-	if err := db.Set("gorm:auto_preload", true).Find(&ormResponse).Error; err != nil {
+	if err := db.Find(&ormResponse).Error; err != nil {
 		return nil, err
 	}
 	pbResponse := []*MultiaccountTypeWithoutID{}
