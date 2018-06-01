@@ -281,7 +281,7 @@ func (p *OrmPlugin) removeChildAssociations(message *generator.Descriptor) {
 			p.P(`}`)
 			p.P(`filter`, fieldName, `.`, foreignKeyName, ` = `, `ormObj.`, assocKeyName)
 			if getMessageOptions(message).GetMultiAccount() {
-				p.P(`filter.AccountID = ormObj.AccountID`)
+				p.P(`filter`, fieldName, `.AccountID = ormObj.AccountID`)
 			}
 			p.P(`if err = db.Where(filter`, fieldName, `).Delete(`, strings.Trim(field.Type, "[]*"), `{}).Error; err != nil {`)
 			p.P(`return nil, err`)

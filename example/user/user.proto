@@ -11,7 +11,8 @@ option go_package = "github.com/infobloxopen/protoc-gen-gorm/example/user;user";
 
 message User {
     option (gorm.opts) = {
-        ormable: true
+        ormable: true,
+        multi_account: true
     };
     int32 id = 1;
     google.protobuf.Timestamp created_at = 2;
@@ -32,6 +33,7 @@ message User {
 message Email {
     option (gorm.opts) = {
         ormable: true,
+        multi_account: true
     };
     int32 id = 1;
     string email = 2;
@@ -39,7 +41,10 @@ message Email {
 }
 
 message Address {
-    option (gorm.opts).ormable = true;
+    option (gorm.opts) = {
+        ormable: true,
+        multi_account: true
+    };
     int32 id = 1;
     string address_1 = 2;
     string address_2 = 3;
@@ -49,6 +54,7 @@ message Address {
 message Language {
     option (gorm.opts) = {
         ormable: true,
+        multi_account: true
     };
     int32 id = 1;
     string name = 2;
@@ -58,6 +64,7 @@ message Language {
 message CreditCard {
     option (gorm.opts) = {
         ormable: true,
+        multi_account: true
     };
     int32 id = 1;
     google.protobuf.Timestamp created_at = 2;
@@ -69,6 +76,7 @@ message CreditCard {
 message Task {
     option (gorm.opts) = {
         ormable: true,
+        multi_account: true
     };
     string name = 1;
     string description = 2;
