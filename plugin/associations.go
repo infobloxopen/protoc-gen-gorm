@@ -253,7 +253,7 @@ func (p *OrmPlugin) parseManyToMany(msg *generator.Descriptor, ormable *OrmableT
 	}
 	mtm.AssociationForeignkey = &assocKeyName
 	var jt string
-	if jt = generator.CamelCase(mtm.GetJointable()); jt == "" {
+	if jt = jgorm.ToDBName(mtm.GetJointable()); jt == "" {
 		if p.countManyToManyAssociationDimension(msg, fieldType) == 1 && typeName != fieldType {
 			jt = jgorm.ToDBName(typeName + inflection.Plural(fieldType))
 		} else {
