@@ -362,6 +362,14 @@ func (p *OrmPlugin) generateConvertFunctions(message *generator.Descriptor) {
 		}
 		p.generateFieldConversion(message, field, true)
 	}
+	if getMessageOptions(message).GetMultiAccount() {
+		p.usingAuth = true
+		p.P("accountID, err := auth.GetAccountID(ctx, nil)")
+		p.P("if err != nil {")
+		p.P("return to, err")
+		p.P("}")
+		p.P("to.AccountID = accountID")
+	}
 	p.P(`if posthook, ok := interface{}(m).(`, typeName, `WithAfterToORM); ok {`)
 	p.P(`err = posthook.AfterToORM(ctx, &to)`)
 	p.P(`}`)
