@@ -219,9 +219,12 @@ func (p *OrmPlugin) getSortedFieldNames(fields map[string]*Field) []string {
 func (p *OrmPlugin) generateOrmable(message *generator.Descriptor) {
 	ormable := p.getOrmable(p.TypeName(message))
 	p.P(`type `, ormable.Name, ` struct {`)
-	for _, fieldName := range p.getSortedFieldNames(ormable.Fields) {
-		field := ormable.Fields[fieldName]
-		p.P(fieldName, ` `, field.Type, p.renderGormTag(field))
+	for _, field := range message.GetField() {
+		fieldName := generator.CamelCase(field.GetName())
+		field, ok := ormable.Fields[fieldName]
+		if ok {
+			p.P(fieldName, ` `, field.Type, p.renderGormTag(field))
+		}
 	}
 	p.P(`}`)
 }
