@@ -172,6 +172,16 @@ func (p *OrmPlugin) generateListHandler(message *generator.Descriptor) {
 	p.P(`db = db.Where(&ormParams)`)
 	p.sortOrderedHasMany(message)
 	p.generatePreloading(ormable)
+
+	// add default ordering by primary key
+	pkName, pk := p.findPrimaryKey(ormable)
+	column := pk.GetTag().GetColumn()
+	if len(column) > 0 && column != pkName {
+		p.P(`db = db.Order("`, column, `")`)
+	} else {
+		p.P(`db = db.Order(gorm.ToDBName("`, pkName, `"))`)
+	}
+
 	p.P(`if err := db.Find(&ormResponse).Error; err != nil {`)
 	p.P(`return nil, err`)
 	p.P(`}`)
