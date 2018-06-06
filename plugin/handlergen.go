@@ -144,7 +144,7 @@ func (p *OrmPlugin) generateDeleteHandler(message *generator.Descriptor) {
 	ormable := p.getOrmable(typeName)
 	pkName, pk := p.findPrimaryKey(ormable)
 	if strings.Contains(pk.Type, "*") {
-		p.P(`if ormObj.`, pkName, ` != nil && *ormObj.`, pkName, ` != `, p.guessZeroValue(pk.Type), ` {`)
+		p.P(`if ormObj.`, pkName, ` == nil || *ormObj.`, pkName, ` == `, p.guessZeroValue(pk.Type), ` {`)
 	} else {
 		p.P(`if ormObj.`, pkName, ` == `, p.guessZeroValue(pk.Type), `{`)
 	}
