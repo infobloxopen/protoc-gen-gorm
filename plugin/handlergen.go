@@ -174,12 +174,14 @@ func (p *OrmPlugin) generateListHandler(message *generator.Descriptor) {
 	p.generatePreloading(ormable)
 
 	// add default ordering by primary key
-	pkName, pk := p.findPrimaryKey(ormable)
-	column := pk.GetTag().GetColumn()
-	if len(column) == 0 {
-		column = jgorm.ToDBName(pkName)
+	if p.hasPrimaryKey(ormable) {
+		pkName, pk := p.findPrimaryKey(ormable)
+		column := pk.GetTag().GetColumn()
+		if len(column) == 0 {
+			column = jgorm.ToDBName(pkName)
+		}
+		p.P(`db = db.Order("`, column, `")`)
 	}
-	p.P(`db = db.Order("`, column, `")`)
 
 	p.P(`if err := db.Find(&ormResponse).Error; err != nil {`)
 	p.P(`return nil, err`)
