@@ -100,7 +100,7 @@ Within the proto files, the following types are supported:
 - custom wrapper types `gorm.types.UUID` and `gorm.types.UUIDValue`, which wrap
   strings and convert to a `uuid.UUID` and `*uuid.UUID` at the ORM level,
   from https://github.com/satori/go.uuid. A null or missing `gorm.types.UUID`
-  will become a NilUUID (`00000000-0000-0000-0000-000000000000`) at the ORM
+  will become a ZeroUUID (`00000000-0000-0000-0000-000000000000`) at the ORM
   level.
 - custom wrapper type `gorm.types.JSONValue`, which wraps a string in protobuf
   containing arbitrary JSON and converts to `postgres.Jsonb` GORM type
