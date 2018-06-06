@@ -10,3 +10,7 @@ message UUIDValue {
 message JSONValue {
   string value = 1;
 }
+
+message UUID {
+  string value = 1;
+}

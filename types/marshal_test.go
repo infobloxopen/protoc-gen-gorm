@@ -10,8 +10,9 @@ import (
 
 // WrapperMessage implements protobuf.Message but is not a normal generated message type.
 type WrapperMessage struct {
-	JSON *JSONValue `protobuf:"bytes,1,opt,name=json,json=json" json:"json,omitempty"`
-	UUID *UUIDValue `protobuf:"bytes,2,opt,name=uuid,json=uuid" json:"uuid,omitempty"`
+	JSON      *JSONValue `protobuf:"bytes,1,opt,name=json,json=json" json:"json,omitempty"`
+	UUIDValue *UUIDValue `protobuf:"bytes,2,opt,name=uuid_value,json=uuid_value" json:"uuid_value,omitempty"`
+	UUID      *UUID      `protobuf:"bytes,2,opt,name=uuid,json=uuid" json:"uuid,omitempty"`
 }
 
 func (m *WrapperMessage) Reset() {
@@ -31,11 +32,13 @@ func TestSuccessfulUnmarshalTypes(t *testing.T) {
 		`{}`: {JSON: nil, UUID: nil},
 		// Can't unmarshal 'null' to nil like a WKT, only an invalid, empty state
 		// which will be remarshalled to 'null'
-		`{"json":null}`:                                      {JSON: &JSONValue{}},
-		`{"uuid":null}`:                                      {UUID: &UUIDValue{}},
-		`{"json":    {"key": "value"}}`:                      {JSON: &JSONValue{Value: `{"key": "value"}`}},
-		`{"uuid":  "6ba7b810-9dad-11d1-80b4-00c04fd430c8" }`: {UUID: &UUIDValue{Value: `6ba7b810-9dad-11d1-80b4-00c04fd430c8`}},
-		`{"uuid":  "6ba7b8109dad11d180b400c04fd430c8" }`:     {UUID: &UUIDValue{Value: `6ba7b8109dad11d180b400c04fd430c8`}},
+		`{"json":null}`:       {JSON: &JSONValue{}},
+		`{"uuid_value":null}`: {UUIDValue: &UUIDValue{}},
+		// Still can't unmarshal 'null' to nil, but will initialize to zero-UUID
+		`{"uuid":null}`:                                            {UUID: &UUID{Value: "00000000-0000-0000-0000-000000000000"}},
+		`{"json":    {"key": "value"}}`:                            {JSON: &JSONValue{Value: `{"key": "value"}`}},
+		`{"uuid_value":  "6ba7b810-9dad-11d1-80b4-00c04fd430c8" }`: {UUIDValue: &UUIDValue{Value: `6ba7b810-9dad-11d1-80b4-00c04fd430c8`}},
+		`{"uuid_value":  "6ba7b8109dad11d180b400c04fd430c8" }`:     {UUIDValue: &UUIDValue{Value: `6ba7b8109dad11d180b400c04fd430c8`}},
 	} {
 		jv := &WrapperMessage{}
 		err := unmarshaler.Unmarshal(strings.NewReader(in), jv)
@@ -54,15 +57,15 @@ func TestBrokenUnmarshalTypes(t *testing.T) {
 	for in, expected := range map[string]string{
 		// A couple cases to demo standard json unmarshaling handling
 		`{"}`: "unexpected EOF",
-		`{"uuid":"6ba7b810-9dad-11d1-80b4-00c04fd430c8}`:  "unexpected EOF",
-		`{"json":[1,2,3,4,`:                               "unexpected EOF",
-		`{"json":}`:                                       "invalid character '}' looking for beginning of value",
-		`{"json":[1,2,3,4,]}`:                             "invalid character ']' looking for beginning of value",
-		`{"json":{"top":{"something":1},2]}}`:             "invalid character '2' looking for beginning of object key string",
-		`{"uuid":{"top":{"something":1}}}`:                "invalid uuid '{\"top\":{\"something\":1}}' does not match accepted format",
-		`{"uuid":"6ba7b810-9dad-11d1-80b4-00c04fdX30c8"}`: "invalid uuid '6ba7b810-9dad-11d1-80b4-00c04fdX30c8' does not match accepted format",
-		`{"uuid":6ba7b810-9dad-11d1-80b4-00c04fd430c8}`:   "invalid character 'b' after object key:value pair",
-		`{"uuid":ba67b810-9dad-11d1-80b4-00c04fd430c8}`:   "invalid character 'b' looking for beginning of value",
+		`{"uuid":"6ba7b810-9dad-11d1-80b4-00c04fd430c8}`:        "unexpected EOF",
+		`{"json":[1,2,3,4,`:                                     "unexpected EOF",
+		`{"json":}`:                                             "invalid character '}' looking for beginning of value",
+		`{"json":[1,2,3,4,]}`:                                   "invalid character ']' looking for beginning of value",
+		`{"json":{"top":{"something":1},2]}}`:                   "invalid character '2' looking for beginning of object key string",
+		`{"uuid_value":{"top":{"something":1}}}`:                "invalid uuid '{\"top\":{\"something\":1}}' does not match accepted format",
+		`{"uuid_value":"6ba7b810-9dad-11d1-80b4-00c04fdX30c8"}`: "invalid uuid '6ba7b810-9dad-11d1-80b4-00c04fdX30c8' does not match accepted format",
+		`{"uuid_value":6ba7b810-9dad-11d1-80b4-00c04fd430c8}`:   "invalid character 'b' after object key:value pair",
+		`{"uuid_value":ba67b810-9dad-11d1-80b4-00c04fd430c8}`:   "invalid character 'b' looking for beginning of value",
 	} {
 		err := unmarshaler.Unmarshal(strings.NewReader(in), &WrapperMessage{})
 		if err == nil || err.Error() != expected {
@@ -78,8 +81,10 @@ func TestBrokenUnmarshalTypes(t *testing.T) {
 func TestMarshalTypes(t *testing.T) {
 	marshaler := &jsonpb.Marshaler{OrigName: true, EmitDefaults: true}
 	for expected, in := range map[string]WrapperMessage{
-		`{"json":null,"uuid":null}`:                                               {},
-		`{"json":{"key": "value"},"uuid":"6ba7b810-9dad-11d1-80b4-00c04fd430c8"}`: {JSON: &JSONValue{Value: `{"key": "value"}`}, UUID: &UUIDValue{Value: `6ba7b810-9dad-11d1-80b4-00c04fd430c8`}},
+		`{"json":null,"uuid_value":null,"uuid":null}`:                                               {},
+		`{"json":null,"uuid_value":null,"uuid":"00000000-0000-0000-0000-000000000000"}`:             {UUID: &UUID{}},
+		`{"json":{"key": "value"},"uuid_value":"6ba7b810-9dad-11d1-80b4-00c04fd430c8","uuid":null}`: {JSON: &JSONValue{Value: `{"key": "value"}`}, UUIDValue: &UUIDValue{Value: `6ba7b810-9dad-11d1-80b4-00c04fd430c8`}},
+		`{"json":null,"uuid_value":"00000000-0000-0000-0000-000000000000","uuid":null}`:             {UUIDValue: &UUIDValue{Value: "00000000-0000-0000-0000-000000000000"}},
 	} {
 		out, err := marshaler.MarshalToString(&in)
 		if err != nil {
@@ -95,12 +100,12 @@ func TestMarshalTypes(t *testing.T) {
 func TestMarshalTypesOmitEmpty(t *testing.T) {
 	marshaller := &jsonpb.Marshaler{OrigName: true}
 	for expected, in := range map[string]WrapperMessage{
-		`{}`:                                                                      {},
-		`{"json":null}`:                                                           {JSON: &JSONValue{}},
-		`{"uuid":null}`:                                                           {UUID: &UUIDValue{}},
-		`{"json":{"key": "value"}}`:                                               {JSON: &JSONValue{Value: `{"key": "value"}`}},
-		`{"uuid":"6ba7b810-9dad-11d1-80b4-00c04fd430c8"}`:                         {UUID: &UUIDValue{Value: `6ba7b810-9dad-11d1-80b4-00c04fd430c8`}},
-		`{"json":{"key": "value"},"uuid":"6ba7b810-9dad-11d1-80b4-00c04fd430c8"}`: {JSON: &JSONValue{Value: `{"key": "value"}`}, UUID: &UUIDValue{Value: `6ba7b810-9dad-11d1-80b4-00c04fd430c8`}},
+		`{}`:                                                                            {},
+		`{"json":null}`:                                                                 {JSON: &JSONValue{}},
+		`{"uuid_value":null}`:                                                           {UUIDValue: &UUIDValue{}},
+		`{"json":{"key": "value"}}`:                                                     {JSON: &JSONValue{Value: `{"key": "value"}`}},
+		`{"uuid_value":"6ba7b810-9dad-11d1-80b4-00c04fd430c8"}`:                         {UUIDValue: &UUIDValue{Value: `6ba7b810-9dad-11d1-80b4-00c04fd430c8`}},
+		`{"json":{"key": "value"},"uuid_value":"6ba7b810-9dad-11d1-80b4-00c04fd430c8"}`: {JSON: &JSONValue{Value: `{"key": "value"}`}, UUIDValue: &UUIDValue{Value: `6ba7b810-9dad-11d1-80b4-00c04fd430c8`}},
 	} {
 		out, err := marshaller.MarshalToString(&in)
 		if err != nil {

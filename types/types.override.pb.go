@@ -11,6 +11,31 @@ import (
 // This Regex should match valid UUID format, in 8-4-4-4-12 or straight 32 byte format
 var validChars = regexp.MustCompile("^[0-9a-f]{8}-?[0-9a-f]{4}-?[1-5][0-9a-f]{3}-?[89ab][0-9a-f]{3}-?[0-9a-f]{12}$")
 
+// ZeroUUID The Zero value used for non-nil, but uninitialized UUID type
+const ZeroUUID = "00000000-0000-0000-0000-000000000000"
+
+// MarshalJSONPB overloads UUID's standard PB -> JSON conversion
+func (m *UUID) MarshalJSONPB(*jsonpb.Marshaler) ([]byte, error) {
+	if len(m.Value) == 0 {
+		return []byte(fmt.Sprintf(`%q`, ZeroUUID)), nil
+	}
+	return []byte(fmt.Sprintf(`%q`, m.Value)), nil
+}
+
+// UnmarshalJSONPB overloads UUID's standard JSON -> PB conversion. If
+// data is null, can't create nil object, but will marshal as null later
+func (m *UUID) UnmarshalJSONPB(_ *jsonpb.Unmarshaler, data []byte) error {
+	if string(data) == "null" {
+		m.Value = ZeroUUID
+		return nil
+	}
+	m.Value = strings.Trim(string(data), `"`)
+	if !validChars.Match([]byte(m.Value)) {
+		return fmt.Errorf(`invalid uuid '%s' does not match accepted format`, m.Value)
+	}
+	return nil
+}
+
 // MarshalJSONPB overloads UUIDValue's standard PB -> JSON conversion
 func (m *UUIDValue) MarshalJSONPB(*jsonpb.Marshaler) ([]byte, error) {
 	if len(m.Value) == 0 {

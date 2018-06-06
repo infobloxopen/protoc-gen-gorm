@@ -185,6 +185,7 @@ func DefaultListIntPoint(ctx context.Context, db *gorm.DB) ([]*IntPoint, error) 
 		return nil, err
 	}
 	db = db.Where(&ormParams)
+	db = db.Order("id")
 	if err := db.Find(&ormResponse).Error; err != nil {
 		return nil, err
 	}
