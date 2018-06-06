@@ -97,8 +97,11 @@ Within the proto files, the following types are supported:
   `*string`, `*bool`, `*uint32`, `*float`
 - [google timestamp type]((https://github.com/golang/protobuf/blob/master/ptypes/timestamp/timestamp.proto)
  `google.protobuf.Timestamp` maps to `time.Time` type at the ORM level
-- custom wrapper type `gorm.types.UUIDValue`, which wraps a string and converts to
-  a `uuid.UUID` type at the ORM level, from https://github.com/satori/go.uuid
+- custom wrapper types `gorm.types.UUID` and `gorm.types.UUIDValue`, which wrap
+  strings and convert to a `uuid.UUID` and `*uuid.UUID` at the ORM level,
+  from https://github.com/satori/go.uuid. A null or missing `gorm.types.UUID`
+  will become a NilUUID (`00000000-0000-0000-0000-000000000000`) at the ORM
+  level.
 - custom wrapper type `gorm.types.JSONValue`, which wraps a string in protobuf
   containing arbitrary JSON and converts to `postgres.Jsonb` GORM type
   (https://github.com/jinzhu/gorm/blob/master/dialects/postgres/postgres.go#L59)

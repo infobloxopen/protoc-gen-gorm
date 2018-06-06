@@ -19,7 +19,8 @@ const (
 
 	protoTypeTimestamp = "Timestamp" // last segment, first will be *google_protobufX
 	protoTypeJSON      = "JSONValue"
-	protoTypeUUID      = "UUIDValue"
+	protoTypeUUID      = "UUID"
+	protoTypeUUIDValue = "UUIDValue"
 )
 
 // DB Engine Enum
@@ -155,6 +156,9 @@ func (p *OrmPlugin) parseBasicFields(msg *generator.Descriptor) {
 				p.wktPkgName = strings.Trim(parts[0], "*")
 				fieldType = v
 			} else if rawType == protoTypeUUID {
+				fieldType = "uuid.UUID"
+				p.usingUUID = true
+			} else if rawType == protoTypeUUIDValue {
 				fieldType = "*uuid.UUID"
 				p.usingUUID = true
 			} else if rawType == protoTypeTimestamp {
@@ -452,7 +456,7 @@ func (p *OrmPlugin) generateFieldConversion(message *generator.Descriptor, field
 					`{Value: *m.`, fieldName, `}`)
 				p.P(`}`)
 			}
-		} else if coreType == protoTypeUUID { // Singular UUID type ------------
+		} else if coreType == protoTypeUUIDValue { // Singular UUIDValue type ----
 			if toORM {
 				p.P(`if m.`, fieldName, ` != nil {`)
 				p.P(`tempUUID, uErr := uuid.FromString(m.`, fieldName, `.Value)`)
@@ -465,6 +469,19 @@ func (p *OrmPlugin) generateFieldConversion(message *generator.Descriptor, field
 				p.P(`if m.`, fieldName, ` != nil {`)
 				p.P(`to.`, fieldName, ` = &gtypes.UUIDValue{Value: m.`, fieldName, `.String()}`)
 				p.P(`}`)
+			}
+		} else if coreType == protoTypeUUID { // Singular UUID type --------------
+			if toORM {
+				p.P(`if m.`, fieldName, ` != nil {`)
+				p.P(`to.`, fieldName, `, err = uuid.FromString(m.`, fieldName, `.Value)`)
+				p.P(`if err != nil {`)
+				p.P(`return to, err`)
+				p.P(`}`)
+				p.P(`} else {`)
+				p.P(`to.`, fieldName, ` = uuid.Nil`)
+				p.P(`}`)
+			} else {
+				p.P(`to.`, fieldName, ` = &gtypes.UUID{Value: m.`, fieldName, `.String()}`)
 			}
 		} else if coreType == protoTypeTimestamp { // Singular WKT Timestamp ---
 			if toORM {

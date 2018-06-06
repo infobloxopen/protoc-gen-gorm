@@ -34,9 +34,9 @@ message TestTypes {
   // The Empty type serves no purpose outside of rpc calls and is dropped
   // automatically from objects
   google.protobuf.Empty nothingness = 5;
-  // The UUIDValue custom type should act like a string at the API level, but is
+  // The UUID custom type should act like a StringValue at the API level, but is
   // automatically converted to and from a uuid.UUID (github.com/satori/go.uuid)
-  gorm.types.UUIDValue uuid = 6;
+  gorm.types.UUID uuid = 6;
   // Timestamps convert to golang's time.Time type, and created_at and
   // updated_at values are automatically filled by GORM
   google.protobuf.Timestamp created_at = 7;
@@ -46,6 +46,9 @@ message TestTypes {
   // This is an arbitrary JSON string that is marshalled and unmarshalled
   // specially in grpc-gateway as a JSON object
   gorm.types.JSONValue json_field = 9;
+  // The UUIDValue custom type should act like a StringValue at the API level, but is
+  // automatically converted to and from a *uuid.UUID (github.com/satori/go.uuid)
+  gorm.types.UUIDValue nullable_uuid = 10;
 }
 
 // TypeWithID demonstrates some basic assocation behavior

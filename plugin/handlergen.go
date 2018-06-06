@@ -143,7 +143,11 @@ func (p *OrmPlugin) generateDeleteHandler(message *generator.Descriptor) {
 	p.P(`}`)
 	ormable := p.getOrmable(typeName)
 	pkName, pk := p.findPrimaryKey(ormable)
-	p.P(`if ormObj.`, pkName, ` == `, p.guessZeroValue(pk.Type), `{`)
+	if strings.Contains(pk.Type, "*") {
+		p.P(`if ormObj.`, pkName, ` != nil && *ormObj.`, pkName, ` != `, p.guessZeroValue(pk.Type), ` {`)
+	} else {
+		p.P(`if ormObj.`, pkName, ` == `, p.guessZeroValue(pk.Type), `{`)
+	}
 	p.P(`return errors.New("A non-zero ID value is required for a delete call")`)
 	p.P(`}`)
 	p.P(`err = db.Where(&ormObj).Delete(&`, ormable.Name, `{}).Error`)
@@ -287,7 +291,11 @@ func (p *OrmPlugin) removeChildAssociations(message *generator.Descriptor) {
 			}
 			p.P(`filter`, fieldName, ` := `, strings.Trim(field.Type, "[]*"), `{}`)
 			zeroValue := p.guessZeroValue(ormable.Fields[assocKeyName].Type)
-			p.P(`if ormObj.`, assocKeyName, ` == `, zeroValue, `{`)
+			if strings.Contains(ormable.Fields[assocKeyName].Type, "*") {
+				p.P(`if ormObj.`, assocKeyName, ` == nil || *ormObj.`, assocKeyName, ` == `, zeroValue, `{`)
+			} else {
+				p.P(`if ormObj.`, assocKeyName, ` == `, zeroValue, `{`)
+			}
 			p.P(`return nil, errors.New("Can't do overwriting update with no `, assocKeyName, ` value for `, ormable.Name, `")`)
 			p.P(`}`)
 			p.P(`filter`, fieldName, `.`, foreignKeyName, ` = `, `ormObj.`, assocKeyName)
