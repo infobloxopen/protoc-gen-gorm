@@ -35,8 +35,7 @@ func CleanImports(pFileText *string) *string {
 
 func (p *OrmPlugin) resetImports() {
 	p.wktPkgName = ""
-	p.gormPkgName = ""
-	p.lftPkgName = ""
+	p.usingGORM = false
 	p.usingUUID = false
 	p.usingTime = false
 	p.usingAuth = false
@@ -47,10 +46,10 @@ func (p *OrmPlugin) resetImports() {
 func (p *OrmPlugin) GenerateImports(file *generator.FileDescriptor) {
 	stdImports := []string{}
 	githubImports := map[string]string{}
-	if p.gormPkgName != "" {
+	if p.usingGORM {
 		stdImports = append(stdImports, "context", "errors")
-		githubImports[p.gormPkgName] = "github.com/jinzhu/gorm"
-		githubImports[p.lftPkgName] = "github.com/infobloxopen/atlas-app-toolkit/gorm"
+		githubImports["gorm"] = "github.com/jinzhu/gorm"
+		githubImports["tkgorm"] = "github.com/infobloxopen/atlas-app-toolkit/gorm"
 	}
 	if p.usingUUID {
 		githubImports["uuid"] = "github.com/satori/go.uuid"

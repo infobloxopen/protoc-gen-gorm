@@ -1,7 +1,7 @@
 GOPATH ?= $(HOME)/go
 SRCPATH := $(patsubst %/,%,$(GOPATH))/src
 
-default: vendor build install
+default: vendor options install
 
 .PHONY: vendor
 vendor:
@@ -11,7 +11,7 @@ vendor:
 vendor-update:
 	@dep ensure
 
-build:
+options:
 	protoc -I. -I$(SRCPATH) -I./vendor \
 		--gogo_out="Mgoogle/protobuf/descriptor.proto=github.com/gogo/protobuf/protoc-gen-gogo/descriptor:$(SRCPATH)" \
 		options/gorm.proto

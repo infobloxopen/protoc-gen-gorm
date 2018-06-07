@@ -21,7 +21,9 @@ func (p *OrmPlugin) generateDefaultServer(file *generator.FileDescriptor) {
 			if opts.GetAutogen() {
 				// All the default server has is a db connection
 				p.P(`type `, svcName, `DefaultServer struct {`)
-				p.P(`DB *`, p.gormPkgName, `.DB`)
+				if !opts.GetTxnMiddleware() {
+					p.P(`DB *gorm.DB`)
+				}
 				p.P(`}`)
 				for _, method := range service.GetMethod() {
 					methodName := generator.CamelCase(method.GetName())
@@ -50,7 +52,8 @@ func (p *OrmPlugin) generateCreateServerMethod(service *descriptor.ServiceDescri
 	p.generateMethodSignature(inType, outType, methodName, svcName)
 	follows, typeName := p.followsCreateConventions(inType, outType)
 	if follows {
-		p.P(`res, err := DefaultCreate`, typeName, `(ctx, in.GetPayload(), m.DB)`)
+		p.generateDBSetup(service, outType)
+		p.P(`res, err := DefaultCreate`, typeName, `(ctx, in.GetPayload(), db)`)
 		p.P(`if err != nil {`)
 		p.P(`return nil, err`)
 		p.P(`}`)
@@ -93,7 +96,8 @@ func (p *OrmPlugin) generateReadServerMethod(service *descriptor.ServiceDescript
 	p.generateMethodSignature(inType, outType, methodName, svcName)
 	follows, typeName := p.followsReadConventions(inType, outType)
 	if follows {
-		p.P(`res, err := DefaultRead`, typeName, `(ctx, &`, typeName, `{Id: in.GetId()}, m.DB)`)
+		p.generateDBSetup(service, outType)
+		p.P(`res, err := DefaultRead`, typeName, `(ctx, &`, typeName, `{Id: in.GetId()}, db)`)
 		p.P(`if err != nil {`)
 		p.P(`return nil, err`)
 		p.P(`}`)
@@ -135,7 +139,8 @@ func (p *OrmPlugin) generateUpdateServerMethod(service *descriptor.ServiceDescri
 	p.generateMethodSignature(inType, outType, methodName, svcName)
 	follows, typeName := p.followsUpdateConventions(inType, outType)
 	if follows {
-		p.P(`res, err := DefaultStrictUpdate`, typeName, `(ctx, in.GetPayload(), m.DB)`)
+		p.generateDBSetup(service, outType)
+		p.P(`res, err := DefaultStrictUpdate`, typeName, `(ctx, in.GetPayload(), db)`)
 		p.P(`if err != nil {`)
 		p.P(`return nil, err`)
 		p.P(`}`)
@@ -178,7 +183,8 @@ func (p *OrmPlugin) generateDeleteServerMethod(service *descriptor.ServiceDescri
 	p.generateMethodSignature(inType, outType, methodName, svcName)
 	follows, typeName := p.followsDeleteConventions(inType, outType, method)
 	if follows {
-		p.P(`return &`, p.TypeName(outType), `{}, `, `DefaultDelete`, typeName, `(ctx, &`, typeName, `{Id: in.GetId()}, m.DB)`)
+		p.generateDBSetup(service, outType)
+		p.P(`return &`, p.TypeName(outType), `{}, `, `DefaultDelete`, typeName, `(ctx, &`, typeName, `{Id: in.GetId()}, db)`)
 		p.P(`}`)
 	} else {
 		p.generateEmptyBody(outType)
@@ -217,7 +223,8 @@ func (p *OrmPlugin) generateListServerMethod(service *descriptor.ServiceDescript
 	p.generateMethodSignature(inType, outType, methodName, svcName)
 	follows, typeName := p.followsListConventions(inType, outType)
 	if follows {
-		p.P(`res, err := DefaultList`, typeName, `(ctx, m.DB)`)
+		p.generateDBSetup(service, outType)
+		p.P(`res, err := DefaultList`, typeName, `(ctx, db)`)
 		p.P(`if err != nil {`)
 		p.P(`return nil, err`)
 		p.P(`}`)
@@ -268,6 +275,26 @@ func (p *OrmPlugin) generateMethodSignature(inType, outType generator.Object, me
 	p.P(`if custom, ok := interface{}(m).(`, svcName, methodName, `CustomHandler); ok {`)
 	p.P(`return custom.Custom`, methodName, `(ctx, in)`)
 	p.P(`}`)
+}
+
+func (p *OrmPlugin) generateDBSetup(service *descriptor.ServiceDescriptorProto, outType generator.Object) error {
+	if service.GetOptions() != nil {
+		v, err := proto.GetExtension(service.GetOptions(), gorm.E_Server)
+		if err != nil {
+			return err
+		}
+		opts, ok := v.(*gorm.AutoServerOptions)
+		if ok && opts.GetTxnMiddleware() {
+			p.P(`txn, ok := tkgorm.FromContext(ctx)`)
+			p.P(`if !ok {`)
+			p.P(`return &`, p.TypeName(outType), `{}, errors.New("Database Transaction For Request Missing")`)
+			p.P(`}`)
+			p.P(`db := txn.Begin()`)
+		} else {
+			p.P(`db := m.DB`)
+		}
+	}
+	return nil
 }
 
 func (p OrmPlugin) generateEmptyBody(outType generator.Object) {

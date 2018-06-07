@@ -103,6 +103,7 @@ extend google.protobuf.ServiceOptions {
 
 message AutoServerOptions {
   optional bool autogen = 1;
+  optional bool txn_middleware = 2;
 }
 
 extend google.protobuf.MethodOptions {

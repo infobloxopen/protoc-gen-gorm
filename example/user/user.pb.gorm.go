@@ -23,8 +23,8 @@ import time "time"
 
 import auth "github.com/infobloxopen/atlas-app-toolkit/auth"
 import gorm "github.com/jinzhu/gorm"
-import ops "github.com/infobloxopen/atlas-app-toolkit/gorm"
 import ptypes "github.com/golang/protobuf/ptypes"
+import tkgorm "github.com/infobloxopen/atlas-app-toolkit/gorm"
 
 import fmt "fmt"
 import math "math"
@@ -822,7 +822,7 @@ func DefaultStrictUpdateUser(ctx context.Context, in *User, db *gorm.DB) (*User,
 // DefaultListUser executes a gorm list call
 func DefaultListUser(ctx context.Context, db *gorm.DB) ([]*User, error) {
 	ormResponse := []UserORM{}
-	db, err := ops.ApplyCollectionOperators(db, ctx)
+	db, err := tkgorm.ApplyCollectionOperators(db, ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -949,7 +949,7 @@ func DefaultStrictUpdateEmail(ctx context.Context, in *Email, db *gorm.DB) (*Ema
 // DefaultListEmail executes a gorm list call
 func DefaultListEmail(ctx context.Context, db *gorm.DB) ([]*Email, error) {
 	ormResponse := []EmailORM{}
-	db, err := ops.ApplyCollectionOperators(db, ctx)
+	db, err := tkgorm.ApplyCollectionOperators(db, ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -1072,7 +1072,7 @@ func DefaultStrictUpdateAddress(ctx context.Context, in *Address, db *gorm.DB) (
 // DefaultListAddress executes a gorm list call
 func DefaultListAddress(ctx context.Context, db *gorm.DB) ([]*Address, error) {
 	ormResponse := []AddressORM{}
-	db, err := ops.ApplyCollectionOperators(db, ctx)
+	db, err := tkgorm.ApplyCollectionOperators(db, ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -1195,7 +1195,7 @@ func DefaultStrictUpdateLanguage(ctx context.Context, in *Language, db *gorm.DB)
 // DefaultListLanguage executes a gorm list call
 func DefaultListLanguage(ctx context.Context, db *gorm.DB) ([]*Language, error) {
 	ormResponse := []LanguageORM{}
-	db, err := ops.ApplyCollectionOperators(db, ctx)
+	db, err := tkgorm.ApplyCollectionOperators(db, ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -1318,7 +1318,7 @@ func DefaultStrictUpdateCreditCard(ctx context.Context, in *CreditCard, db *gorm
 // DefaultListCreditCard executes a gorm list call
 func DefaultListCreditCard(ctx context.Context, db *gorm.DB) ([]*CreditCard, error) {
 	ormResponse := []CreditCardORM{}
-	db, err := ops.ApplyCollectionOperators(db, ctx)
+	db, err := tkgorm.ApplyCollectionOperators(db, ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -1362,7 +1362,7 @@ func DefaultCreateTask(ctx context.Context, in *Task, db *gorm.DB) (*Task, error
 // DefaultListTask executes a gorm list call
 func DefaultListTask(ctx context.Context, db *gorm.DB) ([]*Task, error) {
 	ormResponse := []TaskORM{}
-	db, err := ops.ApplyCollectionOperators(db, ctx)
+	db, err := tkgorm.ApplyCollectionOperators(db, ctx)
 	if err != nil {
 		return nil, err
 	}

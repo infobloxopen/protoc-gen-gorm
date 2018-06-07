@@ -36,8 +36,8 @@ import auth "github.com/infobloxopen/atlas-app-toolkit/auth"
 import gorm "github.com/jinzhu/gorm"
 import gormpq "github.com/jinzhu/gorm/dialects/postgres"
 import gtypes "github.com/infobloxopen/protoc-gen-gorm/types"
-import ops "github.com/infobloxopen/atlas-app-toolkit/gorm"
 import ptypes "github.com/golang/protobuf/ptypes"
+import tkgorm "github.com/infobloxopen/atlas-app-toolkit/gorm"
 import uuid "github.com/satori/go.uuid"
 
 import fmt "fmt"
@@ -442,7 +442,7 @@ func DefaultCreateTestTypes(ctx context.Context, in *TestTypes, db *gorm.DB) (*T
 // DefaultListTestTypes executes a gorm list call
 func DefaultListTestTypes(ctx context.Context, db *gorm.DB) ([]*TestTypes, error) {
 	ormResponse := []TestTypesORM{}
-	db, err := ops.ApplyCollectionOperators(db, ctx)
+	db, err := tkgorm.ApplyCollectionOperators(db, ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -569,7 +569,7 @@ func DefaultStrictUpdateTypeWithID(ctx context.Context, in *TypeWithID, db *gorm
 // DefaultListTypeWithID executes a gorm list call
 func DefaultListTypeWithID(ctx context.Context, db *gorm.DB) ([]*TypeWithID, error) {
 	ormResponse := []TypeWithIDORM{}
-	db, err := ops.ApplyCollectionOperators(db, ctx)
+	db, err := tkgorm.ApplyCollectionOperators(db, ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -693,7 +693,7 @@ func DefaultStrictUpdateMultiaccountTypeWithID(ctx context.Context, in *Multiacc
 // DefaultListMultiaccountTypeWithID executes a gorm list call
 func DefaultListMultiaccountTypeWithID(ctx context.Context, db *gorm.DB) ([]*MultiaccountTypeWithID, error) {
 	ormResponse := []MultiaccountTypeWithIDORM{}
-	db, err := ops.ApplyCollectionOperators(db, ctx)
+	db, err := tkgorm.ApplyCollectionOperators(db, ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -737,7 +737,7 @@ func DefaultCreateMultiaccountTypeWithoutID(ctx context.Context, in *Multiaccoun
 // DefaultListMultiaccountTypeWithoutID executes a gorm list call
 func DefaultListMultiaccountTypeWithoutID(ctx context.Context, db *gorm.DB) ([]*MultiaccountTypeWithoutID, error) {
 	ormResponse := []MultiaccountTypeWithoutIDORM{}
-	db, err := ops.ApplyCollectionOperators(db, ctx)
+	db, err := tkgorm.ApplyCollectionOperators(db, ctx)
 	if err != nil {
 		return nil, err
 	}
