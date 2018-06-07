@@ -10,7 +10,7 @@ import (
 	jgorm "github.com/jinzhu/gorm"
 	"github.com/jinzhu/inflection"
 
-	gorm "github.com/infobloxopen/protoc-gen-gorm/options"
+	"github.com/infobloxopen/protoc-gen-gorm/options"
 )
 
 const (
@@ -216,11 +216,31 @@ func (p *OrmPlugin) getSortedFieldNames(fields map[string]*Field) []string {
 	return keys
 }
 
+func (p *OrmPlugin) generateFields(ormable *OrmableType, message *generator.Descriptor) []string {
+	var fields []string
+
+	for _, v := range message.GetField() {
+		fieldName := generator.CamelCase(*v.Name)
+		fields = append(fields, fieldName)
+	}
+
+	ormFields := p.getSortedFieldNames(ormable.Fields)
+	fieldsJoin := strings.Join(fields, " ")
+	for _, s := range ormFields {
+		if !strings.Contains(fieldsJoin, s) {
+			fields = append(fields, s)
+		}
+	}
+
+	return fields
+}
+
 func (p *OrmPlugin) generateOrmable(message *generator.Descriptor) {
 	ormable := p.getOrmable(p.TypeName(message))
+	fields := p.generateFields(ormable, message)
+
 	p.P(`type `, ormable.Name, ` struct {`)
-	for _, field := range message.GetField() {
-		fieldName := generator.CamelCase(field.GetName())
+	for _, fieldName := range fields {
 		field, ok := ormable.Fields[fieldName]
 		if ok {
 			p.P(fieldName, ` `, field.Type, p.renderGormTag(field))
