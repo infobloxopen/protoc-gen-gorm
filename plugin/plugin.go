@@ -202,6 +202,7 @@ func (p *OrmPlugin) getOrmable(typeName string) *OrmableType {
 	if ormable, ok := p.ormableTypes[strings.Trim(typeName, "[]*")]; ok {
 		return ormable
 	} else {
+		fmt.Println(typeName)
 		p.Fail(typeName, "is not ormable.")
 		return nil
 	}
@@ -216,28 +217,9 @@ func (p *OrmPlugin) getSortedFieldNames(fields map[string]*Field) []string {
 	return keys
 }
 
-func (p *OrmPlugin) generateFields(ormable *OrmableType, message *generator.Descriptor) []string {
-	var fields []string
-
-	for _, v := range message.GetField() {
-		fieldName := generator.CamelCase(*v.Name)
-		fields = append(fields, fieldName)
-	}
-
-	ormFields := p.getSortedFieldNames(ormable.Fields)
-	fieldsJoin := strings.Join(fields, " ")
-	for _, s := range ormFields {
-		if !strings.Contains(fieldsJoin, s) {
-			fields = append(fields, s)
-		}
-	}
-
-	return fields
-}
-
 func (p *OrmPlugin) generateOrmable(message *generator.Descriptor) {
 	ormable := p.getOrmable(p.TypeName(message))
-	fields := p.generateFields(ormable, message)
+	fields := (&OrmOrderField{}).getOrderedFieldNames(ormable, message)
 
 	p.P(`type `, ormable.Name, ` struct {`)
 	for _, fieldName := range fields {
