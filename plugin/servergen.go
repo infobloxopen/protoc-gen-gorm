@@ -12,35 +12,28 @@ import (
 func (p *OrmPlugin) generateDefaultServer(file *generator.FileDescriptor) {
 	for _, service := range file.GetService() {
 		svcName := generator.CamelCase(service.GetName())
-		if service.GetOptions() != nil {
-			v, err := proto.GetExtension(service.GetOptions(), gorm.E_Server)
-			if err != nil {
-				continue
+		if opts := getServiceOptions(service); opts != nil && opts.GetAutogen() {
+			// All the default server has is a db connection
+			p.P(`type `, svcName, `DefaultServer struct {`)
+			if !opts.GetTxnMiddleware() {
+				p.P(`DB *gorm.DB`)
 			}
-			opts := v.(*gorm.AutoServerOptions)
-			if opts.GetAutogen() {
-				// All the default server has is a db connection
-				p.P(`type `, svcName, `DefaultServer struct {`)
-				if !opts.GetTxnMiddleware() {
-					p.P(`DB *gorm.DB`)
-				}
-				p.P(`}`)
-				for _, method := range service.GetMethod() {
-					methodName := generator.CamelCase(method.GetName())
-					p.generateInterface(service, method)
-					if strings.HasPrefix(methodName, "Create") {
-						p.generateCreateServerMethod(service, method)
-					} else if strings.HasPrefix(methodName, "Read") {
-						p.generateReadServerMethod(service, method)
-					} else if strings.HasPrefix(methodName, "Update") {
-						p.generateUpdateServerMethod(service, method)
-					} else if strings.HasPrefix(methodName, "Delete") {
-						p.generateDeleteServerMethod(service, method)
-					} else if strings.HasPrefix(methodName, "List") {
-						p.generateListServerMethod(service, method)
-					} else {
-						p.generateMethodStub(service, method)
-					}
+			p.P(`}`)
+			for _, method := range service.GetMethod() {
+				methodName := generator.CamelCase(method.GetName())
+				p.generateInterface(service, method)
+				if strings.HasPrefix(methodName, "Create") {
+					p.generateCreateServerMethod(service, method)
+				} else if strings.HasPrefix(methodName, "Read") {
+					p.generateReadServerMethod(service, method)
+				} else if strings.HasPrefix(methodName, "Update") {
+					p.generateUpdateServerMethod(service, method)
+				} else if strings.HasPrefix(methodName, "Delete") {
+					p.generateDeleteServerMethod(service, method)
+				} else if strings.HasPrefix(methodName, "List") {
+					p.generateListServerMethod(service, method)
+				} else {
+					p.generateMethodStub(service, method)
 				}
 			}
 		}
@@ -278,21 +271,14 @@ func (p *OrmPlugin) generateMethodSignature(inType, outType generator.Object, me
 }
 
 func (p *OrmPlugin) generateDBSetup(service *descriptor.ServiceDescriptorProto, outType generator.Object) error {
-	if service.GetOptions() != nil {
-		v, err := proto.GetExtension(service.GetOptions(), gorm.E_Server)
-		if err != nil {
-			return err
-		}
-		opts, ok := v.(*gorm.AutoServerOptions)
-		if ok && opts.GetTxnMiddleware() {
-			p.P(`txn, ok := tkgorm.FromContext(ctx)`)
-			p.P(`if !ok {`)
-			p.P(`return &`, p.TypeName(outType), `{}, errors.New("Database Transaction For Request Missing")`)
-			p.P(`}`)
-			p.P(`db := txn.Begin()`)
-		} else {
-			p.P(`db := m.DB`)
-		}
+	if opts := getServiceOptions(service); opts != nil && opts.GetTxnMiddleware() {
+		p.P(`txn, ok := tkgorm.FromContext(ctx)`)
+		p.P(`if !ok {`)
+		p.P(`return &`, p.TypeName(outType), `{}, errors.New("Database Transaction For Request Missing")`)
+		p.P(`}`)
+		p.P(`db := txn.Begin()`)
+	} else {
+		p.P(`db := m.DB`)
 	}
 	return nil
 }
