@@ -74,6 +74,10 @@ To leverage DB specific features, specify the DB engine during generation using
 the `--gorm_out="engine={postgres,...}:{path}"`. Currently only Postgres has
 special type support, any other choice will behave as default.
 
+The generated code can also integrate with the grpc server gorm transaction middleware provided
+in the [atlas-app-toolkit](https://github.com/infobloxopen/atlas-app-toolkit#middlewares)
+using the service level option `option (gorm.server).txn_middleware = true`.
+
 ### Examples
 
 Example .proto files and generated .pb.gorm.go files are included in the

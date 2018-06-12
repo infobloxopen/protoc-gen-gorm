@@ -37,3 +37,18 @@ func getFieldOptions(field *descriptor.FieldDescriptorProto) *gorm.GormFieldOpti
 	}
 	return opts
 }
+
+func getServiceOptions(service *descriptor.ServiceDescriptorProto) *gorm.AutoServerOptions {
+	if service.Options == nil {
+		return nil
+	}
+	v, err := proto.GetExtension(service.Options, gorm.E_Server)
+	if err != nil {
+		return nil
+	}
+	opts, ok := v.(*gorm.AutoServerOptions)
+	if !ok {
+		return nil
+	}
+	return opts
+}

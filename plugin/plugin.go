@@ -60,8 +60,7 @@ type OrmPlugin struct {
 	*generator.Generator
 	dbEngine     int
 	wktPkgName   string
-	gormPkgName  string
-	lftPkgName   string // 'Locally Famous Types', used for collection operators
+	usingGORM    bool
 	usingUUID    bool
 	usingTime    bool
 	usingAuth    bool

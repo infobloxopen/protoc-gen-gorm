@@ -11,8 +11,7 @@ import (
 func (p *OrmPlugin) generateDefaultHandlers(file *generator.FileDescriptor) {
 	for _, message := range file.Messages() {
 		if getMessageOptions(message).GetOrmable() {
-			p.gormPkgName = "gorm"
-			p.lftPkgName = "ops"
+			p.usingGORM = true
 
 			p.generateCreateHandler(message)
 			if p.hasPrimaryKey(p.getOrmable(p.TypeName(message))) {
@@ -30,7 +29,7 @@ func (p *OrmPlugin) generateCreateHandler(message *generator.Descriptor) {
 	typeName := p.TypeName(message)
 	p.P(`// DefaultCreate`, typeName, ` executes a basic gorm create call`)
 	p.P(`func DefaultCreate`, typeName, `(ctx context.Context, in *`,
-		typeName, `, db *`, p.gormPkgName, `.DB) (*`, typeName, `, error) {`)
+		typeName, `, db *gorm.DB) (*`, typeName, `, error) {`)
 	p.P(`if in == nil {`)
 	p.P(`return nil, errors.New("Nil argument to DefaultCreate`, typeName, `")`)
 	p.P(`}`)
@@ -53,7 +52,7 @@ func (p *OrmPlugin) generateReadHandler(message *generator.Descriptor) {
 	ormable := p.getOrmable(typeName)
 	p.P(`// DefaultRead`, typeName, ` executes a basic gorm read call`)
 	p.P(`func DefaultRead`, typeName, `(ctx context.Context, in *`,
-		typeName, `, db *`, p.gormPkgName, `.DB) (*`, typeName, `, error) {`)
+		typeName, `, db *gorm.DB) (*`, typeName, `, error) {`)
 	p.P(`if in == nil {`)
 	p.P(`return nil, errors.New("Nil argument to DefaultRead`, typeName, `")`)
 	p.P(`}`)
@@ -95,7 +94,7 @@ func (p *OrmPlugin) generateUpdateHandler(message *generator.Descriptor) {
 
 	p.P(`// DefaultUpdate`, typeName, ` executes a basic gorm update call`)
 	p.P(`func DefaultUpdate`, typeName, `(ctx context.Context, in *`,
-		typeName, `, db *`, p.gormPkgName, `.DB) (*`, typeName, `, error) {`)
+		typeName, `, db *gorm.DB) (*`, typeName, `, error) {`)
 	p.P(`if in == nil {`)
 	p.P(`return nil, errors.New("Nil argument to DefaultUpdate`, typeName, `")`)
 	p.P(`}`)
@@ -133,7 +132,7 @@ func (p *OrmPlugin) generateUpdateHandler(message *generator.Descriptor) {
 func (p *OrmPlugin) generateDeleteHandler(message *generator.Descriptor) {
 	typeName := p.TypeName(message)
 	p.P(`func DefaultDelete`, typeName, `(ctx context.Context, in *`,
-		typeName, `, db *`, p.gormPkgName, `.DB) error {`)
+		typeName, `, db *gorm.DB) error {`)
 	p.P(`if in == nil {`)
 	p.P(`return errors.New("Nil argument to DefaultDelete`, typeName, `")`)
 	p.P(`}`)
@@ -161,10 +160,10 @@ func (p *OrmPlugin) generateListHandler(message *generator.Descriptor) {
 	ormable := p.getOrmable(typeName)
 
 	p.P(`// DefaultList`, typeName, ` executes a gorm list call`)
-	p.P(`func DefaultList`, typeName, `(ctx context.Context, db *`, p.gormPkgName,
+	p.P(`func DefaultList`, typeName, `(ctx context.Context, db *gorm`,
 		`.DB) ([]*`, typeName, `, error) {`)
 	p.P(`ormResponse := []`, ormable.Name, `{}`)
-	p.P(`db, err := `, p.lftPkgName, `.ApplyCollectionOperators(db, ctx)`)
+	p.P(`db, err := tkgorm.ApplyCollectionOperators(db, ctx)`)
 	p.P(`if err != nil {`)
 	p.P(`return nil, err`)
 	p.P(`}`)
@@ -207,7 +206,7 @@ func (p *OrmPlugin) generateStrictUpdateHandler(message *generator.Descriptor) {
 	typeName := p.TypeName(message)
 	p.P(`// DefaultStrictUpdate`, typeName, ` clears first level 1:many children and then executes a gorm update call`)
 	p.P(`func DefaultStrictUpdate`, typeName, `(ctx context.Context, in *`,
-		typeName, `, db *`, p.gormPkgName, `.DB) (*`, typeName, `, error) {`)
+		typeName, `, db *gorm.DB) (*`, typeName, `, error) {`)
 	p.P(`if in == nil {`)
 	p.P(`return nil, fmt.Errorf("Nil argument to DefaultCascadedUpdate`, typeName, `")`)
 	p.P(`}`)
