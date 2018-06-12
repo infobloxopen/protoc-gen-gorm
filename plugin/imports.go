@@ -33,40 +33,45 @@ func CleanImports(pFileText *string) *string {
 
 /* --------- Plugin level import handling --------- */
 
-func (p *OrmPlugin) resetImports() {
-	p.wktPkgName = ""
-	p.usingGORM = false
-	p.usingUUID = false
-	p.usingTime = false
-	p.usingAuth = false
-	p.usingJSON = false
+type fileImports struct {
+	wktPkgName      string
+	usingGORM       bool
+	usingUUID       bool
+	usingTime       bool
+	usingAuth       bool
+	usingJSON       bool
+	typesToRegister []string
 }
 
 // GenerateImports writes out required imports for the generated files
 func (p *OrmPlugin) GenerateImports(file *generator.FileDescriptor) {
+	imports := p.fileImports[file]
 	stdImports := []string{}
 	githubImports := map[string]string{}
-	if p.usingGORM {
+	if imports.usingGORM {
 		stdImports = append(stdImports, "context", "errors")
 		githubImports["gorm"] = "github.com/jinzhu/gorm"
 		githubImports["tkgorm"] = "github.com/infobloxopen/atlas-app-toolkit/gorm"
 	}
-	if p.usingUUID {
+	if imports.usingUUID {
 		githubImports["uuid"] = "github.com/satori/go.uuid"
 		githubImports["gtypes"] = "github.com/infobloxopen/protoc-gen-gorm/types"
 	}
-	if p.usingTime {
+	if imports.usingTime {
 		stdImports = append(stdImports, "time")
 		githubImports["ptypes"] = "github.com/golang/protobuf/ptypes"
 	}
-	if p.usingAuth {
+	if imports.usingAuth {
 		githubImports["auth"] = "github.com/infobloxopen/atlas-app-toolkit/auth"
 	}
-	if p.usingJSON {
+	if imports.usingJSON {
 		if p.dbEngine == ENGINE_POSTGRES {
 			githubImports["gormpq"] = "github.com/jinzhu/gorm/dialects/postgres"
 			githubImports["gtypes"] = "github.com/infobloxopen/protoc-gen-gorm/types"
 		}
+	}
+	for _, typeName := range imports.typesToRegister {
+		p.RecordTypeUse(typeName)
 	}
 	sort.Strings(stdImports)
 	for _, dep := range stdImports {

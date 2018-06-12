@@ -200,16 +200,16 @@ func DefaultListIntPoint(ctx context.Context, db *gorm.DB) ([]*IntPoint, error) 
 	return pbResponse, nil
 }
 
-type IntPointDefaultServer struct {
+type IntPointServiceDefaultServer struct {
 	DB *gorm.DB
 }
-type IntPointCreateCustomHandler interface {
+type IntPointServiceCreateCustomHandler interface {
 	CustomCreate(context.Context, *CreateIntPointRequest) (*CreateIntPointResponse, error)
 }
 
 // Create ...
-func (m *IntPointDefaultServer) Create(ctx context.Context, in *CreateIntPointRequest) (*CreateIntPointResponse, error) {
-	if custom, ok := interface{}(m).(IntPointCreateCustomHandler); ok {
+func (m *IntPointServiceDefaultServer) Create(ctx context.Context, in *CreateIntPointRequest) (*CreateIntPointResponse, error) {
+	if custom, ok := interface{}(m).(IntPointServiceCreateCustomHandler); ok {
 		return custom.CustomCreate(ctx, in)
 	}
 	db := m.DB
@@ -220,13 +220,13 @@ func (m *IntPointDefaultServer) Create(ctx context.Context, in *CreateIntPointRe
 	return &CreateIntPointResponse{Result: res}, nil
 }
 
-type IntPointReadCustomHandler interface {
+type IntPointServiceReadCustomHandler interface {
 	CustomRead(context.Context, *ReadIntPointRequest) (*ReadIntPointResponse, error)
 }
 
 // Read ...
-func (m *IntPointDefaultServer) Read(ctx context.Context, in *ReadIntPointRequest) (*ReadIntPointResponse, error) {
-	if custom, ok := interface{}(m).(IntPointReadCustomHandler); ok {
+func (m *IntPointServiceDefaultServer) Read(ctx context.Context, in *ReadIntPointRequest) (*ReadIntPointResponse, error) {
+	if custom, ok := interface{}(m).(IntPointServiceReadCustomHandler); ok {
 		return custom.CustomRead(ctx, in)
 	}
 	db := m.DB
@@ -237,13 +237,13 @@ func (m *IntPointDefaultServer) Read(ctx context.Context, in *ReadIntPointReques
 	return &ReadIntPointResponse{Result: res}, nil
 }
 
-type IntPointUpdateCustomHandler interface {
+type IntPointServiceUpdateCustomHandler interface {
 	CustomUpdate(context.Context, *UpdateIntPointRequest) (*UpdateIntPointResponse, error)
 }
 
 // Update ...
-func (m *IntPointDefaultServer) Update(ctx context.Context, in *UpdateIntPointRequest) (*UpdateIntPointResponse, error) {
-	if custom, ok := interface{}(m).(IntPointUpdateCustomHandler); ok {
+func (m *IntPointServiceDefaultServer) Update(ctx context.Context, in *UpdateIntPointRequest) (*UpdateIntPointResponse, error) {
+	if custom, ok := interface{}(m).(IntPointServiceUpdateCustomHandler); ok {
 		return custom.CustomUpdate(ctx, in)
 	}
 	db := m.DB
@@ -254,13 +254,13 @@ func (m *IntPointDefaultServer) Update(ctx context.Context, in *UpdateIntPointRe
 	return &UpdateIntPointResponse{Result: res}, nil
 }
 
-type IntPointListCustomHandler interface {
+type IntPointServiceListCustomHandler interface {
 	CustomList(context.Context, *google_protobuf2.Empty) (*ListIntPointResponse, error)
 }
 
 // List ...
-func (m *IntPointDefaultServer) List(ctx context.Context, in *google_protobuf2.Empty) (*ListIntPointResponse, error) {
-	if custom, ok := interface{}(m).(IntPointListCustomHandler); ok {
+func (m *IntPointServiceDefaultServer) List(ctx context.Context, in *google_protobuf2.Empty) (*ListIntPointResponse, error) {
+	if custom, ok := interface{}(m).(IntPointServiceListCustomHandler); ok {
 		return custom.CustomList(ctx, in)
 	}
 	db := m.DB
@@ -271,38 +271,38 @@ func (m *IntPointDefaultServer) List(ctx context.Context, in *google_protobuf2.E
 	return &ListIntPointResponse{Results: res}, nil
 }
 
-type IntPointDeleteCustomHandler interface {
+type IntPointServiceDeleteCustomHandler interface {
 	CustomDelete(context.Context, *DeleteIntPointRequest) (*DeleteIntPointResponse, error)
 }
 
 // Delete ...
-func (m *IntPointDefaultServer) Delete(ctx context.Context, in *DeleteIntPointRequest) (*DeleteIntPointResponse, error) {
-	if custom, ok := interface{}(m).(IntPointDeleteCustomHandler); ok {
+func (m *IntPointServiceDefaultServer) Delete(ctx context.Context, in *DeleteIntPointRequest) (*DeleteIntPointResponse, error) {
+	if custom, ok := interface{}(m).(IntPointServiceDeleteCustomHandler); ok {
 		return custom.CustomDelete(ctx, in)
 	}
 	db := m.DB
 	return &DeleteIntPointResponse{}, DefaultDeleteIntPoint(ctx, &IntPoint{Id: in.GetId()}, db)
 }
 
-type IntPointCustomMethodCustomHandler interface {
+type IntPointServiceCustomMethodCustomHandler interface {
 	CustomCustomMethod(context.Context, *google_protobuf2.Empty) (*google_protobuf2.Empty, error)
 }
 
 // CustomMethod ...
-func (m *IntPointDefaultServer) CustomMethod(ctx context.Context, in *google_protobuf2.Empty) (*google_protobuf2.Empty, error) {
-	if custom, ok := interface{}(m).(IntPointCustomMethodCustomHandler); ok {
+func (m *IntPointServiceDefaultServer) CustomMethod(ctx context.Context, in *google_protobuf2.Empty) (*google_protobuf2.Empty, error) {
+	if custom, ok := interface{}(m).(IntPointServiceCustomMethodCustomHandler); ok {
 		return custom.CustomCustomMethod(ctx, in)
 	}
 	return &google_protobuf2.Empty{}, nil
 }
 
-type IntPointCreateSomethingCustomHandler interface {
+type IntPointServiceCreateSomethingCustomHandler interface {
 	CustomCreateSomething(context.Context, *Something) (*Something, error)
 }
 
 // CreateSomething ...
-func (m *IntPointDefaultServer) CreateSomething(ctx context.Context, in *Something) (*Something, error) {
-	if custom, ok := interface{}(m).(IntPointCreateSomethingCustomHandler); ok {
+func (m *IntPointServiceDefaultServer) CreateSomething(ctx context.Context, in *Something) (*Something, error) {
+	if custom, ok := interface{}(m).(IntPointServiceCreateSomethingCustomHandler); ok {
 		return custom.CustomCreateSomething(ctx, in)
 	}
 	return &Something{}, nil
