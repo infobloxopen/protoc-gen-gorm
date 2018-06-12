@@ -148,7 +148,7 @@ func (p *OrmPlugin) Generate(file *generator.FileDescriptor) {
 	}
 	p.generateDefaultHandlers(file)
 	p.generateDefaultServer(file)
-	// no ormable objects, and gorm won't be imported (means no services generated)
+	// no ormable objects, and gorm not imported (means no services generated)
 	if empty && !p.GetFileImports().usingGORM {
 		p.EmptyFiles = append(p.EmptyFiles, file.GetName())
 	}
