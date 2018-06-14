@@ -254,8 +254,9 @@ func (p *OrmPlugin) setupOrderedHasMany(message *generator.Descriptor) {
 		field := ormable.Fields[fieldName]
 		if field.GetHasMany().GetPositionField() != "" {
 			positionField := field.GetHasMany().GetPositionField()
+			positionFieldType := p.getOrmable(field.Type).Fields[positionField].Type
 			p.P(`for i, e := range `, `ormObj.`, fieldName, `{`)
-			p.P(`e.`, positionField, ` = i`)
+			p.P(`e.`, positionField, ` = `, positionFieldType, `(i)`)
 			p.P(`}`)
 		}
 	}

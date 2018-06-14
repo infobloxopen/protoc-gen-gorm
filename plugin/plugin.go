@@ -228,7 +228,7 @@ func (p *OrmPlugin) isOrmable(typeName string) bool {
 
 func (p *OrmPlugin) getOrmable(typeName string) *OrmableType {
 	parts := strings.Split(typeName, ".")
-	if ormable, ok := p.ormableTypes[strings.Trim(parts[len(parts)-1], "[]*")]; ok {
+	if ormable, ok := p.ormableTypes[strings.TrimSuffix(strings.Trim(parts[len(parts)-1], "[]*"), "ORM")]; ok {
 		return ormable
 	} else {
 		p.Fail(typeName, "is not ormable.")
