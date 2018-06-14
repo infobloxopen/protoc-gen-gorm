@@ -6,6 +6,8 @@ import "github.com/infobloxopen/protoc-gen-gorm/types/types.proto";
 import "google/protobuf/wrappers.proto";
 import "google/protobuf/empty.proto";
 import "google/protobuf/timestamp.proto";
+import "example/feature_demo/demo_service.proto";
+import "github.com/infobloxopen/protoc-gen-gorm/example/user/user.proto";
 
 option go_package = "github.com/infobloxopen/protoc-gen-gorm/example/feature_demo;example";
 
@@ -75,6 +77,10 @@ message TypeWithID {
   repeated TestTypes things = 3;
   // A default has-one relationship, will error as above
   TestTypes a_nested_object = 4;
+  // An in-package and cross-package imported type (in-package can use any
+  // association type, cross-package is limited to belongs_to and many_to_many)
+  example.IntPoint point = 5 [(gorm.field).belongs_to = {}];
+  user.User user = 6 [(gorm.field).belongs_to = {}];
 }
 
 // MultiaccountTypeWithID demonstrates the generated multi-account support

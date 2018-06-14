@@ -22,6 +22,8 @@ func (p *OrmPlugin) parseAssociations(msg *generator.Descriptor) {
 		fieldName := generator.CamelCase(field.GetName())
 		fieldType, _ := p.GoType(msg, field)
 		fieldType = strings.Trim(fieldType, "[]*")
+		parts := strings.Split(fieldType, ".")
+		fieldTypeShort := parts[len(parts)-1]
 		if p.isOrmable(fieldType) {
 			if fieldOpts == nil {
 				fieldOpts = &gorm.GormFieldOptions{}
@@ -29,19 +31,21 @@ func (p *OrmPlugin) parseAssociations(msg *generator.Descriptor) {
 			assocOrmable := p.getOrmable(fieldType)
 			if field.IsRepeated() {
 				if fieldOpts.GetManyToMany() != nil {
-					p.parseManyToMany(msg, ormable, fieldName, fieldType, assocOrmable, fieldOpts)
+					p.parseManyToMany(msg, ormable, fieldName, fieldTypeShort, assocOrmable, fieldOpts)
 				} else {
-					p.parseHasMany(msg, ormable, fieldName, fieldType, assocOrmable, fieldOpts)
+					p.parseHasMany(msg, ormable, fieldName, fieldTypeShort, assocOrmable, fieldOpts)
 				}
-				fieldType = fmt.Sprintf("[]*%s", assocOrmable.Name)
+				fieldType = fmt.Sprintf("[]*%sORM", fieldType)
 			} else {
 				if fieldOpts.GetBelongsTo() != nil {
-					p.parseBelongsTo(msg, ormable, fieldName, fieldType, assocOrmable, fieldOpts)
+					p.parseBelongsTo(msg, ormable, fieldName, fieldTypeShort, assocOrmable, fieldOpts)
 				} else {
-					p.parseHasOne(msg, ormable, fieldName, fieldType, assocOrmable, fieldOpts)
+					p.parseHasOne(msg, ormable, fieldName, fieldTypeShort, assocOrmable, fieldOpts)
 				}
-				fieldType = fmt.Sprintf("*%s", assocOrmable.Name)
+				fieldType = fmt.Sprintf("*%sORM", fieldType)
 			}
+			// Register type used, in case it's an imported type from another package
+			p.GetFileImports().typesToRegister = append(p.GetFileImports().typesToRegister, field.GetTypeName())
 			ormable.Fields[fieldName] = &Field{Type: fieldType, GormFieldOptions: fieldOpts}
 		}
 	}
@@ -127,6 +131,10 @@ func (p *OrmPlugin) parseHasMany(msg *generator.Descriptor, parent *OrmableType,
 		}
 	}
 	hasMany.Foreignkey = &foreignKeyName
+	if _, ok := child.Fields[foreignKeyName]; child.Package != parent.Package && !ok {
+		p.Fail(`Object`, child.Name, `from package`, child.Package, `cannot be used for has-many in`, parent.Name, `since it`,
+			`does not have FK`, foreignKeyName, `defined. Manually define the key, or switch to many-to-many`)
+	}
 	if exField, ok := child.Fields[foreignKeyName]; !ok {
 		child.Fields[foreignKeyName] = foreignKey
 	} else {
@@ -176,6 +184,10 @@ func (p *OrmPlugin) parseHasOne(msg *generator.Descriptor, parent *OrmableType, 
 		}
 	}
 	hasOne.Foreignkey = &foreignKeyName
+	if _, ok := child.Fields[foreignKeyName]; child.Package != parent.Package && !ok {
+		p.Fail(`Object`, child.Name, `from package`, child.Package, `cannot be used for has-one in`, parent.Name, `since it`,
+			`does not have FK field`, foreignKeyName, `defined. Manually define the key, or switch to belongs-to`)
+	}
 	if exField, ok := child.Fields[foreignKeyName]; !ok {
 		child.Fields[foreignKeyName] = foreignKey
 	} else {

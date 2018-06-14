@@ -110,6 +110,10 @@ Within the proto files, the following types are supported:
   containing arbitrary JSON and converts to `postgres.Jsonb` GORM type
   (https://github.com/jinzhu/gorm/blob/master/dialects/postgres/postgres.go#L59)
   if Postgres is the selected DB engine, otherwise it is currently dropped.
+- types can be imported from other .proto files within the same package (protoc
+  invocation) or between packages. All associations can be generated properly
+  within the same package, but cross package only the belongs-to and many-to-many
+  will work.
 
 ### Associations
 

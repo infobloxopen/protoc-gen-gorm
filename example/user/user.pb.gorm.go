@@ -114,18 +114,18 @@ func (m *User) ToORM(ctx context.Context) (UserORM, error) {
 		}
 	}
 	if m.BillingAddress != nil {
-		tempAddress, err := m.BillingAddress.ToORM(ctx)
+		tempBillingAddress, err := m.BillingAddress.ToORM(ctx)
 		if err != nil {
 			return to, err
 		}
-		to.BillingAddress = &tempAddress
+		to.BillingAddress = &tempBillingAddress
 	}
 	if m.ShippingAddress != nil {
-		tempAddress, err := m.ShippingAddress.ToORM(ctx)
+		tempShippingAddress, err := m.ShippingAddress.ToORM(ctx)
 		if err != nil {
 			return to, err
 		}
-		to.ShippingAddress = &tempAddress
+		to.ShippingAddress = &tempShippingAddress
 	}
 	for _, v := range m.Languages {
 		if v != nil {
@@ -211,18 +211,18 @@ func (m *UserORM) ToPB(ctx context.Context) (User, error) {
 		}
 	}
 	if m.BillingAddress != nil {
-		tempAddress, err := m.BillingAddress.ToPB(ctx)
+		tempBillingAddress, err := m.BillingAddress.ToPB(ctx)
 		if err != nil {
 			return to, err
 		}
-		to.BillingAddress = &tempAddress
+		to.BillingAddress = &tempBillingAddress
 	}
 	if m.ShippingAddress != nil {
-		tempAddress, err := m.ShippingAddress.ToPB(ctx)
+		tempShippingAddress, err := m.ShippingAddress.ToPB(ctx)
 		if err != nil {
 			return to, err
 		}
-		to.ShippingAddress = &tempAddress
+		to.ShippingAddress = &tempShippingAddress
 	}
 	for _, v := range m.Languages {
 		if v != nil {

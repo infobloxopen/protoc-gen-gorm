@@ -11,7 +11,7 @@ import (
 func (p *OrmPlugin) generateDefaultHandlers(file *generator.FileDescriptor) {
 	for _, message := range file.Messages() {
 		if getMessageOptions(message).GetOrmable() {
-			p.usingGORM = true
+			p.GetFileImports().usingGORM = true
 
 			p.generateCreateHandler(message)
 			if p.hasPrimaryKey(p.getOrmable(p.TypeName(message))) {
