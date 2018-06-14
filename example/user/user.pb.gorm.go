@@ -611,7 +611,7 @@ type TaskORM struct {
 	AccountID   string
 	Description string
 	Name        string
-	Priority    int
+	Priority    int64
 	UserId      int32
 }
 
@@ -632,6 +632,7 @@ func (m *Task) ToORM(ctx context.Context) (TaskORM, error) {
 	}
 	to.Name = m.Name
 	to.Description = m.Description
+	to.Priority = m.Priority
 	accountID, err := auth.GetAccountID(ctx, nil)
 	if err != nil {
 		return to, err
@@ -655,6 +656,7 @@ func (m *TaskORM) ToPB(ctx context.Context) (Task, error) {
 	}
 	to.Name = m.Name
 	to.Description = m.Description
+	to.Priority = m.Priority
 	if posthook, ok := interface{}(m).(TaskWithAfterToPB); ok {
 		err = posthook.AfterToPB(ctx, &to)
 	}
@@ -694,7 +696,7 @@ func DefaultCreateUser(ctx context.Context, in *User, db *gorm.DB) (*User, error
 		return nil, err
 	}
 	for i, e := range ormObj.Tasks {
-		e.Priority = i
+		e.Priority = int64(i)
 	}
 	if err = db.Create(&ormObj).Error; err != nil {
 		return nil, err
@@ -745,7 +747,7 @@ func DefaultUpdateUser(ctx context.Context, in *User, db *gorm.DB) (*User, error
 	ormObj.AccountID = accountID
 	db = db.Where(&UserORM{AccountID: accountID})
 	for i, e := range ormObj.Tasks {
-		e.Priority = i
+		e.Priority = int64(i)
 	}
 	if err = db.Save(&ormObj).Error; err != nil {
 		return nil, err
@@ -807,7 +809,7 @@ func DefaultStrictUpdateUser(ctx context.Context, in *User, db *gorm.DB) (*User,
 	}
 	db = db.Where(&UserORM{AccountID: ormObj.AccountID})
 	for i, e := range ormObj.Tasks {
-		e.Priority = i
+		e.Priority = int64(i)
 	}
 	if err = db.Save(&ormObj).Error; err != nil {
 		return nil, err

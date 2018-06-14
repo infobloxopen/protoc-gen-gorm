@@ -139,7 +139,7 @@ func (p *OrmPlugin) parseHasMany(msg *generator.Descriptor, parent *OrmableType,
 		if exField, ok := child.Fields[posField]; !ok {
 			child.Fields[posField] = &Field{Type: "int", GormFieldOptions: &gorm.GormFieldOptions{Tag: hasMany.GetPositionFieldTag()}}
 		} else {
-			if strings.Contains(exField.Type, "int") {
+			if !strings.Contains(exField.Type, "int") {
 				p.Fail("Cannot include", posField, "field into", child.Name, "as it already exists there with a different type.")
 			}
 		}
