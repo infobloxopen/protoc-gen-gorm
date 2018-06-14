@@ -321,9 +321,12 @@ func (m *IntPointTxnDefaultServer) Create(ctx context.Context, in *CreateIntPoin
 	}
 	txn, ok := tkgorm.FromContext(ctx)
 	if !ok {
-		return &CreateIntPointResponse{}, errors.New("Database Transaction For Request Missing")
+		return nil, errors.New("Database Transaction For Request Missing")
 	}
 	db := txn.Begin()
+	if db.Error != nil {
+		return nil, db.Error
+	}
 	res, err := DefaultCreateIntPoint(ctx, in.GetPayload(), db)
 	if err != nil {
 		return nil, err
@@ -342,9 +345,12 @@ func (m *IntPointTxnDefaultServer) Read(ctx context.Context, in *ReadIntPointReq
 	}
 	txn, ok := tkgorm.FromContext(ctx)
 	if !ok {
-		return &ReadIntPointResponse{}, errors.New("Database Transaction For Request Missing")
+		return nil, errors.New("Database Transaction For Request Missing")
 	}
 	db := txn.Begin()
+	if db.Error != nil {
+		return nil, db.Error
+	}
 	res, err := DefaultReadIntPoint(ctx, &IntPoint{Id: in.GetId()}, db)
 	if err != nil {
 		return nil, err
@@ -363,9 +369,12 @@ func (m *IntPointTxnDefaultServer) Update(ctx context.Context, in *UpdateIntPoin
 	}
 	txn, ok := tkgorm.FromContext(ctx)
 	if !ok {
-		return &UpdateIntPointResponse{}, errors.New("Database Transaction For Request Missing")
+		return nil, errors.New("Database Transaction For Request Missing")
 	}
 	db := txn.Begin()
+	if db.Error != nil {
+		return nil, db.Error
+	}
 	res, err := DefaultStrictUpdateIntPoint(ctx, in.GetPayload(), db)
 	if err != nil {
 		return nil, err
@@ -384,9 +393,12 @@ func (m *IntPointTxnDefaultServer) List(ctx context.Context, in *google_protobuf
 	}
 	txn, ok := tkgorm.FromContext(ctx)
 	if !ok {
-		return &ListIntPointResponse{}, errors.New("Database Transaction For Request Missing")
+		return nil, errors.New("Database Transaction For Request Missing")
 	}
 	db := txn.Begin()
+	if db.Error != nil {
+		return nil, db.Error
+	}
 	res, err := DefaultListIntPoint(ctx, db)
 	if err != nil {
 		return nil, err
@@ -405,9 +417,12 @@ func (m *IntPointTxnDefaultServer) Delete(ctx context.Context, in *DeleteIntPoin
 	}
 	txn, ok := tkgorm.FromContext(ctx)
 	if !ok {
-		return &DeleteIntPointResponse{}, errors.New("Database Transaction For Request Missing")
+		return nil, errors.New("Database Transaction For Request Missing")
 	}
 	db := txn.Begin()
+	if db.Error != nil {
+		return nil, db.Error
+	}
 	return &DeleteIntPointResponse{}, DefaultDeleteIntPoint(ctx, &IntPoint{Id: in.GetId()}, db)
 }
 
