@@ -44,7 +44,7 @@ type fileImports struct {
 	usingTime       bool
 	usingAuth       bool
 	usingJSON       bool
-	usingGormTypes  bool
+	usingGormProtos bool
 	usingPTime      bool
 	typesToRegister []string
 	githubImports   map[string]string
@@ -74,7 +74,7 @@ func (p *OrmPlugin) GenerateImports(file *generator.FileDescriptor) {
 			githubImports["gormpq"] = "github.com/jinzhu/gorm/dialects/postgres"
 		}
 	}
-	if imports.usingGormTypes {
+	if imports.usingGormProtos {
 		githubImports["gtypes"] = "github.com/infobloxopen/protoc-gen-gorm/types"
 	}
 	if imports.usingPTime {

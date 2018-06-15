@@ -196,11 +196,11 @@ func (p *OrmPlugin) parseBasicFields(msg *generator.Descriptor) {
 			} else if rawType == protoTypeUUID {
 				fieldType = "uuid.UUID"
 				p.GetFileImports().usingUUID = true
-				p.GetFileImports().usingGormTypes = true
+				p.GetFileImports().usingGormProtos = true
 			} else if rawType == protoTypeUUIDValue {
 				fieldType = "*uuid.UUID"
 				p.GetFileImports().usingUUID = true
-				p.GetFileImports().usingGormTypes = true
+				p.GetFileImports().usingGormProtos = true
 			} else if rawType == protoTypeTimestamp {
 				fieldType = "time.Time"
 				p.GetFileImports().usingTime = true
@@ -209,7 +209,7 @@ func (p *OrmPlugin) parseBasicFields(msg *generator.Descriptor) {
 				p.GetFileImports().usingJSON = true
 				if p.dbEngine == ENGINE_POSTGRES {
 					fieldType = "*gormpq.Jsonb"
-					p.GetFileImports().usingGormTypes = true
+					p.GetFileImports().usingGormProtos = true
 				} else {
 					// Potential TODO: add types we want to use in other/default DB engine
 					continue
@@ -272,11 +272,11 @@ func (p *OrmPlugin) addIncludedField(ormable *OrmableType, field *gorm.ExtraFiel
 		} else if v, ok := p.GetFileImports().githubImports[parts[0]]; !ok {
 			p.Fail(fmt.Sprintf(`Included field %q of type %q not a recognized special type, and no package specified`, field.GetName(), field.GetType()))
 		} else {
+			// If this package prefix has already been used with a package definition,
+			// let's not give up, but let them know and hope for the best
 			log.Printf(`Included field %q of type %q reuses package prefix %q, assumed to also be from package %q`,
 				field.GetName(), field.GetType(), parts[0], v)
 		}
-		// If this package prefix has already been used with a package definition,
-		// let's not give up and hope for the best instead
 	}
 	ormable.Fields[fieldName] = &Field{Type: field.GetType(), GormFieldOptions: &gorm.GormFieldOptions{Tag: field.GetTag()}}
 }
