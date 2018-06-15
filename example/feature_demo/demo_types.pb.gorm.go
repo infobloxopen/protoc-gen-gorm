@@ -36,6 +36,7 @@ import auth "github.com/infobloxopen/atlas-app-toolkit/auth"
 import gorm "github.com/jinzhu/gorm"
 import gormpq "github.com/jinzhu/gorm/dialects/postgres"
 import gtypes "github.com/infobloxopen/protoc-gen-gorm/types"
+import pq "github.com/lib/pq"
 import ptypes "github.com/golang/protobuf/ptypes"
 import tkgorm "github.com/infobloxopen/atlas-app-toolkit/gorm"
 import uuid "github.com/satori/go.uuid"
@@ -53,6 +54,8 @@ var _ = math.Inf
 
 type TestTypesORM struct {
 	ANestedObjectTypeWithIDId uint32
+	Array                     pq.StringArray
+	Array2                    pq.StringArray
 	BecomesInt                int32
 	CreatedAt                 time.Time
 	JsonField                 *gormpq.Jsonb
