@@ -289,17 +289,29 @@ func (p *OrmPlugin) removeChildAssociations(message *generator.Descriptor) {
 				assocKeyName = field.GetHasOne().GetAssociationForeignkey()
 				foreignKeyName = field.GetHasOne().GetForeignkey()
 			}
+			assocKeyType := ormable.Fields[assocKeyName].Type
+			assocOrmable := p.getOrmable(field.Type)
+			foreignKeyType := assocOrmable.Fields[foreignKeyName].Type
 			p.P(`filter`, fieldName, ` := `, strings.Trim(field.Type, "[]*"), `{}`)
-			zeroValue := p.guessZeroValue(ormable.Fields[assocKeyName].Type)
-			if strings.Contains(ormable.Fields[assocKeyName].Type, "*") {
+			zeroValue := p.guessZeroValue(assocKeyType)
+			if strings.Contains(assocKeyType, "*") {
 				p.P(`if ormObj.`, assocKeyName, ` == nil || *ormObj.`, assocKeyName, ` == `, zeroValue, `{`)
 			} else {
 				p.P(`if ormObj.`, assocKeyName, ` == `, zeroValue, `{`)
 			}
 			p.P(`return nil, errors.New("Can't do overwriting update with no `, assocKeyName, ` value for `, ormable.Name, `")`)
 			p.P(`}`)
-			p.P(`filter`, fieldName, `.`, foreignKeyName, ` = `, `ormObj.`, assocKeyName)
-			if _, ok := p.getOrmable(strings.TrimSuffix(field.Type, "ORM")).Fields["AccountID"]; ok {
+			filterDesc := "filter" + fieldName + "." + foreignKeyName
+			ormDesc := "ormObj." + assocKeyName
+			if strings.HasPrefix(foreignKeyType, "*") {
+				p.P(filterDesc, ` = new(`, strings.TrimPrefix(foreignKeyType, "*"), `)`)
+				filterDesc = "*" + filterDesc
+			}
+			if strings.HasPrefix(assocKeyType, "*") {
+				ormDesc = "*" + ormDesc
+			}
+			p.P(filterDesc, " = ", ormDesc)
+			if _, ok := assocOrmable.Fields["AccountID"]; ok {
 				p.P(`filter`, fieldName, `.AccountID = ormObj.AccountID`)
 			}
 			p.P(`if err = db.Where(filter`, fieldName, `).Delete(`, strings.Trim(field.Type, "[]*"), `{}).Error; err != nil {`)

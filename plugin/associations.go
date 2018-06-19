@@ -121,7 +121,15 @@ func (p *OrmPlugin) parseHasMany(msg *generator.Descriptor, parent *OrmableType,
 		}
 	}
 	hasMany.AssociationForeignkey = &assocKeyName
-	foreignKey := &Field{Type: assocKey.Type, GormFieldOptions: &gorm.GormFieldOptions{Tag: hasMany.GetForeignkeyTag()}}
+	var foreignKeyType string
+	if hasMany.GetForeignkeyTag().GetNotNull() {
+		foreignKeyType = strings.TrimPrefix(assocKey.Type, "*")
+	} else if strings.HasPrefix(assocKey.Type, "*") {
+		foreignKeyType = assocKey.Type
+	} else {
+		foreignKeyType = "*" + assocKey.Type
+	}
+	foreignKey := &Field{Type: foreignKeyType, GormFieldOptions: &gorm.GormFieldOptions{Tag: hasMany.GetForeignkeyTag()}}
 	var foreignKeyName string
 	if foreignKeyName = hasMany.GetForeignkey(); foreignKeyName == "" {
 		if p.countHasAssociationDimension(msg, fieldType) == 1 {
@@ -174,7 +182,15 @@ func (p *OrmPlugin) parseHasOne(msg *generator.Descriptor, parent *OrmableType, 
 		}
 	}
 	hasOne.AssociationForeignkey = &assocKeyName
-	foreignKey := &Field{Type: assocKey.Type, GormFieldOptions: &gorm.GormFieldOptions{Tag: hasOne.GetForeignkeyTag()}}
+	var foreignKeyType string
+	if hasOne.GetForeignkeyTag().GetNotNull() {
+		foreignKeyType = strings.TrimPrefix(assocKey.Type, "*")
+	} else if strings.HasPrefix(assocKey.Type, "*") {
+		foreignKeyType = assocKey.Type
+	} else {
+		foreignKeyType = "*" + assocKey.Type
+	}
+	foreignKey := &Field{Type: foreignKeyType, GormFieldOptions: &gorm.GormFieldOptions{Tag: hasOne.GetForeignkeyTag()}}
 	var foreignKeyName string
 	if foreignKeyName = generator.CamelCase(hasOne.GetForeignkey()); foreignKeyName == "" {
 		if p.countHasAssociationDimension(msg, fieldType) == 1 {
@@ -215,7 +231,15 @@ func (p *OrmPlugin) parseBelongsTo(msg *generator.Descriptor, child *OrmableType
 		}
 	}
 	belongsTo.AssociationForeignkey = &assocKeyName
-	foreignKey := &Field{Type: assocKey.Type, GormFieldOptions: &gorm.GormFieldOptions{Tag: belongsTo.GetForeignkeyTag()}}
+	var foreignKeyType string
+	if belongsTo.GetForeignkeyTag().GetNotNull() {
+		foreignKeyType = strings.TrimPrefix(assocKey.Type, "*")
+	} else if strings.HasPrefix(assocKey.Type, "*") {
+		foreignKeyType = assocKey.Type
+	} else {
+		foreignKeyType = "*" + assocKey.Type
+	}
+	foreignKey := &Field{Type: foreignKeyType, GormFieldOptions: &gorm.GormFieldOptions{Tag: belongsTo.GetForeignkeyTag()}}
 	var foreignKeyName string
 	if foreignKeyName = generator.CamelCase(belongsTo.GetForeignkey()); foreignKeyName == "" {
 		if p.countBelongsToAssociationDimension(msg, fieldType) == 1 {
