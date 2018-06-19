@@ -40,6 +40,7 @@ func (p *OrmPlugin) resetImports() {
 	p.usingTime = false
 	p.usingAuth = false
 	p.usingJSON = false
+	p.usingResource = false
 }
 
 // GenerateImports writes out required imports for the generated files
@@ -67,6 +68,9 @@ func (p *OrmPlugin) GenerateImports(file *generator.FileDescriptor) {
 			githubImports["gormpq"] = "github.com/jinzhu/gorm/dialects/postgres"
 			githubImports["gtypes"] = "github.com/infobloxopen/protoc-gen-gorm/types"
 		}
+	}
+	if p.usingResource {
+		githubImports["resource"] = "github.com/infobloxopen/atlas-app-toolkit/rpc/resource"
 	}
 	sort.Strings(stdImports)
 	for _, dep := range stdImports {

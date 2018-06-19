@@ -42,6 +42,14 @@ extend google.protobuf.FieldOptions {
 message GormFieldOptions {
     optional GormTag tag = 1;
     optional bool drop = 2;
+    oneof resource {
+        // if type of a field is infoblox.rpc.Identifier and ref = true
+        // the field will not be bind to the type of the outer message
+        // instead of: resource.Decode(the_message_of_this_field, this_field_value)
+        // the next will be rendered: resource.Decode(nil, this_field_value)
+        // the same is fo resource.Encode
+        bool ref = 7;
+    }
     oneof association {
         HasOneOptions has_one = 3;
         BelongsToOptions belongs_to = 4;

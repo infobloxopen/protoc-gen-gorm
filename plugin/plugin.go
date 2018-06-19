@@ -10,17 +10,18 @@ import (
 	jgorm "github.com/jinzhu/gorm"
 	"github.com/jinzhu/inflection"
 
-	gorm "github.com/infobloxopen/protoc-gen-gorm/options"
+	"github.com/infobloxopen/protoc-gen-gorm/options"
 )
 
 const (
 	typeMessage = 11
 	typeEnum    = 14
 
-	protoTypeTimestamp = "Timestamp" // last segment, first will be *google_protobufX
-	protoTypeJSON      = "JSONValue"
-	protoTypeUUID      = "UUID"
-	protoTypeUUIDValue = "UUIDValue"
+	protoTypeTimestamp  = "Timestamp" // last segment, first will be *google_protobufX
+	protoTypeJSON       = "JSONValue"
+	protoTypeUUID       = "UUID"
+	protoTypeUUIDValue  = "UUIDValue"
+	protoTypeIdentifier = "Identifier"
 )
 
 // DB Engine Enum
@@ -58,15 +59,16 @@ func NewOrmableType() *OrmableType {
 // OrmPlugin implements the plugin interface and creates GORM code from .protos
 type OrmPlugin struct {
 	*generator.Generator
-	dbEngine     int
-	wktPkgName   string
-	usingGORM    bool
-	usingUUID    bool
-	usingTime    bool
-	usingAuth    bool
-	usingJSON    bool
-	ormableTypes map[string]*OrmableType
-	EmptyFiles   []string
+	dbEngine      int
+	wktPkgName    string
+	usingGORM     bool
+	usingUUID     bool
+	usingTime     bool
+	usingAuth     bool
+	usingJSON     bool
+	usingResource bool
+	ormableTypes  map[string]*OrmableType
+	EmptyFiles    []string
 }
 
 // Name identifies the plugin
@@ -171,6 +173,9 @@ func (p *OrmPlugin) parseBasicFields(msg *generator.Descriptor) {
 					// Potential TODO: add types we want to use in other/default DB engine
 					continue
 				}
+			} else if rawType == protoTypeIdentifier {
+				p.usingResource = true
+				fieldType = "resource.Identifier"
 			} else {
 				continue
 			}
@@ -506,6 +511,25 @@ func (p *OrmPlugin) generateFieldConversion(message *generator.Descriptor, field
 					p.P(`}`)
 				}
 			} // Potential TODO other DB engine handling if desired
+		} else if coreType == protoTypeIdentifier {
+			resource := "m"
+			if getFieldOptions(field).GetRef() {
+				resource = "nil"
+			}
+
+			if toORM {
+				p.P(`if v, err := resource.Decode(`, resource, `, m.`, fieldName, `); err != nil {`)
+				p.P(`return to, err`)
+				p.P(`} else {`)
+				p.P(`to.`, fieldName, `= v`)
+				p.P(`}`)
+			} else {
+				p.P(`if v, err := resource.Encode(`, resource, `, m.`, fieldName, `); err != nil {`)
+				p.P(`return to, err`)
+				p.P(`} else {`)
+				p.P(`to.`, fieldName, `= v`)
+				p.P(`}`)
+			}
 		} else if p.isOrmable(fieldType) {
 			// Not a WKT, but a type we're building converters for
 			fieldType = strings.Trim(fieldType, "*")
