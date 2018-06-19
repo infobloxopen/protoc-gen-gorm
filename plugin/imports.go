@@ -1,6 +1,7 @@
 package plugin
 
 import (
+	"fmt"
 	"sort"
 	"strings"
 
@@ -33,68 +34,89 @@ func CleanImports(pFileText *string) *string {
 
 /* --------- Plugin level import handling --------- */
 
-func newFileImports() *fileImports {
-	return &fileImports{githubImports: make(map[string]string)}
+var (
+	gormImport   = &pkgImport{alias: "gorm", packagePath: "github.com/jinzhu/gorm"}
+	tkgormImport = &pkgImport{alias: "tkgorm", packagePath: "github.com/infobloxopen/atlas-app-toolkit/gorm"}
+	uuidImport   = &pkgImport{alias: "uuid", packagePath: "github.com/satori/go.uuid"}
+	authImport   = &pkgImport{alias: "auth", packagePath: "github.com/infobloxopen/atlas-app-toolkit/auth"}
+	gormpqImport = &pkgImport{alias: "gormpq", packagePath: "github.com/jinzhu/gorm/dialects/postgres"}
+	gtypesImport = &pkgImport{alias: "gtypes", packagePath: "github.com/infobloxopen/protoc-gen-gorm/types"}
+	ptypesImport = &pkgImport{alias: "ptypes", packagePath: "github.com/golang/protobuf/ptypes"}
+)
+
+type pkgImport struct {
+	packagePath string
+	alias       string
+}
+
+// NewImport takes a package and adds it to the list of packages to import
+// It will generate a unique new alias using the last portion of the import path
+// unless the package is already imported for this file. Either way, it returns
+// the package alias
+func (p *OrmPlugin) NewImport(packagePath string) string {
+	subpath := packagePath[strings.LastIndex(packagePath, "/")+1:]
+	// package will always be suffixed with an integer to prevent any collisions
+	// with standard package imports
+	for i := 1; ; i++ {
+		newAlias := fmt.Sprintf("%s%d", strings.Replace(subpath, ".", "_", -1), i)
+		if pkg, ok := p.GetFileImports().packages[newAlias]; ok {
+			if packagePath == pkg.packagePath {
+				return pkg.alias
+			}
+		} else {
+			p.GetFileImports().packages[newAlias] = &pkgImport{packagePath: packagePath, alias: newAlias}
+			return newAlias
+		}
+	}
+	// Should never reach here
+}
+
+// UsingGoImports should be used with basic packages like "time", or "context"
+func (p *OrmPlugin) UsingGoImports(pkgNames ...string) {
+	p.GetFileImports().stdImports = append(p.GetFileImports().stdImports, pkgNames...)
+}
+
+// UsingImports should only be used with the specially defined import vars
+func (p *OrmPlugin) UsingImports(pkgs ...*pkgImport) {
+	for _, pkg := range pkgs {
+		p.GetFileImports().packages[pkg.alias] = pkg
+	}
 }
 
 type fileImports struct {
 	wktPkgName      string
-	usingGORM       bool
-	usingUUID       bool
-	usingTime       bool
-	usingAuth       bool
-	usingJSON       bool
-	usingGormProtos bool
-	usingPTime      bool
 	typesToRegister []string
-	githubImports   map[string]string
+	stdImports      []string
+	packages        map[string]*pkgImport
+}
+
+func newFileImports() *fileImports {
+	return &fileImports{packages: make(map[string]*pkgImport)}
+}
+
+func (p *OrmPlugin) GetFileImports() *fileImports {
+	return p.fileImports[p.currentFile]
 }
 
 // GenerateImports writes out required imports for the generated files
 func (p *OrmPlugin) GenerateImports(file *generator.FileDescriptor) {
 	imports := p.fileImports[file]
-	stdImports := []string{}
-	githubImports := imports.githubImports
-	if imports.usingGORM {
-		stdImports = append(stdImports, "context", "errors")
-		githubImports["gorm"] = "github.com/jinzhu/gorm"
-		githubImports["tkgorm"] = "github.com/infobloxopen/atlas-app-toolkit/gorm"
-	}
-	if imports.usingUUID {
-		githubImports["uuid"] = "github.com/satori/go.uuid"
-	}
-	if imports.usingTime {
-		stdImports = append(stdImports, "time")
-	}
-	if imports.usingAuth {
-		githubImports["auth"] = "github.com/infobloxopen/atlas-app-toolkit/auth"
-	}
-	if imports.usingJSON {
-		if p.dbEngine == ENGINE_POSTGRES {
-			githubImports["gormpq"] = "github.com/jinzhu/gorm/dialects/postgres"
-		}
-	}
-	if imports.usingGormProtos {
-		githubImports["gtypes"] = "github.com/infobloxopen/protoc-gen-gorm/types"
-	}
-	if imports.usingPTime {
-		githubImports["ptypes"] = "github.com/golang/protobuf/ptypes"
-	}
 	for _, typeName := range imports.typesToRegister {
 		p.RecordTypeUse(typeName)
 	}
-	sort.Strings(stdImports)
-	for _, dep := range stdImports {
+	githubImports := imports.packages
+	sort.Strings(imports.stdImports)
+	for _, dep := range imports.stdImports {
 		p.PrintImport(dep, dep)
 	}
 	p.P()
-	keys := []string{}
-	for k := range githubImports {
-		keys = append(keys, k)
+	aliases := []string{}
+	for a := range githubImports {
+		aliases = append(aliases, a)
 	}
-	sort.Strings(keys)
-	for _, key := range keys {
-		p.PrintImport(key, githubImports[key])
+	sort.Strings(aliases)
+	for _, a := range aliases {
+		p.PrintImport(a, githubImports[a].packagePath)
 	}
 	p.P()
 }

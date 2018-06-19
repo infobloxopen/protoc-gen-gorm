@@ -2,7 +2,6 @@ package plugin
 
 import (
 	"fmt"
-	"log"
 	"sort"
 	"strings"
 
@@ -82,9 +81,6 @@ type OrmPlugin struct {
 	fileImports    map[*generator.FileDescriptor]*fileImports
 }
 
-func (p *OrmPlugin) GetFileImports() *fileImports {
-	return p.fileImports[p.currentFile]
-}
 func (p *OrmPlugin) setFile(file *generator.FileDescriptor) {
 	p.currentFile = file
 	p.currentPackage = file.GetPackage()
@@ -163,8 +159,8 @@ func (p *OrmPlugin) Generate(file *generator.FileDescriptor) {
 	}
 	p.generateDefaultHandlers(file)
 	p.generateDefaultServer(file)
-	// no ormable objects, and gorm not imported (means no services generated)
-	if empty && !p.GetFileImports().usingGORM {
+	// no ormable objects, and no imports (means no services generated)
+	if empty && len(p.GetFileImports().packages) == 0 {
 		p.EmptyFiles = append(p.EmptyFiles, file.GetName())
 	}
 }
@@ -195,21 +191,18 @@ func (p *OrmPlugin) parseBasicFields(msg *generator.Descriptor) {
 				fieldType = v
 			} else if rawType == protoTypeUUID {
 				fieldType = "uuid.UUID"
-				p.GetFileImports().usingUUID = true
-				p.GetFileImports().usingGormProtos = true
+				p.UsingImports(uuidImport, gtypesImport)
 			} else if rawType == protoTypeUUIDValue {
 				fieldType = "*uuid.UUID"
-				p.GetFileImports().usingUUID = true
-				p.GetFileImports().usingGormProtos = true
+				p.UsingImports(uuidImport, gtypesImport)
 			} else if rawType == protoTypeTimestamp {
 				fieldType = "time.Time"
-				p.GetFileImports().usingTime = true
-				p.GetFileImports().usingPTime = true
+				p.UsingGoImports("time")
+				p.UsingImports(ptypesImport)
 			} else if rawType == protoTypeJSON {
-				p.GetFileImports().usingJSON = true
 				if p.dbEngine == ENGINE_POSTGRES {
 					fieldType = "*gormpq.Jsonb"
-					p.GetFileImports().usingGormProtos = true
+					p.UsingImports(gormpqImport, gtypesImport)
 				} else {
 					// Potential TODO: add types we want to use in other/default DB engine
 					continue
@@ -241,44 +234,36 @@ func (p *OrmPlugin) parseBasicFields(msg *generator.Descriptor) {
 
 func (p *OrmPlugin) addIncludedField(ormable *OrmableType, field *gorm.ExtraField) {
 	fieldName := generator.CamelCase(field.GetName())
-	// Handle non-imported types
-	if _, ok := builtinTypes[strings.TrimPrefix(field.GetType(), "*")]; ok {
-		// basic type, 100% okay
-	} else if field.GetType() == "time.Time" {
-		p.GetFileImports().usingTime = true
-	} else if field.GetType() == "uuid.UUID" || field.GetType() == "*uuid.UUID" {
-		p.GetFileImports().usingUUID = true
-	} else if (field.GetType() == "postgres.Jsonb" || field.GetType() == "pq.Jsonb" ||
-		field.GetType() == "gormpq.Jsonb") && p.dbEngine == ENGINE_POSTGRES {
-		p.GetFileImports().usingJSON = true
-		fType := "gormpq.Jsonb"
-		field.Type = &fType
+	isPtr := strings.HasPrefix(field.GetType(), "*")
+	rawType := strings.TrimPrefix(field.GetType(), "*")
+	// Handle types with a package defined
+	if field.GetPackage() != "" {
+		alias := p.NewImport(field.GetPackage())
+		rawType = fmt.Sprintf("%s.%s", alias, field.GetType())
 	} else {
-		// Not a built-in or super-special type
-		parts := strings.Split(field.GetType(), ".")
-		// Type format is something other than package.type
-		if len(parts) != 2 {
+		// Handle types without a package defined
+		if _, ok := builtinTypes[rawType]; ok {
+			// basic type, 100% okay, no imports or changes needed needed
+		} else if rawType == "Time" || rawType == "time.Time" && field.GetPackage() == "" {
+			p.UsingGoImports("time")
+			rawType = "time.Time"
+		} else if rawType == "UUID" || rawType == "uuid.UUID" && field.GetPackage() == "" {
+			p.UsingImports(uuidImport)
+			rawType = "uuid.UUID"
+		} else if field.GetType() == "Jsonb" && field.GetPackage() == "" && p.dbEngine == ENGINE_POSTGRES {
+			p.UsingImports(gormpqImport)
+			rawType = "gormpq.Jsonb"
+		} else {
 			p.Fail(
-				fmt.Sprintf(`Included field %q of type %q does not match pattern package.type`,
+				fmt.Sprintf(
+					`Included field %q of type %q is not a recognized special type, and no package specified`,
 					field.GetName(), field.GetType()))
 		}
-		if field.GetPackage() != "" {
-			if v, ok := p.GetFileImports().githubImports[parts[0]]; ok && v != field.GetPackage() {
-				p.Fail(
-					fmt.Sprintf(`Included field %q of type %q reuses package prefix %q, but has different package %q, was %q`,
-						field.GetName(), field.GetType(), parts[0], field.GetPackage(), v))
-			}
-			p.GetFileImports().githubImports[parts[0]] = field.GetPackage()
-		} else if v, ok := p.GetFileImports().githubImports[parts[0]]; !ok {
-			p.Fail(fmt.Sprintf(`Included field %q of type %q not a recognized special type, and no package specified`, field.GetName(), field.GetType()))
-		} else {
-			// If this package prefix has already been used with a package definition,
-			// let's not give up, but let them know and hope for the best
-			log.Printf(`Included field %q of type %q reuses package prefix %q, assumed to also be from package %q`,
-				field.GetName(), field.GetType(), parts[0], v)
-		}
 	}
-	ormable.Fields[fieldName] = &Field{Type: field.GetType(), GormFieldOptions: &gorm.GormFieldOptions{Tag: field.GetTag()}}
+	if isPtr {
+		rawType = fmt.Sprintf("*%s", rawType)
+	}
+	ormable.Fields[fieldName] = &Field{Type: rawType, GormFieldOptions: &gorm.GormFieldOptions{Tag: field.GetTag()}}
 }
 
 func (p *OrmPlugin) isOrmable(typeName string) bool {
@@ -453,7 +438,7 @@ func (p *OrmPlugin) generateConvertFunctions(message *generator.Descriptor) {
 		p.generateFieldConversion(message, field, true)
 	}
 	if getMessageOptions(message).GetMultiAccount() {
-		p.GetFileImports().usingAuth = true
+		p.UsingImports(authImport)
 		p.P("accountID, err := auth.GetAccountID(ctx, nil)")
 		p.P("if err != nil {")
 		p.P("return to, err")
