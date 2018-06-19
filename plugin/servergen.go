@@ -274,9 +274,12 @@ func (p *OrmPlugin) generateDBSetup(service *descriptor.ServiceDescriptorProto, 
 	if opts := getServiceOptions(service); opts != nil && opts.GetTxnMiddleware() {
 		p.P(`txn, ok := tkgorm.FromContext(ctx)`)
 		p.P(`if !ok {`)
-		p.P(`return &`, p.TypeName(outType), `{}, errors.New("Database Transaction For Request Missing")`)
+		p.P(`return nil, errors.New("Database Transaction For Request Missing")`)
 		p.P(`}`)
 		p.P(`db := txn.Begin()`)
+		p.P(`if db.Error != nil {`)
+		p.P(`return nil, db.Error`)
+		p.P(`}`)
 	} else {
 		p.P(`db := m.DB`)
 	}
