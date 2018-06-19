@@ -47,7 +47,7 @@ the field options `[(gorm.field).tag = {..., tag: value, ...}]`.
 - A {PbType}.ToORM and {TypeORM}.ToPB function
 - Additional, unexposed fields added from the `option (gorm.opts) = {include: []}`,
   either of a built-in type e.g. `{type: "int32", name: "secret_key"}`, or an
-  imported type, e.g. `{type: "pq.StringArray", name: "array", package:"github.com/lib/pq"}`.
+  imported type, e.g. `{type: "StringArray", name: "array", package:"github.com/lib/pq"}`.
 - Barebones C/U/R/D/L handlers that accept the protobuf versions (as from
   an API call), a context (used with the multiaccount option and for collection
   operators https://github.com/infobloxopen/atlas-app-toolkit#collection-operators),
