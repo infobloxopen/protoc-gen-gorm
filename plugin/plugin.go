@@ -21,6 +21,7 @@ const (
 	protoTypeJSON      = "JSONValue"
 	protoTypeUUID      = "UUID"
 	protoTypeUUIDValue = "UUIDValue"
+	protoTypeInet      = "InetValue"
 )
 
 // DB Engine Enum
@@ -195,6 +196,9 @@ func (p *OrmPlugin) parseBasicFields(msg *generator.Descriptor) {
 					// Potential TODO: add types we want to use in other/default DB engine
 					continue
 				}
+			} else if rawType == protoTypeInet && p.dbEngine == ENGINE_POSTGRES {
+				fieldType = "*gtypes.Inet"
+				p.GetFileImports().usingInet = true
 			} else {
 				continue
 			}
@@ -345,6 +349,19 @@ func (p *OrmPlugin) renderGormTag(field *Field) string {
 		}
 		if mtm.AssociationJointableForeignkey != nil {
 			res += fmt.Sprintf("association_jointable_foreignkey:%s;", mtm.GetAssociationJointableForeignkey())
+		}
+	}
+	if field.Type == "*gtypes.Inet" {
+		if p.dbEngine == ENGINE_POSTGRES {
+			if res == "" {
+				return "`sql:\"type=inet\"`"
+			}
+			return fmt.Sprintf("`gorm:\"%s\" sql:\"type=inet\"`", strings.TrimRight(res, ";"))
+		} else {
+			if res == "" {
+				return "`sql:\"type=varchar()\"`"
+			}
+			return fmt.Sprintf("`gorm:\"%s\" sql:\"type=inet\"`", strings.TrimRight(res, ";"))
 		}
 	}
 	if res == "" {
@@ -532,6 +549,18 @@ func (p *OrmPlugin) generateFieldConversion(message *generator.Descriptor, field
 					p.P(`}`)
 				}
 			} // Potential TODO other DB engine handling if desired
+		} else if coreType == protoTypeInet { // Inet type for Postgres only, currently
+			if p.dbEngine == ENGINE_POSTGRES {
+				if toORM {
+					p.P(`if to.`, fieldName, `, err = gtypes.ParseInet(m.`, fieldName, `.Value); err != nil {`)
+					p.P(`return to, err`)
+					p.P(`}`)
+				} else {
+					p.P(`if m.`, fieldName, ` != nil && m.`, fieldName, `.IPNet != nil {`)
+					p.P(`to.`, fieldName, ` = &gtypes.InetValue{Value: m.`, fieldName, `.String()}`)
+					p.P(`}`)
+				}
+			}
 		} else if p.isOrmable(fieldType) {
 			// Not a WKT, but a type we're building converters for
 			fieldType = strings.Trim(fieldType, "*")

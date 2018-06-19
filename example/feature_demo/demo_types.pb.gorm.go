@@ -171,6 +171,7 @@ type TestTypesWithAfterToPB interface {
 
 type TypeWithIDORM struct {
 	ANestedObject *TestTypesORM `gorm:"foreignkey:ANestedObjectTypeWithIDId;association_foreignkey:Id"`
+	Address       *gtypes.Inet  `sql:"type=inet"`
 	Id            uint32
 	IntPointId    uint32
 	Ip            string          `gorm:"column:ip_addr"`
@@ -230,6 +231,9 @@ func (m *TypeWithID) ToORM(ctx context.Context) (TypeWithIDORM, error) {
 		}
 		to.User = &tempUser
 	}
+	if to.Address, err = gtypes.ParseInet(m.Address.Value); err != nil {
+		return to, err
+	}
 	if posthook, ok := interface{}(m).(TypeWithIDWithAfterToORM); ok {
 		err = posthook.AfterToORM(ctx, &to)
 	}
@@ -279,6 +283,9 @@ func (m *TypeWithIDORM) ToPB(ctx context.Context) (TypeWithID, error) {
 			return to, err
 		}
 		to.User = &tempUser
+	}
+	if m.Address != nil && m.Address.IPNet != nil {
+		to.Address = &gtypes.InetValue{Value: m.Address.String()}
 	}
 	if posthook, ok := interface{}(m).(TypeWithIDWithAfterToPB); ok {
 		err = posthook.AfterToPB(ctx, &to)

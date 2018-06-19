@@ -81,6 +81,7 @@ message TypeWithID {
   // association type, cross-package is limited to belongs_to and many_to_many)
   example.IntPoint point = 5 [(gorm.field).belongs_to = {}];
   user.User user = 6 [(gorm.field).belongs_to = {}];
+  gorm.types.InetValue address = 7;
 }
 
 // MultiaccountTypeWithID demonstrates the generated multi-account support
