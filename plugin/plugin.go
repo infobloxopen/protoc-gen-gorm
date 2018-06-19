@@ -236,21 +236,23 @@ func (p *OrmPlugin) addIncludedField(ormable *OrmableType, field *gorm.ExtraFiel
 	fieldName := generator.CamelCase(field.GetName())
 	isPtr := strings.HasPrefix(field.GetType(), "*")
 	rawType := strings.TrimPrefix(field.GetType(), "*")
+	// cut off any package subpaths
+	rawType = rawType[strings.LastIndex(rawType, ".")+1:]
 	// Handle types with a package defined
 	if field.GetPackage() != "" {
 		alias := p.NewImport(field.GetPackage())
-		rawType = fmt.Sprintf("%s.%s", alias, field.GetType())
+		rawType = fmt.Sprintf("%s.%s", alias, rawType)
 	} else {
 		// Handle types without a package defined
 		if _, ok := builtinTypes[rawType]; ok {
 			// basic type, 100% okay, no imports or changes needed needed
-		} else if rawType == "Time" || rawType == "time.Time" && field.GetPackage() == "" {
+		} else if rawType == "Time" {
 			p.UsingGoImports("time")
 			rawType = "time.Time"
-		} else if rawType == "UUID" || rawType == "uuid.UUID" && field.GetPackage() == "" {
+		} else if rawType == "UUID" {
 			p.UsingImports(uuidImport)
 			rawType = "uuid.UUID"
-		} else if field.GetType() == "Jsonb" && field.GetPackage() == "" && p.dbEngine == ENGINE_POSTGRES {
+		} else if field.GetType() == "Jsonb" && p.dbEngine == ENGINE_POSTGRES {
 			p.UsingImports(gormpqImport)
 			rawType = "gormpq.Jsonb"
 		} else {
