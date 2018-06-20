@@ -18,7 +18,7 @@ var _ = fmt.Errorf
 var _ = math.Inf
 
 type IntPointORM struct {
-	Id uint32
+	Id uint32 // of IntPoint
 	X  int32
 	Y  int32
 }
