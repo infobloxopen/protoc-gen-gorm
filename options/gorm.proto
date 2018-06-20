@@ -32,6 +32,7 @@ message ExtraField {
   required string type = 1;
   required string name = 2;
   optional GormTag tag = 3;
+  optional string package = 4;
 }
 
 // Field level specifications
