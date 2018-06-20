@@ -277,6 +277,8 @@ func (p *OrmPlugin) addIncludedField(ormable *OrmableType, field *gorm.ExtraFiel
 			rawType = fmt.Sprintf("%s.UUID", p.Import(uuidImport))
 		} else if field.GetType() == "Jsonb" && p.dbEngine == ENGINE_POSTGRES {
 			rawType = fmt.Sprintf("%s.Jsonb", p.Import(gormpqImport))
+		} else if rawType == "Inet" {
+			rawType = fmt.Sprintf("%s.Inet", p.Import(gtypesImport))
 		} else {
 			p.Fail(
 				fmt.Sprintf(
@@ -602,16 +604,14 @@ func (p *OrmPlugin) generateFieldConversion(message *generator.Descriptor, field
 				}
 			} // Potential TODO other DB engine handling if desired
 		} else if coreType == protoTypeInet { // Inet type for Postgres only, currently
-			if p.dbEngine == ENGINE_POSTGRES {
-				if toORM {
-					p.P(`if to.`, fieldName, `, err = `, p.Import(gtypesImport), `.ParseInet(m.`, fieldName, `.Value); err != nil {`)
-					p.P(`return to, err`)
-					p.P(`}`)
-				} else {
-					p.P(`if m.`, fieldName, ` != nil && m.`, fieldName, `.IPNet != nil {`)
-					p.P(`to.`, fieldName, ` = &`, p.Import(gtypesImport), `.InetValue{Value: m.`, fieldName, `.String()}`)
-					p.P(`}`)
-				}
+			if toORM {
+				p.P(`if to.`, fieldName, `, err = `, p.Import(gtypesImport), `.ParseInet(m.`, fieldName, `.Value); err != nil {`)
+				p.P(`return to, err`)
+				p.P(`}`)
+			} else {
+				p.P(`if m.`, fieldName, ` != nil && m.`, fieldName, `.IPNet != nil {`)
+				p.P(`to.`, fieldName, ` = &`, p.Import(gtypesImport), `.InetValue{Value: m.`, fieldName, `.String()}`)
+				p.P(`}`)
 			}
 		} else if p.isOrmable(fieldType) {
 			// Not a WKT, but a type we're building converters for

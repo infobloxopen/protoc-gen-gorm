@@ -24,11 +24,16 @@ func (i *Inet) Scan(value interface{}) error {
 	if value == nil {
 		return nil
 	}
+	var strdat string
 	bytes, ok := value.([]byte)
 	if !ok {
-		return errors.New("Could not cast value in Inet.Scan as []byte")
+		if strdat, ok = value.(string); !ok {
+			return errors.New("Could not cast value in Inet.Scan as []byte or string")
+		}
+	} else {
+		strdat = string(bytes)
 	}
-	ip, cidr, err := net.ParseCIDR(string(bytes))
+	ip, cidr, err := net.ParseCIDR(strdat)
 	if err != nil {
 		return err
 	}
