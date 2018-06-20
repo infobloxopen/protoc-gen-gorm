@@ -21,6 +21,7 @@ const (
 	protoTypeJSON      = "JSONValue"
 	protoTypeUUID      = "UUID"
 	protoTypeUUIDValue = "UUIDValue"
+	protoTypeResource  = "Identifier"
 )
 
 // DB Engine Enum
@@ -42,14 +43,16 @@ var wellKnownTypes = map[string]string{
 }
 
 type OrmableType struct {
-	Name    string
-	Package string
-	Fields  map[string]*Field
+	OriginName string
+	Name       string
+	Package    string
+	Fields     map[string]*Field
 }
 
 type Field struct {
 	Type string
 	*gorm.GormFieldOptions
+	BindTo string
 }
 
 func NewOrmableType() *OrmableType {
@@ -114,6 +117,7 @@ func (p *OrmPlugin) Generate(file *generator.FileDescriptor) {
 				if getMessageOptions(msg).GetOrmable() {
 					ormable := NewOrmableType()
 					ormable.Package = fileProto.GetPackage()
+					ormable.OriginName = typeName
 					if _, ok := p.ormableTypes[typeName]; !ok {
 						p.ormableTypes[typeName] = ormable
 					}
@@ -129,6 +133,11 @@ func (p *OrmPlugin) Generate(file *generator.FileDescriptor) {
 				typeName := generator.CamelCase(msg.GetName())
 				if p.isOrmable(typeName) {
 					p.parseAssociations(msg)
+					o := p.getOrmable(typeName)
+					if p.hasPrimaryKey(o) {
+						_, fd := p.findPrimaryKey(o)
+						fd.BindTo = o.OriginName
+					}
 				}
 			}
 		}
@@ -195,6 +204,9 @@ func (p *OrmPlugin) parseBasicFields(msg *generator.Descriptor) {
 					// Potential TODO: add types we want to use in other/default DB engine
 					continue
 				}
+			} else if rawType == protoTypeResource {
+				fieldType = "*resource.Identifier"
+				p.GetFileImports().usingResource = true
 			} else {
 				continue
 			}
@@ -250,7 +262,12 @@ func (p *OrmPlugin) generateOrmable(message *generator.Descriptor) {
 	p.P(`type `, ormable.Name, ` struct {`)
 	for _, fieldName := range p.getSortedFieldNames(ormable.Fields) {
 		field := ormable.Fields[fieldName]
-		p.P(fieldName, ` `, field.Type, p.renderGormTag(field))
+		if field.BindTo != "" {
+			p.P(fieldName, ` `, field.Type, p.renderGormTag(field), `// of `, field.BindTo)
+		} else {
+			p.P(fieldName, ` `, field.Type, p.renderGormTag(field))
+		}
+
 	}
 	p.P(`}`)
 }
@@ -372,6 +389,7 @@ func (p *OrmPlugin) generateTableNameFunction(message *generator.Descriptor) {
 // generateMapFunctions creates the converter functions
 func (p *OrmPlugin) generateConvertFunctions(message *generator.Descriptor) {
 	typeName := p.TypeName(message)
+	ormable := p.getOrmable(generator.CamelCaseSlice(message.TypeName()))
 
 	///// To Orm
 	p.P(`// ToORM runs the BeforeToORM hook if present, converts the fields of this`)
@@ -389,7 +407,11 @@ func (p *OrmPlugin) generateConvertFunctions(message *generator.Descriptor) {
 		if getFieldOptions(field).GetDrop() {
 			continue
 		}
-		p.generateFieldConversion(message, field, true)
+		var ofield *Field
+		if ormable != nil {
+			ofield = ormable.Fields[generator.CamelCase(field.GetName())]
+		}
+		p.generateFieldConversion(message, field, true, ofield)
 	}
 	if getMessageOptions(message).GetMultiAccount() {
 		p.GetFileImports().usingAuth = true
@@ -423,7 +445,11 @@ func (p *OrmPlugin) generateConvertFunctions(message *generator.Descriptor) {
 		if getFieldOptions(field).GetDrop() {
 			continue
 		}
-		p.generateFieldConversion(message, field, false)
+		var ofield *Field
+		if ormable != nil {
+			ofield = ormable.Fields[generator.CamelCase(field.GetName())]
+		}
+		p.generateFieldConversion(message, field, false, ofield)
 	}
 	p.P(`if posthook, ok := interface{}(m).(`, typeName, `WithAfterToPB); ok {`)
 	p.P(`err = posthook.AfterToPB(ctx, &to)`)
@@ -433,7 +459,7 @@ func (p *OrmPlugin) generateConvertFunctions(message *generator.Descriptor) {
 }
 
 // Output code that will convert a field to/from orm.
-func (p *OrmPlugin) generateFieldConversion(message *generator.Descriptor, field *descriptor.FieldDescriptorProto, toORM bool) error {
+func (p *OrmPlugin) generateFieldConversion(message *generator.Descriptor, field *descriptor.FieldDescriptorProto, toORM bool, ofield *Field) error {
 	fieldName := generator.CamelCase(field.GetName())
 	fieldType, _ := p.GoType(message, field)
 	if field.IsRepeated() { // Repeated Object ----------------------------------
@@ -532,6 +558,21 @@ func (p *OrmPlugin) generateFieldConversion(message *generator.Descriptor, field
 					p.P(`}`)
 				}
 			} // Potential TODO other DB engine handling if desired
+		} else if coreType == protoTypeResource {
+			resource := "nil" // assuming we do not know the PB type, nil means call codec for any resource
+
+			if ofield != nil && ofield.BindTo != "" {
+				resource = "&" + ofield.BindTo + "{}"
+			}
+			if toORM {
+				p.P(`if v, err := resource.Decode(`, resource, `, m.`, fieldName, `); err != nil {`)
+			} else {
+				p.P(`if v, err := resource.Encode(`, resource, `, m.`, fieldName, `); err != nil {`)
+			}
+			p.P(`return to, err`)
+			p.P(`} else {`)
+			p.P(`to.`, fieldName, ` = v`)
+			p.P(`}`)
 		} else if p.isOrmable(fieldType) {
 			// Not a WKT, but a type we're building converters for
 			fieldType = strings.Trim(fieldType, "*")

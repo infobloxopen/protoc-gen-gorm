@@ -11,6 +11,7 @@ vendor:
 vendor-update:
 	@dep ensure
 
+.PHONY: options
 options:
 	protoc -I. -I$(SRCPATH) -I./vendor \
 		--gogo_out="Mgoogle/protobuf/descriptor.proto=github.com/gogo/protobuf/protoc-gen-gogo/descriptor:$(SRCPATH)" \

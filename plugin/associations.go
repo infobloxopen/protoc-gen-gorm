@@ -150,6 +150,8 @@ func (p *OrmPlugin) parseHasMany(msg *generator.Descriptor, parent *OrmableType,
 			p.Fail("Cannot include", foreignKeyName, "field into", child.Name, "as it already exists there with a different type.")
 		}
 	}
+	child.Fields[foreignKeyName].BindTo = parent.OriginName
+
 	var posField string
 	if posField = generator.CamelCase(hasMany.GetPositionField()); posField != "" {
 		if exField, ok := child.Fields[posField]; !ok {
@@ -211,6 +213,7 @@ func (p *OrmPlugin) parseHasOne(msg *generator.Descriptor, parent *OrmableType, 
 			p.Fail("Cannot include", foreignKeyName, "field into", child.Name, "as it already exists there with a different type.")
 		}
 	}
+	child.Fields[foreignKeyName].BindTo = parent.OriginName
 }
 
 func (p *OrmPlugin) parseBelongsTo(msg *generator.Descriptor, child *OrmableType, fieldName string, fieldType string, parent *OrmableType, opts *gorm.GormFieldOptions) {
@@ -256,6 +259,7 @@ func (p *OrmPlugin) parseBelongsTo(msg *generator.Descriptor, child *OrmableType
 			p.Fail("Cannot include", foreignKeyName, "field into", child.Name, "as it already exists there with a different type.")
 		}
 	}
+	child.Fields[foreignKeyName].BindTo = parent.OriginName
 }
 
 func (p *OrmPlugin) parseManyToMany(msg *generator.Descriptor, ormable *OrmableType, fieldName string, fieldType string, assoc *OrmableType, opts *gorm.GormFieldOptions) {
