@@ -35,13 +35,13 @@ func CleanImports(pFileText *string) *string {
 /* --------- Plugin level import handling --------- */
 
 var (
-	gormImport   = &pkgImport{alias: "gorm", packagePath: "github.com/jinzhu/gorm"}
-	tkgormImport = &pkgImport{alias: "tkgorm", packagePath: "github.com/infobloxopen/atlas-app-toolkit/gorm"}
-	uuidImport   = &pkgImport{alias: "uuid", packagePath: "github.com/satori/go.uuid"}
-	authImport   = &pkgImport{alias: "auth", packagePath: "github.com/infobloxopen/atlas-app-toolkit/auth"}
-	gormpqImport = &pkgImport{alias: "gormpq", packagePath: "github.com/jinzhu/gorm/dialects/postgres"}
-	gtypesImport = &pkgImport{alias: "gtypes", packagePath: "github.com/infobloxopen/protoc-gen-gorm/types"}
-	ptypesImport = &pkgImport{alias: "ptypes", packagePath: "github.com/golang/protobuf/ptypes"}
+	gormImport   = "github.com/jinzhu/gorm"
+	tkgormImport = "github.com/infobloxopen/atlas-app-toolkit/gorm"
+	uuidImport   = "github.com/satori/go.uuid"
+	authImport   = "github.com/infobloxopen/atlas-app-toolkit/auth"
+	gormpqImport = "github.com/jinzhu/gorm/dialects/postgres"
+	gtypesImport = "github.com/infobloxopen/protoc-gen-gorm/types"
+	ptypesImport = "github.com/golang/protobuf/ptypes"
 )
 
 type pkgImport struct {
@@ -53,7 +53,7 @@ type pkgImport struct {
 // It will generate a unique new alias using the last portion of the import path
 // unless the package is already imported for this file. Either way, it returns
 // the package alias
-func (p *OrmPlugin) NewImport(packagePath string) string {
+func (p *OrmPlugin) Import(packagePath string) string {
 	subpath := packagePath[strings.LastIndex(packagePath, "/")+1:]
 	// package will always be suffixed with an integer to prevent any collisions
 	// with standard package imports
@@ -74,13 +74,6 @@ func (p *OrmPlugin) NewImport(packagePath string) string {
 // UsingGoImports should be used with basic packages like "time", or "context"
 func (p *OrmPlugin) UsingGoImports(pkgNames ...string) {
 	p.GetFileImports().stdImports = append(p.GetFileImports().stdImports, pkgNames...)
-}
-
-// UsingImports should only be used with the specially defined import vars
-func (p *OrmPlugin) UsingImports(pkgs ...*pkgImport) {
-	for _, pkg := range pkgs {
-		p.GetFileImports().packages[pkg.alias] = pkg
-	}
 }
 
 type fileImports struct {

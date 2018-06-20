@@ -16,7 +16,7 @@ func (p *OrmPlugin) generateDefaultServer(file *generator.FileDescriptor) {
 			// All the default server has is a db connection
 			p.P(`type `, svcName, `DefaultServer struct {`)
 			if !opts.GetTxnMiddleware() {
-				p.P(`DB *gorm.DB`)
+				p.P(`DB *`, p.Import(gormImport), `.DB`)
 			}
 			p.P(`}`)
 			for _, method := range service.GetMethod() {
@@ -272,7 +272,7 @@ func (p *OrmPlugin) generateMethodSignature(inType, outType generator.Object, me
 
 func (p *OrmPlugin) generateDBSetup(service *descriptor.ServiceDescriptorProto, outType generator.Object) error {
 	if opts := getServiceOptions(service); opts != nil && opts.GetTxnMiddleware() {
-		p.P(`txn, ok := tkgorm.FromContext(ctx)`)
+		p.P(`txn, ok := `, p.Import(tkgormImport), `.FromContext(ctx)`)
 		p.P(`if !ok {`)
 		p.P(`return nil, errors.New("Database Transaction For Request Missing")`)
 		p.P(`}`)

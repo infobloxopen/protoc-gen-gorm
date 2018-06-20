@@ -6,8 +6,8 @@ package example
 import context "context"
 import errors "errors"
 
-import gorm "github.com/jinzhu/gorm"
-import tkgorm "github.com/infobloxopen/atlas-app-toolkit/gorm"
+import gorm1 "github.com/jinzhu/gorm"
+import gorm2 "github.com/infobloxopen/atlas-app-toolkit/gorm"
 
 import fmt "fmt"
 import math "math"
@@ -90,7 +90,7 @@ type IntPointWithAfterToPB interface {
 }
 
 // DefaultCreateIntPoint executes a basic gorm create call
-func DefaultCreateIntPoint(ctx context.Context, in *IntPoint, db *gorm.DB) (*IntPoint, error) {
+func DefaultCreateIntPoint(ctx context.Context, in *IntPoint, db *gorm1.DB) (*IntPoint, error) {
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultCreateIntPoint")
 	}
@@ -106,7 +106,7 @@ func DefaultCreateIntPoint(ctx context.Context, in *IntPoint, db *gorm.DB) (*Int
 }
 
 // DefaultReadIntPoint executes a basic gorm read call
-func DefaultReadIntPoint(ctx context.Context, in *IntPoint, db *gorm.DB) (*IntPoint, error) {
+func DefaultReadIntPoint(ctx context.Context, in *IntPoint, db *gorm1.DB) (*IntPoint, error) {
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultReadIntPoint")
 	}
@@ -123,7 +123,7 @@ func DefaultReadIntPoint(ctx context.Context, in *IntPoint, db *gorm.DB) (*IntPo
 }
 
 // DefaultUpdateIntPoint executes a basic gorm update call
-func DefaultUpdateIntPoint(ctx context.Context, in *IntPoint, db *gorm.DB) (*IntPoint, error) {
+func DefaultUpdateIntPoint(ctx context.Context, in *IntPoint, db *gorm1.DB) (*IntPoint, error) {
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultUpdateIntPoint")
 	}
@@ -138,7 +138,7 @@ func DefaultUpdateIntPoint(ctx context.Context, in *IntPoint, db *gorm.DB) (*Int
 	return &pbResponse, err
 }
 
-func DefaultDeleteIntPoint(ctx context.Context, in *IntPoint, db *gorm.DB) error {
+func DefaultDeleteIntPoint(ctx context.Context, in *IntPoint, db *gorm1.DB) error {
 	if in == nil {
 		return errors.New("Nil argument to DefaultDeleteIntPoint")
 	}
@@ -154,7 +154,7 @@ func DefaultDeleteIntPoint(ctx context.Context, in *IntPoint, db *gorm.DB) error
 }
 
 // DefaultStrictUpdateIntPoint clears first level 1:many children and then executes a gorm update call
-func DefaultStrictUpdateIntPoint(ctx context.Context, in *IntPoint, db *gorm.DB) (*IntPoint, error) {
+func DefaultStrictUpdateIntPoint(ctx context.Context, in *IntPoint, db *gorm1.DB) (*IntPoint, error) {
 	if in == nil {
 		return nil, fmt.Errorf("Nil argument to DefaultCascadedUpdateIntPoint")
 	}
@@ -173,9 +173,9 @@ func DefaultStrictUpdateIntPoint(ctx context.Context, in *IntPoint, db *gorm.DB)
 }
 
 // DefaultListIntPoint executes a gorm list call
-func DefaultListIntPoint(ctx context.Context, db *gorm.DB) ([]*IntPoint, error) {
+func DefaultListIntPoint(ctx context.Context, db *gorm1.DB) ([]*IntPoint, error) {
 	ormResponse := []IntPointORM{}
-	db, err := tkgorm.ApplyCollectionOperators(db, ctx)
+	db, err := gorm2.ApplyCollectionOperators(db, ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -201,7 +201,7 @@ func DefaultListIntPoint(ctx context.Context, db *gorm.DB) ([]*IntPoint, error) 
 }
 
 type IntPointServiceDefaultServer struct {
-	DB *gorm.DB
+	DB *gorm1.DB
 }
 type IntPointServiceCreateCustomHandler interface {
 	CustomCreate(context.Context, *CreateIntPointRequest) (*CreateIntPointResponse, error)
@@ -319,7 +319,7 @@ func (m *IntPointTxnDefaultServer) Create(ctx context.Context, in *CreateIntPoin
 	if custom, ok := interface{}(m).(IntPointTxnCreateCustomHandler); ok {
 		return custom.CustomCreate(ctx, in)
 	}
-	txn, ok := tkgorm.FromContext(ctx)
+	txn, ok := gorm2.FromContext(ctx)
 	if !ok {
 		return nil, errors.New("Database Transaction For Request Missing")
 	}
@@ -343,7 +343,7 @@ func (m *IntPointTxnDefaultServer) Read(ctx context.Context, in *ReadIntPointReq
 	if custom, ok := interface{}(m).(IntPointTxnReadCustomHandler); ok {
 		return custom.CustomRead(ctx, in)
 	}
-	txn, ok := tkgorm.FromContext(ctx)
+	txn, ok := gorm2.FromContext(ctx)
 	if !ok {
 		return nil, errors.New("Database Transaction For Request Missing")
 	}
@@ -367,7 +367,7 @@ func (m *IntPointTxnDefaultServer) Update(ctx context.Context, in *UpdateIntPoin
 	if custom, ok := interface{}(m).(IntPointTxnUpdateCustomHandler); ok {
 		return custom.CustomUpdate(ctx, in)
 	}
-	txn, ok := tkgorm.FromContext(ctx)
+	txn, ok := gorm2.FromContext(ctx)
 	if !ok {
 		return nil, errors.New("Database Transaction For Request Missing")
 	}
@@ -391,7 +391,7 @@ func (m *IntPointTxnDefaultServer) List(ctx context.Context, in *google_protobuf
 	if custom, ok := interface{}(m).(IntPointTxnListCustomHandler); ok {
 		return custom.CustomList(ctx, in)
 	}
-	txn, ok := tkgorm.FromContext(ctx)
+	txn, ok := gorm2.FromContext(ctx)
 	if !ok {
 		return nil, errors.New("Database Transaction For Request Missing")
 	}
@@ -415,7 +415,7 @@ func (m *IntPointTxnDefaultServer) Delete(ctx context.Context, in *DeleteIntPoin
 	if custom, ok := interface{}(m).(IntPointTxnDeleteCustomHandler); ok {
 		return custom.CustomDelete(ctx, in)
 	}
-	txn, ok := tkgorm.FromContext(ctx)
+	txn, ok := gorm2.FromContext(ctx)
 	if !ok {
 		return nil, errors.New("Database Transaction For Request Missing")
 	}
