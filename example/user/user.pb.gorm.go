@@ -21,10 +21,10 @@ import context "context"
 import errors "errors"
 import time "time"
 
-import auth "github.com/infobloxopen/atlas-app-toolkit/auth"
-import gorm "github.com/jinzhu/gorm"
-import ptypes "github.com/golang/protobuf/ptypes"
-import tkgorm "github.com/infobloxopen/atlas-app-toolkit/gorm"
+import auth1 "github.com/infobloxopen/atlas-app-toolkit/auth"
+import gorm1 "github.com/jinzhu/gorm"
+import gorm2 "github.com/infobloxopen/atlas-app-toolkit/gorm"
+import ptypes1 "github.com/golang/protobuf/ptypes"
 
 import fmt "fmt"
 import math "math"
@@ -69,17 +69,17 @@ func (m *User) ToORM(ctx context.Context) (UserORM, error) {
 	}
 	to.Id = m.Id
 	if m.CreatedAt != nil {
-		if to.CreatedAt, err = ptypes.Timestamp(m.CreatedAt); err != nil {
+		if to.CreatedAt, err = ptypes1.Timestamp(m.CreatedAt); err != nil {
 			return to, err
 		}
 	}
 	if m.UpdatedAt != nil {
-		if to.UpdatedAt, err = ptypes.Timestamp(m.UpdatedAt); err != nil {
+		if to.UpdatedAt, err = ptypes1.Timestamp(m.UpdatedAt); err != nil {
 			return to, err
 		}
 	}
 	if m.Birthday != nil {
-		if to.Birthday, err = ptypes.Timestamp(m.Birthday); err != nil {
+		if to.Birthday, err = ptypes1.Timestamp(m.Birthday); err != nil {
 			return to, err
 		}
 	}
@@ -149,7 +149,7 @@ func (m *User) ToORM(ctx context.Context) (UserORM, error) {
 			to.Friends = append(to.Friends, nil)
 		}
 	}
-	accountID, err := auth.GetAccountID(ctx, nil)
+	accountID, err := auth1.GetAccountID(ctx, nil)
 	if err != nil {
 		return to, err
 	}
@@ -171,13 +171,13 @@ func (m *UserORM) ToPB(ctx context.Context) (User, error) {
 		}
 	}
 	to.Id = m.Id
-	if to.CreatedAt, err = ptypes.TimestampProto(m.CreatedAt); err != nil {
+	if to.CreatedAt, err = ptypes1.TimestampProto(m.CreatedAt); err != nil {
 		return to, err
 	}
-	if to.UpdatedAt, err = ptypes.TimestampProto(m.UpdatedAt); err != nil {
+	if to.UpdatedAt, err = ptypes1.TimestampProto(m.UpdatedAt); err != nil {
 		return to, err
 	}
-	if to.Birthday, err = ptypes.TimestampProto(m.Birthday); err != nil {
+	if to.Birthday, err = ptypes1.TimestampProto(m.Birthday); err != nil {
 		return to, err
 	}
 	to.Num = m.Num
@@ -301,7 +301,7 @@ func (m *Email) ToORM(ctx context.Context) (EmailORM, error) {
 	to.Id = m.Id
 	to.Email = m.Email
 	to.Subscribed = m.Subscribed
-	accountID, err := auth.GetAccountID(ctx, nil)
+	accountID, err := auth1.GetAccountID(ctx, nil)
 	if err != nil {
 		return to, err
 	}
@@ -381,7 +381,7 @@ func (m *Address) ToORM(ctx context.Context) (AddressORM, error) {
 	to.Address_1 = m.Address_1
 	to.Address_2 = m.Address_2
 	to.Post = m.Post
-	accountID, err := auth.GetAccountID(ctx, nil)
+	accountID, err := auth1.GetAccountID(ctx, nil)
 	if err != nil {
 		return to, err
 	}
@@ -460,7 +460,7 @@ func (m *Language) ToORM(ctx context.Context) (LanguageORM, error) {
 	to.Id = m.Id
 	to.Name = m.Name
 	to.Code = m.Code
-	accountID, err := auth.GetAccountID(ctx, nil)
+	accountID, err := auth1.GetAccountID(ctx, nil)
 	if err != nil {
 		return to, err
 	}
@@ -539,17 +539,17 @@ func (m *CreditCard) ToORM(ctx context.Context) (CreditCardORM, error) {
 	}
 	to.Id = m.Id
 	if m.CreatedAt != nil {
-		if to.CreatedAt, err = ptypes.Timestamp(m.CreatedAt); err != nil {
+		if to.CreatedAt, err = ptypes1.Timestamp(m.CreatedAt); err != nil {
 			return to, err
 		}
 	}
 	if m.UpdatedAt != nil {
-		if to.UpdatedAt, err = ptypes.Timestamp(m.UpdatedAt); err != nil {
+		if to.UpdatedAt, err = ptypes1.Timestamp(m.UpdatedAt); err != nil {
 			return to, err
 		}
 	}
 	to.Number = m.Number
-	accountID, err := auth.GetAccountID(ctx, nil)
+	accountID, err := auth1.GetAccountID(ctx, nil)
 	if err != nil {
 		return to, err
 	}
@@ -571,10 +571,10 @@ func (m *CreditCardORM) ToPB(ctx context.Context) (CreditCard, error) {
 		}
 	}
 	to.Id = m.Id
-	if to.CreatedAt, err = ptypes.TimestampProto(m.CreatedAt); err != nil {
+	if to.CreatedAt, err = ptypes1.TimestampProto(m.CreatedAt); err != nil {
 		return to, err
 	}
-	if to.UpdatedAt, err = ptypes.TimestampProto(m.UpdatedAt); err != nil {
+	if to.UpdatedAt, err = ptypes1.TimestampProto(m.UpdatedAt); err != nil {
 		return to, err
 	}
 	to.Number = m.Number
@@ -633,7 +633,7 @@ func (m *Task) ToORM(ctx context.Context) (TaskORM, error) {
 	to.Name = m.Name
 	to.Description = m.Description
 	to.Priority = m.Priority
-	accountID, err := auth.GetAccountID(ctx, nil)
+	accountID, err := auth1.GetAccountID(ctx, nil)
 	if err != nil {
 		return to, err
 	}
@@ -687,7 +687,7 @@ type TaskWithAfterToPB interface {
 }
 
 // DefaultCreateUser executes a basic gorm create call
-func DefaultCreateUser(ctx context.Context, in *User, db *gorm.DB) (*User, error) {
+func DefaultCreateUser(ctx context.Context, in *User, db *gorm1.DB) (*User, error) {
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultCreateUser")
 	}
@@ -706,7 +706,7 @@ func DefaultCreateUser(ctx context.Context, in *User, db *gorm.DB) (*User, error
 }
 
 // DefaultReadUser executes a basic gorm read call
-func DefaultReadUser(ctx context.Context, in *User, db *gorm.DB) (*User, error) {
+func DefaultReadUser(ctx context.Context, in *User, db *gorm1.DB) (*User, error) {
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultReadUser")
 	}
@@ -714,7 +714,7 @@ func DefaultReadUser(ctx context.Context, in *User, db *gorm.DB) (*User, error) 
 	if err != nil {
 		return nil, err
 	}
-	db = db.Preload("Tasks", func(db *gorm.DB) *gorm.DB {
+	db = db.Preload("Tasks", func(db *gorm1.DB) *gorm1.DB {
 		return db.Order("priority")
 	})
 	db = db.Preload("BillingAddress").Preload("CreditCard").Preload("Emails").Preload("Friends").Preload("Languages").Preload("ShippingAddress")
@@ -727,11 +727,11 @@ func DefaultReadUser(ctx context.Context, in *User, db *gorm.DB) (*User, error) 
 }
 
 // DefaultUpdateUser executes a basic gorm update call
-func DefaultUpdateUser(ctx context.Context, in *User, db *gorm.DB) (*User, error) {
+func DefaultUpdateUser(ctx context.Context, in *User, db *gorm1.DB) (*User, error) {
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultUpdateUser")
 	}
-	accountID, err := auth.GetAccountID(ctx, nil)
+	accountID, err := auth1.GetAccountID(ctx, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -756,7 +756,7 @@ func DefaultUpdateUser(ctx context.Context, in *User, db *gorm.DB) (*User, error
 	return &pbResponse, err
 }
 
-func DefaultDeleteUser(ctx context.Context, in *User, db *gorm.DB) error {
+func DefaultDeleteUser(ctx context.Context, in *User, db *gorm1.DB) error {
 	if in == nil {
 		return errors.New("Nil argument to DefaultDeleteUser")
 	}
@@ -772,7 +772,7 @@ func DefaultDeleteUser(ctx context.Context, in *User, db *gorm.DB) error {
 }
 
 // DefaultStrictUpdateUser clears first level 1:many children and then executes a gorm update call
-func DefaultStrictUpdateUser(ctx context.Context, in *User, db *gorm.DB) (*User, error) {
+func DefaultStrictUpdateUser(ctx context.Context, in *User, db *gorm1.DB) (*User, error) {
 	if in == nil {
 		return nil, fmt.Errorf("Nil argument to DefaultCascadedUpdateUser")
 	}
@@ -824,9 +824,9 @@ func DefaultStrictUpdateUser(ctx context.Context, in *User, db *gorm.DB) (*User,
 }
 
 // DefaultListUser executes a gorm list call
-func DefaultListUser(ctx context.Context, db *gorm.DB) ([]*User, error) {
+func DefaultListUser(ctx context.Context, db *gorm1.DB) ([]*User, error) {
 	ormResponse := []UserORM{}
-	db, err := tkgorm.ApplyCollectionOperators(db, ctx)
+	db, err := gorm2.ApplyCollectionOperators(db, ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -836,7 +836,7 @@ func DefaultListUser(ctx context.Context, db *gorm.DB) ([]*User, error) {
 		return nil, err
 	}
 	db = db.Where(&ormParams)
-	db = db.Preload("Tasks", func(db *gorm.DB) *gorm.DB {
+	db = db.Preload("Tasks", func(db *gorm1.DB) *gorm1.DB {
 		return db.Order("priority")
 	})
 	db = db.Preload("BillingAddress").Preload("CreditCard").Preload("Emails").Preload("Friends").Preload("Languages").Preload("ShippingAddress")
@@ -856,7 +856,7 @@ func DefaultListUser(ctx context.Context, db *gorm.DB) ([]*User, error) {
 }
 
 // DefaultCreateEmail executes a basic gorm create call
-func DefaultCreateEmail(ctx context.Context, in *Email, db *gorm.DB) (*Email, error) {
+func DefaultCreateEmail(ctx context.Context, in *Email, db *gorm1.DB) (*Email, error) {
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultCreateEmail")
 	}
@@ -872,7 +872,7 @@ func DefaultCreateEmail(ctx context.Context, in *Email, db *gorm.DB) (*Email, er
 }
 
 // DefaultReadEmail executes a basic gorm read call
-func DefaultReadEmail(ctx context.Context, in *Email, db *gorm.DB) (*Email, error) {
+func DefaultReadEmail(ctx context.Context, in *Email, db *gorm1.DB) (*Email, error) {
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultReadEmail")
 	}
@@ -889,11 +889,11 @@ func DefaultReadEmail(ctx context.Context, in *Email, db *gorm.DB) (*Email, erro
 }
 
 // DefaultUpdateEmail executes a basic gorm update call
-func DefaultUpdateEmail(ctx context.Context, in *Email, db *gorm.DB) (*Email, error) {
+func DefaultUpdateEmail(ctx context.Context, in *Email, db *gorm1.DB) (*Email, error) {
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultUpdateEmail")
 	}
-	accountID, err := auth.GetAccountID(ctx, nil)
+	accountID, err := auth1.GetAccountID(ctx, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -915,7 +915,7 @@ func DefaultUpdateEmail(ctx context.Context, in *Email, db *gorm.DB) (*Email, er
 	return &pbResponse, err
 }
 
-func DefaultDeleteEmail(ctx context.Context, in *Email, db *gorm.DB) error {
+func DefaultDeleteEmail(ctx context.Context, in *Email, db *gorm1.DB) error {
 	if in == nil {
 		return errors.New("Nil argument to DefaultDeleteEmail")
 	}
@@ -931,7 +931,7 @@ func DefaultDeleteEmail(ctx context.Context, in *Email, db *gorm.DB) error {
 }
 
 // DefaultStrictUpdateEmail clears first level 1:many children and then executes a gorm update call
-func DefaultStrictUpdateEmail(ctx context.Context, in *Email, db *gorm.DB) (*Email, error) {
+func DefaultStrictUpdateEmail(ctx context.Context, in *Email, db *gorm1.DB) (*Email, error) {
 	if in == nil {
 		return nil, fmt.Errorf("Nil argument to DefaultCascadedUpdateEmail")
 	}
@@ -951,9 +951,9 @@ func DefaultStrictUpdateEmail(ctx context.Context, in *Email, db *gorm.DB) (*Ema
 }
 
 // DefaultListEmail executes a gorm list call
-func DefaultListEmail(ctx context.Context, db *gorm.DB) ([]*Email, error) {
+func DefaultListEmail(ctx context.Context, db *gorm1.DB) ([]*Email, error) {
 	ormResponse := []EmailORM{}
-	db, err := tkgorm.ApplyCollectionOperators(db, ctx)
+	db, err := gorm2.ApplyCollectionOperators(db, ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -979,7 +979,7 @@ func DefaultListEmail(ctx context.Context, db *gorm.DB) ([]*Email, error) {
 }
 
 // DefaultCreateAddress executes a basic gorm create call
-func DefaultCreateAddress(ctx context.Context, in *Address, db *gorm.DB) (*Address, error) {
+func DefaultCreateAddress(ctx context.Context, in *Address, db *gorm1.DB) (*Address, error) {
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultCreateAddress")
 	}
@@ -995,7 +995,7 @@ func DefaultCreateAddress(ctx context.Context, in *Address, db *gorm.DB) (*Addre
 }
 
 // DefaultReadAddress executes a basic gorm read call
-func DefaultReadAddress(ctx context.Context, in *Address, db *gorm.DB) (*Address, error) {
+func DefaultReadAddress(ctx context.Context, in *Address, db *gorm1.DB) (*Address, error) {
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultReadAddress")
 	}
@@ -1012,11 +1012,11 @@ func DefaultReadAddress(ctx context.Context, in *Address, db *gorm.DB) (*Address
 }
 
 // DefaultUpdateAddress executes a basic gorm update call
-func DefaultUpdateAddress(ctx context.Context, in *Address, db *gorm.DB) (*Address, error) {
+func DefaultUpdateAddress(ctx context.Context, in *Address, db *gorm1.DB) (*Address, error) {
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultUpdateAddress")
 	}
-	accountID, err := auth.GetAccountID(ctx, nil)
+	accountID, err := auth1.GetAccountID(ctx, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -1038,7 +1038,7 @@ func DefaultUpdateAddress(ctx context.Context, in *Address, db *gorm.DB) (*Addre
 	return &pbResponse, err
 }
 
-func DefaultDeleteAddress(ctx context.Context, in *Address, db *gorm.DB) error {
+func DefaultDeleteAddress(ctx context.Context, in *Address, db *gorm1.DB) error {
 	if in == nil {
 		return errors.New("Nil argument to DefaultDeleteAddress")
 	}
@@ -1054,7 +1054,7 @@ func DefaultDeleteAddress(ctx context.Context, in *Address, db *gorm.DB) error {
 }
 
 // DefaultStrictUpdateAddress clears first level 1:many children and then executes a gorm update call
-func DefaultStrictUpdateAddress(ctx context.Context, in *Address, db *gorm.DB) (*Address, error) {
+func DefaultStrictUpdateAddress(ctx context.Context, in *Address, db *gorm1.DB) (*Address, error) {
 	if in == nil {
 		return nil, fmt.Errorf("Nil argument to DefaultCascadedUpdateAddress")
 	}
@@ -1074,9 +1074,9 @@ func DefaultStrictUpdateAddress(ctx context.Context, in *Address, db *gorm.DB) (
 }
 
 // DefaultListAddress executes a gorm list call
-func DefaultListAddress(ctx context.Context, db *gorm.DB) ([]*Address, error) {
+func DefaultListAddress(ctx context.Context, db *gorm1.DB) ([]*Address, error) {
 	ormResponse := []AddressORM{}
-	db, err := tkgorm.ApplyCollectionOperators(db, ctx)
+	db, err := gorm2.ApplyCollectionOperators(db, ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -1102,7 +1102,7 @@ func DefaultListAddress(ctx context.Context, db *gorm.DB) ([]*Address, error) {
 }
 
 // DefaultCreateLanguage executes a basic gorm create call
-func DefaultCreateLanguage(ctx context.Context, in *Language, db *gorm.DB) (*Language, error) {
+func DefaultCreateLanguage(ctx context.Context, in *Language, db *gorm1.DB) (*Language, error) {
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultCreateLanguage")
 	}
@@ -1118,7 +1118,7 @@ func DefaultCreateLanguage(ctx context.Context, in *Language, db *gorm.DB) (*Lan
 }
 
 // DefaultReadLanguage executes a basic gorm read call
-func DefaultReadLanguage(ctx context.Context, in *Language, db *gorm.DB) (*Language, error) {
+func DefaultReadLanguage(ctx context.Context, in *Language, db *gorm1.DB) (*Language, error) {
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultReadLanguage")
 	}
@@ -1135,11 +1135,11 @@ func DefaultReadLanguage(ctx context.Context, in *Language, db *gorm.DB) (*Langu
 }
 
 // DefaultUpdateLanguage executes a basic gorm update call
-func DefaultUpdateLanguage(ctx context.Context, in *Language, db *gorm.DB) (*Language, error) {
+func DefaultUpdateLanguage(ctx context.Context, in *Language, db *gorm1.DB) (*Language, error) {
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultUpdateLanguage")
 	}
-	accountID, err := auth.GetAccountID(ctx, nil)
+	accountID, err := auth1.GetAccountID(ctx, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -1161,7 +1161,7 @@ func DefaultUpdateLanguage(ctx context.Context, in *Language, db *gorm.DB) (*Lan
 	return &pbResponse, err
 }
 
-func DefaultDeleteLanguage(ctx context.Context, in *Language, db *gorm.DB) error {
+func DefaultDeleteLanguage(ctx context.Context, in *Language, db *gorm1.DB) error {
 	if in == nil {
 		return errors.New("Nil argument to DefaultDeleteLanguage")
 	}
@@ -1177,7 +1177,7 @@ func DefaultDeleteLanguage(ctx context.Context, in *Language, db *gorm.DB) error
 }
 
 // DefaultStrictUpdateLanguage clears first level 1:many children and then executes a gorm update call
-func DefaultStrictUpdateLanguage(ctx context.Context, in *Language, db *gorm.DB) (*Language, error) {
+func DefaultStrictUpdateLanguage(ctx context.Context, in *Language, db *gorm1.DB) (*Language, error) {
 	if in == nil {
 		return nil, fmt.Errorf("Nil argument to DefaultCascadedUpdateLanguage")
 	}
@@ -1197,9 +1197,9 @@ func DefaultStrictUpdateLanguage(ctx context.Context, in *Language, db *gorm.DB)
 }
 
 // DefaultListLanguage executes a gorm list call
-func DefaultListLanguage(ctx context.Context, db *gorm.DB) ([]*Language, error) {
+func DefaultListLanguage(ctx context.Context, db *gorm1.DB) ([]*Language, error) {
 	ormResponse := []LanguageORM{}
-	db, err := tkgorm.ApplyCollectionOperators(db, ctx)
+	db, err := gorm2.ApplyCollectionOperators(db, ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -1225,7 +1225,7 @@ func DefaultListLanguage(ctx context.Context, db *gorm.DB) ([]*Language, error) 
 }
 
 // DefaultCreateCreditCard executes a basic gorm create call
-func DefaultCreateCreditCard(ctx context.Context, in *CreditCard, db *gorm.DB) (*CreditCard, error) {
+func DefaultCreateCreditCard(ctx context.Context, in *CreditCard, db *gorm1.DB) (*CreditCard, error) {
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultCreateCreditCard")
 	}
@@ -1241,7 +1241,7 @@ func DefaultCreateCreditCard(ctx context.Context, in *CreditCard, db *gorm.DB) (
 }
 
 // DefaultReadCreditCard executes a basic gorm read call
-func DefaultReadCreditCard(ctx context.Context, in *CreditCard, db *gorm.DB) (*CreditCard, error) {
+func DefaultReadCreditCard(ctx context.Context, in *CreditCard, db *gorm1.DB) (*CreditCard, error) {
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultReadCreditCard")
 	}
@@ -1258,11 +1258,11 @@ func DefaultReadCreditCard(ctx context.Context, in *CreditCard, db *gorm.DB) (*C
 }
 
 // DefaultUpdateCreditCard executes a basic gorm update call
-func DefaultUpdateCreditCard(ctx context.Context, in *CreditCard, db *gorm.DB) (*CreditCard, error) {
+func DefaultUpdateCreditCard(ctx context.Context, in *CreditCard, db *gorm1.DB) (*CreditCard, error) {
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultUpdateCreditCard")
 	}
-	accountID, err := auth.GetAccountID(ctx, nil)
+	accountID, err := auth1.GetAccountID(ctx, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -1284,7 +1284,7 @@ func DefaultUpdateCreditCard(ctx context.Context, in *CreditCard, db *gorm.DB) (
 	return &pbResponse, err
 }
 
-func DefaultDeleteCreditCard(ctx context.Context, in *CreditCard, db *gorm.DB) error {
+func DefaultDeleteCreditCard(ctx context.Context, in *CreditCard, db *gorm1.DB) error {
 	if in == nil {
 		return errors.New("Nil argument to DefaultDeleteCreditCard")
 	}
@@ -1300,7 +1300,7 @@ func DefaultDeleteCreditCard(ctx context.Context, in *CreditCard, db *gorm.DB) e
 }
 
 // DefaultStrictUpdateCreditCard clears first level 1:many children and then executes a gorm update call
-func DefaultStrictUpdateCreditCard(ctx context.Context, in *CreditCard, db *gorm.DB) (*CreditCard, error) {
+func DefaultStrictUpdateCreditCard(ctx context.Context, in *CreditCard, db *gorm1.DB) (*CreditCard, error) {
 	if in == nil {
 		return nil, fmt.Errorf("Nil argument to DefaultCascadedUpdateCreditCard")
 	}
@@ -1320,9 +1320,9 @@ func DefaultStrictUpdateCreditCard(ctx context.Context, in *CreditCard, db *gorm
 }
 
 // DefaultListCreditCard executes a gorm list call
-func DefaultListCreditCard(ctx context.Context, db *gorm.DB) ([]*CreditCard, error) {
+func DefaultListCreditCard(ctx context.Context, db *gorm1.DB) ([]*CreditCard, error) {
 	ormResponse := []CreditCardORM{}
-	db, err := tkgorm.ApplyCollectionOperators(db, ctx)
+	db, err := gorm2.ApplyCollectionOperators(db, ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -1348,7 +1348,7 @@ func DefaultListCreditCard(ctx context.Context, db *gorm.DB) ([]*CreditCard, err
 }
 
 // DefaultCreateTask executes a basic gorm create call
-func DefaultCreateTask(ctx context.Context, in *Task, db *gorm.DB) (*Task, error) {
+func DefaultCreateTask(ctx context.Context, in *Task, db *gorm1.DB) (*Task, error) {
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultCreateTask")
 	}
@@ -1364,9 +1364,9 @@ func DefaultCreateTask(ctx context.Context, in *Task, db *gorm.DB) (*Task, error
 }
 
 // DefaultListTask executes a gorm list call
-func DefaultListTask(ctx context.Context, db *gorm.DB) ([]*Task, error) {
+func DefaultListTask(ctx context.Context, db *gorm1.DB) ([]*Task, error) {
 	ormResponse := []TaskORM{}
-	db, err := tkgorm.ApplyCollectionOperators(db, ctx)
+	db, err := gorm2.ApplyCollectionOperators(db, ctx)
 	if err != nil {
 		return nil, err
 	}

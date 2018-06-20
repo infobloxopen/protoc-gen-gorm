@@ -1,6 +1,7 @@
 package plugin
 
 import (
+	"fmt"
 	"sort"
 	"strings"
 
@@ -33,58 +34,82 @@ func CleanImports(pFileText *string) *string {
 
 /* --------- Plugin level import handling --------- */
 
+var (
+	gormImport   = "github.com/jinzhu/gorm"
+	tkgormImport = "github.com/infobloxopen/atlas-app-toolkit/gorm"
+	uuidImport   = "github.com/satori/go.uuid"
+	authImport   = "github.com/infobloxopen/atlas-app-toolkit/auth"
+	gormpqImport = "github.com/jinzhu/gorm/dialects/postgres"
+	gtypesImport = "github.com/infobloxopen/protoc-gen-gorm/types"
+	ptypesImport = "github.com/golang/protobuf/ptypes"
+)
+
+type pkgImport struct {
+	packagePath string
+	alias       string
+}
+
+// NewImport takes a package and adds it to the list of packages to import
+// It will generate a unique new alias using the last portion of the import path
+// unless the package is already imported for this file. Either way, it returns
+// the package alias
+func (p *OrmPlugin) Import(packagePath string) string {
+	subpath := packagePath[strings.LastIndex(packagePath, "/")+1:]
+	// package will always be suffixed with an integer to prevent any collisions
+	// with standard package imports
+	for i := 1; ; i++ {
+		newAlias := fmt.Sprintf("%s%d", strings.Replace(subpath, ".", "_", -1), i)
+		if pkg, ok := p.GetFileImports().packages[newAlias]; ok {
+			if packagePath == pkg.packagePath {
+				return pkg.alias
+			}
+		} else {
+			p.GetFileImports().packages[newAlias] = &pkgImport{packagePath: packagePath, alias: newAlias}
+			return newAlias
+		}
+	}
+	// Should never reach here
+}
+
+// UsingGoImports should be used with basic packages like "time", or "context"
+func (p *OrmPlugin) UsingGoImports(pkgNames ...string) {
+	p.GetFileImports().stdImports = append(p.GetFileImports().stdImports, pkgNames...)
+}
+
 type fileImports struct {
 	wktPkgName      string
-	usingGORM       bool
-	usingUUID       bool
-	usingTime       bool
-	usingAuth       bool
-	usingJSON       bool
 	typesToRegister []string
+	stdImports      []string
+	packages        map[string]*pkgImport
+}
+
+func newFileImports() *fileImports {
+	return &fileImports{packages: make(map[string]*pkgImport)}
+}
+
+func (p *OrmPlugin) GetFileImports() *fileImports {
+	return p.fileImports[p.currentFile]
 }
 
 // GenerateImports writes out required imports for the generated files
 func (p *OrmPlugin) GenerateImports(file *generator.FileDescriptor) {
 	imports := p.fileImports[file]
-	stdImports := []string{}
-	githubImports := map[string]string{}
-	if imports.usingGORM {
-		stdImports = append(stdImports, "context", "errors")
-		githubImports["gorm"] = "github.com/jinzhu/gorm"
-		githubImports["tkgorm"] = "github.com/infobloxopen/atlas-app-toolkit/gorm"
-	}
-	if imports.usingUUID {
-		githubImports["uuid"] = "github.com/satori/go.uuid"
-		githubImports["gtypes"] = "github.com/infobloxopen/protoc-gen-gorm/types"
-	}
-	if imports.usingTime {
-		stdImports = append(stdImports, "time")
-		githubImports["ptypes"] = "github.com/golang/protobuf/ptypes"
-	}
-	if imports.usingAuth {
-		githubImports["auth"] = "github.com/infobloxopen/atlas-app-toolkit/auth"
-	}
-	if imports.usingJSON {
-		if p.dbEngine == ENGINE_POSTGRES {
-			githubImports["gormpq"] = "github.com/jinzhu/gorm/dialects/postgres"
-			githubImports["gtypes"] = "github.com/infobloxopen/protoc-gen-gorm/types"
-		}
-	}
 	for _, typeName := range imports.typesToRegister {
 		p.RecordTypeUse(typeName)
 	}
-	sort.Strings(stdImports)
-	for _, dep := range stdImports {
+	githubImports := imports.packages
+	sort.Strings(imports.stdImports)
+	for _, dep := range imports.stdImports {
 		p.PrintImport(dep, dep)
 	}
 	p.P()
-	keys := []string{}
-	for k := range githubImports {
-		keys = append(keys, k)
+	aliases := []string{}
+	for a := range githubImports {
+		aliases = append(aliases, a)
 	}
-	sort.Strings(keys)
-	for _, key := range keys {
-		p.PrintImport(key, githubImports[key])
+	sort.Strings(aliases)
+	for _, a := range aliases {
+		p.PrintImport(a, githubImports[a].packagePath)
 	}
 	p.P()
 }

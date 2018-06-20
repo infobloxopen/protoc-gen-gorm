@@ -16,7 +16,15 @@ option go_package = "github.com/infobloxopen/protoc-gen-gorm/example/feature_dem
 message TestTypes {
   // The 'ormable' option flags this for converter autogeneration
   // The table option allows for overriding the default table name 'test_types'
-  option (gorm.opts) = {ormable:true, table: "smorgasbord"};
+  // Two 'included' postgres string arrays demonstrate importing a package for
+  // a special type needed within a gorm object
+  option (gorm.opts) = {
+    ormable:true,
+    table: "smorgasbord",
+    include: [
+    {type: "StringArray", name: "array", package:"github.com/lib/pq"},
+    {type: "StringArray", name: "array2", package:"github.com/lib/pq"}
+    ]};
   // the (gorm.field).drop option allows for setting a field to be API only
   string api_only_string = 1 [(gorm.field).drop = true];
   // repeated raw types are currently unsupported, so this field will be dropped

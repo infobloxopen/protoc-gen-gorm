@@ -41,6 +41,20 @@ var wellKnownTypes = map[string]string{
 	//  "BytesValue" : "*[]byte",
 }
 
+var builtinTypes = map[string]struct{}{
+	"bool": struct{}{},
+	"int":  struct{}{},
+	"int8": struct{}{}, "int16": struct{}{},
+	"int32": struct{}{}, "int64": struct{}{},
+	"uint":  struct{}{},
+	"uint8": struct{}{}, "uint16": struct{}{},
+	"uint32": struct{}{}, "uint64": struct{}{},
+	"uintptr": struct{}{},
+	"float32": struct{}{}, "float64": struct{}{},
+	"string": struct{}{},
+	"[]byte": struct{}{},
+}
+
 type OrmableType struct {
 	Name    string
 	Package string
@@ -67,9 +81,6 @@ type OrmPlugin struct {
 	fileImports    map[*generator.FileDescriptor]*fileImports
 }
 
-func (p *OrmPlugin) GetFileImports() *fileImports {
-	return p.fileImports[p.currentFile]
-}
 func (p *OrmPlugin) setFile(file *generator.FileDescriptor) {
 	p.currentFile = file
 	p.currentPackage = file.GetPackage()
@@ -102,7 +113,7 @@ func (p *OrmPlugin) Generate(file *generator.FileDescriptor) {
 		p.ormableTypes = make(map[string]*OrmableType)
 		for _, fileProto := range p.AllFiles().GetFile() {
 			file := p.FileOf(fileProto)
-			p.fileImports[file] = &fileImports{}
+			p.fileImports[file] = newFileImports()
 			p.setFile(file)
 			// Preload just the types we'll be creating
 			for _, msg := range file.Messages() {
@@ -148,8 +159,8 @@ func (p *OrmPlugin) Generate(file *generator.FileDescriptor) {
 	}
 	p.generateDefaultHandlers(file)
 	p.generateDefaultServer(file)
-	// no ormable objects, and gorm not imported (means no services generated)
-	if empty && !p.GetFileImports().usingGORM {
+	// no ormable objects, and no imports (means no services generated)
+	if empty && len(p.GetFileImports().packages) == 0 {
 		p.EmptyFiles = append(p.EmptyFiles, file.GetName())
 	}
 }
@@ -179,18 +190,15 @@ func (p *OrmPlugin) parseBasicFields(msg *generator.Descriptor) {
 				p.GetFileImports().wktPkgName = strings.Trim(parts[0], "*")
 				fieldType = v
 			} else if rawType == protoTypeUUID {
-				fieldType = "uuid.UUID"
-				p.GetFileImports().usingUUID = true
+				fieldType = fmt.Sprintf("%s.UUID", p.Import(uuidImport))
 			} else if rawType == protoTypeUUIDValue {
-				fieldType = "*uuid.UUID"
-				p.GetFileImports().usingUUID = true
+				fieldType = fmt.Sprintf("*%s.UUID", p.Import(uuidImport))
 			} else if rawType == protoTypeTimestamp {
 				fieldType = "time.Time"
-				p.GetFileImports().usingTime = true
+				p.UsingGoImports("time")
 			} else if rawType == protoTypeJSON {
-				p.GetFileImports().usingJSON = true
 				if p.dbEngine == ENGINE_POSTGRES {
-					fieldType = "*gormpq.Jsonb"
+					fieldType = fmt.Sprintf("*%s.Jsonb", p.Import(gormpqImport))
 				} else {
 					// Potential TODO: add types we want to use in other/default DB engine
 					continue
@@ -213,11 +221,45 @@ func (p *OrmPlugin) parseBasicFields(msg *generator.Descriptor) {
 	for _, field := range getMessageOptions(msg).GetInclude() {
 		fieldName := generator.CamelCase(field.GetName())
 		if _, ok := ormable.Fields[fieldName]; !ok {
-			ormable.Fields[fieldName] = &Field{Type: field.GetType(), GormFieldOptions: &gorm.GormFieldOptions{Tag: field.GetTag()}}
+			p.addIncludedField(ormable, field)
 		} else {
 			p.Fail("Cannot include", fieldName, "field into", ormable.Name, "as it aready exists there.")
 		}
 	}
+}
+
+func (p *OrmPlugin) addIncludedField(ormable *OrmableType, field *gorm.ExtraField) {
+	fieldName := generator.CamelCase(field.GetName())
+	isPtr := strings.HasPrefix(field.GetType(), "*")
+	rawType := strings.TrimPrefix(field.GetType(), "*")
+	// cut off any package subpaths
+	rawType = rawType[strings.LastIndex(rawType, ".")+1:]
+	// Handle types with a package defined
+	if field.GetPackage() != "" {
+		alias := p.Import(field.GetPackage())
+		rawType = fmt.Sprintf("%s.%s", alias, rawType)
+	} else {
+		// Handle types without a package defined
+		if _, ok := builtinTypes[rawType]; ok {
+			// basic type, 100% okay, no imports or changes needed needed
+		} else if rawType == "Time" {
+			p.UsingGoImports("time")
+			rawType = "time.Time"
+		} else if rawType == "UUID" {
+			rawType = fmt.Sprintf("%s.UUID", p.Import(uuidImport))
+		} else if field.GetType() == "Jsonb" && p.dbEngine == ENGINE_POSTGRES {
+			rawType = fmt.Sprintf("%s.Jsonb", p.Import(gormpqImport))
+		} else {
+			p.Fail(
+				fmt.Sprintf(
+					`Included field %q of type %q is not a recognized special type, and no package specified`,
+					field.GetName(), field.GetType()))
+		}
+	}
+	if isPtr {
+		rawType = fmt.Sprintf("*%s", rawType)
+	}
+	ormable.Fields[fieldName] = &Field{Type: rawType, GormFieldOptions: &gorm.GormFieldOptions{Tag: field.GetTag()}}
 }
 
 func (p *OrmPlugin) isOrmable(typeName string) bool {
@@ -392,8 +434,7 @@ func (p *OrmPlugin) generateConvertFunctions(message *generator.Descriptor) {
 		p.generateFieldConversion(message, field, true)
 	}
 	if getMessageOptions(message).GetMultiAccount() {
-		p.GetFileImports().usingAuth = true
-		p.P("accountID, err := auth.GetAccountID(ctx, nil)")
+		p.P("accountID, err := ", p.Import(authImport), ".GetAccountID(ctx, nil)")
 		p.P("if err != nil {")
 		p.P("return to, err")
 		p.P("}")
@@ -484,7 +525,7 @@ func (p *OrmPlugin) generateFieldConversion(message *generator.Descriptor, field
 		} else if coreType == protoTypeUUIDValue { // Singular UUIDValue type ----
 			if toORM {
 				p.P(`if m.`, fieldName, ` != nil {`)
-				p.P(`tempUUID, uErr := uuid.FromString(m.`, fieldName, `.Value)`)
+				p.P(`tempUUID, uErr := `, p.Import(uuidImport), `.FromString(m.`, fieldName, `.Value)`)
 				p.P(`if uErr != nil {`)
 				p.P(`return to, uErr`)
 				p.P(`}`)
@@ -492,31 +533,31 @@ func (p *OrmPlugin) generateFieldConversion(message *generator.Descriptor, field
 				p.P(`}`)
 			} else {
 				p.P(`if m.`, fieldName, ` != nil {`)
-				p.P(`to.`, fieldName, ` = &gtypes.UUIDValue{Value: m.`, fieldName, `.String()}`)
+				p.P(`to.`, fieldName, ` = &`, p.Import(gtypesImport), `.UUIDValue{Value: m.`, fieldName, `.String()}`)
 				p.P(`}`)
 			}
 		} else if coreType == protoTypeUUID { // Singular UUID type --------------
 			if toORM {
 				p.P(`if m.`, fieldName, ` != nil {`)
-				p.P(`to.`, fieldName, `, err = uuid.FromString(m.`, fieldName, `.Value)`)
+				p.P(`to.`, fieldName, `, err = `, p.Import(uuidImport), `.FromString(m.`, fieldName, `.Value)`)
 				p.P(`if err != nil {`)
 				p.P(`return to, err`)
 				p.P(`}`)
 				p.P(`} else {`)
-				p.P(`to.`, fieldName, ` = uuid.Nil`)
+				p.P(`to.`, fieldName, ` = `, p.Import(uuidImport), `.Nil`)
 				p.P(`}`)
 			} else {
-				p.P(`to.`, fieldName, ` = &gtypes.UUID{Value: m.`, fieldName, `.String()}`)
+				p.P(`to.`, fieldName, ` = &`, p.Import(gtypesImport), `.UUID{Value: m.`, fieldName, `.String()}`)
 			}
 		} else if coreType == protoTypeTimestamp { // Singular WKT Timestamp ---
 			if toORM {
 				p.P(`if m.`, fieldName, ` != nil {`)
-				p.P(`if to.`, fieldName, `, err = ptypes.Timestamp(m.`, fieldName, `); err != nil {`)
+				p.P(`if to.`, fieldName, `, err = `, p.Import(ptypesImport), `.Timestamp(m.`, fieldName, `); err != nil {`)
 				p.P(`return to, err`)
 				p.P(`}`)
 				p.P(`}`)
 			} else {
-				p.P(`if to.`, fieldName, `, err = ptypes.TimestampProto(m.`, fieldName, `); err != nil {`)
+				p.P(`if to.`, fieldName, `, err = `, p.Import(ptypesImport), `.TimestampProto(m.`, fieldName, `); err != nil {`)
 				p.P(`return to, err`)
 				p.P(`}`)
 			}
@@ -524,17 +565,16 @@ func (p *OrmPlugin) generateFieldConversion(message *generator.Descriptor, field
 			if p.dbEngine == ENGINE_POSTGRES {
 				if toORM {
 					p.P(`if m.`, fieldName, ` != nil {`)
-					p.P(`to.`, fieldName, ` = &gormpq.Jsonb{[]byte(m.`, fieldName, `.Value)}`)
+					p.P(`to.`, fieldName, ` = &`, p.Import(gormpqImport), `.Jsonb{[]byte(m.`, fieldName, `.Value)}`)
 					p.P(`}`)
 				} else {
 					p.P(`if m.`, fieldName, ` != nil {`)
-					p.P(`to.`, fieldName, ` = &gtypes.JSONValue{Value: string(m.`, fieldName, `.RawMessage)}`)
+					p.P(`to.`, fieldName, ` = &`, p.Import(gtypesImport), `.JSONValue{Value: string(m.`, fieldName, `.RawMessage)}`)
 					p.P(`}`)
 				}
 			} // Potential TODO other DB engine handling if desired
 		} else if p.isOrmable(fieldType) {
 			// Not a WKT, but a type we're building converters for
-			fieldType = strings.Trim(fieldType, "*")
 			p.P(`if m.`, fieldName, ` != nil {`)
 			if toORM {
 				p.P(`temp`, fieldName, `, err := m.`, fieldName, `.ToORM (ctx)`)
