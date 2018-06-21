@@ -33,19 +33,27 @@ func (i *Inet) Scan(value interface{}) error {
 	} else {
 		strdat = string(bytes)
 	}
-	ip, cidr, err := net.ParseCIDR(strdat)
-	if err != nil {
-		return err
-	}
-	i.IPNet = &net.IPNet{IP: ip, Mask: cidr.Mask}
-	return nil
+	inet, err := ParseInet(strdat)
+	i.IPNet = inet.IPNet
+	return err
 }
 
 // ParseInet will return the Inet address/netmask represented in the input string
 func ParseInet(addr string) (*Inet, error) {
 	ip, cidr, err := net.ParseCIDR(addr)
+	var mask net.IPMask
 	if err != nil {
-		return nil, err
+		ip = net.ParseIP(addr)
+		if ip == nil {
+			return nil, err
+		}
+		if v4 := ip.To4(); v4 != nil {
+			mask = net.CIDRMask(32, 32)
+		} else {
+			mask = net.CIDRMask(128, 128)
+		}
+	} else {
+		mask = cidr.Mask
 	}
-	return &Inet{&net.IPNet{IP: ip, Mask: cidr.Mask}}, err
+	return &Inet{&net.IPNet{IP: ip, Mask: mask}}, nil
 }
