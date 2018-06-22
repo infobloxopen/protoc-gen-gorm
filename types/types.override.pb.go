@@ -76,3 +76,22 @@ func (m *JSONValue) UnmarshalJSONPB(_ *jsonpb.Unmarshaler, data []byte) error {
 	m.Value = string(data)
 	return nil
 }
+
+// MarshalJSONPB overloads InetValue's standard PB -> JSON conversion
+func (m *InetValue) MarshalJSONPB(*jsonpb.Marshaler) ([]byte, error) {
+	if len(m.Value) == 0 {
+		return []byte("null"), nil
+	}
+	return []byte(m.Value), nil
+}
+
+// UnmarshalJSONPB overloads InetValue's standard JSON -> PB conversion. If
+// data is null, can't create nil object, but will marshal as null later
+func (m *InetValue) UnmarshalJSONPB(_ *jsonpb.Unmarshaler, data []byte) error {
+	if string(data) == "null" {
+		m.Value = ""
+		return nil
+	}
+	m.Value = string(data)
+	return nil
+}

@@ -96,7 +96,6 @@
     "auth",
     "gateway",
     "gorm",
-    "gorm/resource",
     "query",
     "rpc/errdetails",
     "rpc/resource"
@@ -220,12 +219,20 @@
   packages = [
     "collate",
     "collate/build",
+    "feature/plural",
+    "internal",
+    "internal/catmsg",
     "internal/colltab",
+    "internal/format",
     "internal/gen",
+    "internal/number",
+    "internal/stringset",
     "internal/tag",
     "internal/triegen",
     "internal/ucd",
     "language",
+    "message",
+    "message/catalog",
     "secure/bidirule",
     "transform",
     "unicode/bidi",
@@ -279,6 +286,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "6c304b0ce0073cea2caeff5ddf0f87d001cc160695c0f2377c1894299808a9d4"
+  inputs-digest = "6a4dbe85f136745874eda5b7c0c1041a0349954dcd0fc71fbd40c97132a1f766"
   solver-name = "gps-cdcl"
   solver-version = 1
