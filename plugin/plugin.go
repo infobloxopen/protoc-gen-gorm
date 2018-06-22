@@ -5,6 +5,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/protoc-gen-gogo/descriptor"
 	"github.com/gogo/protobuf/protoc-gen-gogo/generator"
 	jgorm "github.com/jinzhu/gorm"
@@ -21,6 +22,7 @@ const (
 	protoTypeJSON      = "JSONValue"
 	protoTypeUUID      = "UUID"
 	protoTypeUUIDValue = "UUIDValue"
+	protoTypeInet      = "InetValue"
 )
 
 // DB Engine Enum
@@ -171,9 +173,13 @@ func (p *OrmPlugin) parseBasicFields(msg *generator.Descriptor) {
 	ormable.Name = fmt.Sprintf("%sORM", typeName)
 	for _, field := range msg.GetField() {
 		fieldOpts := getFieldOptions(field)
+		if fieldOpts == nil {
+			fieldOpts = &gorm.GormFieldOptions{}
+		}
 		if fieldOpts.GetDrop() {
 			continue
 		}
+		tag := fieldOpts.GetTag()
 		fieldName := generator.CamelCase(field.GetName())
 		fieldType, _ := p.GoType(msg, field)
 		if *(field.Type) == typeEnum {
@@ -191,17 +197,31 @@ func (p *OrmPlugin) parseBasicFields(msg *generator.Descriptor) {
 				fieldType = v
 			} else if rawType == protoTypeUUID {
 				fieldType = fmt.Sprintf("%s.UUID", p.Import(uuidImport))
+				if p.dbEngine == ENGINE_POSTGRES {
+					fieldOpts.Tag = tagWithType(tag, "uuid")
+				}
 			} else if rawType == protoTypeUUIDValue {
 				fieldType = fmt.Sprintf("*%s.UUID", p.Import(uuidImport))
+				if p.dbEngine == ENGINE_POSTGRES {
+					fieldOpts.Tag = tagWithType(tag, "uuid")
+				}
 			} else if rawType == protoTypeTimestamp {
 				fieldType = "time.Time"
 				p.UsingGoImports("time")
 			} else if rawType == protoTypeJSON {
 				if p.dbEngine == ENGINE_POSTGRES {
 					fieldType = fmt.Sprintf("*%s.Jsonb", p.Import(gormpqImport))
+					fieldOpts.Tag = tagWithType(tag, "jsonb")
 				} else {
 					// Potential TODO: add types we want to use in other/default DB engine
 					continue
+				}
+			} else if rawType == protoTypeInet {
+				fieldType = fmt.Sprintf("*%s.Inet", p.Import(gtypesImport))
+				if p.dbEngine == ENGINE_POSTGRES {
+					fieldOpts.Tag = tagWithType(tag, "inet")
+				} else {
+					fieldOpts.Tag = tagWithType(tag, "varchar(48)")
 				}
 			} else {
 				continue
@@ -228,6 +248,14 @@ func (p *OrmPlugin) parseBasicFields(msg *generator.Descriptor) {
 	}
 }
 
+func tagWithType(tag *gorm.GormTag, typename string) *gorm.GormTag {
+	if tag == nil {
+		tag = &gorm.GormTag{}
+	}
+	tag.Type = proto.String(typename)
+	return tag
+}
+
 func (p *OrmPlugin) addIncludedField(ormable *OrmableType, field *gorm.ExtraField) {
 	fieldName := generator.CamelCase(field.GetName())
 	isPtr := strings.HasPrefix(field.GetType(), "*")
@@ -249,6 +277,8 @@ func (p *OrmPlugin) addIncludedField(ormable *OrmableType, field *gorm.ExtraFiel
 			rawType = fmt.Sprintf("%s.UUID", p.Import(uuidImport))
 		} else if field.GetType() == "Jsonb" && p.dbEngine == ENGINE_POSTGRES {
 			rawType = fmt.Sprintf("%s.Jsonb", p.Import(gormpqImport))
+		} else if rawType == "Inet" {
+			rawType = fmt.Sprintf("%s.Inet", p.Import(gtypesImport))
 		} else {
 			p.Fail(
 				fmt.Sprintf(
@@ -573,6 +603,16 @@ func (p *OrmPlugin) generateFieldConversion(message *generator.Descriptor, field
 					p.P(`}`)
 				}
 			} // Potential TODO other DB engine handling if desired
+		} else if coreType == protoTypeInet { // Inet type for Postgres only, currently
+			if toORM {
+				p.P(`if to.`, fieldName, `, err = `, p.Import(gtypesImport), `.ParseInet(m.`, fieldName, `.Value); err != nil {`)
+				p.P(`return to, err`)
+				p.P(`}`)
+			} else {
+				p.P(`if m.`, fieldName, ` != nil && m.`, fieldName, `.IPNet != nil {`)
+				p.P(`to.`, fieldName, ` = &`, p.Import(gtypesImport), `.InetValue{Value: m.`, fieldName, `.String()}`)
+				p.P(`}`)
+			}
 		} else if p.isOrmable(fieldType) {
 			// Not a WKT, but a type we're building converters for
 			p.P(`if m.`, fieldName, ` != nil {`)

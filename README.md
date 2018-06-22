@@ -113,6 +113,11 @@ Within the proto files, the following types are supported:
   containing arbitrary JSON and converts to `postgres.Jsonb` GORM type
   (https://github.com/jinzhu/gorm/blob/master/dialects/postgres/postgres.go#L59)
   if Postgres is the selected DB engine, otherwise it is currently dropped.
+- custom wrapper type `gorm.types.InetValue`, which wraps a string and will
+  convert to the `types.Inet` type at ORM level, which uses the golang `net.IPNet`
+  type to hold an ip address and mask, IPv4 and IPv6 compatible, with the scan
+  and value functions necessary to write to DBs. Like JSONValue, currently
+  dropped if DB engine is not Postgres
 - types can be imported from other .proto files within the same package (protoc
   invocation) or between packages. All associations can be generated properly
   within the same package, but cross package only the belongs-to and many-to-many
