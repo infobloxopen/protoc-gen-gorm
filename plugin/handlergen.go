@@ -333,8 +333,11 @@ func (p *OrmPlugin) guessZeroValue(typeName string) string {
 	if strings.Contains(typeName, "uuid") {
 		return `uuid.Nil`
 	}
-	if strings.Contains(typeName, "resource") {
-		return `resource.Nil`
+	if strings.Contains(typeName, "[]byte") {
+		return `nil`
+	}
+	if strings.Contains(typeName, "bool") {
+		return `false`
 	}
 	return ``
 }

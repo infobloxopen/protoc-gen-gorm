@@ -90,16 +90,19 @@
   revision = "8e809c8a86450a29b90dcc9efbf062d0fe6d9746"
 
 [[projects]]
+  branch = "resource-amaskalenka"
   name = "github.com/infobloxopen/atlas-app-toolkit"
   packages = [
     "auth",
     "gateway",
     "gorm",
+    "gorm/resource",
     "query",
-    "rpc/errdetails"
+    "rpc/errdetails",
+    "rpc/resource"
   ]
-  revision = "e3ff3181cdfee2edbb70f5219c87b5afbb5c5659"
-  version = "v0.5.0"
+  revision = "7cafbb79acaf68eec0ed8a1c7e16becd82076070"
+  source = "github.com/amaskalenka/atlas-app-toolkit"
 
 [[projects]]
   branch = "master"
@@ -276,6 +279,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "cb8fa14b4b622d42d73818c416bdb1d2cb5c1da88c02b08b15c48916ea547686"
+  inputs-digest = "6c304b0ce0073cea2caeff5ddf0f87d001cc160695c0f2377c1894299808a9d4"
   solver-name = "gps-cdcl"
   solver-version = 1

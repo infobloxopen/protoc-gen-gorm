@@ -50,13 +50,18 @@ type OrmableType struct {
 }
 
 type Field struct {
-	Type string
+	ParentGoType string
+	Type         string
 	*gorm.GormFieldOptions
-	BindTo string
+	ParentOriginName string
 }
 
-func NewOrmableType() *OrmableType {
-	return &OrmableType{Fields: make(map[string]*Field)}
+func NewOrmableType(oname, pkg string) *OrmableType {
+	return &OrmableType{
+		OriginName: oname,
+		Package:    pkg,
+		Fields:     make(map[string]*Field),
+	}
 }
 
 // OrmPlugin implements the plugin interface and creates GORM code from .protos
@@ -115,9 +120,7 @@ func (p *OrmPlugin) Generate(file *generator.FileDescriptor) {
 				}
 				typeName := generator.CamelCase(msg.GetName())
 				if getMessageOptions(msg).GetOrmable() {
-					ormable := NewOrmableType()
-					ormable.Package = fileProto.GetPackage()
-					ormable.OriginName = typeName
+					ormable := NewOrmableType(typeName, fileProto.GetPackage())
 					if _, ok := p.ormableTypes[typeName]; !ok {
 						p.ormableTypes[typeName] = ormable
 					}
@@ -136,7 +139,7 @@ func (p *OrmPlugin) Generate(file *generator.FileDescriptor) {
 					o := p.getOrmable(typeName)
 					if p.hasPrimaryKey(o) {
 						_, fd := p.findPrimaryKey(o)
-						fd.BindTo = o.OriginName
+						fd.ParentOriginName = o.OriginName
 					}
 				}
 			}
@@ -205,13 +208,35 @@ func (p *OrmPlugin) parseBasicFields(msg *generator.Descriptor) {
 					continue
 				}
 			} else if rawType == protoTypeResource {
-				fieldType = "*resource.Identifier"
 				p.GetFileImports().usingResource = true
+				tag := getFieldOptions(field).GetTag()
+				ttype := tag.GetType()
+				ttype = strings.ToLower(ttype)
+				if strings.Contains(ttype, "char") {
+					ttype = "char"
+				}
+				if strings.Contains(ttype, "array") || strings.ContainsAny(ttype, "[]") {
+					ttype = "array"
+				}
+				switch ttype {
+				case "uuid", "text", "char", "array":
+					fieldType = "string"
+				case "smallint", "integer", "bigint", "numeric", "smallserial", "serial", "bigserial":
+					fieldType = "int64"
+				case "boolean":
+					fieldType = "bool"
+				case "jsonb", "bytea", "cidr", "inet", "macaddr":
+					fieldType = "[]byte"
+				case "":
+					fieldType = "interface{}" // we do not know the type
+				default:
+					p.Fail("invalid type of Identifier")
+				}
 			} else {
 				continue
 			}
 		}
-		ormable.Fields[fieldName] = &Field{Type: fieldType, GormFieldOptions: fieldOpts}
+		ormable.Fields[fieldName] = &Field{Type: fieldType, ParentGoType: fieldType, GormFieldOptions: fieldOpts}
 	}
 	if getMessageOptions(msg).GetMultiAccount() {
 		if accID, ok := ormable.Fields["AccountID"]; !ok {
@@ -262,11 +287,7 @@ func (p *OrmPlugin) generateOrmable(message *generator.Descriptor) {
 	p.P(`type `, ormable.Name, ` struct {`)
 	for _, fieldName := range p.getSortedFieldNames(ormable.Fields) {
 		field := ormable.Fields[fieldName]
-		if field.BindTo != "" {
-			p.P(fieldName, ` `, field.Type, p.renderGormTag(field), `// of `, field.BindTo)
-		} else {
-			p.P(fieldName, ` `, field.Type, p.renderGormTag(field))
-		}
+		p.P(fieldName, ` `, field.Type, p.renderGormTag(field))
 
 	}
 	p.P(`}`)
@@ -407,10 +428,7 @@ func (p *OrmPlugin) generateConvertFunctions(message *generator.Descriptor) {
 		if getFieldOptions(field).GetDrop() {
 			continue
 		}
-		var ofield *Field
-		if ormable != nil {
-			ofield = ormable.Fields[generator.CamelCase(field.GetName())]
-		}
+		ofield := ormable.Fields[generator.CamelCase(field.GetName())]
 		p.generateFieldConversion(message, field, true, ofield)
 	}
 	if getMessageOptions(message).GetMultiAccount() {
@@ -445,10 +463,7 @@ func (p *OrmPlugin) generateConvertFunctions(message *generator.Descriptor) {
 		if getFieldOptions(field).GetDrop() {
 			continue
 		}
-		var ofield *Field
-		if ormable != nil {
-			ofield = ormable.Fields[generator.CamelCase(field.GetName())]
-		}
+		ofield := ormable.Fields[generator.CamelCase(field.GetName())]
 		p.generateFieldConversion(message, field, false, ofield)
 	}
 	p.P(`if posthook, ok := interface{}(m).(`, typeName, `WithAfterToPB); ok {`)
@@ -561,18 +576,38 @@ func (p *OrmPlugin) generateFieldConversion(message *generator.Descriptor, field
 		} else if coreType == protoTypeResource {
 			resource := "nil" // assuming we do not know the PB type, nil means call codec for any resource
 
-			if ofield != nil && ofield.BindTo != "" {
-				resource = "&" + ofield.BindTo + "{}"
+			if ofield != nil && ofield.ParentOriginName != "" {
+				resource = "&" + ofield.ParentOriginName + "{}"
 			}
 			if toORM {
 				p.P(`if v, err := resource.Decode(`, resource, `, m.`, fieldName, `); err != nil {`)
+				p.P(`return to, err`)
+				p.P(`} else if v == nil {`)
+				if ofield.Type != ofield.ParentGoType && strings.HasPrefix(ofield.Type, "*") {
+					p.P(`to.`, fieldName, ` = (`, ofield.Type, `)(nil)`)
+				} else {
+					p.P(`to.`, fieldName, ` = `, p.guessZeroValue(ofield.ParentGoType))
+				}
+				p.P(`} else {`)
+				if ofield.Type != ofield.ParentGoType && strings.HasPrefix(ofield.Type, "*") {
+					p.P(`vv := v.(`, ofield.ParentGoType, `)`)
+					p.P(`to.`, fieldName, ` = &vv`)
+				} else {
+					p.P(`to.`, fieldName, ` = v.(`, ofield.ParentGoType, `)`)
+				}
+				p.P(`}`)
 			} else {
-				p.P(`if v, err := resource.Encode(`, resource, `, m.`, fieldName, `); err != nil {`)
+				if ofield.Type != ofield.ParentGoType && strings.HasPrefix(ofield.Type, "*") {
+					p.P(`if v, err := resource.Encode(`, resource, `, *m.`, fieldName, `); err != nil {`)
+				} else {
+					p.P(`if v, err := resource.Encode(`, resource, `, m.`, fieldName, `); err != nil {`)
+				}
+				p.P(`return to, err`)
+				p.P(`} else {`)
+				p.P(`to.`, fieldName, ` = v`)
+				p.P(`}`)
 			}
-			p.P(`return to, err`)
-			p.P(`} else {`)
-			p.P(`to.`, fieldName, ` = v`)
-			p.P(`}`)
+
 		} else if p.isOrmable(fieldType) {
 			// Not a WKT, but a type we're building converters for
 			fieldType = strings.Trim(fieldType, "*")
