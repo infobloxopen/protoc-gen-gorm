@@ -15,7 +15,7 @@ message User {
         ormable: true,
         multi_account: true
     };
-    infoblox.rpc.Identifier id = 1;
+    atlas.rpc.Identifier id = 1 [(gorm.field).tag = {type: "uuid"}];
     google.protobuf.Timestamp created_at = 2;
     google.protobuf.Timestamp updated_at = 3;
 
@@ -27,9 +27,9 @@ message User {
     repeated Task tasks = 9 [(gorm.field).has_many = {position_field: "priority", foreignkey_tag: {not_null: true}}];
     Address billing_address = 10 [(gorm.field).belongs_to = {}];
     Address shipping_address = 11 [(gorm.field).belongs_to = {}];
-    infoblox.rpc.Identifier shipping_address_id = 14 ;
     repeated Language languages = 12 [(gorm.field).many_to_many = {}];
     repeated User friends = 13 [(gorm.field).many_to_many = {}];
+    atlas.rpc.Identifier shipping_address_id = 14;
 }
 
 message Email {
@@ -37,10 +37,10 @@ message Email {
         ormable: true,
         multi_account: true
     };
-    infoblox.rpc.Identifier id = 1;
+    atlas.rpc.Identifier id = 1 [(gorm.field).tag = {type: "uuid"}];
     string email = 2;
     bool subscribed = 3;
-    infoblox.rpc.Identifier user_id = 4;
+    atlas.rpc.Identifier user_id = 4;
 }
 
 message Address {
@@ -48,11 +48,11 @@ message Address {
         ormable: true,
         multi_account: true
     };
-    infoblox.rpc.Identifier id = 1;
+    atlas.rpc.Identifier id = 1 [(gorm.field).tag = {type: "integer"}];
     string address_1 = 2;
     string address_2 = 3;
     string post = 4;
-    infoblox.rpc.Identifier external = 5;
+    atlas.rpc.Identifier external = 5 [(gorm.field).tag = {type: "jsonb"}];
 }
 
 message Language {
@@ -60,7 +60,7 @@ message Language {
         ormable: true,
         multi_account: true
     };
-    infoblox.rpc.Identifier id = 1;
+    atlas.rpc.Identifier id = 1 [(gorm.field).tag = {type: "integer"}];
     string name = 2;
     string code = 3;
 }
@@ -70,11 +70,11 @@ message CreditCard {
         ormable: true,
         multi_account: true
     };
-    infoblox.rpc.Identifier id = 1;
+    atlas.rpc.Identifier id = 1 [(gorm.field).tag = {type: "integer"}];
     google.protobuf.Timestamp created_at = 2;
     google.protobuf.Timestamp updated_at = 3;
     string number = 4;
-    infoblox.rpc.Identifier user_id = 5;
+    atlas.rpc.Identifier user_id = 5;
 }
 
 message Task {
