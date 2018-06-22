@@ -652,7 +652,7 @@ func (p *OrmPlugin) generateFieldConversion(message *generator.Descriptor, field
 				resource = "&" + ofield.ParentOriginName + "{}"
 			}
 			if toORM {
-				p.P(`if v, err := resource.Decode(`, resource, `, m.`, fieldName, `); err != nil {`)
+				p.P(`if v, err :=`, p.Import(resourceImport), `.Decode(`, resource, `, m.`, fieldName, `); err != nil {`)
 				p.P(`return to, err`)
 				p.P(`} else if v == nil {`)
 				if ofield.Type != ofield.ParentGoType && strings.HasPrefix(ofield.Type, "*") {
@@ -670,9 +670,9 @@ func (p *OrmPlugin) generateFieldConversion(message *generator.Descriptor, field
 				p.P(`}`)
 			} else {
 				if ofield.Type != ofield.ParentGoType && strings.HasPrefix(ofield.Type, "*") {
-					p.P(`if v, err := resource.Encode(`, resource, `, *m.`, fieldName, `); err != nil {`)
+					p.P(`if v, err := `, p.Import(resourceImport), `.Encode(`, resource, `, *m.`, fieldName, `); err != nil {`)
 				} else {
-					p.P(`if v, err := resource.Encode(`, resource, `, m.`, fieldName, `); err != nil {`)
+					p.P(`if v, err := `, p.Import(resourceImport), `.Encode(`, resource, `, m.`, fieldName, `); err != nil {`)
 				}
 				p.P(`return to, err`)
 				p.P(`} else {`)
