@@ -241,18 +241,16 @@ func (p *OrmPlugin) parseBasicFields(msg *generator.Descriptor) {
 					ttype = "array"
 				}
 				switch ttype {
-				case "uuid", "text", "char", "array":
+				case "uuid", "text", "char", "array", "cidr", "inet", "macaddr":
 					fieldType = "string"
 				case "smallint", "integer", "bigint", "numeric", "smallserial", "serial", "bigserial":
 					fieldType = "int64"
-				case "boolean":
-					fieldType = "bool"
-				case "jsonb", "bytea", "cidr", "inet", "macaddr":
+				case "jsonb", "bytea":
 					fieldType = "[]byte"
 				case "":
-					fieldType = "interface{}" // we do not know the type
+					fieldType = "interface{}" // we do not know the type yet (if it association we will fix the type later)
 				default:
-					p.Fail("invalid type of Identifier")
+					p.Fail("unknown tag type of atlas.rpc.Identifier")
 				}
 			} else if rawType == protoTypeInet {
 				fieldType = fmt.Sprintf("*%s.Inet", p.Import(gtypesImport))
@@ -647,37 +645,80 @@ func (p *OrmPlugin) generateFieldConversion(message *generator.Descriptor, field
 			} // Potential TODO other DB engine handling if desired
 		} else if coreType == protoTypeResource {
 			resource := "nil" // assuming we do not know the PB type, nil means call codec for any resource
-
 			if ofield != nil && ofield.ParentOriginName != "" {
 				resource = "&" + ofield.ParentOriginName + "{}"
 			}
-			if toORM {
-				p.P(`if v, err :=`, p.Import(resourceImport), `.Decode(`, resource, `, m.`, fieldName, `); err != nil {`)
-				p.P(`return to, err`)
-				p.P(`} else if v == nil {`)
-				if ofield.Type != ofield.ParentGoType && strings.HasPrefix(ofield.Type, "*") {
-					p.P(`to.`, fieldName, ` = (`, ofield.Type, `)(nil)`)
-				} else {
-					p.P(`to.`, fieldName, ` = `, p.guessZeroValue(ofield.ParentGoType))
+			encodefn := ".Encode("
+			switch ofield.ParentGoType {
+			case "int64":
+				encodefn = ".EncodeInt64("
+				if toORM {
+					p.P(`if m.`, fieldName, `!= nil {`)
+					p.P(`if v, err :=`, p.Import(resourceImport), `.DecodeInt64(`, resource, `, m.`, fieldName, `); err != nil {`)
+					p.P(`	return to, err`)
+					p.P(`} else {`)
+					if ofield.Type != ofield.ParentGoType && strings.HasPrefix(ofield.Type, "*") {
+						p.P(`to.`, fieldName, ` = &v`)
+					} else {
+						p.P(`to.`, fieldName, ` = v`)
+					}
+					p.P(`}`)
+					p.P(`}`)
 				}
-				p.P(`} else {`)
-				if ofield.Type != ofield.ParentGoType && strings.HasPrefix(ofield.Type, "*") {
-					p.P(`vv := v.(`, ofield.ParentGoType, `)`)
-					p.P(`to.`, fieldName, ` = &vv`)
-				} else {
-					p.P(`to.`, fieldName, ` = v.(`, ofield.ParentGoType, `)`)
+			case "[]byte":
+				encodefn = ".EncodeBytes("
+				if toORM {
+					p.P(`if m.`, fieldName, `!= nil {`)
+					p.P(`if v, err :=`, p.Import(resourceImport), `.DecodeBytes(`, resource, `, m.`, fieldName, `); err != nil {`)
+					p.P(`	return to, err`)
+					p.P(`} else {`)
+					if ofield.Type != ofield.ParentGoType && strings.HasPrefix(ofield.Type, "*") {
+						p.P(`to.`, fieldName, ` = &v`)
+					} else {
+						p.P(`to.`, fieldName, ` = v`)
+					}
+					p.P(`}`)
+					p.P(`}`)
 				}
-				p.P(`}`)
-			} else {
-				if ofield.Type != ofield.ParentGoType && strings.HasPrefix(ofield.Type, "*") {
-					p.P(`if v, err := `, p.Import(resourceImport), `.Encode(`, resource, `, *m.`, fieldName, `); err != nil {`)
-				} else {
-					p.P(`if v, err := `, p.Import(resourceImport), `.Encode(`, resource, `, m.`, fieldName, `); err != nil {`)
+			default:
+				if toORM {
+					p.P(`if m.`, fieldName, `!= nil {`)
+					p.P(`if v, err :=`, p.Import(resourceImport), `.Decode(`, resource, `, m.`, fieldName, `); err != nil {`)
+					p.P(`return to, err`)
+					p.P(`} else if v == nil {`)
+					if ofield.Type != ofield.ParentGoType && strings.HasPrefix(ofield.Type, "*") {
+						p.P(`to.`, fieldName, ` = (`, ofield.Type, `)(nil)`)
+					} else {
+						p.P(`to.`, fieldName, ` = `, p.guessZeroValue(ofield.ParentGoType))
+					}
+					p.P(`} else {`)
+					if ofield.Type != ofield.ParentGoType && strings.HasPrefix(ofield.Type, "*") {
+						p.P(`vv := v.(`, ofield.ParentGoType, `)`)
+						p.P(`to.`, fieldName, ` = &vv`)
+					} else {
+						p.P(`to.`, fieldName, ` = v.(`, ofield.ParentGoType, `)`)
+					}
+					p.P(`}`)
+					p.P(`}`)
 				}
-				p.P(`return to, err`)
-				p.P(`} else {`)
-				p.P(`to.`, fieldName, ` = v`)
-				p.P(`}`)
+			}
+			if !toORM {
+				if ofield.Type != ofield.ParentGoType && strings.HasPrefix(ofield.Type, "*") {
+					p.P(`if m.`, fieldName, `!= nil {`)
+					p.P(`if v, err := `, p.Import(resourceImport), encodefn, resource, `, *m.`, fieldName, `); err != nil {`)
+					p.P(`return to, err`)
+					p.P(`} else {`)
+					p.P(`to.`, fieldName, ` = v`)
+					p.P(`}`)
+					p.P(`}`)
+				} else {
+					p.P(`if v, err := `, p.Import(resourceImport), encodefn, resource, `, m.`, fieldName, `); err != nil {`)
+					p.P(`return to, err`)
+					p.P(`} else {`)
+					p.P(`to.`, fieldName, ` = v`)
+					p.P(`}`)
+				}
+
 			}
 		} else if coreType == protoTypeInet { // Inet type for Postgres only, currently
 			if toORM {

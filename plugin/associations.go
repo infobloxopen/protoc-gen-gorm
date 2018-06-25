@@ -126,6 +126,8 @@ func (p *OrmPlugin) parseHasMany(msg *generator.Descriptor, parent *OrmableType,
 		foreignKeyType = strings.TrimPrefix(assocKey.Type, "*")
 	} else if strings.HasPrefix(assocKey.Type, "*") {
 		foreignKeyType = assocKey.Type
+	} else if strings.Contains(assocKey.Type, "[]byte") {
+		foreignKeyType = assocKey.Type
 	} else {
 		foreignKeyType = "*" + assocKey.Type
 	}
@@ -192,6 +194,8 @@ func (p *OrmPlugin) parseHasOne(msg *generator.Descriptor, parent *OrmableType, 
 		foreignKeyType = strings.TrimPrefix(assocKey.Type, "*")
 	} else if strings.HasPrefix(assocKey.Type, "*") {
 		foreignKeyType = assocKey.Type
+	} else if strings.Contains(assocKey.Type, "[]byte") {
+		foreignKeyType = assocKey.Type
 	} else {
 		foreignKeyType = "*" + assocKey.Type
 	}
@@ -244,6 +248,8 @@ func (p *OrmPlugin) parseBelongsTo(msg *generator.Descriptor, child *OrmableType
 	if belongsTo.GetForeignkeyTag().GetNotNull() {
 		foreignKeyType = strings.TrimPrefix(assocKey.Type, "*")
 	} else if strings.HasPrefix(assocKey.Type, "*") {
+		foreignKeyType = assocKey.Type
+	} else if strings.Contains(assocKey.Type, "[]byte") {
 		foreignKeyType = assocKey.Type
 	} else {
 		foreignKeyType = "*" + assocKey.Type
