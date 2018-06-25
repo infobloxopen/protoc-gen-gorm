@@ -126,10 +126,12 @@ func (p *OrmPlugin) parseHasMany(msg *generator.Descriptor, parent *OrmableType,
 		foreignKeyType = strings.TrimPrefix(assocKey.Type, "*")
 	} else if strings.HasPrefix(assocKey.Type, "*") {
 		foreignKeyType = assocKey.Type
+	} else if strings.Contains(assocKey.Type, "[]byte") {
+		foreignKeyType = assocKey.Type
 	} else {
 		foreignKeyType = "*" + assocKey.Type
 	}
-	foreignKey := &Field{Type: foreignKeyType, GormFieldOptions: &gorm.GormFieldOptions{Tag: hasMany.GetForeignkeyTag()}}
+	foreignKey := &Field{Type: foreignKeyType, ParentGoType: assocKey.Type, GormFieldOptions: &gorm.GormFieldOptions{Tag: hasMany.GetForeignkeyTag()}}
 	var foreignKeyName string
 	if foreignKeyName = hasMany.GetForeignkey(); foreignKeyName == "" {
 		if p.countHasAssociationDimension(msg, fieldType) == 1 {
@@ -146,10 +148,15 @@ func (p *OrmPlugin) parseHasMany(msg *generator.Descriptor, parent *OrmableType,
 	if exField, ok := child.Fields[foreignKeyName]; !ok {
 		child.Fields[foreignKeyName] = foreignKey
 	} else {
-		if exField.Type != foreignKey.Type {
-			p.Fail("Cannot include", foreignKeyName, "field into", child.Name, "as it already exists there with a different type.")
+		if exField.Type == "interface{}" {
+			exField.Type = foreignKey.Type
+			exField.ParentGoType = assocKey.Type
+		} else if exField.Type != foreignKey.Type {
+			p.Fail("Cannot include", foreignKeyName, "field into", child.Name, "as it already exists there with a different type:", exField.Type, foreignKey.Type)
 		}
 	}
+	child.Fields[foreignKeyName].ParentOriginName = parent.OriginName
+
 	var posField string
 	if posField = generator.CamelCase(hasMany.GetPositionField()); posField != "" {
 		if exField, ok := child.Fields[posField]; !ok {
@@ -187,10 +194,12 @@ func (p *OrmPlugin) parseHasOne(msg *generator.Descriptor, parent *OrmableType, 
 		foreignKeyType = strings.TrimPrefix(assocKey.Type, "*")
 	} else if strings.HasPrefix(assocKey.Type, "*") {
 		foreignKeyType = assocKey.Type
+	} else if strings.Contains(assocKey.Type, "[]byte") {
+		foreignKeyType = assocKey.Type
 	} else {
 		foreignKeyType = "*" + assocKey.Type
 	}
-	foreignKey := &Field{Type: foreignKeyType, GormFieldOptions: &gorm.GormFieldOptions{Tag: hasOne.GetForeignkeyTag()}}
+	foreignKey := &Field{Type: foreignKeyType, ParentGoType: assocKey.Type, GormFieldOptions: &gorm.GormFieldOptions{Tag: hasOne.GetForeignkeyTag()}}
 	var foreignKeyName string
 	if foreignKeyName = generator.CamelCase(hasOne.GetForeignkey()); foreignKeyName == "" {
 		if p.countHasAssociationDimension(msg, fieldType) == 1 {
@@ -207,10 +216,14 @@ func (p *OrmPlugin) parseHasOne(msg *generator.Descriptor, parent *OrmableType, 
 	if exField, ok := child.Fields[foreignKeyName]; !ok {
 		child.Fields[foreignKeyName] = foreignKey
 	} else {
-		if exField.Type != foreignKey.Type {
-			p.Fail("Cannot include", foreignKeyName, "field into", child.Name, "as it already exists there with a different type.")
+		if exField.Type == "interface{}" {
+			exField.Type = foreignKey.Type
+			exField.ParentGoType = assocKey.Type
+		} else if exField.Type != foreignKey.Type {
+			p.Fail("Cannot include", foreignKeyName, "field into", child.Name, "as it already exists there with a different type:", exField.Type, foreignKey.Type)
 		}
 	}
+	child.Fields[foreignKeyName].ParentOriginName = parent.OriginName
 }
 
 func (p *OrmPlugin) parseBelongsTo(msg *generator.Descriptor, child *OrmableType, fieldName string, fieldType string, parent *OrmableType, opts *gorm.GormFieldOptions) {
@@ -236,10 +249,12 @@ func (p *OrmPlugin) parseBelongsTo(msg *generator.Descriptor, child *OrmableType
 		foreignKeyType = strings.TrimPrefix(assocKey.Type, "*")
 	} else if strings.HasPrefix(assocKey.Type, "*") {
 		foreignKeyType = assocKey.Type
+	} else if strings.Contains(assocKey.Type, "[]byte") {
+		foreignKeyType = assocKey.Type
 	} else {
 		foreignKeyType = "*" + assocKey.Type
 	}
-	foreignKey := &Field{Type: foreignKeyType, GormFieldOptions: &gorm.GormFieldOptions{Tag: belongsTo.GetForeignkeyTag()}}
+	foreignKey := &Field{Type: foreignKeyType, ParentGoType: assocKey.Type, GormFieldOptions: &gorm.GormFieldOptions{Tag: belongsTo.GetForeignkeyTag()}}
 	var foreignKeyName string
 	if foreignKeyName = generator.CamelCase(belongsTo.GetForeignkey()); foreignKeyName == "" {
 		if p.countBelongsToAssociationDimension(msg, fieldType) == 1 {
@@ -252,10 +267,14 @@ func (p *OrmPlugin) parseBelongsTo(msg *generator.Descriptor, child *OrmableType
 	if exField, ok := child.Fields[foreignKeyName]; !ok {
 		child.Fields[foreignKeyName] = foreignKey
 	} else {
-		if exField.Type != foreignKey.Type {
-			p.Fail("Cannot include", foreignKeyName, "field into", child.Name, "as it already exists there with a different type.")
+		if exField.Type == "interface{}" {
+			exField.Type = foreignKeyType
+			exField.ParentGoType = assocKey.Type
+		} else if exField.Type != foreignKey.Type {
+			p.Fail("Cannot include", foreignKeyName, "field into", child.Name, "as it already exists there with a different type:", exField.Type, foreignKey.Type)
 		}
 	}
+	child.Fields[foreignKeyName].ParentOriginName = parent.OriginName
 }
 
 func (p *OrmPlugin) parseManyToMany(msg *generator.Descriptor, ormable *OrmableType, fieldName string, fieldType string, assoc *OrmableType, opts *gorm.GormFieldOptions) {

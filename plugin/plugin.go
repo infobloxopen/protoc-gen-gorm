@@ -22,6 +22,7 @@ const (
 	protoTypeJSON      = "JSONValue"
 	protoTypeUUID      = "UUID"
 	protoTypeUUIDValue = "UUIDValue"
+	protoTypeResource  = "Identifier"
 	protoTypeInet      = "InetValue"
 )
 
@@ -58,18 +59,25 @@ var builtinTypes = map[string]struct{}{
 }
 
 type OrmableType struct {
-	Name    string
-	Package string
-	Fields  map[string]*Field
+	OriginName string
+	Name       string
+	Package    string
+	Fields     map[string]*Field
 }
 
 type Field struct {
-	Type string
+	ParentGoType string
+	Type         string
 	*gorm.GormFieldOptions
+	ParentOriginName string
 }
 
-func NewOrmableType() *OrmableType {
-	return &OrmableType{Fields: make(map[string]*Field)}
+func NewOrmableType(oname, pkg string) *OrmableType {
+	return &OrmableType{
+		OriginName: oname,
+		Package:    pkg,
+		Fields:     make(map[string]*Field),
+	}
 }
 
 // OrmPlugin implements the plugin interface and creates GORM code from .protos
@@ -125,8 +133,7 @@ func (p *OrmPlugin) Generate(file *generator.FileDescriptor) {
 				}
 				typeName := generator.CamelCase(msg.GetName())
 				if getMessageOptions(msg).GetOrmable() {
-					ormable := NewOrmableType()
-					ormable.Package = fileProto.GetPackage()
+					ormable := NewOrmableType(typeName, fileProto.GetPackage())
 					if _, ok := p.ormableTypes[typeName]; !ok {
 						p.ormableTypes[typeName] = ormable
 					}
@@ -142,6 +149,11 @@ func (p *OrmPlugin) Generate(file *generator.FileDescriptor) {
 				typeName := generator.CamelCase(msg.GetName())
 				if p.isOrmable(typeName) {
 					p.parseAssociations(msg)
+					o := p.getOrmable(typeName)
+					if p.hasPrimaryKey(o) {
+						_, fd := p.findPrimaryKey(o)
+						fd.ParentOriginName = o.OriginName
+					}
 				}
 			}
 		}
@@ -216,6 +228,30 @@ func (p *OrmPlugin) parseBasicFields(msg *generator.Descriptor) {
 					// Potential TODO: add types we want to use in other/default DB engine
 					continue
 				}
+			} else if rawType == protoTypeResource {
+				p.Import(resourceImport)
+
+				tag := getFieldOptions(field).GetTag()
+				ttype := tag.GetType()
+				ttype = strings.ToLower(ttype)
+				if strings.Contains(ttype, "char") {
+					ttype = "char"
+				}
+				if strings.Contains(ttype, "array") || strings.ContainsAny(ttype, "[]") {
+					ttype = "array"
+				}
+				switch ttype {
+				case "uuid", "text", "char", "array", "cidr", "inet", "macaddr":
+					fieldType = "string"
+				case "smallint", "integer", "bigint", "numeric", "smallserial", "serial", "bigserial":
+					fieldType = "int64"
+				case "jsonb", "bytea":
+					fieldType = "[]byte"
+				case "":
+					fieldType = "interface{}" // we do not know the type yet (if it association we will fix the type later)
+				default:
+					p.Fail("unknown tag type of atlas.rpc.Identifier")
+				}
 			} else if rawType == protoTypeInet {
 				fieldType = fmt.Sprintf("*%s.Inet", p.Import(gtypesImport))
 				if p.dbEngine == ENGINE_POSTGRES {
@@ -227,7 +263,7 @@ func (p *OrmPlugin) parseBasicFields(msg *generator.Descriptor) {
 				continue
 			}
 		}
-		ormable.Fields[fieldName] = &Field{Type: fieldType, GormFieldOptions: fieldOpts}
+		ormable.Fields[fieldName] = &Field{Type: fieldType, ParentGoType: fieldType, GormFieldOptions: fieldOpts}
 	}
 	if getMessageOptions(msg).GetMultiAccount() {
 		if accID, ok := ormable.Fields["AccountID"]; !ok {
@@ -323,6 +359,7 @@ func (p *OrmPlugin) generateOrmable(message *generator.Descriptor) {
 	for _, fieldName := range p.getSortedFieldNames(ormable.Fields) {
 		field := ormable.Fields[fieldName]
 		p.P(fieldName, ` `, field.Type, p.renderGormTag(field))
+
 	}
 	p.P(`}`)
 }
@@ -444,6 +481,7 @@ func (p *OrmPlugin) generateTableNameFunction(message *generator.Descriptor) {
 // generateMapFunctions creates the converter functions
 func (p *OrmPlugin) generateConvertFunctions(message *generator.Descriptor) {
 	typeName := p.TypeName(message)
+	ormable := p.getOrmable(generator.CamelCaseSlice(message.TypeName()))
 
 	///// To Orm
 	p.P(`// ToORM runs the BeforeToORM hook if present, converts the fields of this`)
@@ -461,7 +499,8 @@ func (p *OrmPlugin) generateConvertFunctions(message *generator.Descriptor) {
 		if getFieldOptions(field).GetDrop() {
 			continue
 		}
-		p.generateFieldConversion(message, field, true)
+		ofield := ormable.Fields[generator.CamelCase(field.GetName())]
+		p.generateFieldConversion(message, field, true, ofield)
 	}
 	if getMessageOptions(message).GetMultiAccount() {
 		p.P("accountID, err := ", p.Import(authImport), ".GetAccountID(ctx, nil)")
@@ -494,7 +533,8 @@ func (p *OrmPlugin) generateConvertFunctions(message *generator.Descriptor) {
 		if getFieldOptions(field).GetDrop() {
 			continue
 		}
-		p.generateFieldConversion(message, field, false)
+		ofield := ormable.Fields[generator.CamelCase(field.GetName())]
+		p.generateFieldConversion(message, field, false, ofield)
 	}
 	p.P(`if posthook, ok := interface{}(m).(`, typeName, `WithAfterToPB); ok {`)
 	p.P(`err = posthook.AfterToPB(ctx, &to)`)
@@ -504,7 +544,7 @@ func (p *OrmPlugin) generateConvertFunctions(message *generator.Descriptor) {
 }
 
 // Output code that will convert a field to/from orm.
-func (p *OrmPlugin) generateFieldConversion(message *generator.Descriptor, field *descriptor.FieldDescriptorProto, toORM bool) error {
+func (p *OrmPlugin) generateFieldConversion(message *generator.Descriptor, field *descriptor.FieldDescriptorProto, toORM bool, ofield *Field) error {
 	fieldName := generator.CamelCase(field.GetName())
 	fieldType, _ := p.GoType(message, field)
 	if field.IsRepeated() { // Repeated Object ----------------------------------
@@ -603,6 +643,83 @@ func (p *OrmPlugin) generateFieldConversion(message *generator.Descriptor, field
 					p.P(`}`)
 				}
 			} // Potential TODO other DB engine handling if desired
+		} else if coreType == protoTypeResource {
+			resource := "nil" // assuming we do not know the PB type, nil means call codec for any resource
+			if ofield != nil && ofield.ParentOriginName != "" {
+				resource = "&" + ofield.ParentOriginName + "{}"
+			}
+			encodefn := ".Encode("
+			switch ofield.ParentGoType {
+			case "int64":
+				encodefn = ".EncodeInt64("
+				if toORM {
+					p.P(`if m.`, fieldName, `!= nil {`)
+					p.P(`if v, err :=`, p.Import(resourceImport), `.DecodeInt64(`, resource, `, m.`, fieldName, `); err != nil {`)
+					p.P(`	return to, err`)
+					p.P(`} else {`)
+					if ofield.Type != ofield.ParentGoType && strings.HasPrefix(ofield.Type, "*") {
+						p.P(`to.`, fieldName, ` = &v`)
+					} else {
+						p.P(`to.`, fieldName, ` = v`)
+					}
+					p.P(`}`)
+					p.P(`}`)
+				}
+			case "[]byte":
+				encodefn = ".EncodeBytes("
+				if toORM {
+					p.P(`if m.`, fieldName, `!= nil {`)
+					p.P(`if v, err :=`, p.Import(resourceImport), `.DecodeBytes(`, resource, `, m.`, fieldName, `); err != nil {`)
+					p.P(`	return to, err`)
+					p.P(`} else {`)
+					if ofield.Type != ofield.ParentGoType && strings.HasPrefix(ofield.Type, "*") {
+						p.P(`to.`, fieldName, ` = &v`)
+					} else {
+						p.P(`to.`, fieldName, ` = v`)
+					}
+					p.P(`}`)
+					p.P(`}`)
+				}
+			default:
+				if toORM {
+					p.P(`if m.`, fieldName, `!= nil {`)
+					p.P(`if v, err :=`, p.Import(resourceImport), `.Decode(`, resource, `, m.`, fieldName, `); err != nil {`)
+					p.P(`return to, err`)
+					p.P(`} else if v == nil {`)
+					if ofield.Type != ofield.ParentGoType && strings.HasPrefix(ofield.Type, "*") {
+						p.P(`to.`, fieldName, ` = (`, ofield.Type, `)(nil)`)
+					} else {
+						p.P(`to.`, fieldName, ` = `, p.guessZeroValue(ofield.ParentGoType))
+					}
+					p.P(`} else {`)
+					if ofield.Type != ofield.ParentGoType && strings.HasPrefix(ofield.Type, "*") {
+						p.P(`vv := v.(`, ofield.ParentGoType, `)`)
+						p.P(`to.`, fieldName, ` = &vv`)
+					} else {
+						p.P(`to.`, fieldName, ` = v.(`, ofield.ParentGoType, `)`)
+					}
+					p.P(`}`)
+					p.P(`}`)
+				}
+			}
+			if !toORM {
+				if ofield.Type != ofield.ParentGoType && strings.HasPrefix(ofield.Type, "*") {
+					p.P(`if m.`, fieldName, `!= nil {`)
+					p.P(`if v, err := `, p.Import(resourceImport), encodefn, resource, `, *m.`, fieldName, `); err != nil {`)
+					p.P(`return to, err`)
+					p.P(`} else {`)
+					p.P(`to.`, fieldName, ` = v`)
+					p.P(`}`)
+					p.P(`}`)
+				} else {
+					p.P(`if v, err := `, p.Import(resourceImport), encodefn, resource, `, m.`, fieldName, `); err != nil {`)
+					p.P(`return to, err`)
+					p.P(`} else {`)
+					p.P(`to.`, fieldName, ` = v`)
+					p.P(`}`)
+				}
+
+			}
 		} else if coreType == protoTypeInet { // Inet type for Postgres only, currently
 			if toORM {
 				p.P(`if to.`, fieldName, `, err = `, p.Import(gtypesImport), `.ParseInet(m.`, fieldName, `.Value); err != nil {`)
