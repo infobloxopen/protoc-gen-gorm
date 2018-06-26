@@ -6,12 +6,15 @@ package example
 import context "context"
 import errors "errors"
 
+import gateway1 "github.com/infobloxopen/atlas-app-toolkit/gateway"
 import gorm1 "github.com/jinzhu/gorm"
 import gorm2 "github.com/infobloxopen/atlas-app-toolkit/gorm"
+import query1 "github.com/infobloxopen/atlas-app-toolkit/query"
 
 import fmt "fmt"
 import math "math"
 import google_protobuf2 "github.com/golang/protobuf/ptypes/empty"
+import _ "github.com/infobloxopen/atlas-app-toolkit/query"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = fmt.Errorf
@@ -172,10 +175,39 @@ func DefaultStrictUpdateIntPoint(ctx context.Context, in *IntPoint, db *gorm1.DB
 	return &pbResponse, nil
 }
 
+// getCollectionOperators takes collection operator values from corresponding message fields
+func getCollectionOperators(in interface{}) (*query1.Filtering, *query1.Sorting, *query1.Pagination, *query1.FieldSelection, error) {
+	f := &query1.Filtering{}
+	err := gateway1.GetCollectionOp(in, f)
+	if err != nil {
+		return nil, nil, nil, nil, err
+	}
+	s := &query1.Sorting{}
+	err = gateway1.GetCollectionOp(in, s)
+	if err != nil {
+		return nil, nil, nil, nil, err
+	}
+	p := &query1.Pagination{}
+	err = gateway1.GetCollectionOp(in, p)
+	if err != nil {
+		return nil, nil, nil, nil, err
+	}
+	fs := &query1.FieldSelection{}
+	err = gateway1.GetCollectionOp(in, fs)
+	if err != nil {
+		return nil, nil, nil, nil, err
+	}
+	return f, s, p, fs, nil
+}
+
 // DefaultListIntPoint executes a gorm list call
-func DefaultListIntPoint(ctx context.Context, db *gorm1.DB) ([]*IntPoint, error) {
+func DefaultListIntPoint(ctx context.Context, db *gorm1.DB, req interface{}) ([]*IntPoint, error) {
 	ormResponse := []IntPointORM{}
-	db, err := gorm2.ApplyCollectionOperators(db, ctx)
+	f, s, p, fs, err := getCollectionOperators(req)
+	if err != nil {
+		return nil, err
+	}
+	db, err = gorm2.ApplyCollectionOperators(db, f, s, p, fs)
 	if err != nil {
 		return nil, err
 	}
@@ -255,16 +287,16 @@ func (m *IntPointServiceDefaultServer) Update(ctx context.Context, in *UpdateInt
 }
 
 type IntPointServiceListCustomHandler interface {
-	CustomList(context.Context, *google_protobuf2.Empty) (*ListIntPointResponse, error)
+	CustomList(context.Context, *ListIntPointRequest) (*ListIntPointResponse, error)
 }
 
 // List ...
-func (m *IntPointServiceDefaultServer) List(ctx context.Context, in *google_protobuf2.Empty) (*ListIntPointResponse, error) {
+func (m *IntPointServiceDefaultServer) List(ctx context.Context, in *ListIntPointRequest) (*ListIntPointResponse, error) {
 	if custom, ok := interface{}(m).(IntPointServiceListCustomHandler); ok {
 		return custom.CustomList(ctx, in)
 	}
 	db := m.DB
-	res, err := DefaultListIntPoint(ctx, db)
+	res, err := DefaultListIntPoint(ctx, db, in)
 	if err != nil {
 		return nil, err
 	}
@@ -399,7 +431,7 @@ func (m *IntPointTxnDefaultServer) List(ctx context.Context, in *google_protobuf
 	if db.Error != nil {
 		return nil, db.Error
 	}
-	res, err := DefaultListIntPoint(ctx, db)
+	res, err := DefaultListIntPoint(ctx, db, in)
 	if err != nil {
 		return nil, err
 	}

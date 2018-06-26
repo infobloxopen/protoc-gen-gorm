@@ -8,6 +8,43 @@ import (
 	jgorm "github.com/jinzhu/gorm"
 )
 
+var isCollectionFetcherGenerated bool
+
+func (p *OrmPlugin) generateCollectionOperatorsFetcher() {
+	if isCollectionFetcherGenerated == true {
+		return
+	}
+	isCollectionFetcherGenerated = true
+	p.P(`// getCollectionOperators takes collection operator values from corresponding message fields`)
+	p.P(`func getCollectionOperators(in interface{}) (*`, p.Import(queryImport), `.Filtering, *`, p.Import(queryImport), `.Sorting, *`, p.Import(queryImport), `.Pagination, *`, p.Import(queryImport), `.FieldSelection, error) {`)
+	p.P(`f := &`, p.Import(queryImport), `.Filtering{}`)
+	p.P(`err := `, p.Import(gatewayImport), `.GetCollectionOp(in, f)`)
+	p.P(`if err != nil {`)
+	p.P(`return nil, nil, nil, nil, err`)
+	p.P(`}`)
+
+	p.P(`s := &`, p.Import(queryImport), `.Sorting{}`)
+	p.P(`err = `, p.Import(gatewayImport), `.GetCollectionOp(in, s)`)
+	p.P(`if err != nil {`)
+	p.P(`return nil, nil, nil, nil, err`)
+	p.P(`}`)
+
+	p.P(`p := &`, p.Import(queryImport), `.Pagination{}`)
+	p.P(`err = `, p.Import(gatewayImport), `.GetCollectionOp(in, p)`)
+	p.P(`if err != nil {`)
+	p.P(`return nil, nil, nil, nil, err`)
+	p.P(`}`)
+
+	p.P(`fs := &`, p.Import(queryImport), `.FieldSelection{}`)
+	p.P(`err = `, p.Import(gatewayImport), `.GetCollectionOp(in, fs)`)
+	p.P(`if err != nil {`)
+	p.P(`return nil, nil, nil, nil, err`)
+	p.P(`}`)
+
+	p.P(`return f, s, p, fs, nil`)
+	p.P(`}`)
+}
+
 func (p *OrmPlugin) generateDefaultHandlers(file *generator.FileDescriptor) {
 	for _, message := range file.Messages() {
 		if getMessageOptions(message).GetOrmable() {
@@ -20,6 +57,7 @@ func (p *OrmPlugin) generateDefaultHandlers(file *generator.FileDescriptor) {
 				p.generateDeleteHandler(message)
 				p.generateStrictUpdateHandler(message)
 			}
+			p.generateCollectionOperatorsFetcher()
 			p.generateListHandler(message)
 		}
 	}
@@ -161,9 +199,15 @@ func (p *OrmPlugin) generateListHandler(message *generator.Descriptor) {
 
 	p.P(`// DefaultList`, typeName, ` executes a gorm list call`)
 	p.P(`func DefaultList`, typeName, `(ctx context.Context, db *`, p.Import(gormImport), ``,
-		`.DB) ([]*`, typeName, `, error) {`)
+		`.DB, req interface{}) ([]*`, typeName, `, error) {`)
 	p.P(`ormResponse := []`, ormable.Name, `{}`)
-	p.P(`db, err := `, p.Import(tkgormImport), `.ApplyCollectionOperators(db, ctx)`)
+
+	p.P(`f, s, p, fs, err := getCollectionOperators(req)`)
+	p.P(`if err != nil {`)
+	p.P(`return nil, err`)
+	p.P(`}`)
+
+	p.P(`db, err = `, p.Import(tkgormImport), `.ApplyCollectionOperators(db, f, s, p, fs)`)
 	p.P(`if err != nil {`)
 	p.P(`return nil, err`)
 	p.P(`}`)

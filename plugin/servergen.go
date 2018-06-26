@@ -217,7 +217,7 @@ func (p *OrmPlugin) generateListServerMethod(service *descriptor.ServiceDescript
 	follows, typeName := p.followsListConventions(inType, outType)
 	if follows {
 		p.generateDBSetup(service, outType)
-		p.P(`res, err := DefaultList`, typeName, `(ctx, db)`)
+		p.P(`res, err := DefaultList`, typeName, `(ctx, db, in)`)
 		p.P(`if err != nil {`)
 		p.P(`return nil, err`)
 		p.P(`}`)

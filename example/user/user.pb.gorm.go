@@ -22,9 +22,11 @@ import errors "errors"
 import time "time"
 
 import auth1 "github.com/infobloxopen/atlas-app-toolkit/auth"
+import gateway1 "github.com/infobloxopen/atlas-app-toolkit/gateway"
 import gorm1 "github.com/jinzhu/gorm"
 import gorm2 "github.com/infobloxopen/atlas-app-toolkit/gorm"
 import ptypes1 "github.com/golang/protobuf/ptypes"
+import query1 "github.com/infobloxopen/atlas-app-toolkit/query"
 import resource1 "github.com/infobloxopen/atlas-app-toolkit/gorm/resource"
 
 import fmt "fmt"
@@ -940,10 +942,39 @@ func DefaultStrictUpdateUser(ctx context.Context, in *User, db *gorm1.DB) (*User
 	return &pbResponse, nil
 }
 
+// getCollectionOperators takes collection operator values from corresponding message fields
+func getCollectionOperators(in interface{}) (*query1.Filtering, *query1.Sorting, *query1.Pagination, *query1.FieldSelection, error) {
+	f := &query1.Filtering{}
+	err := gateway1.GetCollectionOp(in, f)
+	if err != nil {
+		return nil, nil, nil, nil, err
+	}
+	s := &query1.Sorting{}
+	err = gateway1.GetCollectionOp(in, s)
+	if err != nil {
+		return nil, nil, nil, nil, err
+	}
+	p := &query1.Pagination{}
+	err = gateway1.GetCollectionOp(in, p)
+	if err != nil {
+		return nil, nil, nil, nil, err
+	}
+	fs := &query1.FieldSelection{}
+	err = gateway1.GetCollectionOp(in, fs)
+	if err != nil {
+		return nil, nil, nil, nil, err
+	}
+	return f, s, p, fs, nil
+}
+
 // DefaultListUser executes a gorm list call
-func DefaultListUser(ctx context.Context, db *gorm1.DB) ([]*User, error) {
+func DefaultListUser(ctx context.Context, db *gorm1.DB, req interface{}) ([]*User, error) {
 	ormResponse := []UserORM{}
-	db, err := gorm2.ApplyCollectionOperators(db, ctx)
+	f, s, p, fs, err := getCollectionOperators(req)
+	if err != nil {
+		return nil, err
+	}
+	db, err = gorm2.ApplyCollectionOperators(db, f, s, p, fs)
 	if err != nil {
 		return nil, err
 	}
@@ -1068,9 +1099,13 @@ func DefaultStrictUpdateEmail(ctx context.Context, in *Email, db *gorm1.DB) (*Em
 }
 
 // DefaultListEmail executes a gorm list call
-func DefaultListEmail(ctx context.Context, db *gorm1.DB) ([]*Email, error) {
+func DefaultListEmail(ctx context.Context, db *gorm1.DB, req interface{}) ([]*Email, error) {
 	ormResponse := []EmailORM{}
-	db, err := gorm2.ApplyCollectionOperators(db, ctx)
+	f, s, p, fs, err := getCollectionOperators(req)
+	if err != nil {
+		return nil, err
+	}
+	db, err = gorm2.ApplyCollectionOperators(db, f, s, p, fs)
 	if err != nil {
 		return nil, err
 	}
@@ -1191,9 +1226,13 @@ func DefaultStrictUpdateAddress(ctx context.Context, in *Address, db *gorm1.DB) 
 }
 
 // DefaultListAddress executes a gorm list call
-func DefaultListAddress(ctx context.Context, db *gorm1.DB) ([]*Address, error) {
+func DefaultListAddress(ctx context.Context, db *gorm1.DB, req interface{}) ([]*Address, error) {
 	ormResponse := []AddressORM{}
-	db, err := gorm2.ApplyCollectionOperators(db, ctx)
+	f, s, p, fs, err := getCollectionOperators(req)
+	if err != nil {
+		return nil, err
+	}
+	db, err = gorm2.ApplyCollectionOperators(db, f, s, p, fs)
 	if err != nil {
 		return nil, err
 	}
@@ -1314,9 +1353,13 @@ func DefaultStrictUpdateLanguage(ctx context.Context, in *Language, db *gorm1.DB
 }
 
 // DefaultListLanguage executes a gorm list call
-func DefaultListLanguage(ctx context.Context, db *gorm1.DB) ([]*Language, error) {
+func DefaultListLanguage(ctx context.Context, db *gorm1.DB, req interface{}) ([]*Language, error) {
 	ormResponse := []LanguageORM{}
-	db, err := gorm2.ApplyCollectionOperators(db, ctx)
+	f, s, p, fs, err := getCollectionOperators(req)
+	if err != nil {
+		return nil, err
+	}
+	db, err = gorm2.ApplyCollectionOperators(db, f, s, p, fs)
 	if err != nil {
 		return nil, err
 	}
@@ -1437,9 +1480,13 @@ func DefaultStrictUpdateCreditCard(ctx context.Context, in *CreditCard, db *gorm
 }
 
 // DefaultListCreditCard executes a gorm list call
-func DefaultListCreditCard(ctx context.Context, db *gorm1.DB) ([]*CreditCard, error) {
+func DefaultListCreditCard(ctx context.Context, db *gorm1.DB, req interface{}) ([]*CreditCard, error) {
 	ormResponse := []CreditCardORM{}
-	db, err := gorm2.ApplyCollectionOperators(db, ctx)
+	f, s, p, fs, err := getCollectionOperators(req)
+	if err != nil {
+		return nil, err
+	}
+	db, err = gorm2.ApplyCollectionOperators(db, f, s, p, fs)
 	if err != nil {
 		return nil, err
 	}
@@ -1481,9 +1528,13 @@ func DefaultCreateTask(ctx context.Context, in *Task, db *gorm1.DB) (*Task, erro
 }
 
 // DefaultListTask executes a gorm list call
-func DefaultListTask(ctx context.Context, db *gorm1.DB) ([]*Task, error) {
+func DefaultListTask(ctx context.Context, db *gorm1.DB, req interface{}) ([]*Task, error) {
 	ormResponse := []TaskORM{}
-	db, err := gorm2.ApplyCollectionOperators(db, ctx)
+	f, s, p, fs, err := getCollectionOperators(req)
+	if err != nil {
+		return nil, err
+	}
+	db, err = gorm2.ApplyCollectionOperators(db, f, s, p, fs)
 	if err != nil {
 		return nil, err
 	}

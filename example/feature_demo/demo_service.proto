@@ -3,6 +3,7 @@ syntax = "proto3";
 package example;
 import "google/protobuf/empty.proto";
 import "github.com/infobloxopen/protoc-gen-gorm/options/gorm.proto";
+import "github.com/infobloxopen/atlas-app-toolkit/query/collection_operators.proto";
 
 option go_package = "github.com/infobloxopen/protoc-gen-gorm/example/feature_demo;example";
 
@@ -67,6 +68,13 @@ message ListIntPointResponse {
 message Something {
 }
 
+message ListIntPointRequest {
+    infoblox.api.Filtering filter = 1;
+    infoblox.api.Sorting order_by = 2;
+    infoblox.api.FieldSelection fields = 3;
+    infoblox.api.Pagination paging = 4;
+}
+
 service IntPointService {
   // This option tells protoc-gen-gorm to generate the calls and stubs
   option (gorm.server).autogen = true;
@@ -77,7 +85,7 @@ service IntPointService {
   rpc Create ( CreateIntPointRequest ) returns ( CreateIntPointResponse ) {}
   rpc Read ( ReadIntPointRequest ) returns ( ReadIntPointResponse ) {}
   rpc Update ( UpdateIntPointRequest ) returns ( UpdateIntPointResponse ) {}
-  rpc List ( google.protobuf.Empty ) returns ( ListIntPointResponse ) {}
+  rpc List ( ListIntPointRequest ) returns ( ListIntPointResponse ) {}
   rpc Delete ( DeleteIntPointRequest ) returns  ( DeleteIntPointResponse ) {
       // This option is required because the type/table can't be inferred
       // by the return type

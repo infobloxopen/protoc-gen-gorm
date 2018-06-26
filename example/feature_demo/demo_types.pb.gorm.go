@@ -25,6 +25,7 @@ It has these top-level messages:
 	DeleteIntPointResponse
 	ListIntPointResponse
 	Something
+	ListIntPointRequest
 */
 package example
 
@@ -483,9 +484,13 @@ func DefaultCreateTestTypes(ctx context.Context, in *TestTypes, db *gorm1.DB) (*
 }
 
 // DefaultListTestTypes executes a gorm list call
-func DefaultListTestTypes(ctx context.Context, db *gorm1.DB) ([]*TestTypes, error) {
+func DefaultListTestTypes(ctx context.Context, db *gorm1.DB, req interface{}) ([]*TestTypes, error) {
 	ormResponse := []TestTypesORM{}
-	db, err := gorm2.ApplyCollectionOperators(db, ctx)
+	f, s, p, fs, err := getCollectionOperators(req)
+	if err != nil {
+		return nil, err
+	}
+	db, err = gorm2.ApplyCollectionOperators(db, f, s, p, fs)
 	if err != nil {
 		return nil, err
 	}
@@ -612,9 +617,13 @@ func DefaultStrictUpdateTypeWithID(ctx context.Context, in *TypeWithID, db *gorm
 }
 
 // DefaultListTypeWithID executes a gorm list call
-func DefaultListTypeWithID(ctx context.Context, db *gorm1.DB) ([]*TypeWithID, error) {
+func DefaultListTypeWithID(ctx context.Context, db *gorm1.DB, req interface{}) ([]*TypeWithID, error) {
 	ormResponse := []TypeWithIDORM{}
-	db, err := gorm2.ApplyCollectionOperators(db, ctx)
+	f, s, p, fs, err := getCollectionOperators(req)
+	if err != nil {
+		return nil, err
+	}
+	db, err = gorm2.ApplyCollectionOperators(db, f, s, p, fs)
 	if err != nil {
 		return nil, err
 	}
@@ -736,9 +745,13 @@ func DefaultStrictUpdateMultiaccountTypeWithID(ctx context.Context, in *Multiacc
 }
 
 // DefaultListMultiaccountTypeWithID executes a gorm list call
-func DefaultListMultiaccountTypeWithID(ctx context.Context, db *gorm1.DB) ([]*MultiaccountTypeWithID, error) {
+func DefaultListMultiaccountTypeWithID(ctx context.Context, db *gorm1.DB, req interface{}) ([]*MultiaccountTypeWithID, error) {
 	ormResponse := []MultiaccountTypeWithIDORM{}
-	db, err := gorm2.ApplyCollectionOperators(db, ctx)
+	f, s, p, fs, err := getCollectionOperators(req)
+	if err != nil {
+		return nil, err
+	}
+	db, err = gorm2.ApplyCollectionOperators(db, f, s, p, fs)
 	if err != nil {
 		return nil, err
 	}
@@ -780,9 +793,13 @@ func DefaultCreateMultiaccountTypeWithoutID(ctx context.Context, in *Multiaccoun
 }
 
 // DefaultListMultiaccountTypeWithoutID executes a gorm list call
-func DefaultListMultiaccountTypeWithoutID(ctx context.Context, db *gorm1.DB) ([]*MultiaccountTypeWithoutID, error) {
+func DefaultListMultiaccountTypeWithoutID(ctx context.Context, db *gorm1.DB, req interface{}) ([]*MultiaccountTypeWithoutID, error) {
 	ormResponse := []MultiaccountTypeWithoutIDORM{}
-	db, err := gorm2.ApplyCollectionOperators(db, ctx)
+	f, s, p, fs, err := getCollectionOperators(req)
+	if err != nil {
+		return nil, err
+	}
+	db, err = gorm2.ApplyCollectionOperators(db, f, s, p, fs)
 	if err != nil {
 		return nil, err
 	}
