@@ -28,6 +28,8 @@ func (p *OrmPlugin) generateDefaultServer(file *generator.FileDescriptor) {
 					p.generateReadServerMethod(service, method)
 				} else if strings.HasPrefix(methodName, "Update") {
 					p.generateUpdateServerMethod(service, method)
+				} else if strings.HasPrefix(methodName, "Patch") {
+					p.generatePatchServerMethod(service, method)
 				} else if strings.HasPrefix(methodName, "Delete") {
 					p.generateDeleteServerMethod(service, method)
 				} else if strings.HasPrefix(methodName, "List") {
@@ -170,6 +172,58 @@ func (p *OrmPlugin) followsUpdateConventions(inType generator.Object, outType ge
 	}
 	return false, ""
 }
+
+func (p *OrmPlugin) generatePatchServerMethod(service *descriptor.ServiceDescriptorProto, method *descriptor.MethodDescriptorProto) {
+	inType, outType, methodName, svcName := p.getMethodProps(service, method)
+	p.generateMethodSignature(inType, outType, methodName, svcName)
+	follows, typeName := p.followsPatchConventions(inType, outType)
+	if follows {
+		p.generateDBSetup(service, outType)
+		p.P(`res, err := DefaultPatch`, typeName, `(ctx, in.GetPayload(), in.GetFieldMask(), db)`)
+		p.P(`if err != nil {`)
+		p.P(`return nil, err`)
+		p.P(`}`)
+		p.P(`return &`, p.TypeName(outType), `{Result: res}, nil`)
+		p.P(`}`)
+	} else {
+		p.generateEmptyBody(outType)
+	}
+}
+
+func (p *OrmPlugin) followsPatchConventions(inType generator.Object, outType generator.Object) (bool, string) {
+	inMsg := inType.(*generator.Descriptor)
+	outMsg := outType.(*generator.Descriptor)
+
+	var inTypeName string
+	var typeOrmable bool
+	var hasFieldMask bool
+
+	for _, field := range inMsg.Field {
+		if field.GetName() == "payload" {
+			gType, _ := p.GoType(inMsg, field)
+			inTypeName = strings.TrimPrefix(gType, "*")
+			if p.isOrmable(inTypeName) {
+				typeOrmable = true
+			}
+		}
+
+		if field.GetName() == "field_mask" {
+			hasFieldMask = true
+		}
+	}
+	var outTypeName string
+	for _, field := range outMsg.Field {
+		if field.GetName() == "result" {
+			gType, _ := p.GoType(outMsg, field)
+			outTypeName = strings.TrimPrefix(gType, "*")
+		}
+	}
+	if inTypeName == outTypeName && typeOrmable && p.hasPrimaryKey(p.getOrmable(outTypeName)) && hasFieldMask {
+		return true, inTypeName
+	}
+	return false, ""
+}
+
 
 func (p *OrmPlugin) generateDeleteServerMethod(service *descriptor.ServiceDescriptorProto, method *descriptor.MethodDescriptorProto) {
 	inType, outType, methodName, svcName := p.getMethodProps(service, method)

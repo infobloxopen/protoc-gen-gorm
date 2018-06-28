@@ -105,7 +105,6 @@ func (p *OrmPlugin) generatePatchHandler(message *generator.Descriptor) {
 		p.P("if err != nil {")
 		p.P("return nil, err")
 		p.P("}")
-		p.P(`db = db.Where(&`, typeName, `ORM{AccountID: accountID})`)
 	}
 
 	p.P(`var ormObj `, typeName, `ORM`)
@@ -123,17 +122,24 @@ func (p *OrmPlugin) generatePatchHandler(message *generator.Descriptor) {
 
 	p.P(`for _, f := range fieldMask {`)
 	for _, field := range message.GetField() {
-		if field.GetName() == "id" || !p.isFieldOrmable(message, generator.CamelCase(field.GetName())) {
+
+		ccName := generator.CamelCase(field.GetName())
+
+		if field.GetName() == "id" || !p.isFieldOrmable(message, ccName) {
 			continue
 		}
 
 		p.P(`if f == "`, field.GetName(), `" {`)
-		p.removeChildAssociation(message, generator.CamelCase(field.GetName()))
-		p.P(`ormObj.`, generator.CamelCase(field.GetName()), ` = patcher.`, generator.CamelCase(field.GetName()))
+		p.removeChildAssociationsByName(message, ccName)
+		p.setupOrderedHasManyByName(message, ccName)
+		p.P(`ormObj.`, ccName, ` = patcher.`, ccName)
 		p.P(`}`)
 	}
 	p.P(`}`)
 
+	if getMessageOptions(message).GetMultiAccount() {
+		p.P(`db = db.Where(&`, typeName, `ORM{AccountID: accountID})`)
+	}
 	p.P(`if err = db.Save(&ormObj).Error; err != nil {`)
 	p.P(`return nil, err`)
 	p.P(`}`)
@@ -322,14 +328,20 @@ func (p *OrmPlugin) generatePreloading(ormable *OrmableType) {
 func (p *OrmPlugin) setupOrderedHasMany(message *generator.Descriptor) {
 	ormable := p.getOrmable(p.TypeName(message))
 	for _, fieldName := range p.getSortedFieldNames(ormable.Fields) {
-		field := ormable.Fields[fieldName]
-		if field.GetHasMany().GetPositionField() != "" {
-			positionField := field.GetHasMany().GetPositionField()
-			positionFieldType := p.getOrmable(field.Type).Fields[positionField].Type
-			p.P(`for i, e := range `, `ormObj.`, fieldName, `{`)
-			p.P(`e.`, positionField, ` = `, positionFieldType, `(i)`)
-			p.P(`}`)
-		}
+		p.setupOrderedHasManyByName(message, fieldName)
+	}
+}
+
+func (p *OrmPlugin) setupOrderedHasManyByName(message *generator.Descriptor, fieldName string) {
+	ormable := p.getOrmable(p.TypeName(message))
+	field := ormable.Fields[fieldName]
+
+	if field.GetHasMany().GetPositionField() != "" {
+		positionField := field.GetHasMany().GetPositionField()
+		positionFieldType := p.getOrmable(field.Type).Fields[positionField].Type
+		p.P(`for i, e := range `, `ormObj.`, fieldName, `{`)
+		p.P(`e.`, positionField, ` = `, positionFieldType, `(i)`)
+		p.P(`}`)
 	}
 }
 
@@ -346,65 +358,26 @@ func (p *OrmPlugin) sortOrderedHasMany(message *generator.Descriptor) {
 	}
 }
 
-func (p *OrmPlugin) removeChildAssociations(message *generator.Descriptor) {
-	ormable := p.getOrmable(p.TypeName(message))
-	for _, fieldName := range p.getSortedFieldNames(ormable.Fields) {
-		field := ormable.Fields[fieldName]
-		if field.GetHasMany() != nil || field.GetHasOne() != nil {
-			var assocKeyName, foreignKeyName string
-			switch {
-			case field.GetHasMany() != nil:
-				assocKeyName = field.GetHasMany().GetAssociationForeignkey()
-				foreignKeyName = field.GetHasMany().GetForeignkey()
-			case field.GetHasOne() != nil:
-				assocKeyName = field.GetHasOne().GetAssociationForeignkey()
-				foreignKeyName = field.GetHasOne().GetForeignkey()
-			}
-			assocKeyType := ormable.Fields[assocKeyName].Type
-			assocOrmable := p.getOrmable(field.Type)
-			foreignKeyType := assocOrmable.Fields[foreignKeyName].Type
-			p.P(`filter`, fieldName, ` := `, strings.Trim(field.Type, "[]*"), `{}`)
-			zeroValue := p.guessZeroValue(assocKeyType)
-			if strings.Contains(assocKeyType, "*") {
-				p.P(`if ormObj.`, assocKeyName, ` == nil || *ormObj.`, assocKeyName, ` == `, zeroValue, `{`)
-			} else {
-				p.P(`if ormObj.`, assocKeyName, ` == `, zeroValue, `{`)
-			}
-			p.P(`return nil, errors.New("Can't do overwriting update with no `, assocKeyName, ` value for `, ormable.Name, `")`)
-			p.P(`}`)
-			filterDesc := "filter" + fieldName + "." + foreignKeyName
-			ormDesc := "ormObj." + assocKeyName
-			if strings.HasPrefix(foreignKeyType, "*") {
-				p.P(filterDesc, ` = new(`, strings.TrimPrefix(foreignKeyType, "*"), `)`)
-				filterDesc = "*" + filterDesc
-			}
-			if strings.HasPrefix(assocKeyType, "*") {
-				ormDesc = "*" + ormDesc
-			}
-			p.P(filterDesc, " = ", ormDesc)
-			if _, ok := assocOrmable.Fields["AccountID"]; ok {
-				p.P(`filter`, fieldName, `.AccountID = ormObj.AccountID`)
-			}
-			p.P(`if err = db.Where(filter`, fieldName, `).Delete(`, strings.Trim(field.Type, "[]*"), `{}).Error; err != nil {`)
-			p.P(`return nil, err`)
-			p.P(`}`)
-		}
-	}
-}
-
-func (p *OrmPlugin) isFieldOrmable(message *generator.Descriptor, field string) bool {
-	_, ok := p.getOrmable(p.TypeName(message)).Fields[field]
+func (p *OrmPlugin) isFieldOrmable(message *generator.Descriptor, fieldName string) bool {
+	_, ok := p.getOrmable(p.TypeName(message)).Fields[fieldName]
 	return ok
 }
 
-func (p *OrmPlugin) removeChildAssociation(message *generator.Descriptor, assocField string) {
-	if !p.isFieldOrmable(message, assocField) {
+func (p *OrmPlugin) removeChildAssociations(message *generator.Descriptor) {
+	ormable := p.getOrmable(p.TypeName(message))
+	for _, fieldName := range p.getSortedFieldNames(ormable.Fields) {
+		p.removeChildAssociationsByName(message, fieldName)
+	}
+}
+
+func (p *OrmPlugin) removeChildAssociationsByName(message *generator.Descriptor, fieldName string) {
+	ormable := p.getOrmable(p.TypeName(message))
+	field := ormable.Fields[fieldName]
+
+	if field == nil {
 		return
 	}
 
-	ormable := p.getOrmable(p.TypeName(message))
-
-	field := ormable.Fields[assocField]
 	if field.GetHasMany() != nil || field.GetHasOne() != nil {
 		var assocKeyName, foreignKeyName string
 		switch {
@@ -418,7 +391,7 @@ func (p *OrmPlugin) removeChildAssociation(message *generator.Descriptor, assocF
 		assocKeyType := ormable.Fields[assocKeyName].Type
 		assocOrmable := p.getOrmable(field.Type)
 		foreignKeyType := assocOrmable.Fields[foreignKeyName].Type
-		p.P(`filter`, assocField, ` := `, strings.Trim(field.Type, "[]*"), `{}`)
+		p.P(`filter`, fieldName, ` := `, strings.Trim(field.Type, "[]*"), `{}`)
 		zeroValue := p.guessZeroValue(assocKeyType)
 		if strings.Contains(assocKeyType, "*") {
 			p.P(`if ormObj.`, assocKeyName, ` == nil || *ormObj.`, assocKeyName, ` == `, zeroValue, `{`)
@@ -427,7 +400,7 @@ func (p *OrmPlugin) removeChildAssociation(message *generator.Descriptor, assocF
 		}
 		p.P(`return nil, errors.New("Can't do overwriting update with no `, assocKeyName, ` value for `, ormable.Name, `")`)
 		p.P(`}`)
-		filterDesc := "filter" + assocField + "." + foreignKeyName
+		filterDesc := "filter" + fieldName + "." + foreignKeyName
 		ormDesc := "ormObj." + assocKeyName
 		if strings.HasPrefix(foreignKeyType, "*") {
 			p.P(filterDesc, ` = new(`, strings.TrimPrefix(foreignKeyType, "*"), `)`)
@@ -438,9 +411,9 @@ func (p *OrmPlugin) removeChildAssociation(message *generator.Descriptor, assocF
 		}
 		p.P(filterDesc, " = ", ormDesc)
 		if _, ok := assocOrmable.Fields["AccountID"]; ok {
-			p.P(`filter`, assocField, `.AccountID = ormObj.AccountID`)
+			p.P(`filter`, fieldName, `.AccountID = ormObj.AccountID`)
 		}
-		p.P(`if err = db.Where(filter`, assocField, `).Delete(`, strings.Trim(field.Type, "[]*"), `{}).Error; err != nil {`)
+		p.P(`if err = db.Where(filter`, fieldName, `).Delete(`, strings.Trim(field.Type, "[]*"), `{}).Error; err != nil {`)
 		p.P(`return nil, err`)
 		p.P(`}`)
 	}
