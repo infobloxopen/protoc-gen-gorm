@@ -431,5 +431,11 @@ func (p *OrmPlugin) guessZeroValue(typeName string) string {
 	if strings.Contains(typeName, "uuid") {
 		return fmt.Sprintf(`%s.Nil`, p.Import(uuidImport))
 	}
+	if strings.Contains(typeName, "[]byte") {
+		return `nil`
+	}
+	if strings.Contains(typeName, "bool") {
+		return `false`
+	}
 	return ``
 }

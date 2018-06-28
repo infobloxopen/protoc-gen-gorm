@@ -14,3 +14,7 @@ message JSONValue {
 message UUID {
   string value = 1;
 }
+
+message InetValue {
+  string value = 1;
+}
