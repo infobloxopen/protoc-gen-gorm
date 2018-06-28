@@ -172,6 +172,36 @@ func DefaultStrictUpdateIntPoint(ctx context.Context, in *IntPoint, db *gorm1.DB
 	return &pbResponse, nil
 }
 
+// DefaultPatchIntPoint executes a basic gorm update call with patch behavior
+func DefaultPatchIntPoint(ctx context.Context, in *IntPoint, fieldMask []string, db *gorm1.DB) (*IntPoint, error) {
+	if in == nil {
+		return nil, errors.New("Nil argument to DefaultUpdateIntPoint")
+	}
+	var ormObj IntPointORM
+	if ormObj, err := DefaultReadIntPoint(ctx, &IntPoint{Id: in.GetId()}, db); err != nil {
+		return nil, err
+	} else if ormObj == nil {
+		return nil, errors.New("IntPoint not found")
+	}
+	patcher, err := in.ToORM(ctx)
+	if err != nil {
+		return nil, err
+	}
+	for _, f := range fieldMask {
+		if f == "x" {
+			ormObj.X = patcher.X
+		}
+		if f == "y" {
+			ormObj.Y = patcher.Y
+		}
+	}
+	if err = db.Save(&ormObj).Error; err != nil {
+		return nil, err
+	}
+	pbResponse, err := ormObj.ToPB(ctx)
+	return &pbResponse, err
+}
+
 // DefaultListIntPoint executes a gorm list call
 func DefaultListIntPoint(ctx context.Context, db *gorm1.DB) ([]*IntPoint, error) {
 	ormResponse := []IntPointORM{}
@@ -252,6 +282,23 @@ func (m *IntPointServiceDefaultServer) Update(ctx context.Context, in *UpdateInt
 		return nil, err
 	}
 	return &UpdateIntPointResponse{Result: res}, nil
+}
+
+type IntPointServicePatchCustomHandler interface {
+	CustomPatch(context.Context, *PatchIntPointRequest) (*PatchIntPointResponse, error)
+}
+
+// Patch ...
+func (m *IntPointServiceDefaultServer) Patch(ctx context.Context, in *PatchIntPointRequest) (*PatchIntPointResponse, error) {
+	if custom, ok := interface{}(m).(IntPointServicePatchCustomHandler); ok {
+		return custom.CustomPatch(ctx, in)
+	}
+	db := m.DB
+	res, err := DefaultPatchIntPoint(ctx, in.GetPayload(), in.GetFieldMask(), db)
+	if err != nil {
+		return nil, err
+	}
+	return &PatchIntPointResponse{Result: res}, nil
 }
 
 type IntPointServiceListCustomHandler interface {
@@ -380,6 +427,30 @@ func (m *IntPointTxnDefaultServer) Update(ctx context.Context, in *UpdateIntPoin
 		return nil, err
 	}
 	return &UpdateIntPointResponse{Result: res}, nil
+}
+
+type IntPointTxnPatchCustomHandler interface {
+	CustomPatch(context.Context, *PatchIntPointRequest) (*PatchIntPointResponse, error)
+}
+
+// Patch ...
+func (m *IntPointTxnDefaultServer) Patch(ctx context.Context, in *PatchIntPointRequest) (*PatchIntPointResponse, error) {
+	if custom, ok := interface{}(m).(IntPointTxnPatchCustomHandler); ok {
+		return custom.CustomPatch(ctx, in)
+	}
+	txn, ok := gorm2.FromContext(ctx)
+	if !ok {
+		return nil, errors.New("Database Transaction For Request Missing")
+	}
+	db := txn.Begin()
+	if db.Error != nil {
+		return nil, db.Error
+	}
+	res, err := DefaultPatchIntPoint(ctx, in.GetPayload(), in.GetFieldMask(), db)
+	if err != nil {
+		return nil, err
+	}
+	return &PatchIntPointResponse{Result: res}, nil
 }
 
 type IntPointTxnListCustomHandler interface {

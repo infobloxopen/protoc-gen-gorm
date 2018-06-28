@@ -823,6 +823,100 @@ func DefaultStrictUpdateUser(ctx context.Context, in *User, db *gorm1.DB) (*User
 	return &pbResponse, nil
 }
 
+// DefaultPatchUser executes a basic gorm update call with patch behavior
+func DefaultPatchUser(ctx context.Context, in *User, fieldMask []string, db *gorm1.DB) (*User, error) {
+	if in == nil {
+		return nil, errors.New("Nil argument to DefaultUpdateUser")
+	}
+	accountID, err := auth1.GetAccountID(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+	var ormObj UserORM
+	if ormObj, err := DefaultReadUser(ctx, &User{Id: in.GetId()}, db); err != nil {
+		return nil, err
+	} else if ormObj == nil {
+		return nil, errors.New("User not found")
+	}
+	patcher, err := in.ToORM(ctx)
+	if err != nil {
+		return nil, err
+	}
+	for _, f := range fieldMask {
+		if f == "created_at" {
+			ormObj.CreatedAt = patcher.CreatedAt
+		}
+		if f == "updated_at" {
+			ormObj.UpdatedAt = patcher.UpdatedAt
+		}
+		if f == "birthday" {
+			ormObj.Birthday = patcher.Birthday
+		}
+		if f == "num" {
+			ormObj.Num = patcher.Num
+		}
+		if f == "credit_card" {
+			filterCreditCard := CreditCardORM{}
+			if ormObj.Id == 0 {
+				return nil, errors.New("Can't do overwriting update with no Id value for UserORM")
+			}
+			filterCreditCard.UserId = new(int32)
+			*filterCreditCard.UserId = ormObj.Id
+			filterCreditCard.AccountID = ormObj.AccountID
+			if err = db.Where(filterCreditCard).Delete(CreditCardORM{}).Error; err != nil {
+				return nil, err
+			}
+			ormObj.CreditCard = patcher.CreditCard
+		}
+		if f == "emails" {
+			filterEmails := EmailORM{}
+			if ormObj.Id == 0 {
+				return nil, errors.New("Can't do overwriting update with no Id value for UserORM")
+			}
+			filterEmails.UserId = new(int32)
+			*filterEmails.UserId = ormObj.Id
+			filterEmails.AccountID = ormObj.AccountID
+			if err = db.Where(filterEmails).Delete(EmailORM{}).Error; err != nil {
+				return nil, err
+			}
+			ormObj.Emails = patcher.Emails
+		}
+		if f == "tasks" {
+			filterTasks := TaskORM{}
+			if ormObj.Id == 0 {
+				return nil, errors.New("Can't do overwriting update with no Id value for UserORM")
+			}
+			filterTasks.UserId = ormObj.Id
+			filterTasks.AccountID = ormObj.AccountID
+			if err = db.Where(filterTasks).Delete(TaskORM{}).Error; err != nil {
+				return nil, err
+			}
+			for i, e := range ormObj.Tasks {
+				e.Priority = int64(i)
+			}
+			ormObj.Tasks = patcher.Tasks
+		}
+		if f == "billing_address" {
+			ormObj.BillingAddress = patcher.BillingAddress
+		}
+		if f == "shipping_address" {
+			ormObj.ShippingAddress = patcher.ShippingAddress
+		}
+		if f == "languages" {
+			ormObj.Languages = patcher.Languages
+		}
+		if f == "friends" {
+			ormObj.Friends = patcher.Friends
+		}
+	}
+	db = db.Where(&UserORM{AccountID: accountID})
+	if err = db.Save(&ormObj).Error; err != nil {
+		return nil, err
+	}
+	pbResponse, err := ormObj.ToPB(ctx)
+	return &pbResponse, err
+}
+
 // DefaultListUser executes a gorm list call
 func DefaultListUser(ctx context.Context, db *gorm1.DB) ([]*User, error) {
 	ormResponse := []UserORM{}
@@ -950,6 +1044,41 @@ func DefaultStrictUpdateEmail(ctx context.Context, in *Email, db *gorm1.DB) (*Em
 	return &pbResponse, nil
 }
 
+// DefaultPatchEmail executes a basic gorm update call with patch behavior
+func DefaultPatchEmail(ctx context.Context, in *Email, fieldMask []string, db *gorm1.DB) (*Email, error) {
+	if in == nil {
+		return nil, errors.New("Nil argument to DefaultUpdateEmail")
+	}
+	accountID, err := auth1.GetAccountID(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+	var ormObj EmailORM
+	if ormObj, err := DefaultReadEmail(ctx, &Email{Id: in.GetId()}, db); err != nil {
+		return nil, err
+	} else if ormObj == nil {
+		return nil, errors.New("Email not found")
+	}
+	patcher, err := in.ToORM(ctx)
+	if err != nil {
+		return nil, err
+	}
+	for _, f := range fieldMask {
+		if f == "email" {
+			ormObj.Email = patcher.Email
+		}
+		if f == "subscribed" {
+			ormObj.Subscribed = patcher.Subscribed
+		}
+	}
+	db = db.Where(&EmailORM{AccountID: accountID})
+	if err = db.Save(&ormObj).Error; err != nil {
+		return nil, err
+	}
+	pbResponse, err := ormObj.ToPB(ctx)
+	return &pbResponse, err
+}
+
 // DefaultListEmail executes a gorm list call
 func DefaultListEmail(ctx context.Context, db *gorm1.DB) ([]*Email, error) {
 	ormResponse := []EmailORM{}
@@ -1071,6 +1200,44 @@ func DefaultStrictUpdateAddress(ctx context.Context, in *Address, db *gorm1.DB) 
 		return nil, err
 	}
 	return &pbResponse, nil
+}
+
+// DefaultPatchAddress executes a basic gorm update call with patch behavior
+func DefaultPatchAddress(ctx context.Context, in *Address, fieldMask []string, db *gorm1.DB) (*Address, error) {
+	if in == nil {
+		return nil, errors.New("Nil argument to DefaultUpdateAddress")
+	}
+	accountID, err := auth1.GetAccountID(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+	var ormObj AddressORM
+	if ormObj, err := DefaultReadAddress(ctx, &Address{Id: in.GetId()}, db); err != nil {
+		return nil, err
+	} else if ormObj == nil {
+		return nil, errors.New("Address not found")
+	}
+	patcher, err := in.ToORM(ctx)
+	if err != nil {
+		return nil, err
+	}
+	for _, f := range fieldMask {
+		if f == "address_1" {
+			ormObj.Address_1 = patcher.Address_1
+		}
+		if f == "address_2" {
+			ormObj.Address_2 = patcher.Address_2
+		}
+		if f == "post" {
+			ormObj.Post = patcher.Post
+		}
+	}
+	db = db.Where(&AddressORM{AccountID: accountID})
+	if err = db.Save(&ormObj).Error; err != nil {
+		return nil, err
+	}
+	pbResponse, err := ormObj.ToPB(ctx)
+	return &pbResponse, err
 }
 
 // DefaultListAddress executes a gorm list call
@@ -1196,6 +1363,41 @@ func DefaultStrictUpdateLanguage(ctx context.Context, in *Language, db *gorm1.DB
 	return &pbResponse, nil
 }
 
+// DefaultPatchLanguage executes a basic gorm update call with patch behavior
+func DefaultPatchLanguage(ctx context.Context, in *Language, fieldMask []string, db *gorm1.DB) (*Language, error) {
+	if in == nil {
+		return nil, errors.New("Nil argument to DefaultUpdateLanguage")
+	}
+	accountID, err := auth1.GetAccountID(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+	var ormObj LanguageORM
+	if ormObj, err := DefaultReadLanguage(ctx, &Language{Id: in.GetId()}, db); err != nil {
+		return nil, err
+	} else if ormObj == nil {
+		return nil, errors.New("Language not found")
+	}
+	patcher, err := in.ToORM(ctx)
+	if err != nil {
+		return nil, err
+	}
+	for _, f := range fieldMask {
+		if f == "name" {
+			ormObj.Name = patcher.Name
+		}
+		if f == "code" {
+			ormObj.Code = patcher.Code
+		}
+	}
+	db = db.Where(&LanguageORM{AccountID: accountID})
+	if err = db.Save(&ormObj).Error; err != nil {
+		return nil, err
+	}
+	pbResponse, err := ormObj.ToPB(ctx)
+	return &pbResponse, err
+}
+
 // DefaultListLanguage executes a gorm list call
 func DefaultListLanguage(ctx context.Context, db *gorm1.DB) ([]*Language, error) {
 	ormResponse := []LanguageORM{}
@@ -1317,6 +1519,44 @@ func DefaultStrictUpdateCreditCard(ctx context.Context, in *CreditCard, db *gorm
 		return nil, err
 	}
 	return &pbResponse, nil
+}
+
+// DefaultPatchCreditCard executes a basic gorm update call with patch behavior
+func DefaultPatchCreditCard(ctx context.Context, in *CreditCard, fieldMask []string, db *gorm1.DB) (*CreditCard, error) {
+	if in == nil {
+		return nil, errors.New("Nil argument to DefaultUpdateCreditCard")
+	}
+	accountID, err := auth1.GetAccountID(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+	var ormObj CreditCardORM
+	if ormObj, err := DefaultReadCreditCard(ctx, &CreditCard{Id: in.GetId()}, db); err != nil {
+		return nil, err
+	} else if ormObj == nil {
+		return nil, errors.New("CreditCard not found")
+	}
+	patcher, err := in.ToORM(ctx)
+	if err != nil {
+		return nil, err
+	}
+	for _, f := range fieldMask {
+		if f == "created_at" {
+			ormObj.CreatedAt = patcher.CreatedAt
+		}
+		if f == "updated_at" {
+			ormObj.UpdatedAt = patcher.UpdatedAt
+		}
+		if f == "number" {
+			ormObj.Number = patcher.Number
+		}
+	}
+	db = db.Where(&CreditCardORM{AccountID: accountID})
+	if err = db.Save(&ormObj).Error; err != nil {
+		return nil, err
+	}
+	pbResponse, err := ormObj.ToPB(ctx)
+	return &pbResponse, err
 }
 
 // DefaultListCreditCard executes a gorm list call

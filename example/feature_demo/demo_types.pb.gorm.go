@@ -21,6 +21,8 @@ It has these top-level messages:
 	ReadIntPointResponse
 	UpdateIntPointRequest
 	UpdateIntPointResponse
+	PatchIntPointRequest
+	PatchIntPointResponse
 	DeleteIntPointRequest
 	DeleteIntPointResponse
 	ListIntPointResponse
@@ -604,6 +606,63 @@ func DefaultStrictUpdateTypeWithID(ctx context.Context, in *TypeWithID, db *gorm
 	return &pbResponse, nil
 }
 
+// DefaultPatchTypeWithID executes a basic gorm update call with patch behavior
+func DefaultPatchTypeWithID(ctx context.Context, in *TypeWithID, fieldMask []string, db *gorm1.DB) (*TypeWithID, error) {
+	if in == nil {
+		return nil, errors.New("Nil argument to DefaultUpdateTypeWithID")
+	}
+	var ormObj TypeWithIDORM
+	if ormObj, err := DefaultReadTypeWithID(ctx, &TypeWithID{Id: in.GetId()}, db); err != nil {
+		return nil, err
+	} else if ormObj == nil {
+		return nil, errors.New("TypeWithID not found")
+	}
+	patcher, err := in.ToORM(ctx)
+	if err != nil {
+		return nil, err
+	}
+	for _, f := range fieldMask {
+		if f == "ip" {
+			ormObj.Ip = patcher.Ip
+		}
+		if f == "things" {
+			filterThings := TestTypesORM{}
+			if ormObj.Id == 0 {
+				return nil, errors.New("Can't do overwriting update with no Id value for TypeWithIDORM")
+			}
+			filterThings.ThingsTypeWithIDId = new(uint32)
+			*filterThings.ThingsTypeWithIDId = ormObj.Id
+			if err = db.Where(filterThings).Delete(TestTypesORM{}).Error; err != nil {
+				return nil, err
+			}
+			ormObj.Things = patcher.Things
+		}
+		if f == "a_nested_object" {
+			filterANestedObject := TestTypesORM{}
+			if ormObj.Id == 0 {
+				return nil, errors.New("Can't do overwriting update with no Id value for TypeWithIDORM")
+			}
+			filterANestedObject.ANestedObjectTypeWithIDId = new(uint32)
+			*filterANestedObject.ANestedObjectTypeWithIDId = ormObj.Id
+			if err = db.Where(filterANestedObject).Delete(TestTypesORM{}).Error; err != nil {
+				return nil, err
+			}
+			ormObj.ANestedObject = patcher.ANestedObject
+		}
+		if f == "point" {
+			ormObj.Point = patcher.Point
+		}
+		if f == "user" {
+			ormObj.User = patcher.User
+		}
+	}
+	if err = db.Save(&ormObj).Error; err != nil {
+		return nil, err
+	}
+	pbResponse, err := ormObj.ToPB(ctx)
+	return &pbResponse, err
+}
+
 // DefaultListTypeWithID executes a gorm list call
 func DefaultListTypeWithID(ctx context.Context, db *gorm1.DB) ([]*TypeWithID, error) {
 	ormResponse := []TypeWithIDORM{}
@@ -726,6 +785,38 @@ func DefaultStrictUpdateMultiaccountTypeWithID(ctx context.Context, in *Multiacc
 		return nil, err
 	}
 	return &pbResponse, nil
+}
+
+// DefaultPatchMultiaccountTypeWithID executes a basic gorm update call with patch behavior
+func DefaultPatchMultiaccountTypeWithID(ctx context.Context, in *MultiaccountTypeWithID, fieldMask []string, db *gorm1.DB) (*MultiaccountTypeWithID, error) {
+	if in == nil {
+		return nil, errors.New("Nil argument to DefaultUpdateMultiaccountTypeWithID")
+	}
+	accountID, err := auth1.GetAccountID(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+	var ormObj MultiaccountTypeWithIDORM
+	if ormObj, err := DefaultReadMultiaccountTypeWithID(ctx, &MultiaccountTypeWithID{Id: in.GetId()}, db); err != nil {
+		return nil, err
+	} else if ormObj == nil {
+		return nil, errors.New("MultiaccountTypeWithID not found")
+	}
+	patcher, err := in.ToORM(ctx)
+	if err != nil {
+		return nil, err
+	}
+	for _, f := range fieldMask {
+		if f == "some_field" {
+			ormObj.SomeField = patcher.SomeField
+		}
+	}
+	db = db.Where(&MultiaccountTypeWithIDORM{AccountID: accountID})
+	if err = db.Save(&ormObj).Error; err != nil {
+		return nil, err
+	}
+	pbResponse, err := ormObj.ToPB(ctx)
+	return &pbResponse, err
 }
 
 // DefaultListMultiaccountTypeWithID executes a gorm list call

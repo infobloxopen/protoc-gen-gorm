@@ -48,6 +48,15 @@ message UpdateIntPointResponse {
     IntPoint result = 1;
 }
 
+message PatchIntPointRequest {
+    IntPoint payload = 1;
+    repeated string field_mask = 2;
+}
+
+message PatchIntPointResponse {
+    IntPoint result = 1;
+}
+
 message DeleteIntPointRequest {
     // Only the id is needed for a delete request
     uint32 id = 1;
@@ -77,6 +86,7 @@ service IntPointService {
   rpc Create ( CreateIntPointRequest ) returns ( CreateIntPointResponse ) {}
   rpc Read ( ReadIntPointRequest ) returns ( ReadIntPointResponse ) {}
   rpc Update ( UpdateIntPointRequest ) returns ( UpdateIntPointResponse ) {}
+  rpc Patch ( PatchIntPointRequest ) returns ( PatchIntPointResponse ) {}
   rpc List ( google.protobuf.Empty ) returns ( ListIntPointResponse ) {}
   rpc Delete ( DeleteIntPointRequest ) returns  ( DeleteIntPointResponse ) {
       // This option is required because the type/table can't be inferred
@@ -101,6 +111,7 @@ service IntPointTxn {
   rpc Create ( CreateIntPointRequest ) returns ( CreateIntPointResponse ) {}
   rpc Read ( ReadIntPointRequest ) returns ( ReadIntPointResponse ) {}
   rpc Update ( UpdateIntPointRequest ) returns ( UpdateIntPointResponse ) {}
+  rpc Patch ( PatchIntPointRequest ) returns ( PatchIntPointResponse ) {}
   rpc List ( google.protobuf.Empty ) returns ( ListIntPointResponse ) {}
   rpc Delete ( DeleteIntPointRequest ) returns  ( DeleteIntPointResponse ) {
       // This option is required because the type/table can't be inferred
