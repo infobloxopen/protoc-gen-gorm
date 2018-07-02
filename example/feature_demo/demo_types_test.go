@@ -8,6 +8,11 @@ import (
 func TestInet(t *testing.T) {
 	// a nil Inet originally panicked -- this test ensures that the panic is fixed
 	t.Run("nil Inet value doesn't panic", func(t *testing.T) {
+		defer func() {
+			if r := recover(); r != nil {
+				t.Errorf("expected no panic, but got %v", r)
+			}
+		}()
 		pb := &TypeWithID{}
 		orm, err := pb.ToORM(context.Background())
 		if err != nil {
