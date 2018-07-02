@@ -722,8 +722,10 @@ func (p *OrmPlugin) generateFieldConversion(message *generator.Descriptor, field
 			}
 		} else if coreType == protoTypeInet { // Inet type for Postgres only, currently
 			if toORM {
+				p.P(`if m.`, fieldName, ` != nil {`)
 				p.P(`if to.`, fieldName, `, err = `, p.Import(gtypesImport), `.ParseInet(m.`, fieldName, `.Value); err != nil {`)
 				p.P(`return to, err`)
+				p.P(`}`)
 				p.P(`}`)
 			} else {
 				p.P(`if m.`, fieldName, ` != nil && m.`, fieldName, `.IPNet != nil {`)
