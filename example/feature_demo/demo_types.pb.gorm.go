@@ -234,8 +234,10 @@ func (m *TypeWithID) ToORM(ctx context.Context) (TypeWithIDORM, error) {
 		}
 		to.User = &tempUser
 	}
-	if to.Address, err = types1.ParseInet(m.Address.Value); err != nil {
-		return to, err
+	if m.Address != nil {
+		if to.Address, err = types1.ParseInet(m.Address.Value); err != nil {
+			return to, err
+		}
 	}
 	if posthook, ok := interface{}(m).(TypeWithIDWithAfterToORM); ok {
 		err = posthook.AfterToORM(ctx, &to)
