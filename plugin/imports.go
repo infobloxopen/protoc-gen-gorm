@@ -43,6 +43,8 @@ var (
 	gtypesImport   = "github.com/infobloxopen/protoc-gen-gorm/types"
 	ptypesImport   = "github.com/golang/protobuf/ptypes"
 	resourceImport = "github.com/infobloxopen/atlas-app-toolkit/gorm/resource"
+	queryImport    = "github.com/infobloxopen/atlas-app-toolkit/query"
+	gatewayImport  = "github.com/infobloxopen/atlas-app-toolkit/gateway"
 )
 
 type pkgImport struct {

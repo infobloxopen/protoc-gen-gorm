@@ -102,7 +102,7 @@
     "rpc/errfields",
     "rpc/resource"
   ]
-  revision = "1498dd01b71c7ef524204741041ae42c77e8c60e"
+  revision = "18076e1d3abb72afd7cf06badc4cacf514594e6e"
 
 [[projects]]
   branch = "master"
