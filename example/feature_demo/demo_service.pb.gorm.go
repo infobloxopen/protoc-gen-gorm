@@ -13,6 +13,7 @@ import gorm2 "github.com/infobloxopen/atlas-app-toolkit/gorm"
 import fmt "fmt"
 import math "math"
 import google_protobuf2 "github.com/golang/protobuf/ptypes/empty"
+import _ "google.golang.org/genproto/protobuf/field_mask"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = fmt.Errorf
@@ -306,7 +307,12 @@ func (m *IntPointServiceDefaultServer) Patch(ctx context.Context, in *PatchIntPo
 	if custom, ok := interface{}(m).(IntPointServicePatchCustomHandler); ok {
 		return custom.CustomPatch(ctx, in)
 	}
-	return &PatchIntPointResponse{}, nil
+	db := m.DB
+	res, err := DefaultPatchIntPoint(ctx, in.GetPayload(), in.GetUpdateMask(), db)
+	if err != nil {
+		return nil, err
+	}
+	return &PatchIntPointResponse{Result: res}, nil
 }
 
 type IntPointServiceListCustomHandler interface {
@@ -446,7 +452,19 @@ func (m *IntPointTxnDefaultServer) Patch(ctx context.Context, in *PatchIntPointR
 	if custom, ok := interface{}(m).(IntPointTxnPatchCustomHandler); ok {
 		return custom.CustomPatch(ctx, in)
 	}
-	return &PatchIntPointResponse{}, nil
+	txn, ok := gorm2.FromContext(ctx)
+	if !ok {
+		return nil, errors.New("Database Transaction For Request Missing")
+	}
+	db := txn.Begin()
+	if db.Error != nil {
+		return nil, db.Error
+	}
+	res, err := DefaultPatchIntPoint(ctx, in.GetPayload(), in.GetUpdateMask(), db)
+	if err != nil {
+		return nil, err
+	}
+	return &PatchIntPointResponse{Result: res}, nil
 }
 
 type IntPointTxnListCustomHandler interface {

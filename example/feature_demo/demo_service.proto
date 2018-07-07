@@ -3,6 +3,7 @@ syntax = "proto3";
 package example;
 import "google/protobuf/empty.proto";
 import "github.com/infobloxopen/protoc-gen-gorm/options/gorm.proto";
+import "google/protobuf/field_mask.proto";
 
 option go_package = "github.com/infobloxopen/protoc-gen-gorm/example/feature_demo;example";
 
@@ -50,7 +51,7 @@ message UpdateIntPointResponse {
 
 message PatchIntPointRequest {
     IntPoint payload = 1;
-    repeated string field_mask = 2;
+    google.protobuf.FieldMask update_mask = 2;
 }
 
 message PatchIntPointResponse {
