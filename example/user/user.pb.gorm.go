@@ -22,6 +22,7 @@ import errors "errors"
 import time "time"
 
 import auth1 "github.com/infobloxopen/atlas-app-toolkit/auth"
+import field_mask1 "google.golang.org/genproto/protobuf/field_mask"
 import gorm1 "github.com/jinzhu/gorm"
 import gorm2 "github.com/infobloxopen/atlas-app-toolkit/gorm"
 import ptypes1 "github.com/golang/protobuf/ptypes"
@@ -940,6 +941,120 @@ func DefaultStrictUpdateUser(ctx context.Context, in *User, db *gorm1.DB) (*User
 	return &pbResponse, nil
 }
 
+// DefaultPatchUser executes a basic gorm update call with patch behavior
+func DefaultPatchUser(ctx context.Context, in *User, updateMask *field_mask1.FieldMask, db *gorm1.DB) (*User, error) {
+	if in == nil {
+		return nil, errors.New("Nil argument to DefaultPatchUser")
+	}
+	accountID, err := auth1.GetAccountID(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+	ormParams, err := (&User{Id: in.GetId()}).ToORM(ctx)
+	if err != nil {
+		return nil, err
+	}
+	db = db.Where(&UserORM{AccountID: accountID})
+	db = db.Preload("BillingAddress").Preload("CreditCard").Preload("Emails").Preload("Friends").Preload("Languages").Preload("ShippingAddress")
+	ormObj := UserORM{}
+	if err := db.Where(&ormParams).First(&ormObj).Error; err != nil {
+		return nil, err
+	}
+	pbObj, err := ormObj.ToPB(ctx)
+	if err != nil {
+		return nil, err
+	}
+	for _, f := range updateMask.GetPaths() {
+		if f == "Id" {
+			pbObj.Id = in.Id
+		}
+		if f == "CreatedAt" {
+			pbObj.CreatedAt = in.CreatedAt
+		}
+		if f == "UpdatedAt" {
+			pbObj.UpdatedAt = in.UpdatedAt
+		}
+		if f == "Birthday" {
+			pbObj.Birthday = in.Birthday
+		}
+		if f == "Age" {
+			pbObj.Age = in.Age
+		}
+		if f == "Num" {
+			pbObj.Num = in.Num
+		}
+		if f == "CreditCard" {
+			pbObj.CreditCard = in.CreditCard
+			filterCreditCard := CreditCardORM{}
+			if ormObj.Id == "" {
+				return nil, errors.New("Can't do overwriting update with no Id value for UserORM")
+			}
+			filterCreditCard.UserId = new(string)
+			*filterCreditCard.UserId = ormObj.Id
+			filterCreditCard.AccountID = ormObj.AccountID
+			if err = db.Where(filterCreditCard).Delete(CreditCardORM{}).Error; err != nil {
+				return nil, err
+			}
+		}
+		if f == "Emails" {
+			pbObj.Emails = in.Emails
+			filterEmails := EmailORM{}
+			if ormObj.Id == "" {
+				return nil, errors.New("Can't do overwriting update with no Id value for UserORM")
+			}
+			filterEmails.UserId = new(string)
+			*filterEmails.UserId = ormObj.Id
+			filterEmails.AccountID = ormObj.AccountID
+			if err = db.Where(filterEmails).Delete(EmailORM{}).Error; err != nil {
+				return nil, err
+			}
+		}
+		if f == "Tasks" {
+			pbObj.Tasks = in.Tasks
+			filterTasks := TaskORM{}
+			if ormObj.Id == "" {
+				return nil, errors.New("Can't do overwriting update with no Id value for UserORM")
+			}
+			filterTasks.UserId = ormObj.Id
+			filterTasks.AccountID = ormObj.AccountID
+			if err = db.Where(filterTasks).Delete(TaskORM{}).Error; err != nil {
+				return nil, err
+			}
+			for i, e := range ormObj.Tasks {
+				e.Priority = int64(i)
+			}
+		}
+		if f == "BillingAddress" {
+			pbObj.BillingAddress = in.BillingAddress
+		}
+		if f == "ShippingAddress" {
+			pbObj.ShippingAddress = in.ShippingAddress
+		}
+		if f == "Languages" {
+			pbObj.Languages = in.Languages
+		}
+		if f == "Friends" {
+			pbObj.Friends = in.Friends
+		}
+		if f == "ShippingAddressId" {
+			pbObj.ShippingAddressId = in.ShippingAddressId
+		}
+	}
+	ormObj, err = pbObj.ToORM(ctx)
+	if err != nil {
+		return nil, err
+	}
+	db = db.Where(&UserORM{AccountID: accountID})
+	if err = db.Save(&ormObj).Error; err != nil {
+		return nil, err
+	}
+	pbObj, err = ormObj.ToPB(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return &pbObj, err
+}
+
 // DefaultListUser executes a gorm list call
 func DefaultListUser(ctx context.Context, db *gorm1.DB) ([]*User, error) {
 	ormResponse := []UserORM{}
@@ -1067,6 +1182,57 @@ func DefaultStrictUpdateEmail(ctx context.Context, in *Email, db *gorm1.DB) (*Em
 	return &pbResponse, nil
 }
 
+// DefaultPatchEmail executes a basic gorm update call with patch behavior
+func DefaultPatchEmail(ctx context.Context, in *Email, updateMask *field_mask1.FieldMask, db *gorm1.DB) (*Email, error) {
+	if in == nil {
+		return nil, errors.New("Nil argument to DefaultPatchEmail")
+	}
+	accountID, err := auth1.GetAccountID(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+	ormParams, err := (&Email{Id: in.GetId()}).ToORM(ctx)
+	if err != nil {
+		return nil, err
+	}
+	db = db.Where(&EmailORM{AccountID: accountID})
+	ormObj := EmailORM{}
+	if err := db.Where(&ormParams).First(&ormObj).Error; err != nil {
+		return nil, err
+	}
+	pbObj, err := ormObj.ToPB(ctx)
+	if err != nil {
+		return nil, err
+	}
+	for _, f := range updateMask.GetPaths() {
+		if f == "Id" {
+			pbObj.Id = in.Id
+		}
+		if f == "Email" {
+			pbObj.Email = in.Email
+		}
+		if f == "Subscribed" {
+			pbObj.Subscribed = in.Subscribed
+		}
+		if f == "UserId" {
+			pbObj.UserId = in.UserId
+		}
+	}
+	ormObj, err = pbObj.ToORM(ctx)
+	if err != nil {
+		return nil, err
+	}
+	db = db.Where(&EmailORM{AccountID: accountID})
+	if err = db.Save(&ormObj).Error; err != nil {
+		return nil, err
+	}
+	pbObj, err = ormObj.ToPB(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return &pbObj, err
+}
+
 // DefaultListEmail executes a gorm list call
 func DefaultListEmail(ctx context.Context, db *gorm1.DB) ([]*Email, error) {
 	ormResponse := []EmailORM{}
@@ -1188,6 +1354,60 @@ func DefaultStrictUpdateAddress(ctx context.Context, in *Address, db *gorm1.DB) 
 		return nil, err
 	}
 	return &pbResponse, nil
+}
+
+// DefaultPatchAddress executes a basic gorm update call with patch behavior
+func DefaultPatchAddress(ctx context.Context, in *Address, updateMask *field_mask1.FieldMask, db *gorm1.DB) (*Address, error) {
+	if in == nil {
+		return nil, errors.New("Nil argument to DefaultPatchAddress")
+	}
+	accountID, err := auth1.GetAccountID(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+	ormParams, err := (&Address{Id: in.GetId()}).ToORM(ctx)
+	if err != nil {
+		return nil, err
+	}
+	db = db.Where(&AddressORM{AccountID: accountID})
+	ormObj := AddressORM{}
+	if err := db.Where(&ormParams).First(&ormObj).Error; err != nil {
+		return nil, err
+	}
+	pbObj, err := ormObj.ToPB(ctx)
+	if err != nil {
+		return nil, err
+	}
+	for _, f := range updateMask.GetPaths() {
+		if f == "Id" {
+			pbObj.Id = in.Id
+		}
+		if f == "Address_1" {
+			pbObj.Address_1 = in.Address_1
+		}
+		if f == "Address_2" {
+			pbObj.Address_2 = in.Address_2
+		}
+		if f == "Post" {
+			pbObj.Post = in.Post
+		}
+		if f == "External" {
+			pbObj.External = in.External
+		}
+	}
+	ormObj, err = pbObj.ToORM(ctx)
+	if err != nil {
+		return nil, err
+	}
+	db = db.Where(&AddressORM{AccountID: accountID})
+	if err = db.Save(&ormObj).Error; err != nil {
+		return nil, err
+	}
+	pbObj, err = ormObj.ToPB(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return &pbObj, err
 }
 
 // DefaultListAddress executes a gorm list call
@@ -1313,6 +1533,54 @@ func DefaultStrictUpdateLanguage(ctx context.Context, in *Language, db *gorm1.DB
 	return &pbResponse, nil
 }
 
+// DefaultPatchLanguage executes a basic gorm update call with patch behavior
+func DefaultPatchLanguage(ctx context.Context, in *Language, updateMask *field_mask1.FieldMask, db *gorm1.DB) (*Language, error) {
+	if in == nil {
+		return nil, errors.New("Nil argument to DefaultPatchLanguage")
+	}
+	accountID, err := auth1.GetAccountID(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+	ormParams, err := (&Language{Id: in.GetId()}).ToORM(ctx)
+	if err != nil {
+		return nil, err
+	}
+	db = db.Where(&LanguageORM{AccountID: accountID})
+	ormObj := LanguageORM{}
+	if err := db.Where(&ormParams).First(&ormObj).Error; err != nil {
+		return nil, err
+	}
+	pbObj, err := ormObj.ToPB(ctx)
+	if err != nil {
+		return nil, err
+	}
+	for _, f := range updateMask.GetPaths() {
+		if f == "Id" {
+			pbObj.Id = in.Id
+		}
+		if f == "Name" {
+			pbObj.Name = in.Name
+		}
+		if f == "Code" {
+			pbObj.Code = in.Code
+		}
+	}
+	ormObj, err = pbObj.ToORM(ctx)
+	if err != nil {
+		return nil, err
+	}
+	db = db.Where(&LanguageORM{AccountID: accountID})
+	if err = db.Save(&ormObj).Error; err != nil {
+		return nil, err
+	}
+	pbObj, err = ormObj.ToPB(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return &pbObj, err
+}
+
 // DefaultListLanguage executes a gorm list call
 func DefaultListLanguage(ctx context.Context, db *gorm1.DB) ([]*Language, error) {
 	ormResponse := []LanguageORM{}
@@ -1434,6 +1702,60 @@ func DefaultStrictUpdateCreditCard(ctx context.Context, in *CreditCard, db *gorm
 		return nil, err
 	}
 	return &pbResponse, nil
+}
+
+// DefaultPatchCreditCard executes a basic gorm update call with patch behavior
+func DefaultPatchCreditCard(ctx context.Context, in *CreditCard, updateMask *field_mask1.FieldMask, db *gorm1.DB) (*CreditCard, error) {
+	if in == nil {
+		return nil, errors.New("Nil argument to DefaultPatchCreditCard")
+	}
+	accountID, err := auth1.GetAccountID(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+	ormParams, err := (&CreditCard{Id: in.GetId()}).ToORM(ctx)
+	if err != nil {
+		return nil, err
+	}
+	db = db.Where(&CreditCardORM{AccountID: accountID})
+	ormObj := CreditCardORM{}
+	if err := db.Where(&ormParams).First(&ormObj).Error; err != nil {
+		return nil, err
+	}
+	pbObj, err := ormObj.ToPB(ctx)
+	if err != nil {
+		return nil, err
+	}
+	for _, f := range updateMask.GetPaths() {
+		if f == "Id" {
+			pbObj.Id = in.Id
+		}
+		if f == "CreatedAt" {
+			pbObj.CreatedAt = in.CreatedAt
+		}
+		if f == "UpdatedAt" {
+			pbObj.UpdatedAt = in.UpdatedAt
+		}
+		if f == "Number" {
+			pbObj.Number = in.Number
+		}
+		if f == "UserId" {
+			pbObj.UserId = in.UserId
+		}
+	}
+	ormObj, err = pbObj.ToORM(ctx)
+	if err != nil {
+		return nil, err
+	}
+	db = db.Where(&CreditCardORM{AccountID: accountID})
+	if err = db.Save(&ormObj).Error; err != nil {
+		return nil, err
+	}
+	pbObj, err = ormObj.ToPB(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return &pbObj, err
 }
 
 // DefaultListCreditCard executes a gorm list call

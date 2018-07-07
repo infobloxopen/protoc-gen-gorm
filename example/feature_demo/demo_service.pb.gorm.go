@@ -6,6 +6,7 @@ package example
 import context "context"
 import errors "errors"
 
+import field_mask1 "google.golang.org/genproto/protobuf/field_mask"
 import gorm1 "github.com/jinzhu/gorm"
 import gorm2 "github.com/infobloxopen/atlas-app-toolkit/gorm"
 
@@ -170,6 +171,48 @@ func DefaultStrictUpdateIntPoint(ctx context.Context, in *IntPoint, db *gorm1.DB
 		return nil, err
 	}
 	return &pbResponse, nil
+}
+
+// DefaultPatchIntPoint executes a basic gorm update call with patch behavior
+func DefaultPatchIntPoint(ctx context.Context, in *IntPoint, updateMask *field_mask1.FieldMask, db *gorm1.DB) (*IntPoint, error) {
+	if in == nil {
+		return nil, errors.New("Nil argument to DefaultPatchIntPoint")
+	}
+	ormParams, err := (&IntPoint{Id: in.GetId()}).ToORM(ctx)
+	if err != nil {
+		return nil, err
+	}
+	ormObj := IntPointORM{}
+	if err := db.Where(&ormParams).First(&ormObj).Error; err != nil {
+		return nil, err
+	}
+	pbObj, err := ormObj.ToPB(ctx)
+	if err != nil {
+		return nil, err
+	}
+	for _, f := range updateMask.GetPaths() {
+		if f == "Id" {
+			pbObj.Id = in.Id
+		}
+		if f == "X" {
+			pbObj.X = in.X
+		}
+		if f == "Y" {
+			pbObj.Y = in.Y
+		}
+	}
+	ormObj, err = pbObj.ToORM(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if err = db.Save(&ormObj).Error; err != nil {
+		return nil, err
+	}
+	pbObj, err = ormObj.ToPB(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return &pbObj, err
 }
 
 // DefaultListIntPoint executes a gorm list call

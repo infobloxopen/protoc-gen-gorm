@@ -43,6 +43,7 @@ var (
 	gtypesImport   = "github.com/infobloxopen/protoc-gen-gorm/types"
 	ptypesImport   = "github.com/golang/protobuf/ptypes"
 	resourceImport = "github.com/infobloxopen/atlas-app-toolkit/gorm/resource"
+	fmImport       = "google.golang.org/genproto/protobuf/field_mask"
 )
 
 type pkgImport struct {

@@ -74,16 +74,20 @@ func (p *OrmPlugin) generateReadHandler(message *generator.Descriptor) {
 }
 
 func (p *OrmPlugin) generatePatchHandler(message *generator.Descriptor) {
-	typeName := p.TypeName(message)
+	var isMultiAccount bool
+	var hasIDField bool
 
-	hasIDField := false
+
+	typeName := p.TypeName(message)
+	ormable := p.getOrmable(typeName)
+
 	for _, field := range message.GetField() {
 		if strings.ToLower(field.GetName()) == "id" {
 			hasIDField = true
 			break
 		}
 	}
-	isMultiAccount := false
+
 	if opts := getMessageOptions(message); opts != nil && opts.GetMultiAccount() {
 		isMultiAccount = true
 	}
@@ -95,10 +99,10 @@ func (p *OrmPlugin) generatePatchHandler(message *generator.Descriptor) {
 
 	p.P(`// DefaultPatch`, typeName, ` executes a basic gorm update call with patch behavior`)
 	p.P(`func DefaultPatch`, typeName, `(ctx context.Context, in *`,
-		typeName, `, fieldMask []string, db *`, p.Import(gormImport), `.DB) (*`, typeName, `, error) {`)
+		typeName, `, updateMask *`, p.Import(fmImport), `.FieldMask, db *`, p.Import(gormImport), `.DB) (*`, typeName, `, error) {`)
 
 	p.P(`if in == nil {`)
-	p.P(`return nil, errors.New("Nil argument to DefaultUpdate`, typeName, `")`)
+	p.P(`return nil, errors.New("Nil argument to DefaultPatch`, typeName, `")`)
 	p.P(`}`)
 	if isMultiAccount {
 		p.P("accountID, err := ", p.Import(authImport), ".GetAccountID(ctx, nil)")
@@ -107,44 +111,69 @@ func (p *OrmPlugin) generatePatchHandler(message *generator.Descriptor) {
 		p.P("}")
 	}
 
-	p.P(`var ormObj `, typeName, `ORM`)
-	p.P(fmt.Sprintf("if ormObj, err := DefaultRead%s(ctx, &%s{Id: in.GetId()}, db); err != nil {",
-		typeName, typeName))
-	p.P("return nil, err")
-	p.P("} else if ormObj == nil {")
-	p.P(fmt.Sprintf("return nil, errors.New(\"%s not found\")", typeName))
-	p.P("}")
+	// Read ORM object with preloaded subobjects. For simplicity we
+	// put the DefaultRead body here to have an ormObj to operate with
+	// in child association removals.
 
-	p.P(`patcher, err := in.ToORM(ctx)`)
+	p.P(`ormParams, err := (&`, typeName, `{Id: in.GetId()}).ToORM(ctx)`)
 	p.P(`if err != nil {`)
 	p.P(`return nil, err`)
 	p.P(`}`)
 
-	p.P(`for _, f := range fieldMask {`)
+	if isMultiAccount {
+		p.P(`db = db.Where(&`, typeName, `ORM{AccountID: accountID})`)
+	}
+
+	p.generatePreloading(ormable)
+
+	p.P(`ormObj := `, ormable.Name, `{}`)
+	p.P(`if err := db.Where(&ormParams).First(&ormObj).Error; err != nil {`)
+	p.P(`return nil, err`)
+	p.P(`}`)
+
+	// Convert ormObject to protobuf to apply field mask.
+	// Note that due to synthetic fields support we cannot patch
+	// ormObj directly.
+	p.P(`pbObj, err := ormObj.ToPB(ctx)`)
+	p.P(`if err != nil {`)
+	p.P(`return nil, err`)
+	p.P(`}`)
+
+	// Patch pbObj with input according to a field mask.
+	p.P(`for _, f := range updateMask.GetPaths() {`)
 	for _, field := range message.GetField() {
-
 		ccName := generator.CamelCase(field.GetName())
-
-		if field.GetName() == "id" || !p.isFieldOrmable(message, ccName) {
-			continue
-		}
-
-		p.P(`if f == "`, field.GetName(), `" {`)
+		p.P(`if f == "`, ccName, `" {`)
+		p.P(`pbObj.`, ccName, ` = in.`, ccName)
 		p.removeChildAssociationsByName(message, ccName)
 		p.setupOrderedHasManyByName(message, ccName)
-		p.P(`ormObj.`, ccName, ` = patcher.`, ccName)
 		p.P(`}`)
 	}
 	p.P(`}`)
 
-	if getMessageOptions(message).GetMultiAccount() {
+	// Convert pbObj back to ormObj to trigger any logic that was
+	// written for BeforeToORM/AfterToORM and perform db.Save call.
+	p.P(`ormObj, err = pbObj.ToORM(ctx)`)
+	p.P(`if err != nil {`)
+	p.P(`return nil, err`)
+	p.P(`}`)
+
+	if isMultiAccount {
 		p.P(`db = db.Where(&`, typeName, `ORM{AccountID: accountID})`)
 	}
+
 	p.P(`if err = db.Save(&ormObj).Error; err != nil {`)
 	p.P(`return nil, err`)
 	p.P(`}`)
-	p.P(`pbResponse, err := ormObj.ToPB(ctx)`)
-	p.P(`return &pbResponse, err`)
+
+	// convert ormObj to pbObj again (sic!) to trigger any logic that was
+	// written for AfterToPB/BeforeToPB.
+	p.P(`pbObj, err = ormObj.ToPB(ctx)`)
+	p.P(`if err != nil {`)
+	p.P(`return nil, err`)
+	p.P(`}`)
+
+	p.P(`return &pbObj, err`)
 	p.P(`}`)
 	p.P()
 }
@@ -335,6 +364,10 @@ func (p *OrmPlugin) setupOrderedHasMany(message *generator.Descriptor) {
 func (p *OrmPlugin) setupOrderedHasManyByName(message *generator.Descriptor, fieldName string) {
 	ormable := p.getOrmable(p.TypeName(message))
 	field := ormable.Fields[fieldName]
+
+	if field == nil {
+		return
+	}
 
 	if field.GetHasMany().GetPositionField() != "" {
 		positionField := field.GetHasMany().GetPositionField()

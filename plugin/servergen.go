@@ -179,7 +179,7 @@ func (p *OrmPlugin) generatePatchServerMethod(service *descriptor.ServiceDescrip
 	follows, typeName := p.followsPatchConventions(inType, outType)
 	if follows {
 		p.generateDBSetup(service, outType)
-		p.P(`res, err := DefaultPatch`, typeName, `(ctx, in.GetPayload(), in.GetFieldMask(), db)`)
+		p.P(`res, err := DefaultPatch`, typeName, `(ctx, in.GetPayload(), in.GetUpdateMask(), db)`)
 		p.P(`if err != nil {`)
 		p.P(`return nil, err`)
 		p.P(`}`)
@@ -196,7 +196,7 @@ func (p *OrmPlugin) followsPatchConventions(inType generator.Object, outType gen
 
 	var inTypeName string
 	var typeOrmable bool
-	var hasFieldMask bool
+	var hasUpdateMask bool
 
 	for _, field := range inMsg.Field {
 		if field.GetName() == "payload" {
@@ -207,8 +207,8 @@ func (p *OrmPlugin) followsPatchConventions(inType generator.Object, outType gen
 			}
 		}
 
-		if field.GetName() == "field_mask" {
-			hasFieldMask = true
+		if field.GetName() == "update_mask" {
+			hasUpdateMask = true
 		}
 	}
 	var outTypeName string
@@ -218,7 +218,7 @@ func (p *OrmPlugin) followsPatchConventions(inType generator.Object, outType gen
 			outTypeName = strings.TrimPrefix(gType, "*")
 		}
 	}
-	if inTypeName == outTypeName && typeOrmable && p.hasPrimaryKey(p.getOrmable(outTypeName)) && hasFieldMask {
+	if inTypeName == outTypeName && typeOrmable && p.hasPrimaryKey(p.getOrmable(outTypeName)) && hasUpdateMask {
 		return true, inTypeName
 	}
 	return false, ""

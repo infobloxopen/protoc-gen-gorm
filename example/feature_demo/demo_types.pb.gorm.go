@@ -35,6 +35,7 @@ import errors "errors"
 import time "time"
 
 import auth1 "github.com/infobloxopen/atlas-app-toolkit/auth"
+import field_mask1 "google.golang.org/genproto/protobuf/field_mask"
 import go_uuid1 "github.com/satori/go.uuid"
 import gorm1 "github.com/jinzhu/gorm"
 import gorm2 "github.com/infobloxopen/atlas-app-toolkit/gorm"
@@ -613,6 +614,79 @@ func DefaultStrictUpdateTypeWithID(ctx context.Context, in *TypeWithID, db *gorm
 	return &pbResponse, nil
 }
 
+// DefaultPatchTypeWithID executes a basic gorm update call with patch behavior
+func DefaultPatchTypeWithID(ctx context.Context, in *TypeWithID, updateMask *field_mask1.FieldMask, db *gorm1.DB) (*TypeWithID, error) {
+	if in == nil {
+		return nil, errors.New("Nil argument to DefaultPatchTypeWithID")
+	}
+	ormParams, err := (&TypeWithID{Id: in.GetId()}).ToORM(ctx)
+	if err != nil {
+		return nil, err
+	}
+	db = db.Preload("ANestedObject").Preload("Point").Preload("Things").Preload("User")
+	ormObj := TypeWithIDORM{}
+	if err := db.Where(&ormParams).First(&ormObj).Error; err != nil {
+		return nil, err
+	}
+	pbObj, err := ormObj.ToPB(ctx)
+	if err != nil {
+		return nil, err
+	}
+	for _, f := range updateMask.GetPaths() {
+		if f == "Id" {
+			pbObj.Id = in.Id
+		}
+		if f == "Ip" {
+			pbObj.Ip = in.Ip
+		}
+		if f == "Things" {
+			pbObj.Things = in.Things
+			filterThings := TestTypesORM{}
+			if ormObj.Id == 0 {
+				return nil, errors.New("Can't do overwriting update with no Id value for TypeWithIDORM")
+			}
+			filterThings.ThingsTypeWithIDId = new(uint32)
+			*filterThings.ThingsTypeWithIDId = ormObj.Id
+			if err = db.Where(filterThings).Delete(TestTypesORM{}).Error; err != nil {
+				return nil, err
+			}
+		}
+		if f == "ANestedObject" {
+			pbObj.ANestedObject = in.ANestedObject
+			filterANestedObject := TestTypesORM{}
+			if ormObj.Id == 0 {
+				return nil, errors.New("Can't do overwriting update with no Id value for TypeWithIDORM")
+			}
+			filterANestedObject.ANestedObjectTypeWithIDId = new(uint32)
+			*filterANestedObject.ANestedObjectTypeWithIDId = ormObj.Id
+			if err = db.Where(filterANestedObject).Delete(TestTypesORM{}).Error; err != nil {
+				return nil, err
+			}
+		}
+		if f == "Point" {
+			pbObj.Point = in.Point
+		}
+		if f == "User" {
+			pbObj.User = in.User
+		}
+		if f == "Address" {
+			pbObj.Address = in.Address
+		}
+	}
+	ormObj, err = pbObj.ToORM(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if err = db.Save(&ormObj).Error; err != nil {
+		return nil, err
+	}
+	pbObj, err = ormObj.ToPB(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return &pbObj, err
+}
+
 // DefaultListTypeWithID executes a gorm list call
 func DefaultListTypeWithID(ctx context.Context, db *gorm1.DB) ([]*TypeWithID, error) {
 	ormResponse := []TypeWithIDORM{}
@@ -735,6 +809,51 @@ func DefaultStrictUpdateMultiaccountTypeWithID(ctx context.Context, in *Multiacc
 		return nil, err
 	}
 	return &pbResponse, nil
+}
+
+// DefaultPatchMultiaccountTypeWithID executes a basic gorm update call with patch behavior
+func DefaultPatchMultiaccountTypeWithID(ctx context.Context, in *MultiaccountTypeWithID, updateMask *field_mask1.FieldMask, db *gorm1.DB) (*MultiaccountTypeWithID, error) {
+	if in == nil {
+		return nil, errors.New("Nil argument to DefaultPatchMultiaccountTypeWithID")
+	}
+	accountID, err := auth1.GetAccountID(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+	ormParams, err := (&MultiaccountTypeWithID{Id: in.GetId()}).ToORM(ctx)
+	if err != nil {
+		return nil, err
+	}
+	db = db.Where(&MultiaccountTypeWithIDORM{AccountID: accountID})
+	ormObj := MultiaccountTypeWithIDORM{}
+	if err := db.Where(&ormParams).First(&ormObj).Error; err != nil {
+		return nil, err
+	}
+	pbObj, err := ormObj.ToPB(ctx)
+	if err != nil {
+		return nil, err
+	}
+	for _, f := range updateMask.GetPaths() {
+		if f == "Id" {
+			pbObj.Id = in.Id
+		}
+		if f == "SomeField" {
+			pbObj.SomeField = in.SomeField
+		}
+	}
+	ormObj, err = pbObj.ToORM(ctx)
+	if err != nil {
+		return nil, err
+	}
+	db = db.Where(&MultiaccountTypeWithIDORM{AccountID: accountID})
+	if err = db.Save(&ormObj).Error; err != nil {
+		return nil, err
+	}
+	pbObj, err = ormObj.ToPB(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return &pbObj, err
 }
 
 // DefaultListMultiaccountTypeWithID executes a gorm list call
