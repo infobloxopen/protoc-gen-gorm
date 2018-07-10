@@ -34,6 +34,7 @@ import errors "errors"
 import time "time"
 
 import auth1 "github.com/infobloxopen/atlas-app-toolkit/auth"
+import gateway1 "github.com/infobloxopen/atlas-app-toolkit/gateway"
 import go_uuid1 "github.com/satori/go.uuid"
 import gorm1 "github.com/jinzhu/gorm"
 import gorm2 "github.com/infobloxopen/atlas-app-toolkit/gorm"
@@ -590,6 +591,11 @@ func DefaultStrictUpdateTypeWithID(ctx context.Context, in *TypeWithID, db *gorm
 	if err != nil {
 		return nil, err
 	}
+	count := 1
+	err = db.Model(&ormObj).Where("id=?", ormObj.Id).Count(&count).Error
+	if err != nil {
+		return nil, err
+	}
 	filterANestedObject := TestTypesORM{}
 	if ormObj.Id == 0 {
 		return nil, errors.New("Can't do overwriting update with no Id value for TypeWithIDORM")
@@ -615,7 +621,10 @@ func DefaultStrictUpdateTypeWithID(ctx context.Context, in *TypeWithID, db *gorm
 	if err != nil {
 		return nil, err
 	}
-	return &pbResponse, nil
+	if count == 0 {
+		err = gateway1.SetCreated(ctx, "")
+	}
+	return &pbResponse, err
 }
 
 // DefaultListTypeWithID executes a gorm list call
@@ -735,6 +744,11 @@ func DefaultStrictUpdateMultiaccountTypeWithID(ctx context.Context, in *Multiacc
 	if err != nil {
 		return nil, err
 	}
+	count := 1
+	err = db.Model(&ormObj).Where("id=?", ormObj.Id).Count(&count).Error
+	if err != nil {
+		return nil, err
+	}
 	db = db.Where(&MultiaccountTypeWithIDORM{AccountID: ormObj.AccountID})
 	if err = db.Save(&ormObj).Error; err != nil {
 		return nil, err
@@ -743,7 +757,10 @@ func DefaultStrictUpdateMultiaccountTypeWithID(ctx context.Context, in *Multiacc
 	if err != nil {
 		return nil, err
 	}
-	return &pbResponse, nil
+	if count == 0 {
+		err = gateway1.SetCreated(ctx, "")
+	}
+	return &pbResponse, err
 }
 
 // DefaultListMultiaccountTypeWithID executes a gorm list call
