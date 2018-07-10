@@ -836,7 +836,6 @@ func DefaultReadUser(ctx context.Context, in *User, db *gorm1.DB) (*User, error)
 	db = db.Preload("Tasks", func(db *gorm1.DB) *gorm1.DB {
 		return db.Order("priority")
 	})
-	db = db.Preload("BillingAddress").Preload("CreditCard").Preload("Emails").Preload("Friends").Preload("Languages").Preload("ShippingAddress")
 	ormResponse := UserORM{}
 	if err = db.Where(&ormParams).First(&ormResponse).Error; err != nil {
 		return nil, err
@@ -899,6 +898,11 @@ func DefaultStrictUpdateUser(ctx context.Context, in *User, db *gorm1.DB) (*User
 	if err != nil {
 		return nil, err
 	}
+	count := 1
+	err = db.Model(&ormObj).Where("id=?", ormObj.Id).Count(&count).Error
+	if err != nil {
+		return nil, err
+	}
 	filterCreditCard := CreditCardORM{}
 	if ormObj.Id == "" {
 		return nil, errors.New("Can't do overwriting update with no Id value for UserORM")
@@ -939,7 +943,10 @@ func DefaultStrictUpdateUser(ctx context.Context, in *User, db *gorm1.DB) (*User
 	if err != nil {
 		return nil, err
 	}
-	return &pbResponse, nil
+	if count == 0 {
+		err = gateway1.SetCreated(ctx, "")
+	}
+	return &pbResponse, err
 }
 
 // getCollectionOperators takes collection operator values from corresponding message fields
@@ -974,7 +981,7 @@ func DefaultListUser(ctx context.Context, db *gorm1.DB, req interface{}) ([]*Use
 	if err != nil {
 		return nil, err
 	}
-	db, err = gorm2.ApplyCollectionOperators(db, f, s, p, fs)
+	db, err = gorm2.ApplyCollectionOperators(db, &UserORM{}, f, s, p, fs)
 	if err != nil {
 		return nil, err
 	}
@@ -987,7 +994,6 @@ func DefaultListUser(ctx context.Context, db *gorm1.DB, req interface{}) ([]*Use
 	db = db.Preload("Tasks", func(db *gorm1.DB) *gorm1.DB {
 		return db.Order("priority")
 	})
-	db = db.Preload("BillingAddress").Preload("CreditCard").Preload("Emails").Preload("Friends").Preload("Languages").Preload("ShippingAddress")
 	db = db.Order("id")
 	if err := db.Find(&ormResponse).Error; err != nil {
 		return nil, err
@@ -1087,6 +1093,11 @@ func DefaultStrictUpdateEmail(ctx context.Context, in *Email, db *gorm1.DB) (*Em
 	if err != nil {
 		return nil, err
 	}
+	count := 1
+	err = db.Model(&ormObj).Where("id=?", ormObj.Id).Count(&count).Error
+	if err != nil {
+		return nil, err
+	}
 	db = db.Where(&EmailORM{AccountID: ormObj.AccountID})
 	if err = db.Save(&ormObj).Error; err != nil {
 		return nil, err
@@ -1095,7 +1106,10 @@ func DefaultStrictUpdateEmail(ctx context.Context, in *Email, db *gorm1.DB) (*Em
 	if err != nil {
 		return nil, err
 	}
-	return &pbResponse, nil
+	if count == 0 {
+		err = gateway1.SetCreated(ctx, "")
+	}
+	return &pbResponse, err
 }
 
 // DefaultListEmail executes a gorm list call
@@ -1105,7 +1119,7 @@ func DefaultListEmail(ctx context.Context, db *gorm1.DB, req interface{}) ([]*Em
 	if err != nil {
 		return nil, err
 	}
-	db, err = gorm2.ApplyCollectionOperators(db, f, s, p, fs)
+	db, err = gorm2.ApplyCollectionOperators(db, &EmailORM{}, f, s, p, fs)
 	if err != nil {
 		return nil, err
 	}
@@ -1214,6 +1228,11 @@ func DefaultStrictUpdateAddress(ctx context.Context, in *Address, db *gorm1.DB) 
 	if err != nil {
 		return nil, err
 	}
+	count := 1
+	err = db.Model(&ormObj).Where("id=?", ormObj.Id).Count(&count).Error
+	if err != nil {
+		return nil, err
+	}
 	db = db.Where(&AddressORM{AccountID: ormObj.AccountID})
 	if err = db.Save(&ormObj).Error; err != nil {
 		return nil, err
@@ -1222,7 +1241,10 @@ func DefaultStrictUpdateAddress(ctx context.Context, in *Address, db *gorm1.DB) 
 	if err != nil {
 		return nil, err
 	}
-	return &pbResponse, nil
+	if count == 0 {
+		err = gateway1.SetCreated(ctx, "")
+	}
+	return &pbResponse, err
 }
 
 // DefaultListAddress executes a gorm list call
@@ -1232,7 +1254,7 @@ func DefaultListAddress(ctx context.Context, db *gorm1.DB, req interface{}) ([]*
 	if err != nil {
 		return nil, err
 	}
-	db, err = gorm2.ApplyCollectionOperators(db, f, s, p, fs)
+	db, err = gorm2.ApplyCollectionOperators(db, &AddressORM{}, f, s, p, fs)
 	if err != nil {
 		return nil, err
 	}
@@ -1341,6 +1363,11 @@ func DefaultStrictUpdateLanguage(ctx context.Context, in *Language, db *gorm1.DB
 	if err != nil {
 		return nil, err
 	}
+	count := 1
+	err = db.Model(&ormObj).Where("id=?", ormObj.Id).Count(&count).Error
+	if err != nil {
+		return nil, err
+	}
 	db = db.Where(&LanguageORM{AccountID: ormObj.AccountID})
 	if err = db.Save(&ormObj).Error; err != nil {
 		return nil, err
@@ -1349,7 +1376,10 @@ func DefaultStrictUpdateLanguage(ctx context.Context, in *Language, db *gorm1.DB
 	if err != nil {
 		return nil, err
 	}
-	return &pbResponse, nil
+	if count == 0 {
+		err = gateway1.SetCreated(ctx, "")
+	}
+	return &pbResponse, err
 }
 
 // DefaultListLanguage executes a gorm list call
@@ -1359,7 +1389,7 @@ func DefaultListLanguage(ctx context.Context, db *gorm1.DB, req interface{}) ([]
 	if err != nil {
 		return nil, err
 	}
-	db, err = gorm2.ApplyCollectionOperators(db, f, s, p, fs)
+	db, err = gorm2.ApplyCollectionOperators(db, &LanguageORM{}, f, s, p, fs)
 	if err != nil {
 		return nil, err
 	}
@@ -1468,6 +1498,11 @@ func DefaultStrictUpdateCreditCard(ctx context.Context, in *CreditCard, db *gorm
 	if err != nil {
 		return nil, err
 	}
+	count := 1
+	err = db.Model(&ormObj).Where("id=?", ormObj.Id).Count(&count).Error
+	if err != nil {
+		return nil, err
+	}
 	db = db.Where(&CreditCardORM{AccountID: ormObj.AccountID})
 	if err = db.Save(&ormObj).Error; err != nil {
 		return nil, err
@@ -1476,7 +1511,10 @@ func DefaultStrictUpdateCreditCard(ctx context.Context, in *CreditCard, db *gorm
 	if err != nil {
 		return nil, err
 	}
-	return &pbResponse, nil
+	if count == 0 {
+		err = gateway1.SetCreated(ctx, "")
+	}
+	return &pbResponse, err
 }
 
 // DefaultListCreditCard executes a gorm list call
@@ -1486,7 +1524,7 @@ func DefaultListCreditCard(ctx context.Context, db *gorm1.DB, req interface{}) (
 	if err != nil {
 		return nil, err
 	}
-	db, err = gorm2.ApplyCollectionOperators(db, f, s, p, fs)
+	db, err = gorm2.ApplyCollectionOperators(db, &CreditCardORM{}, f, s, p, fs)
 	if err != nil {
 		return nil, err
 	}
@@ -1534,7 +1572,7 @@ func DefaultListTask(ctx context.Context, db *gorm1.DB, req interface{}) ([]*Tas
 	if err != nil {
 		return nil, err
 	}
-	db, err = gorm2.ApplyCollectionOperators(db, f, s, p, fs)
+	db, err = gorm2.ApplyCollectionOperators(db, &TaskORM{}, f, s, p, fs)
 	if err != nil {
 		return nil, err
 	}

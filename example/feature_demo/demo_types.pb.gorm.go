@@ -34,6 +34,7 @@ import errors "errors"
 import time "time"
 
 import auth1 "github.com/infobloxopen/atlas-app-toolkit/auth"
+import gateway1 "github.com/infobloxopen/atlas-app-toolkit/gateway"
 import go_uuid1 "github.com/satori/go.uuid"
 import gorm1 "github.com/jinzhu/gorm"
 import gorm2 "github.com/infobloxopen/atlas-app-toolkit/gorm"
@@ -492,7 +493,7 @@ func DefaultListTestTypes(ctx context.Context, db *gorm1.DB, req interface{}) ([
 	if err != nil {
 		return nil, err
 	}
-	db, err = gorm2.ApplyCollectionOperators(db, f, s, p, fs)
+	db, err = gorm2.ApplyCollectionOperators(db, &TestTypesORM{}, f, s, p, fs)
 	if err != nil {
 		return nil, err
 	}
@@ -541,7 +542,6 @@ func DefaultReadTypeWithID(ctx context.Context, in *TypeWithID, db *gorm1.DB) (*
 	if err != nil {
 		return nil, err
 	}
-	db = db.Preload("ANestedObject").Preload("Point").Preload("Things").Preload("User")
 	ormResponse := TypeWithIDORM{}
 	if err = db.Where(&ormParams).First(&ormResponse).Error; err != nil {
 		return nil, err
@@ -590,6 +590,11 @@ func DefaultStrictUpdateTypeWithID(ctx context.Context, in *TypeWithID, db *gorm
 	if err != nil {
 		return nil, err
 	}
+	count := 1
+	err = db.Model(&ormObj).Where("id=?", ormObj.Id).Count(&count).Error
+	if err != nil {
+		return nil, err
+	}
 	filterANestedObject := TestTypesORM{}
 	if ormObj.Id == 0 {
 		return nil, errors.New("Can't do overwriting update with no Id value for TypeWithIDORM")
@@ -615,7 +620,10 @@ func DefaultStrictUpdateTypeWithID(ctx context.Context, in *TypeWithID, db *gorm
 	if err != nil {
 		return nil, err
 	}
-	return &pbResponse, nil
+	if count == 0 {
+		err = gateway1.SetCreated(ctx, "")
+	}
+	return &pbResponse, err
 }
 
 // DefaultListTypeWithID executes a gorm list call
@@ -625,7 +633,7 @@ func DefaultListTypeWithID(ctx context.Context, db *gorm1.DB, req interface{}) (
 	if err != nil {
 		return nil, err
 	}
-	db, err = gorm2.ApplyCollectionOperators(db, f, s, p, fs)
+	db, err = gorm2.ApplyCollectionOperators(db, &TypeWithIDORM{}, f, s, p, fs)
 	if err != nil {
 		return nil, err
 	}
@@ -635,7 +643,6 @@ func DefaultListTypeWithID(ctx context.Context, db *gorm1.DB, req interface{}) (
 		return nil, err
 	}
 	db = db.Where(&ormParams)
-	db = db.Preload("ANestedObject").Preload("Point").Preload("Things").Preload("User")
 	db = db.Order("id")
 	if err := db.Find(&ormResponse).Error; err != nil {
 		return nil, err
@@ -735,6 +742,11 @@ func DefaultStrictUpdateMultiaccountTypeWithID(ctx context.Context, in *Multiacc
 	if err != nil {
 		return nil, err
 	}
+	count := 1
+	err = db.Model(&ormObj).Where("id=?", ormObj.Id).Count(&count).Error
+	if err != nil {
+		return nil, err
+	}
 	db = db.Where(&MultiaccountTypeWithIDORM{AccountID: ormObj.AccountID})
 	if err = db.Save(&ormObj).Error; err != nil {
 		return nil, err
@@ -743,7 +755,10 @@ func DefaultStrictUpdateMultiaccountTypeWithID(ctx context.Context, in *Multiacc
 	if err != nil {
 		return nil, err
 	}
-	return &pbResponse, nil
+	if count == 0 {
+		err = gateway1.SetCreated(ctx, "")
+	}
+	return &pbResponse, err
 }
 
 // DefaultListMultiaccountTypeWithID executes a gorm list call
@@ -753,7 +768,7 @@ func DefaultListMultiaccountTypeWithID(ctx context.Context, db *gorm1.DB, req in
 	if err != nil {
 		return nil, err
 	}
-	db, err = gorm2.ApplyCollectionOperators(db, f, s, p, fs)
+	db, err = gorm2.ApplyCollectionOperators(db, &MultiaccountTypeWithIDORM{}, f, s, p, fs)
 	if err != nil {
 		return nil, err
 	}
@@ -801,7 +816,7 @@ func DefaultListMultiaccountTypeWithoutID(ctx context.Context, db *gorm1.DB, req
 	if err != nil {
 		return nil, err
 	}
-	db, err = gorm2.ApplyCollectionOperators(db, f, s, p, fs)
+	db, err = gorm2.ApplyCollectionOperators(db, &MultiaccountTypeWithoutIDORM{}, f, s, p, fs)
 	if err != nil {
 		return nil, err
 	}

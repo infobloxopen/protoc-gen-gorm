@@ -165,6 +165,11 @@ func DefaultStrictUpdateIntPoint(ctx context.Context, in *IntPoint, db *gorm1.DB
 	if err != nil {
 		return nil, err
 	}
+	count := 1
+	err = db.Model(&ormObj).Where("id=?", ormObj.Id).Count(&count).Error
+	if err != nil {
+		return nil, err
+	}
 	if err = db.Save(&ormObj).Error; err != nil {
 		return nil, err
 	}
@@ -172,7 +177,10 @@ func DefaultStrictUpdateIntPoint(ctx context.Context, in *IntPoint, db *gorm1.DB
 	if err != nil {
 		return nil, err
 	}
-	return &pbResponse, nil
+	if count == 0 {
+		err = gateway1.SetCreated(ctx, "")
+	}
+	return &pbResponse, err
 }
 
 // getCollectionOperators takes collection operator values from corresponding message fields
@@ -207,7 +215,7 @@ func DefaultListIntPoint(ctx context.Context, db *gorm1.DB, req interface{}) ([]
 	if err != nil {
 		return nil, err
 	}
-	db, err = gorm2.ApplyCollectionOperators(db, f, s, p, fs)
+	db, err = gorm2.ApplyCollectionOperators(db, &IntPointORM{}, f, s, p, fs)
 	if err != nil {
 		return nil, err
 	}
