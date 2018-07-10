@@ -179,8 +179,8 @@ type TypeWithIDORM struct {
 	Address           *types1.Inet  `gorm:"type:inet"`
 	Id                uint32
 	IntPointId        *uint32
-	Ip                string `gorm:"column:ip_addr"`
-	MultiAccountTypes []*JoinTable
+	Ip                string          `gorm:"column:ip_addr"`
+	MultiAccountTypes []*JoinTable    `gorm:"foreignkey:TypeWithIDID"`
 	Point             *IntPointORM    `gorm:"foreignkey:IntPointId;association_foreignkey:Id"`
 	SecretInt         int32           `gorm:"-"`
 	Things            []*TestTypesORM `gorm:"foreignkey:ThingsTypeWithIDId;association_foreignkey:Id"`
