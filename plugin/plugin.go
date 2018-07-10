@@ -317,9 +317,8 @@ func (p *OrmPlugin) addIncludedField(ormable *OrmableType, field *gorm.ExtraFiel
 		} else if rawType == "Inet" {
 			rawType = fmt.Sprintf("%s.Inet", p.Import(gtypesImport))
 		} else {
-			log.Printf(fmt.Sprintf(
-				`WARNING: included field %q of type %q is not a recognized special type, and no package specified. This type is assumed to be in the same package as the generated code`,
-				field.GetName(), field.GetType()))
+			log.Printf(`WARNING: included field %q of type %q is not a recognized special type, and no package specified. This type is assumed to be in the same package as the generated code`,
+				field.GetName(), field.GetType())
 		}
 	}
 	if isPtr {
