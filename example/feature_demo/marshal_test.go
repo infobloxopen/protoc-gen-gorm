@@ -16,7 +16,7 @@ import (
 func TestSuccessfulUnmarshalTypes(t *testing.T) {
 	unmarshaler := &jsonpb.Unmarshaler{}
 	for in, expected := range map[string]TestTypes{
-		`{}`: {},
+		`{}`:                                              {},
 		`{"api_only_string":"important text"}`:            {ApiOnlyString: "important text"},
 		`{"numbers":null}`:                                {},
 		`{"numbers":[]}`:                                  {Numbers: []int32{}},
@@ -61,22 +61,23 @@ func TestBrokenUnmarshalTypes(t *testing.T) {
 	unmarshaler := &jsonpb.Unmarshaler{}
 	for in, expected := range map[string]string{
 		// A subset of possible broken inputs
-		`{"}`: "unexpected EOF",
-		`{"becomes_int":"NOT_AN_ENUM_VALUE"}`:       "unknown value \"NOT_AN_ENUM_VALUE\" for enum example.TestTypesStatus",
-		`{"numbers":[1,2,3,4,]}`:                    "invalid character ']' looking for beginning of value",
-		`{"json_field":{"top":{"something":1},2]}}`: "invalid character '2' looking for beginning of object key string",
-		`{"type_with_id_id":"4"}`:                   "json: cannot unmarshal string into Go value of type uint32",
-		`{"uuid":""}`:                               "invalid uuid '' does not match accepted format",
+		`{"}`:                                                "unexpected EOF",
+		`{"becomes_int":"NOT_AN_ENUM_VALUE"}`:                "unknown value \"NOT_AN_ENUM_VALUE\" for enum example.TestTypesStatus",
+		`{"numbers":[1,2,3,4,]}`:                             "invalid character ']' looking for beginning of value",
+		`{"json_field":{"top":{"something":1},2]}}`:          "invalid character '2' looking for beginning of object key string",
+		`{"uuid":""}`:                                        "invalid uuid '' does not match accepted format",
 		`{"uuid":"   6ba7b810-9dad-11d1-80b4-00c04fd430c8"}`: "invalid uuid '   6ba7b810-9dad-11d1-80b4-00c04fd430c8' does not match accepted format",
 	} {
-		err := unmarshaler.Unmarshal(strings.NewReader(in), &TestTypes{})
-		if err == nil || err.Error() != expected {
-			if err == nil {
-				t.Errorf("Expected error %q, but got no error", expected)
-			} else {
-				t.Errorf("Expected error %q, but got %q", expected, err.Error())
+		t.Run(in, func(t *testing.T) {
+			err := unmarshaler.Unmarshal(strings.NewReader(in), &TestTypes{})
+			if err == nil || err.Error() != expected {
+				if err == nil {
+					t.Errorf("Expected error %q, but got no error", expected)
+				} else {
+					t.Errorf("Expected error %q, but got %q", expected, err.Error())
+				}
 			}
-		}
+		})
 	}
 }
 
@@ -109,7 +110,7 @@ func TestMarshalTypesOmitEmpty(t *testing.T) {
 	// Will marshal with snake_case names, but not default values
 	marshaller := &jsonpb.Marshaler{OrigName: true}
 	for expected, in := range map[string]TestTypes{
-		`{}`: {},
+		`{}`:                                              {},
 		`{"api_only_string":"Something"}`:                 {ApiOnlyString: "Something"},
 		`{"numbers":[0,1,2,3]}`:                           {Numbers: []int32{0, 1, 2, 3}},
 		`{"optional_string":"Not nothing"}`:               {OptionalString: &wrappers.StringValue{Value: "Not nothing"}},
