@@ -242,15 +242,18 @@ func (p *OrmPlugin) parseBasicFields(msg *generator.Descriptor) {
 				}
 				switch ttype {
 				case "uuid", "text", "char", "array", "cidr", "inet", "macaddr":
-					fieldType = "string"
+					fieldType = "*string"
 				case "smallint", "integer", "bigint", "numeric", "smallserial", "serial", "bigserial":
-					fieldType = "int64"
+					fieldType = "*int64"
 				case "jsonb", "bytea":
 					fieldType = "[]byte"
 				case "":
 					fieldType = "interface{}" // we do not know the type yet (if it association we will fix the type later)
 				default:
 					p.Fail("unknown tag type of atlas.rpc.Identifier")
+				}
+				if tag.GetNotNull() || tag.GetPrimaryKey() {
+					fieldType = strings.TrimPrefix(fieldType, "*")
 				}
 			} else if rawType == protoTypeInet {
 				fieldType = fmt.Sprintf("*%s.Inet", p.Import(gtypesImport))
@@ -648,69 +651,69 @@ func (p *OrmPlugin) generateFieldConversion(message *generator.Descriptor, field
 			if ofield != nil && ofield.ParentOriginName != "" {
 				resource = "&" + ofield.ParentOriginName + "{}"
 			}
+			btype := strings.TrimPrefix(ofield.Type, "*")
+			nillable := strings.HasPrefix(ofield.Type, "*")
 			encodefn := ".Encode("
-			switch ofield.ParentGoType {
+			switch btype {
 			case "int64":
-				encodefn = ".EncodeInt64("
 				if toORM {
-					p.P(`if m.`, fieldName, `!= nil {`)
 					p.P(`if v, err :=`, p.Import(resourceImport), `.DecodeInt64(`, resource, `, m.`, fieldName, `); err != nil {`)
 					p.P(`	return to, err`)
 					p.P(`} else {`)
-					if ofield.Type != ofield.ParentGoType && strings.HasPrefix(ofield.Type, "*") {
+					if nillable {
 						p.P(`to.`, fieldName, ` = &v`)
 					} else {
 						p.P(`to.`, fieldName, ` = v`)
 					}
 					p.P(`}`)
-					p.P(`}`)
 				}
+				encodefn = ".EncodeInt64("
 			case "[]byte":
-				encodefn = ".EncodeBytes("
 				if toORM {
-					p.P(`if m.`, fieldName, `!= nil {`)
 					p.P(`if v, err :=`, p.Import(resourceImport), `.DecodeBytes(`, resource, `, m.`, fieldName, `); err != nil {`)
 					p.P(`	return to, err`)
 					p.P(`} else {`)
-					if ofield.Type != ofield.ParentGoType && strings.HasPrefix(ofield.Type, "*") {
-						p.P(`to.`, fieldName, ` = &v`)
-					} else {
-						p.P(`to.`, fieldName, ` = v`)
-					}
-					p.P(`}`)
+					p.P(`	to.`, fieldName, ` = v`)
 					p.P(`}`)
 				}
+				encodefn = ".EncodeBytes("
 			default:
 				if toORM {
-					p.P(`if m.`, fieldName, `!= nil {`)
 					p.P(`if v, err :=`, p.Import(resourceImport), `.Decode(`, resource, `, m.`, fieldName, `); err != nil {`)
 					p.P(`return to, err`)
 					p.P(`} else if v == nil {`)
-					if ofield.Type != ofield.ParentGoType && strings.HasPrefix(ofield.Type, "*") {
-						p.P(`to.`, fieldName, ` = (`, ofield.Type, `)(nil)`)
+					if nillable {
+						p.P(`to.`, fieldName, ` = nil`)
 					} else {
-						p.P(`to.`, fieldName, ` = `, p.guessZeroValue(ofield.ParentGoType))
+						p.P(`to.`, fieldName, ` = `, p.guessZeroValue(btype))
 					}
 					p.P(`} else {`)
-					if ofield.Type != ofield.ParentGoType && strings.HasPrefix(ofield.Type, "*") {
-						p.P(`vv := v.(`, ofield.ParentGoType, `)`)
+					if nillable {
+						p.P(`vv := v.(`, btype, `)`)
 						p.P(`to.`, fieldName, ` = &vv`)
 					} else {
-						p.P(`to.`, fieldName, ` = v.(`, ofield.ParentGoType, `)`)
+						p.P(`to.`, fieldName, ` = v.(`, btype, `)`)
 					}
-					p.P(`}`)
 					p.P(`}`)
 				}
 			}
+
 			if !toORM {
-				if ofield.Type != ofield.ParentGoType && strings.HasPrefix(ofield.Type, "*") {
+				if nillable {
 					p.P(`if m.`, fieldName, `!= nil {`)
-					p.P(`if v, err := `, p.Import(resourceImport), encodefn, resource, `, *m.`, fieldName, `); err != nil {`)
-					p.P(`return to, err`)
+					p.P(`	if v, err := `, p.Import(resourceImport), encodefn, resource, `, *m.`, fieldName, `); err != nil {`)
+					p.P(`		return to, err`)
+					p.P(`	} else {`)
+					p.P(`		to.`, fieldName, ` = v`)
+					p.P(`	}`)
 					p.P(`} else {`)
-					p.P(`to.`, fieldName, ` = v`)
+					p.P(`	if v, err := `, p.Import(resourceImport), encodefn, resource, `, nil); err != nil {`)
+					p.P(`		return to, err`)
+					p.P(`	} else {`)
+					p.P(`		to.`, fieldName, ` = v`)
+					p.P(`	}`)
 					p.P(`}`)
-					p.P(`}`)
+
 				} else {
 					p.P(`if v, err := `, p.Import(resourceImport), encodefn, resource, `, m.`, fieldName, `); err != nil {`)
 					p.P(`return to, err`)
@@ -718,7 +721,6 @@ func (p *OrmPlugin) generateFieldConversion(message *generator.Descriptor, field
 					p.P(`to.`, fieldName, ` = v`)
 					p.P(`}`)
 				}
-
 			}
 		} else if coreType == protoTypeInet { // Inet type for Postgres only, currently
 			if toORM {
