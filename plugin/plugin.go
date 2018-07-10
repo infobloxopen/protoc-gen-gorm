@@ -316,10 +316,10 @@ func (p *OrmPlugin) addIncludedField(ormable *OrmableType, field *gorm.ExtraFiel
 		} else if rawType == "Inet" {
 			rawType = fmt.Sprintf("%s.Inet", p.Import(gtypesImport))
 		} else {
-			p.Fail(
-				fmt.Sprintf(
-					`Included field %q of type %q is not a recognized special type, and no package specified`,
-					field.GetName(), field.GetType()))
+			//p.Fail(
+			//	fmt.Sprintf(
+			//		`Included field %q of type %q is not a recognized special type, and no package specified`,
+			//		field.GetName(), field.GetType()))
 		}
 	}
 	if isPtr {
