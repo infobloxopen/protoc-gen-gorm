@@ -258,6 +258,22 @@ func (p *OrmPlugin) generateStrictUpdateHandler(message *generator.Descriptor) {
 	p.P(`if err != nil {`)
 	p.P(`return nil, err`)
 	p.P(`}`)
+
+	p.P(`count := 1`)
+	// add default ordering by primary key
+	ormable := p.getOrmable(typeName)
+	if p.hasPrimaryKey(ormable) {
+		pkName, pk := p.findPrimaryKey(ormable)
+		column := pk.GetTag().GetColumn()
+		if len(column) == 0 {
+			column = jgorm.ToDBName(pkName)
+		}
+		p.P(`err = db.Model(&ormObj).Where("`, column, `=?", ormObj.`, pkName, `).Count(&count).Error`)
+		p.P(`if err != nil {`)
+		p.P(`return nil, err`)
+		p.P(`}`)
+	}
+
 	p.removeChildAssociations(message)
 	if getMessageOptions(message).GetMultiAccount() {
 		p.P(`db = db.Where(&`, typeName, `ORM{AccountID: ormObj.AccountID})`)
@@ -270,7 +286,12 @@ func (p *OrmPlugin) generateStrictUpdateHandler(message *generator.Descriptor) {
 	p.P(`if err != nil {`)
 	p.P(`return nil, err`)
 	p.P(`}`)
-	p.P(`return &pbResponse, nil`)
+
+	p.P(`if count == 0 {`)
+	p.P(`err = `, p.Import(gatewayImport), `.SetCreated(ctx, "")`)
+	p.P(`}`)
+
+	p.P(`return &pbResponse, err`)
 	p.P(`}`)
 	p.P()
 }
