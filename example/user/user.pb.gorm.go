@@ -890,7 +890,6 @@ func DefaultReadUser(ctx context.Context, in *User, db *gorm1.DB) (*User, error)
 	db = db.Preload("Tasks", func(db *gorm1.DB) *gorm1.DB {
 		return db.Order("priority")
 	})
-	db = db.Preload("BillingAddress").Preload("CreditCard").Preload("Emails").Preload("Friends").Preload("Languages").Preload("ShippingAddress")
 	ormResponse := UserORM{}
 	if err = db.Where(&ormParams).First(&ormResponse).Error; err != nil {
 		return nil, err
@@ -1036,7 +1035,7 @@ func DefaultListUser(ctx context.Context, db *gorm1.DB, req interface{}) ([]*Use
 	if err != nil {
 		return nil, err
 	}
-	db, err = gorm2.ApplyCollectionOperators(db, f, s, p, fs)
+	db, err = gorm2.ApplyCollectionOperators(db, &UserORM{}, f, s, p, fs)
 	if err != nil {
 		return nil, err
 	}
@@ -1049,7 +1048,6 @@ func DefaultListUser(ctx context.Context, db *gorm1.DB, req interface{}) ([]*Use
 	db = db.Preload("Tasks", func(db *gorm1.DB) *gorm1.DB {
 		return db.Order("priority")
 	})
-	db = db.Preload("BillingAddress").Preload("CreditCard").Preload("Emails").Preload("Friends").Preload("Languages").Preload("ShippingAddress")
 	db = db.Order("id")
 	if err := db.Find(&ormResponse).Error; err != nil {
 		return nil, err
@@ -1175,7 +1173,7 @@ func DefaultListEmail(ctx context.Context, db *gorm1.DB, req interface{}) ([]*Em
 	if err != nil {
 		return nil, err
 	}
-	db, err = gorm2.ApplyCollectionOperators(db, f, s, p, fs)
+	db, err = gorm2.ApplyCollectionOperators(db, &EmailORM{}, f, s, p, fs)
 	if err != nil {
 		return nil, err
 	}
@@ -1310,7 +1308,7 @@ func DefaultListAddress(ctx context.Context, db *gorm1.DB, req interface{}) ([]*
 	if err != nil {
 		return nil, err
 	}
-	db, err = gorm2.ApplyCollectionOperators(db, f, s, p, fs)
+	db, err = gorm2.ApplyCollectionOperators(db, &AddressORM{}, f, s, p, fs)
 	if err != nil {
 		return nil, err
 	}
@@ -1445,7 +1443,7 @@ func DefaultListLanguage(ctx context.Context, db *gorm1.DB, req interface{}) ([]
 	if err != nil {
 		return nil, err
 	}
-	db, err = gorm2.ApplyCollectionOperators(db, f, s, p, fs)
+	db, err = gorm2.ApplyCollectionOperators(db, &LanguageORM{}, f, s, p, fs)
 	if err != nil {
 		return nil, err
 	}
@@ -1580,7 +1578,7 @@ func DefaultListCreditCard(ctx context.Context, db *gorm1.DB, req interface{}) (
 	if err != nil {
 		return nil, err
 	}
-	db, err = gorm2.ApplyCollectionOperators(db, f, s, p, fs)
+	db, err = gorm2.ApplyCollectionOperators(db, &CreditCardORM{}, f, s, p, fs)
 	if err != nil {
 		return nil, err
 	}
@@ -1628,7 +1626,7 @@ func DefaultListTask(ctx context.Context, db *gorm1.DB, req interface{}) ([]*Tas
 	if err != nil {
 		return nil, err
 	}
-	db, err = gorm2.ApplyCollectionOperators(db, f, s, p, fs)
+	db, err = gorm2.ApplyCollectionOperators(db, &TaskORM{}, f, s, p, fs)
 	if err != nil {
 		return nil, err
 	}
