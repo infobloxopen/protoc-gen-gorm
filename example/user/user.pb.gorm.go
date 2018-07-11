@@ -275,13 +275,13 @@ func (m *UserORM) ToPB(ctx context.Context) (User, error) {
 		}
 	}
 	if m.ShippingAddressId != nil {
-		if v, err := resource1.EncodeInt64(&Address{}, *m.ShippingAddressId); err != nil {
+		if v, err := resource1.Encode(&Address{}, *m.ShippingAddressId); err != nil {
 			return to, err
 		} else {
 			to.ShippingAddressId = v
 		}
 	} else {
-		if v, err := resource1.EncodeInt64(&Address{}, nil); err != nil {
+		if v, err := resource1.Encode(&Address{}, nil); err != nil {
 			return to, err
 		} else {
 			to.ShippingAddressId = v
@@ -510,7 +510,7 @@ func (m *AddressORM) ToPB(ctx context.Context) (Address, error) {
 			return to, err
 		}
 	}
-	if v, err := resource1.EncodeInt64(&Address{}, m.Id); err != nil {
+	if v, err := resource1.Encode(&Address{}, m.Id); err != nil {
 		return to, err
 	} else {
 		to.Id = v
@@ -518,7 +518,7 @@ func (m *AddressORM) ToPB(ctx context.Context) (Address, error) {
 	to.Address_1 = m.Address_1
 	to.Address_2 = m.Address_2
 	to.Post = m.Post
-	if v, err := resource1.EncodeBytes(nil, m.External); err != nil {
+	if v, err := resource1.Encode(nil, m.External); err != nil {
 		return to, err
 	} else {
 		to.External = v
@@ -608,7 +608,7 @@ func (m *LanguageORM) ToPB(ctx context.Context) (Language, error) {
 			return to, err
 		}
 	}
-	if v, err := resource1.EncodeInt64(&Language{}, m.Id); err != nil {
+	if v, err := resource1.Encode(&Language{}, m.Id); err != nil {
 		return to, err
 	} else {
 		to.Id = v
@@ -616,13 +616,13 @@ func (m *LanguageORM) ToPB(ctx context.Context) (Language, error) {
 	to.Name = m.Name
 	to.Code = m.Code
 	if m.ExternalInt != nil {
-		if v, err := resource1.EncodeInt64(nil, *m.ExternalInt); err != nil {
+		if v, err := resource1.Encode(nil, *m.ExternalInt); err != nil {
 			return to, err
 		} else {
 			to.ExternalInt = v
 		}
 	} else {
-		if v, err := resource1.EncodeInt64(nil, nil); err != nil {
+		if v, err := resource1.Encode(nil, nil); err != nil {
 			return to, err
 		} else {
 			to.ExternalInt = v
@@ -726,7 +726,7 @@ func (m *CreditCardORM) ToPB(ctx context.Context) (CreditCard, error) {
 			return to, err
 		}
 	}
-	if v, err := resource1.EncodeInt64(&CreditCard{}, m.Id); err != nil {
+	if v, err := resource1.Encode(&CreditCard{}, m.Id); err != nil {
 		return to, err
 	} else {
 		to.Id = v
