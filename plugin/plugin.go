@@ -66,8 +66,7 @@ type OrmableType struct {
 }
 
 type Field struct {
-	ParentGoType string
-	Type         string
+	Type string
 	*gorm.GormFieldOptions
 	ParentOriginName string
 }
@@ -266,7 +265,7 @@ func (p *OrmPlugin) parseBasicFields(msg *generator.Descriptor) {
 				continue
 			}
 		}
-		ormable.Fields[fieldName] = &Field{Type: fieldType, ParentGoType: fieldType, GormFieldOptions: fieldOpts}
+		ormable.Fields[fieldName] = &Field{Type: fieldType, GormFieldOptions: fieldOpts}
 	}
 	if getMessageOptions(msg).GetMultiAccount() {
 		if accID, ok := ormable.Fields["AccountID"]; !ok {
@@ -653,7 +652,6 @@ func (p *OrmPlugin) generateFieldConversion(message *generator.Descriptor, field
 			}
 			btype := strings.TrimPrefix(ofield.Type, "*")
 			nillable := strings.HasPrefix(ofield.Type, "*")
-			encodefn := ".Encode("
 			switch btype {
 			case "int64":
 				if toORM {
@@ -667,7 +665,6 @@ func (p *OrmPlugin) generateFieldConversion(message *generator.Descriptor, field
 					}
 					p.P(`}`)
 				}
-				encodefn = ".EncodeInt64("
 			case "[]byte":
 				if toORM {
 					p.P(`if v, err :=`, p.Import(resourceImport), `.DecodeBytes(`, resource, `, m.`, fieldName, `); err != nil {`)
@@ -676,7 +673,6 @@ func (p *OrmPlugin) generateFieldConversion(message *generator.Descriptor, field
 					p.P(`	to.`, fieldName, ` = v`)
 					p.P(`}`)
 				}
-				encodefn = ".EncodeBytes("
 			default:
 				if toORM {
 					p.P(`if v, err :=`, p.Import(resourceImport), `.Decode(`, resource, `, m.`, fieldName, `); err != nil {`)
@@ -701,13 +697,13 @@ func (p *OrmPlugin) generateFieldConversion(message *generator.Descriptor, field
 			if !toORM {
 				if nillable {
 					p.P(`if m.`, fieldName, `!= nil {`)
-					p.P(`	if v, err := `, p.Import(resourceImport), encodefn, resource, `, *m.`, fieldName, `); err != nil {`)
+					p.P(`	if v, err := `, p.Import(resourceImport), `.Encode(`, resource, `, *m.`, fieldName, `); err != nil {`)
 					p.P(`		return to, err`)
 					p.P(`	} else {`)
 					p.P(`		to.`, fieldName, ` = v`)
 					p.P(`	}`)
 					p.P(`} else {`)
-					p.P(`	if v, err := `, p.Import(resourceImport), encodefn, resource, `, nil); err != nil {`)
+					p.P(`	if v, err := `, p.Import(resourceImport), `.Encode(`, resource, `, nil); err != nil {`)
 					p.P(`		return to, err`)
 					p.P(`	} else {`)
 					p.P(`		to.`, fieldName, ` = v`)
@@ -715,7 +711,7 @@ func (p *OrmPlugin) generateFieldConversion(message *generator.Descriptor, field
 					p.P(`}`)
 
 				} else {
-					p.P(`if v, err := `, p.Import(resourceImport), encodefn, resource, `, m.`, fieldName, `); err != nil {`)
+					p.P(`if v, err := `, p.Import(resourceImport), `.Encode(`, resource, `, m.`, fieldName, `); err != nil {`)
 					p.P(`return to, err`)
 					p.P(`} else {`)
 					p.P(`to.`, fieldName, ` = v`)
