@@ -11,7 +11,9 @@ import (
 	jgorm "github.com/jinzhu/gorm"
 	"github.com/jinzhu/inflection"
 
-	gorm "github.com/infobloxopen/protoc-gen-gorm/options"
+	"log"
+
+	"github.com/infobloxopen/protoc-gen-gorm/options"
 )
 
 const (
@@ -66,7 +68,8 @@ type OrmableType struct {
 }
 
 type Field struct {
-	Type string
+	ParentGoType string
+	Type         string
 	*gorm.GormFieldOptions
 	ParentOriginName string
 }
@@ -318,10 +321,8 @@ func (p *OrmPlugin) addIncludedField(ormable *OrmableType, field *gorm.ExtraFiel
 		} else if rawType == "Inet" {
 			rawType = fmt.Sprintf("%s.Inet", p.Import(gtypesImport))
 		} else {
-			p.Fail(
-				fmt.Sprintf(
-					`Included field %q of type %q is not a recognized special type, and no package specified`,
-					field.GetName(), field.GetType()))
+			log.Printf(`WARNING: included field %q of type %q is not a recognized special type, and no package specified. This type is assumed to be in the same package as the generated code`,
+				field.GetName(), field.GetType())
 		}
 	}
 	if isPtr {
@@ -368,96 +369,102 @@ func (p *OrmPlugin) generateOrmable(message *generator.Descriptor) {
 
 func (p *OrmPlugin) renderGormTag(field *Field) string {
 	res := ""
-	if tag := field.GetTag(); tag != nil {
-		if tag.Column != nil {
-			res += fmt.Sprintf("column:%s;", tag.GetColumn())
-		}
-		if tag.Type != nil {
-			res += fmt.Sprintf("type:%s;", string(tag.GetType()))
-		}
-		if tag.Size_ != nil {
-			res += fmt.Sprintf("size:%s;", string(tag.GetSize_()))
-		}
-		if tag.Precision != nil {
-			res += fmt.Sprintf("precision:%s;", string(tag.GetPrecision()))
-		}
-		if tag.GetPrimaryKey() {
-			res += "primary_key;"
-		}
-		if tag.GetUnique() {
-			res += "unique;"
-		}
-		if tag.Default != nil {
-			res += fmt.Sprintf("default:%s;", tag.GetDefault())
-		}
-		if tag.GetNotNull() {
-			res += "not null;"
-		}
-		if tag.GetAutoIncrement() {
-			res += "auto_increment;"
-		}
-		if tag.Index != nil {
-			if tag.GetIndex() == "" {
-				res += "index;"
-			} else {
-				res += fmt.Sprintf("index:%s;", tag.GetIndex())
-			}
-		}
-		if tag.UniqueIndex != nil {
-			if tag.GetUniqueIndex() == "" {
-				res += "unique_index;"
-			} else {
-				res += fmt.Sprintf("unique_index:%s;", tag.GetUniqueIndex())
-			}
-		}
-		if tag.GetEmbedded() {
-			res += "embedded;"
-		}
-		if tag.EmbeddedPrefix != nil {
-			res += fmt.Sprintf("embedded_prefix:%s;", tag.GetEmbeddedPrefix())
-		}
-		if tag.GetIgnore() {
-			res += "-;"
+	tag := field.GetTag()
+	if tag == nil {
+		tag = &gorm.GormTag{}
+	}
+
+	if tag.Column != nil {
+		res += fmt.Sprintf("column:%s;", tag.GetColumn())
+	}
+	if tag.Type != nil {
+		res += fmt.Sprintf("type:%s;", string(tag.GetType()))
+	}
+	if tag.Size_ != nil {
+		res += fmt.Sprintf("size:%s;", string(tag.GetSize_()))
+	}
+	if tag.Precision != nil {
+		res += fmt.Sprintf("precision:%s;", string(tag.GetPrecision()))
+	}
+	if tag.GetPrimaryKey() {
+		res += "primary_key;"
+	}
+	if tag.GetUnique() {
+		res += "unique;"
+	}
+	if tag.Default != nil {
+		res += fmt.Sprintf("default:%s;", tag.GetDefault())
+	}
+	if tag.GetNotNull() {
+		res += "not null;"
+	}
+	if tag.GetAutoIncrement() {
+		res += "auto_increment;"
+	}
+	if tag.Index != nil {
+		if tag.GetIndex() == "" {
+			res += "index;"
+		} else {
+			res += fmt.Sprintf("index:%s;", tag.GetIndex())
 		}
 	}
+	if tag.UniqueIndex != nil {
+		if tag.GetUniqueIndex() == "" {
+			res += "unique_index;"
+		} else {
+			res += fmt.Sprintf("unique_index:%s;", tag.GetUniqueIndex())
+		}
+	}
+	if tag.GetEmbedded() {
+		res += "embedded;"
+	}
+	if tag.EmbeddedPrefix != nil {
+		res += fmt.Sprintf("embedded_prefix:%s;", tag.GetEmbeddedPrefix())
+	}
+	if tag.GetIgnore() {
+		res += "-;"
+	}
+
+	var foreignKey, associationForeignKey, joinTable, joinTableForeignKey, associationJoinTableForeignKey *string
 	if hasOne := field.GetHasOne(); hasOne != nil {
-		if hasOne.Foreignkey != nil {
-			res += fmt.Sprintf("foreignkey:%s;", hasOne.GetForeignkey())
-		}
-		if hasOne.AssociationForeignkey != nil {
-			res += fmt.Sprintf("association_foreignkey:%s;", hasOne.GetAssociationForeignkey())
-		}
+		foreignKey = hasOne.Foreignkey
+		associationForeignKey = hasOne.AssociationForeignkey
 	} else if belongsTo := field.GetBelongsTo(); belongsTo != nil {
-		if belongsTo.Foreignkey != nil {
-			res += fmt.Sprintf("foreignkey:%s;", belongsTo.GetForeignkey())
-		}
-		if belongsTo.AssociationForeignkey != nil {
-			res += fmt.Sprintf("association_foreignkey:%s;", belongsTo.GetAssociationForeignkey())
-		}
+		foreignKey = belongsTo.Foreignkey
+		associationForeignKey = belongsTo.AssociationForeignkey
 	} else if hasMany := field.GetHasMany(); hasMany != nil {
-		if hasMany.Foreignkey != nil {
-			res += fmt.Sprintf("foreignkey:%s;", hasMany.GetForeignkey())
-		}
-		if hasMany.AssociationForeignkey != nil {
-			res += fmt.Sprintf("association_foreignkey:%s;", hasMany.GetAssociationForeignkey())
-		}
+		foreignKey = hasMany.Foreignkey
+		associationForeignKey = hasMany.AssociationForeignkey
 	} else if mtm := field.GetManyToMany(); mtm != nil {
-		if mtm.Jointable != nil {
-			res += fmt.Sprintf("many2many:%s;", mtm.GetJointable())
-		}
-		if mtm.Foreignkey != nil {
-			res += fmt.Sprintf("foreignkey:%s;", mtm.GetForeignkey())
-		}
-		if mtm.AssociationForeignkey != nil {
-			res += fmt.Sprintf("association_foreignkey:%s;", mtm.GetAssociationForeignkey())
-		}
-		if mtm.JointableForeignkey != nil {
-			res += fmt.Sprintf("jointable_foreignkey:%s;", mtm.GetJointableForeignkey())
-		}
-		if mtm.AssociationJointableForeignkey != nil {
-			res += fmt.Sprintf("association_jointable_foreignkey:%s;", mtm.GetAssociationJointableForeignkey())
-		}
+		foreignKey = mtm.Foreignkey
+		associationForeignKey = mtm.AssociationForeignkey
+		joinTable = mtm.Jointable
+		joinTableForeignKey = mtm.JointableForeignkey
+		associationJoinTableForeignKey = mtm.AssociationJointableForeignkey
+	} else {
+		foreignKey = tag.ForeignKey
+		associationForeignKey = tag.AssociationForeignKey
+		joinTable = tag.ManyToMany
+		joinTableForeignKey = tag.JointableForeignkey
+		associationJoinTableForeignKey = tag.AssociationJointableForeignkey
 	}
+
+	if foreignKey != nil {
+		res += fmt.Sprintf("foreignkey:%s;", *foreignKey)
+	}
+	if associationForeignKey != nil {
+		res += fmt.Sprintf("association_foreignkey:%s;", *associationForeignKey)
+	}
+	if joinTable != nil {
+		res += fmt.Sprintf("many2many:%s;", *joinTable)
+	}
+	if joinTableForeignKey != nil {
+		res += fmt.Sprintf("jointable_foreignkey:%s;", *joinTableForeignKey)
+	}
+	if associationJoinTableForeignKey != nil {
+		res += fmt.Sprintf("association_jointable_foreignkey:%s;", *associationJoinTableForeignKey)
+	}
+
 	if res == "" {
 		return ""
 	}

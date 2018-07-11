@@ -47,9 +47,9 @@ type UserORM struct {
 	CreditCard        *CreditCardORM `gorm:"foreignkey:UserId;association_foreignkey:Id"`
 	Emails            []*EmailORM    `gorm:"foreignkey:UserId;association_foreignkey:Id"`
 	ExternalUuid      *string        `gorm:"type:uuid"`
-	Friends           []*UserORM     `gorm:"many2many:user_friends;foreignkey:Id;association_foreignkey:Id;jointable_foreignkey:user_id;association_jointable_foreignkey:friend_id"`
+	Friends           []*UserORM     `gorm:"foreignkey:Id;association_foreignkey:Id;many2many:user_friends;jointable_foreignkey:user_id;association_jointable_foreignkey:friend_id"`
 	Id                string         `gorm:"type:uuid;primary_key"`
-	Languages         []*LanguageORM `gorm:"many2many:user_languages;foreignkey:Id;association_foreignkey:Id;jointable_foreignkey:user_id;association_jointable_foreignkey:language_id"`
+	Languages         []*LanguageORM `gorm:"foreignkey:Id;association_foreignkey:Id;many2many:user_languages;jointable_foreignkey:user_id;association_jointable_foreignkey:language_id"`
 	Num               uint32
 	ShippingAddress   *AddressORM `gorm:"foreignkey:ShippingAddressId;association_foreignkey:Id"`
 	ShippingAddressId *int64
