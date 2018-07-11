@@ -15,7 +15,7 @@ message User {
         ormable: true,
         multi_account: true
     };
-    atlas.rpc.Identifier id = 1 [(gorm.field).tag = {type: "uuid"}];
+    atlas.rpc.Identifier id = 1 [(gorm.field).tag = {type: "uuid" primary_key: true}];
     google.protobuf.Timestamp created_at = 2;
     google.protobuf.Timestamp updated_at = 3;
 
@@ -24,12 +24,13 @@ message User {
     uint32 num = 6;
     CreditCard credit_card = 7; // has one
     repeated Email emails = 8; // has many
-    repeated Task tasks = 9 [(gorm.field).has_many = {position_field: "priority", foreignkey_tag: {not_null: true}}];
+    repeated Task tasks = 9 [(gorm.field).has_many = {position_field: "priority" foreignkey_tag: {not_null: true}}];
     Address billing_address = 10 [(gorm.field).belongs_to = {}];
     Address shipping_address = 11 [(gorm.field).belongs_to = {}];
     repeated Language languages = 12 [(gorm.field).many_to_many = {}];
     repeated User friends = 13 [(gorm.field).many_to_many = {}];
     atlas.rpc.Identifier shipping_address_id = 14;
+    atlas.rpc.Identifier external_uuid = 15 [(gorm.field).tag = {type: "uuid"}];
 }
 
 message Email {
@@ -37,10 +38,11 @@ message Email {
         ormable: true,
         multi_account: true
     };
-    atlas.rpc.Identifier id = 1 [(gorm.field).tag = {type: "uuid"}];
+    atlas.rpc.Identifier id = 1 [(gorm.field).tag = {type: "uuid" primary_key: true}];
     string email = 2;
     bool subscribed = 3;
     atlas.rpc.Identifier user_id = 4;
+    atlas.rpc.Identifier external_not_null = 5 [(gorm.field).tag = {type: "uuid" not_null: true}];
 }
 
 message Address {
@@ -48,7 +50,7 @@ message Address {
         ormable: true,
         multi_account: true
     };
-    atlas.rpc.Identifier id = 1 [(gorm.field).tag = {type: "integer"}];
+    atlas.rpc.Identifier id = 1 [(gorm.field).tag = {type: "integer" primary_key: true}];
     string address_1 = 2;
     string address_2 = 3;
     string post = 4;
@@ -60,9 +62,10 @@ message Language {
         ormable: true,
         multi_account: true
     };
-    atlas.rpc.Identifier id = 1 [(gorm.field).tag = {type: "integer"}];
+    atlas.rpc.Identifier id = 1 [(gorm.field).tag = {type: "integer" primary_key: true}];
     string name = 2;
     string code = 3;
+    atlas.rpc.Identifier external_int = 4 [(gorm.field).tag = {type: "integer"}];
 }
 
 message CreditCard {
@@ -70,7 +73,7 @@ message CreditCard {
         ormable: true,
         multi_account: true
     };
-    atlas.rpc.Identifier id = 1 [(gorm.field).tag = {type: "integer"}];
+    atlas.rpc.Identifier id = 1 [(gorm.field).tag = {type: "integer" primary_key: true}];
     google.protobuf.Timestamp created_at = 2;
     google.protobuf.Timestamp updated_at = 3;
     string number = 4;
