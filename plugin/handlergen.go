@@ -99,7 +99,6 @@ func (p *OrmPlugin) generateReadHandler(message *generator.Descriptor) {
 	p.P(`return nil, err`)
 	p.P(`}`)
 	p.sortOrderedHasMany(message)
-	p.generatePreloading(ormable)
 	p.P(`ormResponse := `, ormable.Name, `{}`)
 	p.P(`if err = db.Where(&ormParams).First(&ormResponse).Error; err != nil {`)
 	p.P(`return nil, err`)
@@ -207,7 +206,7 @@ func (p *OrmPlugin) generateListHandler(message *generator.Descriptor) {
 	p.P(`return nil, err`)
 	p.P(`}`)
 
-	p.P(`db, err = `, p.Import(tkgormImport), `.ApplyCollectionOperators(db, f, s, p, fs)`)
+	p.P(`db, err = `, p.Import(tkgormImport), `.ApplyCollectionOperators(db, &`, ormable.Name, `{}, f, s, p, fs)`)
 	p.P(`if err != nil {`)
 	p.P(`return nil, err`)
 	p.P(`}`)
@@ -218,7 +217,6 @@ func (p *OrmPlugin) generateListHandler(message *generator.Descriptor) {
 	p.P(`}`)
 	p.P(`db = db.Where(&ormParams)`)
 	p.sortOrderedHasMany(message)
-	p.generatePreloading(ormable)
 
 	// add default ordering by primary key
 	if p.hasPrimaryKey(ormable) {
@@ -294,23 +292,6 @@ func (p *OrmPlugin) generateStrictUpdateHandler(message *generator.Descriptor) {
 	p.P(`return &pbResponse, err`)
 	p.P(`}`)
 	p.P()
-}
-
-func (p *OrmPlugin) generatePreloading(ormable *OrmableType) {
-	var assocList []string
-	for _, fieldName := range p.getSortedFieldNames(ormable.Fields) {
-		field := ormable.Fields[fieldName]
-		if field.GetAssociation() != nil && field.GetHasMany().GetPositionField() == "" {
-			assocList = append(assocList, fieldName)
-		}
-	}
-	if len(assocList) != 0 {
-		preload := ""
-		for _, assoc := range assocList {
-			preload += fmt.Sprintf(`.Preload("%s")`, assoc)
-		}
-		p.P(`db = db`, preload)
-	}
 }
 
 func (p *OrmPlugin) setupOrderedHasMany(message *generator.Descriptor) {

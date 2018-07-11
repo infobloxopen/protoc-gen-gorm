@@ -1,4 +1,8 @@
 [[constraint]]
+  name = "github.com/infobloxopen/atlas-app-toolkit"
+  branch = "master"
+
+[[constraint]]
   name = "github.com/gogo/protobuf"
   version = "1.0.0"
 

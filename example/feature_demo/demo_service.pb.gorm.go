@@ -215,7 +215,7 @@ func DefaultListIntPoint(ctx context.Context, db *gorm1.DB, req interface{}) ([]
 	if err != nil {
 		return nil, err
 	}
-	db, err = gorm2.ApplyCollectionOperators(db, f, s, p, fs)
+	db, err = gorm2.ApplyCollectionOperators(db, &IntPointORM{}, f, s, p, fs)
 	if err != nil {
 		return nil, err
 	}
