@@ -494,7 +494,7 @@ func DefaultListTestTypes(ctx context.Context, db *gorm1.DB, req interface{}) ([
 	if err != nil {
 		return nil, err
 	}
-	db, err = gorm2.ApplyCollectionOperators(db, f, s, p, fs)
+	db, err = gorm2.ApplyCollectionOperators(db, &TestTypesORM{}, f, s, p, fs)
 	if err != nil {
 		return nil, err
 	}
@@ -543,7 +543,6 @@ func DefaultReadTypeWithID(ctx context.Context, in *TypeWithID, db *gorm1.DB) (*
 	if err != nil {
 		return nil, err
 	}
-	db = db.Preload("ANestedObject").Preload("Point").Preload("Things").Preload("User")
 	ormResponse := TypeWithIDORM{}
 	if err = db.Where(&ormParams).First(&ormResponse).Error; err != nil {
 		return nil, err
@@ -635,7 +634,7 @@ func DefaultListTypeWithID(ctx context.Context, db *gorm1.DB, req interface{}) (
 	if err != nil {
 		return nil, err
 	}
-	db, err = gorm2.ApplyCollectionOperators(db, f, s, p, fs)
+	db, err = gorm2.ApplyCollectionOperators(db, &TypeWithIDORM{}, f, s, p, fs)
 	if err != nil {
 		return nil, err
 	}
@@ -645,7 +644,6 @@ func DefaultListTypeWithID(ctx context.Context, db *gorm1.DB, req interface{}) (
 		return nil, err
 	}
 	db = db.Where(&ormParams)
-	db = db.Preload("ANestedObject").Preload("Point").Preload("Things").Preload("User")
 	db = db.Order("id")
 	if err := db.Find(&ormResponse).Error; err != nil {
 		return nil, err
@@ -771,7 +769,7 @@ func DefaultListMultiaccountTypeWithID(ctx context.Context, db *gorm1.DB, req in
 	if err != nil {
 		return nil, err
 	}
-	db, err = gorm2.ApplyCollectionOperators(db, f, s, p, fs)
+	db, err = gorm2.ApplyCollectionOperators(db, &MultiaccountTypeWithIDORM{}, f, s, p, fs)
 	if err != nil {
 		return nil, err
 	}
@@ -819,7 +817,7 @@ func DefaultListMultiaccountTypeWithoutID(ctx context.Context, db *gorm1.DB, req
 	if err != nil {
 		return nil, err
 	}
-	db, err = gorm2.ApplyCollectionOperators(db, f, s, p, fs)
+	db, err = gorm2.ApplyCollectionOperators(db, &MultiaccountTypeWithoutIDORM{}, f, s, p, fs)
 	if err != nil {
 		return nil, err
 	}
