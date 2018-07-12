@@ -58,7 +58,7 @@ type TestTypesORM struct {
 	ANestedObjectTypeWithIDId *uint32
 	Array                     pq1.StringArray
 	Array2                    pq1.StringArray
-	BecomesInt                int32
+	BecomesInt                string
 	CreatedAt                 time.Time
 	JsonField                 *postgres1.Jsonb `gorm:"type:jsonb"`
 	NullableUuid              *go_uuid1.UUID   `gorm:"type:uuid"`
@@ -88,7 +88,7 @@ func (m *TestTypes) ToORM(ctx context.Context) (TestTypesORM, error) {
 		v := m.OptionalString.Value
 		to.OptionalString = &v
 	}
-	to.BecomesInt = int32(m.BecomesInt)
+	to.BecomesInt = TestTypesStatus_name[int32(m.BecomesInt)]
 	if m.Uuid != nil {
 		to.Uuid, err = go_uuid1.FromString(m.Uuid.Value)
 		if err != nil {
@@ -133,7 +133,7 @@ func (m *TestTypesORM) ToPB(ctx context.Context) (TestTypes, error) {
 	if m.OptionalString != nil {
 		to.OptionalString = &google_protobuf1.StringValue{Value: *m.OptionalString}
 	}
-	to.BecomesInt = TestTypesStatus(m.BecomesInt)
+	to.BecomesInt = TestTypesStatus(TestTypesStatus_value[m.BecomesInt])
 	to.Uuid = &types1.UUID{Value: m.Uuid.String()}
 	if to.CreatedAt, err = ptypes1.TimestampProto(m.CreatedAt); err != nil {
 		return to, err
