@@ -11,7 +11,9 @@ import (
 	jgorm "github.com/jinzhu/gorm"
 	"github.com/jinzhu/inflection"
 
-	gorm "github.com/infobloxopen/protoc-gen-gorm/options"
+	"log"
+
+	"github.com/infobloxopen/protoc-gen-gorm/options"
 )
 
 const (
@@ -250,15 +252,18 @@ func (p *OrmPlugin) parseBasicFields(msg *generator.Descriptor) {
 				}
 				switch ttype {
 				case "uuid", "text", "char", "array", "cidr", "inet", "macaddr":
-					fieldType = "string"
+					fieldType = "*string"
 				case "smallint", "integer", "bigint", "numeric", "smallserial", "serial", "bigserial":
-					fieldType = "int64"
+					fieldType = "*int64"
 				case "jsonb", "bytea":
 					fieldType = "[]byte"
 				case "":
 					fieldType = "interface{}" // we do not know the type yet (if it association we will fix the type later)
 				default:
 					p.Fail("unknown tag type of atlas.rpc.Identifier")
+				}
+				if tag.GetNotNull() || tag.GetPrimaryKey() {
+					fieldType = strings.TrimPrefix(fieldType, "*")
 				}
 			} else if rawType == protoTypeInet {
 				fieldType = fmt.Sprintf("*%s.Inet", p.Import(gtypesImport))
@@ -271,7 +276,7 @@ func (p *OrmPlugin) parseBasicFields(msg *generator.Descriptor) {
 				continue
 			}
 		}
-		ormable.Fields[fieldName] = &Field{Type: fieldType, ParentGoType: fieldType, GormFieldOptions: fieldOpts}
+		ormable.Fields[fieldName] = &Field{Type: fieldType, GormFieldOptions: fieldOpts}
 	}
 	if getMessageOptions(msg).GetMultiAccount() {
 		if accID, ok := ormable.Fields["AccountID"]; !ok {
@@ -324,10 +329,8 @@ func (p *OrmPlugin) addIncludedField(ormable *OrmableType, field *gorm.ExtraFiel
 		} else if rawType == "Inet" {
 			rawType = fmt.Sprintf("%s.Inet", p.Import(gtypesImport))
 		} else {
-			p.Fail(
-				fmt.Sprintf(
-					`Included field %q of type %q is not a recognized special type, and no package specified`,
-					field.GetName(), field.GetType()))
+			log.Printf(`WARNING: included field %q of type %q is not a recognized special type, and no package specified. This type is assumed to be in the same package as the generated code`,
+				field.GetName(), field.GetType())
 		}
 	}
 	if isPtr {
@@ -374,96 +377,102 @@ func (p *OrmPlugin) generateOrmable(message *generator.Descriptor) {
 
 func (p *OrmPlugin) renderGormTag(field *Field) string {
 	res := ""
-	if tag := field.GetTag(); tag != nil {
-		if tag.Column != nil {
-			res += fmt.Sprintf("column:%s;", tag.GetColumn())
-		}
-		if tag.Type != nil {
-			res += fmt.Sprintf("type:%s;", string(tag.GetType()))
-		}
-		if tag.Size_ != nil {
-			res += fmt.Sprintf("size:%s;", string(tag.GetSize_()))
-		}
-		if tag.Precision != nil {
-			res += fmt.Sprintf("precision:%s;", string(tag.GetPrecision()))
-		}
-		if tag.GetPrimaryKey() {
-			res += "primary_key;"
-		}
-		if tag.GetUnique() {
-			res += "unique;"
-		}
-		if tag.Default != nil {
-			res += fmt.Sprintf("default:%s;", tag.GetDefault())
-		}
-		if tag.GetNotNull() {
-			res += "not null;"
-		}
-		if tag.GetAutoIncrement() {
-			res += "auto_increment;"
-		}
-		if tag.Index != nil {
-			if tag.GetIndex() == "" {
-				res += "index;"
-			} else {
-				res += fmt.Sprintf("index:%s;", tag.GetIndex())
-			}
-		}
-		if tag.UniqueIndex != nil {
-			if tag.GetUniqueIndex() == "" {
-				res += "unique_index;"
-			} else {
-				res += fmt.Sprintf("unique_index:%s;", tag.GetUniqueIndex())
-			}
-		}
-		if tag.GetEmbedded() {
-			res += "embedded;"
-		}
-		if tag.EmbeddedPrefix != nil {
-			res += fmt.Sprintf("embedded_prefix:%s;", tag.GetEmbeddedPrefix())
-		}
-		if tag.GetIgnore() {
-			res += "-;"
+	tag := field.GetTag()
+	if tag == nil {
+		tag = &gorm.GormTag{}
+	}
+
+	if tag.Column != nil {
+		res += fmt.Sprintf("column:%s;", tag.GetColumn())
+	}
+	if tag.Type != nil {
+		res += fmt.Sprintf("type:%s;", string(tag.GetType()))
+	}
+	if tag.Size_ != nil {
+		res += fmt.Sprintf("size:%s;", string(tag.GetSize_()))
+	}
+	if tag.Precision != nil {
+		res += fmt.Sprintf("precision:%s;", string(tag.GetPrecision()))
+	}
+	if tag.GetPrimaryKey() {
+		res += "primary_key;"
+	}
+	if tag.GetUnique() {
+		res += "unique;"
+	}
+	if tag.Default != nil {
+		res += fmt.Sprintf("default:%s;", tag.GetDefault())
+	}
+	if tag.GetNotNull() {
+		res += "not null;"
+	}
+	if tag.GetAutoIncrement() {
+		res += "auto_increment;"
+	}
+	if tag.Index != nil {
+		if tag.GetIndex() == "" {
+			res += "index;"
+		} else {
+			res += fmt.Sprintf("index:%s;", tag.GetIndex())
 		}
 	}
+	if tag.UniqueIndex != nil {
+		if tag.GetUniqueIndex() == "" {
+			res += "unique_index;"
+		} else {
+			res += fmt.Sprintf("unique_index:%s;", tag.GetUniqueIndex())
+		}
+	}
+	if tag.GetEmbedded() {
+		res += "embedded;"
+	}
+	if tag.EmbeddedPrefix != nil {
+		res += fmt.Sprintf("embedded_prefix:%s;", tag.GetEmbeddedPrefix())
+	}
+	if tag.GetIgnore() {
+		res += "-;"
+	}
+
+	var foreignKey, associationForeignKey, joinTable, joinTableForeignKey, associationJoinTableForeignKey *string
 	if hasOne := field.GetHasOne(); hasOne != nil {
-		if hasOne.Foreignkey != nil {
-			res += fmt.Sprintf("foreignkey:%s;", hasOne.GetForeignkey())
-		}
-		if hasOne.AssociationForeignkey != nil {
-			res += fmt.Sprintf("association_foreignkey:%s;", hasOne.GetAssociationForeignkey())
-		}
+		foreignKey = hasOne.Foreignkey
+		associationForeignKey = hasOne.AssociationForeignkey
 	} else if belongsTo := field.GetBelongsTo(); belongsTo != nil {
-		if belongsTo.Foreignkey != nil {
-			res += fmt.Sprintf("foreignkey:%s;", belongsTo.GetForeignkey())
-		}
-		if belongsTo.AssociationForeignkey != nil {
-			res += fmt.Sprintf("association_foreignkey:%s;", belongsTo.GetAssociationForeignkey())
-		}
+		foreignKey = belongsTo.Foreignkey
+		associationForeignKey = belongsTo.AssociationForeignkey
 	} else if hasMany := field.GetHasMany(); hasMany != nil {
-		if hasMany.Foreignkey != nil {
-			res += fmt.Sprintf("foreignkey:%s;", hasMany.GetForeignkey())
-		}
-		if hasMany.AssociationForeignkey != nil {
-			res += fmt.Sprintf("association_foreignkey:%s;", hasMany.GetAssociationForeignkey())
-		}
+		foreignKey = hasMany.Foreignkey
+		associationForeignKey = hasMany.AssociationForeignkey
 	} else if mtm := field.GetManyToMany(); mtm != nil {
-		if mtm.Jointable != nil {
-			res += fmt.Sprintf("many2many:%s;", mtm.GetJointable())
-		}
-		if mtm.Foreignkey != nil {
-			res += fmt.Sprintf("foreignkey:%s;", mtm.GetForeignkey())
-		}
-		if mtm.AssociationForeignkey != nil {
-			res += fmt.Sprintf("association_foreignkey:%s;", mtm.GetAssociationForeignkey())
-		}
-		if mtm.JointableForeignkey != nil {
-			res += fmt.Sprintf("jointable_foreignkey:%s;", mtm.GetJointableForeignkey())
-		}
-		if mtm.AssociationJointableForeignkey != nil {
-			res += fmt.Sprintf("association_jointable_foreignkey:%s;", mtm.GetAssociationJointableForeignkey())
-		}
+		foreignKey = mtm.Foreignkey
+		associationForeignKey = mtm.AssociationForeignkey
+		joinTable = mtm.Jointable
+		joinTableForeignKey = mtm.JointableForeignkey
+		associationJoinTableForeignKey = mtm.AssociationJointableForeignkey
+	} else {
+		foreignKey = tag.ForeignKey
+		associationForeignKey = tag.AssociationForeignKey
+		joinTable = tag.ManyToMany
+		joinTableForeignKey = tag.JointableForeignkey
+		associationJoinTableForeignKey = tag.AssociationJointableForeignkey
 	}
+
+	if foreignKey != nil {
+		res += fmt.Sprintf("foreignkey:%s;", *foreignKey)
+	}
+	if associationForeignKey != nil {
+		res += fmt.Sprintf("association_foreignkey:%s;", *associationForeignKey)
+	}
+	if joinTable != nil {
+		res += fmt.Sprintf("many2many:%s;", *joinTable)
+	}
+	if joinTableForeignKey != nil {
+		res += fmt.Sprintf("jointable_foreignkey:%s;", *joinTableForeignKey)
+	}
+	if associationJoinTableForeignKey != nil {
+		res += fmt.Sprintf("association_jointable_foreignkey:%s;", *associationJoinTableForeignKey)
+	}
+
 	if res == "" {
 		return ""
 	}
@@ -664,77 +673,73 @@ func (p *OrmPlugin) generateFieldConversion(message *generator.Descriptor, field
 			if ofield != nil && ofield.ParentOriginName != "" {
 				resource = "&" + ofield.ParentOriginName + "{}"
 			}
-			encodefn := ".Encode("
-			switch ofield.ParentGoType {
+			btype := strings.TrimPrefix(ofield.Type, "*")
+			nillable := strings.HasPrefix(ofield.Type, "*")
+			switch btype {
 			case "int64":
-				encodefn = ".EncodeInt64("
 				if toORM {
-					p.P(`if m.`, fieldName, `!= nil {`)
 					p.P(`if v, err :=`, p.Import(resourceImport), `.DecodeInt64(`, resource, `, m.`, fieldName, `); err != nil {`)
 					p.P(`	return to, err`)
 					p.P(`} else {`)
-					if ofield.Type != ofield.ParentGoType && strings.HasPrefix(ofield.Type, "*") {
+					if nillable {
 						p.P(`to.`, fieldName, ` = &v`)
 					} else {
 						p.P(`to.`, fieldName, ` = v`)
 					}
-					p.P(`}`)
 					p.P(`}`)
 				}
 			case "[]byte":
-				encodefn = ".EncodeBytes("
 				if toORM {
-					p.P(`if m.`, fieldName, `!= nil {`)
 					p.P(`if v, err :=`, p.Import(resourceImport), `.DecodeBytes(`, resource, `, m.`, fieldName, `); err != nil {`)
 					p.P(`	return to, err`)
 					p.P(`} else {`)
-					if ofield.Type != ofield.ParentGoType && strings.HasPrefix(ofield.Type, "*") {
-						p.P(`to.`, fieldName, ` = &v`)
-					} else {
-						p.P(`to.`, fieldName, ` = v`)
-					}
-					p.P(`}`)
+					p.P(`	to.`, fieldName, ` = v`)
 					p.P(`}`)
 				}
 			default:
 				if toORM {
-					p.P(`if m.`, fieldName, `!= nil {`)
 					p.P(`if v, err :=`, p.Import(resourceImport), `.Decode(`, resource, `, m.`, fieldName, `); err != nil {`)
 					p.P(`return to, err`)
 					p.P(`} else if v == nil {`)
-					if ofield.Type != ofield.ParentGoType && strings.HasPrefix(ofield.Type, "*") {
-						p.P(`to.`, fieldName, ` = (`, ofield.Type, `)(nil)`)
+					if nillable {
+						p.P(`to.`, fieldName, ` = nil`)
 					} else {
-						p.P(`to.`, fieldName, ` = `, p.guessZeroValue(ofield.ParentGoType))
+						p.P(`to.`, fieldName, ` = `, p.guessZeroValue(btype))
 					}
 					p.P(`} else {`)
-					if ofield.Type != ofield.ParentGoType && strings.HasPrefix(ofield.Type, "*") {
-						p.P(`vv := v.(`, ofield.ParentGoType, `)`)
+					if nillable {
+						p.P(`vv := v.(`, btype, `)`)
 						p.P(`to.`, fieldName, ` = &vv`)
 					} else {
-						p.P(`to.`, fieldName, ` = v.(`, ofield.ParentGoType, `)`)
+						p.P(`to.`, fieldName, ` = v.(`, btype, `)`)
 					}
-					p.P(`}`)
 					p.P(`}`)
 				}
 			}
+
 			if !toORM {
-				if ofield.Type != ofield.ParentGoType && strings.HasPrefix(ofield.Type, "*") {
+				if nillable {
 					p.P(`if m.`, fieldName, `!= nil {`)
-					p.P(`if v, err := `, p.Import(resourceImport), encodefn, resource, `, *m.`, fieldName, `); err != nil {`)
-					p.P(`return to, err`)
+					p.P(`	if v, err := `, p.Import(resourceImport), `.Encode(`, resource, `, *m.`, fieldName, `); err != nil {`)
+					p.P(`		return to, err`)
+					p.P(`	} else {`)
+					p.P(`		to.`, fieldName, ` = v`)
+					p.P(`	}`)
 					p.P(`} else {`)
-					p.P(`to.`, fieldName, ` = v`)
+					p.P(`	if v, err := `, p.Import(resourceImport), `.Encode(`, resource, `, nil); err != nil {`)
+					p.P(`		return to, err`)
+					p.P(`	} else {`)
+					p.P(`		to.`, fieldName, ` = v`)
+					p.P(`	}`)
 					p.P(`}`)
-					p.P(`}`)
+
 				} else {
-					p.P(`if v, err := `, p.Import(resourceImport), encodefn, resource, `, m.`, fieldName, `); err != nil {`)
+					p.P(`if v, err := `, p.Import(resourceImport), `.Encode(`, resource, `, m.`, fieldName, `); err != nil {`)
 					p.P(`return to, err`)
 					p.P(`} else {`)
 					p.P(`to.`, fieldName, ` = v`)
 					p.P(`}`)
 				}
-
 			}
 		} else if coreType == protoTypeInet { // Inet type for Postgres only, currently
 			if toORM {

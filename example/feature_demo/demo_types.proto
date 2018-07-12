@@ -70,7 +70,8 @@ message TypeWithID {
   option (gorm.opts) = {
     ormable: true,
     include: [
-      {type: "int32", name: "secret_int", tag: {ignore: true}}
+      {type: "int32", name: "secret_int", tag: {ignore: true}},
+      {type: "[]*JoinTable", name: "multi_account_types", tag: {foreign_key: "TypeWithIDID"}}
       ]
     };
   // any field named 'id' is assumed by gorm to be the primary key for the
@@ -90,6 +91,7 @@ message TypeWithID {
   example.IntPoint point = 5 [(gorm.field).belongs_to = {}];
   user.User user = 6 [(gorm.field).belongs_to = {}];
   gorm.types.InetValue address = 7;
+  repeated uint32 multiaccount_type_ids = 8 [(gorm.field).drop = true];
 }
 
 // MultiaccountTypeWithID demonstrates the generated multi-account support
