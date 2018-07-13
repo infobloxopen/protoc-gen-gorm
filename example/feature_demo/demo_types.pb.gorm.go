@@ -585,7 +585,7 @@ func DefaultDeleteTypeWithID(ctx context.Context, in *TypeWithID, db *gorm1.DB) 
 // DefaultStrictUpdateTypeWithID clears first level 1:many children and then executes a gorm update call
 func DefaultStrictUpdateTypeWithID(ctx context.Context, in *TypeWithID, db *gorm1.DB) (*TypeWithID, error) {
 	if in == nil {
-		return nil, fmt.Errorf("Nil argument to DefaultCascadedUpdateTypeWithID")
+		return nil, fmt.Errorf("Nil argument to DefaultStrictUpdateTypeWithID")
 	}
 	ormObj, err := in.ToORM(ctx)
 	if err != nil {
@@ -737,7 +737,7 @@ func DefaultDeleteMultiaccountTypeWithID(ctx context.Context, in *MultiaccountTy
 // DefaultStrictUpdateMultiaccountTypeWithID clears first level 1:many children and then executes a gorm update call
 func DefaultStrictUpdateMultiaccountTypeWithID(ctx context.Context, in *MultiaccountTypeWithID, db *gorm1.DB) (*MultiaccountTypeWithID, error) {
 	if in == nil {
-		return nil, fmt.Errorf("Nil argument to DefaultCascadedUpdateMultiaccountTypeWithID")
+		return nil, fmt.Errorf("Nil argument to DefaultStrictUpdateMultiaccountTypeWithID")
 	}
 	ormObj, err := in.ToORM(ctx)
 	if err != nil {
