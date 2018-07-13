@@ -49,6 +49,7 @@ message GormFieldOptions {
         HasManyOptions has_many = 5;
         ManyToManyOptions many_to_many = 6;
     }
+    optional string reference_of = 7;
 }
 
 message GormTag {

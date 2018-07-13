@@ -92,6 +92,7 @@ type OrmPlugin struct {
 	currentPackage string
 	currentFile    *generator.FileDescriptor
 	fileImports    map[*generator.FileDescriptor]*fileImports
+	messages       map[string]struct{}
 }
 
 func (p *OrmPlugin) setFile(file *generator.FileDescriptor) {
@@ -110,6 +111,7 @@ func (p *OrmPlugin) Name() string {
 func (p *OrmPlugin) Init(g *generator.Generator) {
 	p.Generator = g
 	p.fileImports = make(map[*generator.FileDescriptor]*fileImports)
+	p.messages = make(map[string]struct{})
 	if strings.EqualFold(g.Param["engine"], "postgres") {
 		p.dbEngine = ENGINE_POSTGRES
 	} else {
@@ -138,6 +140,7 @@ func (p *OrmPlugin) Generate(file *generator.FileDescriptor) {
 					continue
 				}
 				typeName := p.getMsgName(msg)
+				p.messages[typeName] = struct{}{}
 
 				if getMessageOptions(msg).GetOrmable() {
 					ormable := NewOrmableType(typeName, fileProto.GetPackage())
@@ -276,7 +279,14 @@ func (p *OrmPlugin) parseBasicFields(msg *generator.Descriptor) {
 				continue
 			}
 		}
-		ormable.Fields[fieldName] = &Field{Type: fieldType, GormFieldOptions: fieldOpts}
+		f := &Field{Type: fieldType, GormFieldOptions: fieldOpts}
+		if tname := getFieldOptions(field).GetReferenceOf(); tname != "" {
+			if _, ok := p.messages[tname]; !ok {
+				p.Fail("unknown message type in refers_to: ", tname, " in field: ", fieldName, " of type: ", typeName)
+			}
+			f.ParentOriginName = tname
+		}
+		ormable.Fields[fieldName] = f
 	}
 	if getMessageOptions(msg).GetMultiAccount() {
 		if accID, ok := ormable.Fields["AccountID"]; !ok {
@@ -675,6 +685,8 @@ func (p *OrmPlugin) generateFieldConversion(message *generator.Descriptor, field
 			}
 			btype := strings.TrimPrefix(ofield.Type, "*")
 			nillable := strings.HasPrefix(ofield.Type, "*")
+			iface := ofield.Type == "interface{}"
+
 			switch btype {
 			case "int64":
 				if toORM {
@@ -703,6 +715,8 @@ func (p *OrmPlugin) generateFieldConversion(message *generator.Descriptor, field
 					p.P(`} else if v == nil {`)
 					if nillable {
 						p.P(`to.`, fieldName, ` = nil`)
+					} else if iface {
+						p.P(`to.`, fieldName, `= nil`)
 					} else {
 						p.P(`to.`, fieldName, ` = `, p.guessZeroValue(btype))
 					}
@@ -710,6 +724,8 @@ func (p *OrmPlugin) generateFieldConversion(message *generator.Descriptor, field
 					if nillable {
 						p.P(`vv := v.(`, btype, `)`)
 						p.P(`to.`, fieldName, ` = &vv`)
+					} else if iface {
+						p.P(`to.`, fieldName, `= v`)
 					} else {
 						p.P(`to.`, fieldName, ` = v.(`, btype, `)`)
 					}
