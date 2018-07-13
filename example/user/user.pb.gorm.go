@@ -968,7 +968,7 @@ func DefaultDeleteUser(ctx context.Context, in *User, db *gorm1.DB) error {
 // DefaultStrictUpdateUser clears first level 1:many children and then executes a gorm update call
 func DefaultStrictUpdateUser(ctx context.Context, in *User, db *gorm1.DB) (*User, error) {
 	if in == nil {
-		return nil, fmt.Errorf("Nil argument to DefaultCascadedUpdateUser")
+		return nil, fmt.Errorf("Nil argument to DefaultStrictUpdateUser")
 	}
 	ormObj, err := in.ToORM(ctx)
 	if err != nil {
@@ -1163,7 +1163,7 @@ func DefaultDeleteEmail(ctx context.Context, in *Email, db *gorm1.DB) error {
 // DefaultStrictUpdateEmail clears first level 1:many children and then executes a gorm update call
 func DefaultStrictUpdateEmail(ctx context.Context, in *Email, db *gorm1.DB) (*Email, error) {
 	if in == nil {
-		return nil, fmt.Errorf("Nil argument to DefaultCascadedUpdateEmail")
+		return nil, fmt.Errorf("Nil argument to DefaultStrictUpdateEmail")
 	}
 	ormObj, err := in.ToORM(ctx)
 	if err != nil {
@@ -1298,7 +1298,7 @@ func DefaultDeleteAddress(ctx context.Context, in *Address, db *gorm1.DB) error 
 // DefaultStrictUpdateAddress clears first level 1:many children and then executes a gorm update call
 func DefaultStrictUpdateAddress(ctx context.Context, in *Address, db *gorm1.DB) (*Address, error) {
 	if in == nil {
-		return nil, fmt.Errorf("Nil argument to DefaultCascadedUpdateAddress")
+		return nil, fmt.Errorf("Nil argument to DefaultStrictUpdateAddress")
 	}
 	ormObj, err := in.ToORM(ctx)
 	if err != nil {
@@ -1433,7 +1433,7 @@ func DefaultDeleteLanguage(ctx context.Context, in *Language, db *gorm1.DB) erro
 // DefaultStrictUpdateLanguage clears first level 1:many children and then executes a gorm update call
 func DefaultStrictUpdateLanguage(ctx context.Context, in *Language, db *gorm1.DB) (*Language, error) {
 	if in == nil {
-		return nil, fmt.Errorf("Nil argument to DefaultCascadedUpdateLanguage")
+		return nil, fmt.Errorf("Nil argument to DefaultStrictUpdateLanguage")
 	}
 	ormObj, err := in.ToORM(ctx)
 	if err != nil {
@@ -1568,7 +1568,7 @@ func DefaultDeleteCreditCard(ctx context.Context, in *CreditCard, db *gorm1.DB) 
 // DefaultStrictUpdateCreditCard clears first level 1:many children and then executes a gorm update call
 func DefaultStrictUpdateCreditCard(ctx context.Context, in *CreditCard, db *gorm1.DB) (*CreditCard, error) {
 	if in == nil {
-		return nil, fmt.Errorf("Nil argument to DefaultCascadedUpdateCreditCard")
+		return nil, fmt.Errorf("Nil argument to DefaultStrictUpdateCreditCard")
 	}
 	ormObj, err := in.ToORM(ctx)
 	if err != nil {

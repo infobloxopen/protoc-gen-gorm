@@ -159,7 +159,7 @@ func DefaultDeleteIntPoint(ctx context.Context, in *IntPoint, db *gorm1.DB) erro
 // DefaultStrictUpdateIntPoint clears first level 1:many children and then executes a gorm update call
 func DefaultStrictUpdateIntPoint(ctx context.Context, in *IntPoint, db *gorm1.DB) (*IntPoint, error) {
 	if in == nil {
-		return nil, fmt.Errorf("Nil argument to DefaultCascadedUpdateIntPoint")
+		return nil, fmt.Errorf("Nil argument to DefaultStrictUpdateIntPoint")
 	}
 	ormObj, err := in.ToORM(ctx)
 	if err != nil {

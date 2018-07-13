@@ -541,9 +541,8 @@ var _ grpc.ClientConn
 // is compatible with the grpc package it is being compiled against.
 const _ = grpc.SupportPackageIsVersion4
 
-// IntPointServiceClient is the client API for IntPointService service.
-//
-// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
+// Client API for IntPointService service
+
 type IntPointServiceClient interface {
 	// The convention requires the rpc names have Create/Read/Update/List/Delete
 	// as a prefix. The type is inferred from the response (except for delete),
@@ -571,7 +570,7 @@ func NewIntPointServiceClient(cc *grpc.ClientConn) IntPointServiceClient {
 
 func (c *intPointServiceClient) Create(ctx context.Context, in *CreateIntPointRequest, opts ...grpc.CallOption) (*CreateIntPointResponse, error) {
 	out := new(CreateIntPointResponse)
-	err := c.cc.Invoke(ctx, "/example.IntPointService/Create", in, out, opts...)
+	err := grpc.Invoke(ctx, "/example.IntPointService/Create", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -580,7 +579,7 @@ func (c *intPointServiceClient) Create(ctx context.Context, in *CreateIntPointRe
 
 func (c *intPointServiceClient) Read(ctx context.Context, in *ReadIntPointRequest, opts ...grpc.CallOption) (*ReadIntPointResponse, error) {
 	out := new(ReadIntPointResponse)
-	err := c.cc.Invoke(ctx, "/example.IntPointService/Read", in, out, opts...)
+	err := grpc.Invoke(ctx, "/example.IntPointService/Read", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -589,7 +588,7 @@ func (c *intPointServiceClient) Read(ctx context.Context, in *ReadIntPointReques
 
 func (c *intPointServiceClient) Update(ctx context.Context, in *UpdateIntPointRequest, opts ...grpc.CallOption) (*UpdateIntPointResponse, error) {
 	out := new(UpdateIntPointResponse)
-	err := c.cc.Invoke(ctx, "/example.IntPointService/Update", in, out, opts...)
+	err := grpc.Invoke(ctx, "/example.IntPointService/Update", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -598,7 +597,7 @@ func (c *intPointServiceClient) Update(ctx context.Context, in *UpdateIntPointRe
 
 func (c *intPointServiceClient) List(ctx context.Context, in *ListIntPointRequest, opts ...grpc.CallOption) (*ListIntPointResponse, error) {
 	out := new(ListIntPointResponse)
-	err := c.cc.Invoke(ctx, "/example.IntPointService/List", in, out, opts...)
+	err := grpc.Invoke(ctx, "/example.IntPointService/List", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -607,7 +606,7 @@ func (c *intPointServiceClient) List(ctx context.Context, in *ListIntPointReques
 
 func (c *intPointServiceClient) Delete(ctx context.Context, in *DeleteIntPointRequest, opts ...grpc.CallOption) (*DeleteIntPointResponse, error) {
 	out := new(DeleteIntPointResponse)
-	err := c.cc.Invoke(ctx, "/example.IntPointService/Delete", in, out, opts...)
+	err := grpc.Invoke(ctx, "/example.IntPointService/Delete", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -616,7 +615,7 @@ func (c *intPointServiceClient) Delete(ctx context.Context, in *DeleteIntPointRe
 
 func (c *intPointServiceClient) CustomMethod(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*empty.Empty, error) {
 	out := new(empty.Empty)
-	err := c.cc.Invoke(ctx, "/example.IntPointService/CustomMethod", in, out, opts...)
+	err := grpc.Invoke(ctx, "/example.IntPointService/CustomMethod", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -625,7 +624,7 @@ func (c *intPointServiceClient) CustomMethod(ctx context.Context, in *empty.Empt
 
 func (c *intPointServiceClient) CreateSomething(ctx context.Context, in *Something, opts ...grpc.CallOption) (*Something, error) {
 	out := new(Something)
-	err := c.cc.Invoke(ctx, "/example.IntPointService/CreateSomething", in, out, opts...)
+	err := grpc.Invoke(ctx, "/example.IntPointService/CreateSomething", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -818,9 +817,8 @@ var _IntPointService_serviceDesc = grpc.ServiceDesc{
 	Metadata: "example/feature_demo/demo_service.proto",
 }
 
-// IntPointTxnClient is the client API for IntPointTxn service.
-//
-// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
+// Client API for IntPointTxn service
+
 type IntPointTxnClient interface {
 	// The convention requires the rpc names have Create/Read/Update/List/Delete
 	// as a prefix. The type is inferred from the response (except for delete),
@@ -848,7 +846,7 @@ func NewIntPointTxnClient(cc *grpc.ClientConn) IntPointTxnClient {
 
 func (c *intPointTxnClient) Create(ctx context.Context, in *CreateIntPointRequest, opts ...grpc.CallOption) (*CreateIntPointResponse, error) {
 	out := new(CreateIntPointResponse)
-	err := c.cc.Invoke(ctx, "/example.IntPointTxn/Create", in, out, opts...)
+	err := grpc.Invoke(ctx, "/example.IntPointTxn/Create", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -857,7 +855,7 @@ func (c *intPointTxnClient) Create(ctx context.Context, in *CreateIntPointReques
 
 func (c *intPointTxnClient) Read(ctx context.Context, in *ReadIntPointRequest, opts ...grpc.CallOption) (*ReadIntPointResponse, error) {
 	out := new(ReadIntPointResponse)
-	err := c.cc.Invoke(ctx, "/example.IntPointTxn/Read", in, out, opts...)
+	err := grpc.Invoke(ctx, "/example.IntPointTxn/Read", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -866,7 +864,7 @@ func (c *intPointTxnClient) Read(ctx context.Context, in *ReadIntPointRequest, o
 
 func (c *intPointTxnClient) Update(ctx context.Context, in *UpdateIntPointRequest, opts ...grpc.CallOption) (*UpdateIntPointResponse, error) {
 	out := new(UpdateIntPointResponse)
-	err := c.cc.Invoke(ctx, "/example.IntPointTxn/Update", in, out, opts...)
+	err := grpc.Invoke(ctx, "/example.IntPointTxn/Update", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -875,7 +873,7 @@ func (c *intPointTxnClient) Update(ctx context.Context, in *UpdateIntPointReques
 
 func (c *intPointTxnClient) List(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*ListIntPointResponse, error) {
 	out := new(ListIntPointResponse)
-	err := c.cc.Invoke(ctx, "/example.IntPointTxn/List", in, out, opts...)
+	err := grpc.Invoke(ctx, "/example.IntPointTxn/List", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -884,7 +882,7 @@ func (c *intPointTxnClient) List(ctx context.Context, in *empty.Empty, opts ...g
 
 func (c *intPointTxnClient) Delete(ctx context.Context, in *DeleteIntPointRequest, opts ...grpc.CallOption) (*DeleteIntPointResponse, error) {
 	out := new(DeleteIntPointResponse)
-	err := c.cc.Invoke(ctx, "/example.IntPointTxn/Delete", in, out, opts...)
+	err := grpc.Invoke(ctx, "/example.IntPointTxn/Delete", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -893,7 +891,7 @@ func (c *intPointTxnClient) Delete(ctx context.Context, in *DeleteIntPointReques
 
 func (c *intPointTxnClient) CustomMethod(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*empty.Empty, error) {
 	out := new(empty.Empty)
-	err := c.cc.Invoke(ctx, "/example.IntPointTxn/CustomMethod", in, out, opts...)
+	err := grpc.Invoke(ctx, "/example.IntPointTxn/CustomMethod", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -902,7 +900,7 @@ func (c *intPointTxnClient) CustomMethod(ctx context.Context, in *empty.Empty, o
 
 func (c *intPointTxnClient) CreateSomething(ctx context.Context, in *Something, opts ...grpc.CallOption) (*Something, error) {
 	out := new(Something)
-	err := c.cc.Invoke(ctx, "/example.IntPointTxn/CreateSomething", in, out, opts...)
+	err := grpc.Invoke(ctx, "/example.IntPointTxn/CreateSomething", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
 	}
