@@ -55,6 +55,7 @@ message Address {
     string address_2 = 3;
     string post = 4;
     atlas.rpc.Identifier external = 5 [(gorm.field).tag = {type: "jsonb"}];
+    atlas.rpc.Identifier implicit_fk = 6 [(gorm.field) = {reference_of: "Email" tag: {type: "text"} }];
 }
 
 message Language {
