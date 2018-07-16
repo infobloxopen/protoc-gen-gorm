@@ -311,7 +311,7 @@ func (p *OrmPlugin) generatePreserviceCall(svc, typeName, mthd string) {
 }
 
 func (p *OrmPlugin) generatePreserviceHook(svc, typeName, inTypeName, mthd string) {
-	p.P(`// `, svc, typeName, `WithBefore`, mthd, ` called before DefaultCreate`, typeName, ` in the default Create handler`)
+	p.P(`// `, svc, typeName, `WithBefore`, mthd, ` called before Default`, mthd, typeName, ` in the default `, mthd, ` handler`)
 	p.P(`type `, svc, typeName, `WithBefore`, mthd, ` interface {`)
 	p.P(`Before`, mthd, `(context.Context, *`, inTypeName, `, *`, p.Import(gormImport), `.DB) (context.Context, *`, p.Import(gormImport), `.DB, error)`)
 	p.P(`}`)

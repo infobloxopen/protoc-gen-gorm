@@ -283,7 +283,7 @@ func (m *IntPointServiceDefaultServer) Read(ctx context.Context, in *ReadIntPoin
 	return &ReadIntPointResponse{Result: res}, nil
 }
 
-// IntPointServiceIntPointWithBeforeRead called before DefaultCreateIntPoint in the default Create handler
+// IntPointServiceIntPointWithBeforeRead called before DefaultReadIntPoint in the default Read handler
 type IntPointServiceIntPointWithBeforeRead interface {
 	BeforeRead(context.Context, *ReadIntPointRequest, *gorm1.DB) (context.Context, *gorm1.DB, error)
 }
@@ -305,7 +305,7 @@ func (m *IntPointServiceDefaultServer) Update(ctx context.Context, in *UpdateInt
 	return &UpdateIntPointResponse{Result: res}, nil
 }
 
-// IntPointServiceIntPointWithBeforeUpdate called before DefaultCreateIntPoint in the default Create handler
+// IntPointServiceIntPointWithBeforeUpdate called before DefaultUpdateIntPoint in the default Update handler
 type IntPointServiceIntPointWithBeforeUpdate interface {
 	BeforeUpdate(context.Context, *UpdateIntPointRequest, *gorm1.DB) (context.Context, *gorm1.DB, error)
 }
@@ -327,7 +327,7 @@ func (m *IntPointServiceDefaultServer) List(ctx context.Context, in *ListIntPoin
 	return &ListIntPointResponse{Results: res}, nil
 }
 
-// IntPointServiceIntPointWithBeforeList called before DefaultCreateIntPoint in the default Create handler
+// IntPointServiceIntPointWithBeforeList called before DefaultListIntPoint in the default List handler
 type IntPointServiceIntPointWithBeforeList interface {
 	BeforeList(context.Context, *ListIntPointRequest, *gorm1.DB) (context.Context, *gorm1.DB, error)
 }
@@ -345,7 +345,7 @@ func (m *IntPointServiceDefaultServer) Delete(ctx context.Context, in *DeleteInt
 	return &DeleteIntPointResponse{}, DefaultDeleteIntPoint(ctx, &IntPoint{Id: in.GetId()}, db)
 }
 
-// IntPointServiceIntPointWithBeforeDelete called before DefaultCreateIntPoint in the default Create handler
+// IntPointServiceIntPointWithBeforeDelete called before DefaultDeleteIntPoint in the default Delete handler
 type IntPointServiceIntPointWithBeforeDelete interface {
 	BeforeDelete(context.Context, *DeleteIntPointRequest, *gorm1.DB) (context.Context, *gorm1.DB, error)
 }
@@ -416,7 +416,7 @@ func (m *IntPointTxnDefaultServer) Read(ctx context.Context, in *ReadIntPointReq
 	return &ReadIntPointResponse{Result: res}, nil
 }
 
-// IntPointTxnIntPointWithBeforeRead called before DefaultCreateIntPoint in the default Create handler
+// IntPointTxnIntPointWithBeforeRead called before DefaultReadIntPoint in the default Read handler
 type IntPointTxnIntPointWithBeforeRead interface {
 	BeforeRead(context.Context, *ReadIntPointRequest, *gorm1.DB) (context.Context, *gorm1.DB, error)
 }
@@ -445,7 +445,7 @@ func (m *IntPointTxnDefaultServer) Update(ctx context.Context, in *UpdateIntPoin
 	return &UpdateIntPointResponse{Result: res}, nil
 }
 
-// IntPointTxnIntPointWithBeforeUpdate called before DefaultCreateIntPoint in the default Create handler
+// IntPointTxnIntPointWithBeforeUpdate called before DefaultUpdateIntPoint in the default Update handler
 type IntPointTxnIntPointWithBeforeUpdate interface {
 	BeforeUpdate(context.Context, *UpdateIntPointRequest, *gorm1.DB) (context.Context, *gorm1.DB, error)
 }
@@ -474,7 +474,7 @@ func (m *IntPointTxnDefaultServer) List(ctx context.Context, in *google_protobuf
 	return &ListIntPointResponse{Results: res}, nil
 }
 
-// IntPointTxnIntPointWithBeforeList called before DefaultCreateIntPoint in the default Create handler
+// IntPointTxnIntPointWithBeforeList called before DefaultListIntPoint in the default List handler
 type IntPointTxnIntPointWithBeforeList interface {
 	BeforeList(context.Context, *google_protobuf2.Empty, *gorm1.DB) (context.Context, *gorm1.DB, error)
 }
@@ -499,7 +499,7 @@ func (m *IntPointTxnDefaultServer) Delete(ctx context.Context, in *DeleteIntPoin
 	return &DeleteIntPointResponse{}, DefaultDeleteIntPoint(ctx, &IntPoint{Id: in.GetId()}, db)
 }
 
-// IntPointTxnIntPointWithBeforeDelete called before DefaultCreateIntPoint in the default Create handler
+// IntPointTxnIntPointWithBeforeDelete called before DefaultDeleteIntPoint in the default Delete handler
 type IntPointTxnIntPointWithBeforeDelete interface {
 	BeforeDelete(context.Context, *DeleteIntPointRequest, *gorm1.DB) (context.Context, *gorm1.DB, error)
 }
