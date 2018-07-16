@@ -32,7 +32,7 @@ type TestTypesORM struct {
 	ANestedObjectTypeWithIDId *uint32
 	Array                     pq1.StringArray
 	Array2                    pq1.StringArray
-	BecomesInt                int32
+	BecomesInt                string
 	CreatedAt                 time.Time
 	JsonField                 *postgres1.Jsonb `gorm:"type:jsonb"`
 	NullableUuid              *go_uuid1.UUID   `gorm:"type:uuid"`
@@ -62,7 +62,7 @@ func (m *TestTypes) ToORM(ctx context.Context) (TestTypesORM, error) {
 		v := m.OptionalString.Value
 		to.OptionalString = &v
 	}
-	to.BecomesInt = int32(m.BecomesInt)
+	to.BecomesInt = TestTypesStatus_name[int32(m.BecomesInt)]
 	if m.Uuid != nil {
 		to.Uuid, err = go_uuid1.FromString(m.Uuid.Value)
 		if err != nil {
@@ -107,7 +107,7 @@ func (m *TestTypesORM) ToPB(ctx context.Context) (TestTypes, error) {
 	if m.OptionalString != nil {
 		to.OptionalString = &google_protobuf1.StringValue{Value: *m.OptionalString}
 	}
-	to.BecomesInt = TestTypesStatus(m.BecomesInt)
+	to.BecomesInt = TestTypesStatus(TestTypesStatus_value[m.BecomesInt])
 	to.Uuid = &types1.UUID{Value: m.Uuid.String()}
 	if to.CreatedAt, err = ptypes1.TimestampProto(m.CreatedAt); err != nil {
 		return to, err
@@ -648,7 +648,7 @@ func DefaultDeleteTypeWithID(ctx context.Context, in *TypeWithID, db *gorm1.DB) 
 // DefaultStrictUpdateTypeWithID clears first level 1:many children and then executes a gorm update call
 func DefaultStrictUpdateTypeWithID(ctx context.Context, in *TypeWithID, db *gorm1.DB) (*TypeWithID, error) {
 	if in == nil {
-		return nil, fmt.Errorf("Nil argument to DefaultCascadedUpdateTypeWithID")
+		return nil, fmt.Errorf("Nil argument to DefaultStrictUpdateTypeWithID")
 	}
 	ormObj, err := in.ToORM(ctx)
 	if err != nil {
@@ -800,7 +800,7 @@ func DefaultDeleteMultiaccountTypeWithID(ctx context.Context, in *MultiaccountTy
 // DefaultStrictUpdateMultiaccountTypeWithID clears first level 1:many children and then executes a gorm update call
 func DefaultStrictUpdateMultiaccountTypeWithID(ctx context.Context, in *MultiaccountTypeWithID, db *gorm1.DB) (*MultiaccountTypeWithID, error) {
 	if in == nil {
-		return nil, fmt.Errorf("Nil argument to DefaultCascadedUpdateMultiaccountTypeWithID")
+		return nil, fmt.Errorf("Nil argument to DefaultStrictUpdateMultiaccountTypeWithID")
 	}
 	ormObj, err := in.ToORM(ctx)
 	if err != nil {
@@ -971,7 +971,7 @@ func DefaultDeletePrimaryUUIDType(ctx context.Context, in *PrimaryUUIDType, db *
 // DefaultStrictUpdatePrimaryUUIDType clears first level 1:many children and then executes a gorm update call
 func DefaultStrictUpdatePrimaryUUIDType(ctx context.Context, in *PrimaryUUIDType, db *gorm1.DB) (*PrimaryUUIDType, error) {
 	if in == nil {
-		return nil, fmt.Errorf("Nil argument to DefaultCascadedUpdatePrimaryUUIDType")
+		return nil, fmt.Errorf("Nil argument to DefaultStrictUpdatePrimaryUUIDType")
 	}
 	ormObj, err := in.ToORM(ctx)
 	if err != nil {

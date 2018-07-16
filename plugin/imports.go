@@ -53,7 +53,7 @@ type pkgImport struct {
 	alias       string
 }
 
-// NewImport takes a package and adds it to the list of packages to import
+// Import takes a package and adds it to the list of packages to import
 // It will generate a unique new alias using the last portion of the import path
 // unless the package is already imported for this file. Either way, it returns
 // the package alias

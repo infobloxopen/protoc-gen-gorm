@@ -182,7 +182,7 @@ func DefaultDeleteExternalChild(ctx context.Context, in *ExternalChild, db *gorm
 // DefaultStrictUpdateExternalChild clears first level 1:many children and then executes a gorm update call
 func DefaultStrictUpdateExternalChild(ctx context.Context, in *ExternalChild, db *gorm1.DB) (*ExternalChild, error) {
 	if in == nil {
-		return nil, fmt.Errorf("Nil argument to DefaultCascadedUpdateExternalChild")
+		return nil, fmt.Errorf("Nil argument to DefaultStrictUpdateExternalChild")
 	}
 	ormObj, err := in.ToORM(ctx)
 	if err != nil {

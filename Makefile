@@ -26,7 +26,7 @@ install:
 
 example: default
 	protoc -I. -I$(SRCPATH) -I./vendor \
-		--go_out="plugins=grpc:$(SRCPATH)" --gorm_out="engine=postgres:$(SRCPATH)" \
+		--go_out="plugins=grpc:$(SRCPATH)" --gorm_out="engine=postgres,enums=string:$(SRCPATH)" \
 		example/feature_demo/demo_multi_file.proto \
 		example/feature_demo/demo_types.proto \
 		example/feature_demo/demo_service.proto

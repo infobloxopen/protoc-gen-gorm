@@ -89,11 +89,13 @@ func NewOrmableType(oname, pkg string, file *generator.FileDescriptor) *OrmableT
 type OrmPlugin struct {
 	*generator.Generator
 	dbEngine       int
+	stringEnums    bool
 	ormableTypes   map[string]*OrmableType
 	EmptyFiles     []string
 	currentPackage string
 	currentFile    *generator.FileDescriptor
 	fileImports    map[*generator.FileDescriptor]*fileImports
+	messages       map[string]struct{}
 }
 
 func (p *OrmPlugin) setFile(file *generator.FileDescriptor) {
@@ -112,10 +114,14 @@ func (p *OrmPlugin) Name() string {
 func (p *OrmPlugin) Init(g *generator.Generator) {
 	p.Generator = g
 	p.fileImports = make(map[*generator.FileDescriptor]*fileImports)
+	p.messages = make(map[string]struct{})
 	if strings.EqualFold(g.Param["engine"], "postgres") {
 		p.dbEngine = ENGINE_POSTGRES
 	} else {
 		p.dbEngine = ENGINE_UNSET
+	}
+	if strings.EqualFold(g.Param["enums"], "string") {
+		p.stringEnums = true
 	}
 }
 
@@ -136,7 +142,9 @@ func (p *OrmPlugin) Generate(file *generator.FileDescriptor) {
 				if msg.GetOptions().GetMapEntry() {
 					continue
 				}
-				typeName := generator.CamelCase(msg.GetName())
+				typeName := p.getMsgName(msg)
+				p.messages[typeName] = struct{}{}
+
 				if getMessageOptions(msg).GetOrmable() {
 					ormable := NewOrmableType(typeName, fileProto.GetPackage(), file)
 					if _, ok := p.ormableTypes[typeName]; !ok {
@@ -145,13 +153,13 @@ func (p *OrmPlugin) Generate(file *generator.FileDescriptor) {
 				}
 			}
 			for _, msg := range file.Messages() {
-				typeName := generator.CamelCase(msg.GetName())
+				typeName := p.getMsgName(msg)
 				if p.isOrmable(typeName) {
 					p.parseBasicFields(msg)
 				}
 			}
 			for _, msg := range file.Messages() {
-				typeName := generator.CamelCase(msg.GetName())
+				typeName := p.getMsgName(msg)
 				if p.isOrmable(typeName) {
 					p.parseAssociations(msg)
 					o := p.getOrmable(typeName)
@@ -167,7 +175,7 @@ func (p *OrmPlugin) Generate(file *generator.FileDescriptor) {
 	p.setFile(file)
 	empty := true
 	for _, msg := range file.Messages() {
-		typeName := generator.CamelCaseSlice(msg.TypeName())
+		typeName := p.getMsgName(msg)
 		if p.isOrmable(typeName) {
 			empty = false
 			p.generateOrmable(msg)
@@ -185,7 +193,7 @@ func (p *OrmPlugin) Generate(file *generator.FileDescriptor) {
 }
 
 func (p *OrmPlugin) parseBasicFields(msg *generator.Descriptor) {
-	typeName := generator.CamelCaseSlice(msg.TypeName())
+	typeName := p.getMsgName(msg)
 	ormable := p.getOrmable(typeName)
 	ormable.Name = fmt.Sprintf("%sORM", typeName)
 	for _, field := range msg.GetField() {
@@ -202,6 +210,9 @@ func (p *OrmPlugin) parseBasicFields(msg *generator.Descriptor) {
 		var typePackage string
 		if *(field.Type) == typeEnum {
 			fieldType = "int32"
+			if p.stringEnums {
+				fieldType = "string"
+			}
 		} else if *(field.Type) != typeMessage && field.IsRepeated() {
 			// Not implemented yet
 			continue
@@ -278,7 +289,14 @@ func (p *OrmPlugin) parseBasicFields(msg *generator.Descriptor) {
 				continue
 			}
 		}
-		ormable.Fields[fieldName] = &Field{Type: fieldType, Package: typePackage, GormFieldOptions: fieldOpts}
+		f := &Field{Type: fieldType, Package: typePackage, GormFieldOptions: fieldOpts}
+		if tname := getFieldOptions(field).GetReferenceOf(); tname != "" {
+			if _, ok := p.messages[tname]; !ok {
+				p.Fail("unknown message type in refers_to: ", tname, " in field: ", fieldName, " of type: ", typeName)
+			}
+			f.ParentOriginName = tname
+		}
+		ormable.Fields[fieldName] = f
 	}
 	if getMessageOptions(msg).GetMultiAccount() {
 		if accID, ok := ormable.Fields["AccountID"]; !ok {
@@ -590,9 +608,17 @@ func (p *OrmPlugin) generateFieldConversion(message *generator.Descriptor, field
 		}
 	} else if *(field.Type) == typeEnum { // Singular Enum, which is an int32 ---
 		if toORM {
-			p.P(`to.`, fieldName, ` = int32(m.`, fieldName, `)`)
+			if p.stringEnums {
+				p.P(`to.`, fieldName, ` = `, fieldType, `_name[int32(m.`, fieldName, `)]`)
+			} else {
+				p.P(`to.`, fieldName, ` = int32(m.`, fieldName, `)`)
+			}
 		} else {
-			p.P(`to.`, fieldName, ` = `, fieldType, `(m.`, fieldName, `)`)
+			if p.stringEnums {
+				p.P(`to.`, fieldName, ` = `, fieldType, `(`, fieldType, `_value[m.`, fieldName, `])`)
+			} else {
+				p.P(`to.`, fieldName, ` = `, fieldType, `(m.`, fieldName, `)`)
+			}
 		}
 	} else if *(field.Type) == typeMessage { // Singular Object -------------
 		//Check for WKTs
@@ -669,6 +695,8 @@ func (p *OrmPlugin) generateFieldConversion(message *generator.Descriptor, field
 			}
 			btype := strings.TrimPrefix(ofield.Type, "*")
 			nillable := strings.HasPrefix(ofield.Type, "*")
+			iface := ofield.Type == "interface{}"
+
 			switch btype {
 			case "int64":
 				if toORM {
@@ -697,6 +725,8 @@ func (p *OrmPlugin) generateFieldConversion(message *generator.Descriptor, field
 					p.P(`} else if v == nil {`)
 					if nillable {
 						p.P(`to.`, fieldName, ` = nil`)
+					} else if iface {
+						p.P(`to.`, fieldName, `= nil`)
 					} else {
 						p.P(`to.`, fieldName, ` = `, p.guessZeroValue(btype))
 					}
@@ -704,6 +734,8 @@ func (p *OrmPlugin) generateFieldConversion(message *generator.Descriptor, field
 					if nillable {
 						p.P(`vv := v.(`, btype, `)`)
 						p.P(`to.`, fieldName, ` = &vv`)
+					} else if iface {
+						p.P(`to.`, fieldName, `= v`)
 					} else {
 						p.P(`to.`, fieldName, ` = v.(`, btype, `)`)
 					}

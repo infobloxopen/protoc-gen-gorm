@@ -250,7 +250,7 @@ func (p *OrmPlugin) generateStrictUpdateHandler(message *generator.Descriptor) {
 	p.P(`func DefaultStrictUpdate`, typeName, `(ctx context.Context, in *`,
 		typeName, `, db *`, p.Import(gormImport), `.DB) (*`, typeName, `, error) {`)
 	p.P(`if in == nil {`)
-	p.P(`return nil, fmt.Errorf("Nil argument to DefaultCascadedUpdate`, typeName, `")`)
+	p.P(`return nil, fmt.Errorf("Nil argument to DefaultStrictUpdate`, typeName, `")`)
 	p.P(`}`)
 	p.P(`ormObj, err := in.ToORM(ctx)`)
 	p.P(`if err != nil {`)
