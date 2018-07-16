@@ -57,3 +57,11 @@ func ParseInet(addr string) (*Inet, error) {
 	}
 	return &Inet{&net.IPNet{IP: ip, Mask: mask}}, nil
 }
+
+func (i *Inet) String() string {
+	// don't print the mask if it specifies only a single host
+	if ones, bits := i.Mask.Size(); ones == bits {
+		return i.IP.String()
+	}
+	return i.IPNet.String()
+}

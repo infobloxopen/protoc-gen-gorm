@@ -49,3 +49,28 @@ func TestInetParse(t *testing.T) {
 		t.Errorf("Did not get expected value, got %+v", *inet)
 	}
 }
+
+func TestString(t *testing.T) {
+	cases := []struct {
+		name string
+		input string
+		want  string
+	}{
+		{"v4","192.168.1.1", "192.168.1.1"},
+		{"v4 with single host mask","192.168.1.1/32", "192.168.1.1"},
+		{"v4 with different mask","192.168.1.1/24", "192.168.1.1/24"},
+		{"v6","2001:0db8:85a3:0000:0000:8a2e:0370:7334", "2001:db8:85a3::8a2e:370:7334"},
+		{"v6 with single host mask","2001:0db8:85a3:0000:0000:8a2e:0370:7334/128", "2001:db8:85a3::8a2e:370:7334"},
+		{"v6 with different","2001:0db8:85a3:0000:0000:8a2e:0370:7334/64", "2001:db8:85a3::8a2e:370:7334/64"},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			if inet, err := ParseInet(tc.input); err != nil {
+				t.Errorf("failed to parse Inet value %s: %v", tc.input, err)
+			} else if got, want := inet.String(), tc.want; want != got {
+				t.Errorf("got %s; want %s", got, want)
+			}
+		})
+	}
+}
