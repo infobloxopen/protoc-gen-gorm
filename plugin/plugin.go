@@ -64,20 +64,23 @@ type OrmableType struct {
 	OriginName string
 	Name       string
 	Package    string
+	File       *generator.FileDescriptor
 	Fields     map[string]*Field
 }
 
 type Field struct {
 	ParentGoType string
 	Type         string
+	Package      string
 	*gorm.GormFieldOptions
 	ParentOriginName string
 }
 
-func NewOrmableType(oname, pkg string) *OrmableType {
+func NewOrmableType(oname, pkg string, file *generator.FileDescriptor) *OrmableType {
 	return &OrmableType{
 		OriginName: oname,
 		Package:    pkg,
+		File:       file,
 		Fields:     make(map[string]*Field),
 	}
 }
@@ -135,7 +138,7 @@ func (p *OrmPlugin) Generate(file *generator.FileDescriptor) {
 				}
 				typeName := generator.CamelCase(msg.GetName())
 				if getMessageOptions(msg).GetOrmable() {
-					ormable := NewOrmableType(typeName, fileProto.GetPackage())
+					ormable := NewOrmableType(typeName, fileProto.GetPackage(), file)
 					if _, ok := p.ormableTypes[typeName]; !ok {
 						p.ormableTypes[typeName] = ormable
 					}
@@ -196,6 +199,7 @@ func (p *OrmPlugin) parseBasicFields(msg *generator.Descriptor) {
 		tag := fieldOpts.GetTag()
 		fieldName := generator.CamelCase(field.GetName())
 		fieldType, _ := p.GoType(msg, field)
+		var typePackage string
 		if *(field.Type) == typeEnum {
 			fieldType = "int32"
 		} else if *(field.Type) != typeMessage && field.IsRepeated() {
@@ -209,22 +213,27 @@ func (p *OrmPlugin) parseBasicFields(msg *generator.Descriptor) {
 				p.GetFileImports().typesToRegister = append(p.GetFileImports().typesToRegister, field.GetTypeName())
 				p.GetFileImports().wktPkgName = strings.Trim(parts[0], "*")
 				fieldType = v
+				typePackage = wktImport
 			} else if rawType == protoTypeUUID {
 				fieldType = fmt.Sprintf("%s.UUID", p.Import(uuidImport))
+				typePackage = uuidImport
 				if p.dbEngine == ENGINE_POSTGRES {
 					fieldOpts.Tag = tagWithType(tag, "uuid")
 				}
 			} else if rawType == protoTypeUUIDValue {
 				fieldType = fmt.Sprintf("*%s.UUID", p.Import(uuidImport))
+				typePackage = uuidImport
 				if p.dbEngine == ENGINE_POSTGRES {
 					fieldOpts.Tag = tagWithType(tag, "uuid")
 				}
 			} else if rawType == protoTypeTimestamp {
 				fieldType = "time.Time"
+				typePackage = "time"
 				p.UsingGoImports("time")
 			} else if rawType == protoTypeJSON {
 				if p.dbEngine == ENGINE_POSTGRES {
 					fieldType = fmt.Sprintf("*%s.Jsonb", p.Import(gormpqImport))
+					typePackage = gormpqImport
 					fieldOpts.Tag = tagWithType(tag, "jsonb")
 				} else {
 					// Potential TODO: add types we want to use in other/default DB engine
@@ -259,6 +268,7 @@ func (p *OrmPlugin) parseBasicFields(msg *generator.Descriptor) {
 				}
 			} else if rawType == protoTypeInet {
 				fieldType = fmt.Sprintf("*%s.Inet", p.Import(gtypesImport))
+				typePackage = gtypesImport
 				if p.dbEngine == ENGINE_POSTGRES {
 					fieldOpts.Tag = tagWithType(tag, "inet")
 				} else {
@@ -268,7 +278,7 @@ func (p *OrmPlugin) parseBasicFields(msg *generator.Descriptor) {
 				continue
 			}
 		}
-		ormable.Fields[fieldName] = &Field{Type: fieldType, GormFieldOptions: fieldOpts}
+		ormable.Fields[fieldName] = &Field{Type: fieldType, Package: typePackage, GormFieldOptions: fieldOpts}
 	}
 	if getMessageOptions(msg).GetMultiAccount() {
 		if accID, ok := ormable.Fields["AccountID"]; !ok {
