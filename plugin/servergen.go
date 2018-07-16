@@ -21,7 +21,6 @@ func (p *OrmPlugin) generateDefaultServer(file *generator.FileDescriptor) {
 			p.P(`}`)
 			for _, method := range service.GetMethod() {
 				methodName := generator.CamelCase(method.GetName())
-				p.generateInterface(service, method)
 				if strings.HasPrefix(methodName, "Create") {
 					p.generateCreateServerMethod(service, method)
 				} else if strings.HasPrefix(methodName, "Read") {
@@ -46,12 +45,14 @@ func (p *OrmPlugin) generateCreateServerMethod(service *descriptor.ServiceDescri
 	follows, typeName := p.followsCreateConventions(inType, outType)
 	if follows {
 		p.generateDBSetup(service, outType)
+		p.generatePreserviceCall(svcName, typeName, "Create")
 		p.P(`res, err := DefaultCreate`, typeName, `(ctx, in.GetPayload(), db)`)
 		p.P(`if err != nil {`)
 		p.P(`return nil, err`)
 		p.P(`}`)
 		p.P(`return &`, p.TypeName(outType), `{Result: res}, nil`)
 		p.P(`}`)
+		p.generatePreserviceHook(svcName, typeName, p.TypeName(inType), "Create")
 	} else {
 		p.generateEmptyBody(outType)
 	}
@@ -90,12 +91,14 @@ func (p *OrmPlugin) generateReadServerMethod(service *descriptor.ServiceDescript
 	follows, typeName := p.followsReadConventions(inType, outType)
 	if follows {
 		p.generateDBSetup(service, outType)
+		p.generatePreserviceCall(svcName, typeName, "Read")
 		p.P(`res, err := DefaultRead`, typeName, `(ctx, &`, typeName, `{Id: in.GetId()}, db)`)
 		p.P(`if err != nil {`)
 		p.P(`return nil, err`)
 		p.P(`}`)
 		p.P(`return &`, p.TypeName(outType), `{Result: res}, nil`)
 		p.P(`}`)
+		p.generatePreserviceHook(svcName, typeName, p.TypeName(inType), "Read")
 	} else {
 		p.generateEmptyBody(outType)
 	}
@@ -133,12 +136,14 @@ func (p *OrmPlugin) generateUpdateServerMethod(service *descriptor.ServiceDescri
 	follows, typeName := p.followsUpdateConventions(inType, outType)
 	if follows {
 		p.generateDBSetup(service, outType)
+		p.generatePreserviceCall(svcName, typeName, "Update")
 		p.P(`res, err := DefaultStrictUpdate`, typeName, `(ctx, in.GetPayload(), db)`)
 		p.P(`if err != nil {`)
 		p.P(`return nil, err`)
 		p.P(`}`)
 		p.P(`return &`, p.TypeName(outType), `{Result: res}, nil`)
 		p.P(`}`)
+		p.generatePreserviceHook(svcName, typeName, p.TypeName(inType), "Update")
 	} else {
 		p.generateEmptyBody(outType)
 	}
@@ -177,8 +182,10 @@ func (p *OrmPlugin) generateDeleteServerMethod(service *descriptor.ServiceDescri
 	follows, typeName := p.followsDeleteConventions(inType, outType, method)
 	if follows {
 		p.generateDBSetup(service, outType)
+		p.generatePreserviceCall(svcName, typeName, "Delete")
 		p.P(`return &`, p.TypeName(outType), `{}, `, `DefaultDelete`, typeName, `(ctx, &`, typeName, `{Id: in.GetId()}, db)`)
 		p.P(`}`)
+		p.generatePreserviceHook(svcName, typeName, p.TypeName(inType), "Delete")
 	} else {
 		p.generateEmptyBody(outType)
 	}
@@ -217,12 +224,14 @@ func (p *OrmPlugin) generateListServerMethod(service *descriptor.ServiceDescript
 	follows, typeName := p.followsListConventions(inType, outType)
 	if follows {
 		p.generateDBSetup(service, outType)
+		p.generatePreserviceCall(svcName, typeName, "List")
 		p.P(`res, err := DefaultList`, typeName, `(ctx, db, in)`)
 		p.P(`if err != nil {`)
 		p.P(`return nil, err`)
 		p.P(`}`)
 		p.P(`return &`, p.TypeName(outType), `{Results: res}, nil`)
 		p.P(`}`)
+		p.generatePreserviceHook(svcName, typeName, p.TypeName(inType), "List")
 	} else {
 		p.generateEmptyBody(outType)
 	}
@@ -247,14 +256,6 @@ func (p *OrmPlugin) followsListConventions(inType generator.Object, outType gene
 	return false, ""
 }
 
-func (p *OrmPlugin) generateInterface(service *descriptor.ServiceDescriptorProto, method *descriptor.MethodDescriptorProto) {
-	inType, outType, methodName, svcName := p.getMethodProps(service, method)
-	p.P(`type `, svcName, methodName, `CustomHandler interface {`)
-	p.P(`Custom`, methodName, `(context.Context, *`, p.TypeName(inType), `) (*`,
-		p.TypeName(outType), `, error)`)
-	p.P(`}`)
-}
-
 func (p *OrmPlugin) generateMethodStub(service *descriptor.ServiceDescriptorProto, method *descriptor.MethodDescriptorProto) {
 	inType, outType, methodName, svcName := p.getMethodProps(service, method)
 	p.generateMethodSignature(inType, outType, methodName, svcName)
@@ -265,9 +266,6 @@ func (p *OrmPlugin) generateMethodSignature(inType, outType generator.Object, me
 	p.P(`// `, methodName, ` ...`)
 	p.P(`func (m *`, svcName, `DefaultServer) `, methodName, ` (ctx context.Context, in *`,
 		p.TypeName(inType), `) (*`, p.TypeName(outType), `, error) {`)
-	p.P(`if custom, ok := interface{}(m).(`, svcName, methodName, `CustomHandler); ok {`)
-	p.P(`return custom.Custom`, methodName, `(ctx, in)`)
-	p.P(`}`)
 }
 
 func (p *OrmPlugin) generateDBSetup(service *descriptor.ServiceDescriptorProto, outType generator.Object) error {
@@ -300,4 +298,21 @@ func (p *OrmPlugin) getMethodProps(service *descriptor.ServiceDescriptorProto,
 	methodName := generator.CamelCase(method.GetName())
 	svcName := generator.CamelCase(service.GetName())
 	return inType, outType, methodName, svcName
+}
+
+func (p *OrmPlugin) generatePreserviceCall(svc, typeName, mthd string) {
+	p.P(`if custom, ok := interface{}(in).(`, svc, typeName, `WithBefore`, mthd, `); ok {`)
+	p.P(`var err error`)
+	p.P(`ctx, db, err = custom.Before`, mthd, `(ctx, in, db)`)
+	p.P(`if err != nil {`)
+	p.P(`return nil, err`)
+	p.P(`}`)
+	p.P(`}`)
+}
+
+func (p *OrmPlugin) generatePreserviceHook(svc, typeName, inTypeName, mthd string) {
+	p.P(`// `, svc, typeName, `WithBefore`, mthd, ` called before Default`, mthd, typeName, ` in the default `, mthd, ` handler`)
+	p.P(`type `, svc, typeName, `WithBefore`, mthd, ` interface {`)
+	p.P(`Before`, mthd, `(context.Context, *`, inTypeName, `, *`, p.Import(gormImport), `.DB) (context.Context, *`, p.Import(gormImport), `.DB, error)`)
+	p.P(`}`)
 }

@@ -70,6 +70,9 @@ For CRUD methods to be generated correctly you need to follow specific conventio
 - Delete methods require the `(gorm.method).object_type` option to indicate
   which Ormable Type it should delete, and has no response type requirements.
 
+To customize the generated server, embed it into a new type and override any
+desired functions.
+
 If conventions are not met stubs are generated for CRUD methods. As seen in the
 [feature_demo/demo_service](example/feature_demo/demo_service.proto) example.
 

@@ -243,16 +243,17 @@ func DefaultListIntPoint(ctx context.Context, db *gorm1.DB, req interface{}) ([]
 type IntPointServiceDefaultServer struct {
 	DB *gorm1.DB
 }
-type IntPointServiceCreateCustomHandler interface {
-	CustomCreate(context.Context, *CreateIntPointRequest) (*CreateIntPointResponse, error)
-}
 
 // Create ...
 func (m *IntPointServiceDefaultServer) Create(ctx context.Context, in *CreateIntPointRequest) (*CreateIntPointResponse, error) {
-	if custom, ok := interface{}(m).(IntPointServiceCreateCustomHandler); ok {
-		return custom.CustomCreate(ctx, in)
-	}
 	db := m.DB
+	if custom, ok := interface{}(in).(IntPointServiceIntPointWithBeforeCreate); ok {
+		var err error
+		ctx, db, err = custom.BeforeCreate(ctx, in, db)
+		if err != nil {
+			return nil, err
+		}
+	}
 	res, err := DefaultCreateIntPoint(ctx, in.GetPayload(), db)
 	if err != nil {
 		return nil, err
@@ -260,16 +261,21 @@ func (m *IntPointServiceDefaultServer) Create(ctx context.Context, in *CreateInt
 	return &CreateIntPointResponse{Result: res}, nil
 }
 
-type IntPointServiceReadCustomHandler interface {
-	CustomRead(context.Context, *ReadIntPointRequest) (*ReadIntPointResponse, error)
+// IntPointServiceIntPointWithBeforeCreate called before DefaultCreateIntPoint in the default Create handler
+type IntPointServiceIntPointWithBeforeCreate interface {
+	BeforeCreate(context.Context, *CreateIntPointRequest, *gorm1.DB) (context.Context, *gorm1.DB, error)
 }
 
 // Read ...
 func (m *IntPointServiceDefaultServer) Read(ctx context.Context, in *ReadIntPointRequest) (*ReadIntPointResponse, error) {
-	if custom, ok := interface{}(m).(IntPointServiceReadCustomHandler); ok {
-		return custom.CustomRead(ctx, in)
-	}
 	db := m.DB
+	if custom, ok := interface{}(in).(IntPointServiceIntPointWithBeforeRead); ok {
+		var err error
+		ctx, db, err = custom.BeforeRead(ctx, in, db)
+		if err != nil {
+			return nil, err
+		}
+	}
 	res, err := DefaultReadIntPoint(ctx, &IntPoint{Id: in.GetId()}, db)
 	if err != nil {
 		return nil, err
@@ -277,16 +283,21 @@ func (m *IntPointServiceDefaultServer) Read(ctx context.Context, in *ReadIntPoin
 	return &ReadIntPointResponse{Result: res}, nil
 }
 
-type IntPointServiceUpdateCustomHandler interface {
-	CustomUpdate(context.Context, *UpdateIntPointRequest) (*UpdateIntPointResponse, error)
+// IntPointServiceIntPointWithBeforeRead called before DefaultReadIntPoint in the default Read handler
+type IntPointServiceIntPointWithBeforeRead interface {
+	BeforeRead(context.Context, *ReadIntPointRequest, *gorm1.DB) (context.Context, *gorm1.DB, error)
 }
 
 // Update ...
 func (m *IntPointServiceDefaultServer) Update(ctx context.Context, in *UpdateIntPointRequest) (*UpdateIntPointResponse, error) {
-	if custom, ok := interface{}(m).(IntPointServiceUpdateCustomHandler); ok {
-		return custom.CustomUpdate(ctx, in)
-	}
 	db := m.DB
+	if custom, ok := interface{}(in).(IntPointServiceIntPointWithBeforeUpdate); ok {
+		var err error
+		ctx, db, err = custom.BeforeUpdate(ctx, in, db)
+		if err != nil {
+			return nil, err
+		}
+	}
 	res, err := DefaultStrictUpdateIntPoint(ctx, in.GetPayload(), db)
 	if err != nil {
 		return nil, err
@@ -294,16 +305,21 @@ func (m *IntPointServiceDefaultServer) Update(ctx context.Context, in *UpdateInt
 	return &UpdateIntPointResponse{Result: res}, nil
 }
 
-type IntPointServiceListCustomHandler interface {
-	CustomList(context.Context, *ListIntPointRequest) (*ListIntPointResponse, error)
+// IntPointServiceIntPointWithBeforeUpdate called before DefaultUpdateIntPoint in the default Update handler
+type IntPointServiceIntPointWithBeforeUpdate interface {
+	BeforeUpdate(context.Context, *UpdateIntPointRequest, *gorm1.DB) (context.Context, *gorm1.DB, error)
 }
 
 // List ...
 func (m *IntPointServiceDefaultServer) List(ctx context.Context, in *ListIntPointRequest) (*ListIntPointResponse, error) {
-	if custom, ok := interface{}(m).(IntPointServiceListCustomHandler); ok {
-		return custom.CustomList(ctx, in)
-	}
 	db := m.DB
+	if custom, ok := interface{}(in).(IntPointServiceIntPointWithBeforeList); ok {
+		var err error
+		ctx, db, err = custom.BeforeList(ctx, in, db)
+		if err != nil {
+			return nil, err
+		}
+	}
 	res, err := DefaultListIntPoint(ctx, db, in)
 	if err != nil {
 		return nil, err
@@ -311,54 +327,44 @@ func (m *IntPointServiceDefaultServer) List(ctx context.Context, in *ListIntPoin
 	return &ListIntPointResponse{Results: res}, nil
 }
 
-type IntPointServiceDeleteCustomHandler interface {
-	CustomDelete(context.Context, *DeleteIntPointRequest) (*DeleteIntPointResponse, error)
+// IntPointServiceIntPointWithBeforeList called before DefaultListIntPoint in the default List handler
+type IntPointServiceIntPointWithBeforeList interface {
+	BeforeList(context.Context, *ListIntPointRequest, *gorm1.DB) (context.Context, *gorm1.DB, error)
 }
 
 // Delete ...
 func (m *IntPointServiceDefaultServer) Delete(ctx context.Context, in *DeleteIntPointRequest) (*DeleteIntPointResponse, error) {
-	if custom, ok := interface{}(m).(IntPointServiceDeleteCustomHandler); ok {
-		return custom.CustomDelete(ctx, in)
-	}
 	db := m.DB
+	if custom, ok := interface{}(in).(IntPointServiceIntPointWithBeforeDelete); ok {
+		var err error
+		ctx, db, err = custom.BeforeDelete(ctx, in, db)
+		if err != nil {
+			return nil, err
+		}
+	}
 	return &DeleteIntPointResponse{}, DefaultDeleteIntPoint(ctx, &IntPoint{Id: in.GetId()}, db)
 }
 
-type IntPointServiceCustomMethodCustomHandler interface {
-	CustomCustomMethod(context.Context, *google_protobuf2.Empty) (*google_protobuf2.Empty, error)
+// IntPointServiceIntPointWithBeforeDelete called before DefaultDeleteIntPoint in the default Delete handler
+type IntPointServiceIntPointWithBeforeDelete interface {
+	BeforeDelete(context.Context, *DeleteIntPointRequest, *gorm1.DB) (context.Context, *gorm1.DB, error)
 }
 
 // CustomMethod ...
 func (m *IntPointServiceDefaultServer) CustomMethod(ctx context.Context, in *google_protobuf2.Empty) (*google_protobuf2.Empty, error) {
-	if custom, ok := interface{}(m).(IntPointServiceCustomMethodCustomHandler); ok {
-		return custom.CustomCustomMethod(ctx, in)
-	}
 	return &google_protobuf2.Empty{}, nil
-}
-
-type IntPointServiceCreateSomethingCustomHandler interface {
-	CustomCreateSomething(context.Context, *Something) (*Something, error)
 }
 
 // CreateSomething ...
 func (m *IntPointServiceDefaultServer) CreateSomething(ctx context.Context, in *Something) (*Something, error) {
-	if custom, ok := interface{}(m).(IntPointServiceCreateSomethingCustomHandler); ok {
-		return custom.CustomCreateSomething(ctx, in)
-	}
 	return &Something{}, nil
 }
 
 type IntPointTxnDefaultServer struct {
 }
-type IntPointTxnCreateCustomHandler interface {
-	CustomCreate(context.Context, *CreateIntPointRequest) (*CreateIntPointResponse, error)
-}
 
 // Create ...
 func (m *IntPointTxnDefaultServer) Create(ctx context.Context, in *CreateIntPointRequest) (*CreateIntPointResponse, error) {
-	if custom, ok := interface{}(m).(IntPointTxnCreateCustomHandler); ok {
-		return custom.CustomCreate(ctx, in)
-	}
 	txn, ok := gorm2.FromContext(ctx)
 	if !ok {
 		return nil, errors.New("Database Transaction For Request Missing")
@@ -366,6 +372,13 @@ func (m *IntPointTxnDefaultServer) Create(ctx context.Context, in *CreateIntPoin
 	db := txn.Begin()
 	if db.Error != nil {
 		return nil, db.Error
+	}
+	if custom, ok := interface{}(in).(IntPointTxnIntPointWithBeforeCreate); ok {
+		var err error
+		ctx, db, err = custom.BeforeCreate(ctx, in, db)
+		if err != nil {
+			return nil, err
+		}
 	}
 	res, err := DefaultCreateIntPoint(ctx, in.GetPayload(), db)
 	if err != nil {
@@ -374,15 +387,13 @@ func (m *IntPointTxnDefaultServer) Create(ctx context.Context, in *CreateIntPoin
 	return &CreateIntPointResponse{Result: res}, nil
 }
 
-type IntPointTxnReadCustomHandler interface {
-	CustomRead(context.Context, *ReadIntPointRequest) (*ReadIntPointResponse, error)
+// IntPointTxnIntPointWithBeforeCreate called before DefaultCreateIntPoint in the default Create handler
+type IntPointTxnIntPointWithBeforeCreate interface {
+	BeforeCreate(context.Context, *CreateIntPointRequest, *gorm1.DB) (context.Context, *gorm1.DB, error)
 }
 
 // Read ...
 func (m *IntPointTxnDefaultServer) Read(ctx context.Context, in *ReadIntPointRequest) (*ReadIntPointResponse, error) {
-	if custom, ok := interface{}(m).(IntPointTxnReadCustomHandler); ok {
-		return custom.CustomRead(ctx, in)
-	}
 	txn, ok := gorm2.FromContext(ctx)
 	if !ok {
 		return nil, errors.New("Database Transaction For Request Missing")
@@ -390,6 +401,13 @@ func (m *IntPointTxnDefaultServer) Read(ctx context.Context, in *ReadIntPointReq
 	db := txn.Begin()
 	if db.Error != nil {
 		return nil, db.Error
+	}
+	if custom, ok := interface{}(in).(IntPointTxnIntPointWithBeforeRead); ok {
+		var err error
+		ctx, db, err = custom.BeforeRead(ctx, in, db)
+		if err != nil {
+			return nil, err
+		}
 	}
 	res, err := DefaultReadIntPoint(ctx, &IntPoint{Id: in.GetId()}, db)
 	if err != nil {
@@ -398,15 +416,13 @@ func (m *IntPointTxnDefaultServer) Read(ctx context.Context, in *ReadIntPointReq
 	return &ReadIntPointResponse{Result: res}, nil
 }
 
-type IntPointTxnUpdateCustomHandler interface {
-	CustomUpdate(context.Context, *UpdateIntPointRequest) (*UpdateIntPointResponse, error)
+// IntPointTxnIntPointWithBeforeRead called before DefaultReadIntPoint in the default Read handler
+type IntPointTxnIntPointWithBeforeRead interface {
+	BeforeRead(context.Context, *ReadIntPointRequest, *gorm1.DB) (context.Context, *gorm1.DB, error)
 }
 
 // Update ...
 func (m *IntPointTxnDefaultServer) Update(ctx context.Context, in *UpdateIntPointRequest) (*UpdateIntPointResponse, error) {
-	if custom, ok := interface{}(m).(IntPointTxnUpdateCustomHandler); ok {
-		return custom.CustomUpdate(ctx, in)
-	}
 	txn, ok := gorm2.FromContext(ctx)
 	if !ok {
 		return nil, errors.New("Database Transaction For Request Missing")
@@ -414,6 +430,13 @@ func (m *IntPointTxnDefaultServer) Update(ctx context.Context, in *UpdateIntPoin
 	db := txn.Begin()
 	if db.Error != nil {
 		return nil, db.Error
+	}
+	if custom, ok := interface{}(in).(IntPointTxnIntPointWithBeforeUpdate); ok {
+		var err error
+		ctx, db, err = custom.BeforeUpdate(ctx, in, db)
+		if err != nil {
+			return nil, err
+		}
 	}
 	res, err := DefaultStrictUpdateIntPoint(ctx, in.GetPayload(), db)
 	if err != nil {
@@ -422,15 +445,13 @@ func (m *IntPointTxnDefaultServer) Update(ctx context.Context, in *UpdateIntPoin
 	return &UpdateIntPointResponse{Result: res}, nil
 }
 
-type IntPointTxnListCustomHandler interface {
-	CustomList(context.Context, *google_protobuf2.Empty) (*ListIntPointResponse, error)
+// IntPointTxnIntPointWithBeforeUpdate called before DefaultUpdateIntPoint in the default Update handler
+type IntPointTxnIntPointWithBeforeUpdate interface {
+	BeforeUpdate(context.Context, *UpdateIntPointRequest, *gorm1.DB) (context.Context, *gorm1.DB, error)
 }
 
 // List ...
 func (m *IntPointTxnDefaultServer) List(ctx context.Context, in *google_protobuf2.Empty) (*ListIntPointResponse, error) {
-	if custom, ok := interface{}(m).(IntPointTxnListCustomHandler); ok {
-		return custom.CustomList(ctx, in)
-	}
 	txn, ok := gorm2.FromContext(ctx)
 	if !ok {
 		return nil, errors.New("Database Transaction For Request Missing")
@@ -438,6 +459,13 @@ func (m *IntPointTxnDefaultServer) List(ctx context.Context, in *google_protobuf
 	db := txn.Begin()
 	if db.Error != nil {
 		return nil, db.Error
+	}
+	if custom, ok := interface{}(in).(IntPointTxnIntPointWithBeforeList); ok {
+		var err error
+		ctx, db, err = custom.BeforeList(ctx, in, db)
+		if err != nil {
+			return nil, err
+		}
 	}
 	res, err := DefaultListIntPoint(ctx, db, in)
 	if err != nil {
@@ -446,15 +474,13 @@ func (m *IntPointTxnDefaultServer) List(ctx context.Context, in *google_protobuf
 	return &ListIntPointResponse{Results: res}, nil
 }
 
-type IntPointTxnDeleteCustomHandler interface {
-	CustomDelete(context.Context, *DeleteIntPointRequest) (*DeleteIntPointResponse, error)
+// IntPointTxnIntPointWithBeforeList called before DefaultListIntPoint in the default List handler
+type IntPointTxnIntPointWithBeforeList interface {
+	BeforeList(context.Context, *google_protobuf2.Empty, *gorm1.DB) (context.Context, *gorm1.DB, error)
 }
 
 // Delete ...
 func (m *IntPointTxnDefaultServer) Delete(ctx context.Context, in *DeleteIntPointRequest) (*DeleteIntPointResponse, error) {
-	if custom, ok := interface{}(m).(IntPointTxnDeleteCustomHandler); ok {
-		return custom.CustomDelete(ctx, in)
-	}
 	txn, ok := gorm2.FromContext(ctx)
 	if !ok {
 		return nil, errors.New("Database Transaction For Request Missing")
@@ -463,29 +489,27 @@ func (m *IntPointTxnDefaultServer) Delete(ctx context.Context, in *DeleteIntPoin
 	if db.Error != nil {
 		return nil, db.Error
 	}
+	if custom, ok := interface{}(in).(IntPointTxnIntPointWithBeforeDelete); ok {
+		var err error
+		ctx, db, err = custom.BeforeDelete(ctx, in, db)
+		if err != nil {
+			return nil, err
+		}
+	}
 	return &DeleteIntPointResponse{}, DefaultDeleteIntPoint(ctx, &IntPoint{Id: in.GetId()}, db)
 }
 
-type IntPointTxnCustomMethodCustomHandler interface {
-	CustomCustomMethod(context.Context, *google_protobuf2.Empty) (*google_protobuf2.Empty, error)
+// IntPointTxnIntPointWithBeforeDelete called before DefaultDeleteIntPoint in the default Delete handler
+type IntPointTxnIntPointWithBeforeDelete interface {
+	BeforeDelete(context.Context, *DeleteIntPointRequest, *gorm1.DB) (context.Context, *gorm1.DB, error)
 }
 
 // CustomMethod ...
 func (m *IntPointTxnDefaultServer) CustomMethod(ctx context.Context, in *google_protobuf2.Empty) (*google_protobuf2.Empty, error) {
-	if custom, ok := interface{}(m).(IntPointTxnCustomMethodCustomHandler); ok {
-		return custom.CustomCustomMethod(ctx, in)
-	}
 	return &google_protobuf2.Empty{}, nil
-}
-
-type IntPointTxnCreateSomethingCustomHandler interface {
-	CustomCreateSomething(context.Context, *Something) (*Something, error)
 }
 
 // CreateSomething ...
 func (m *IntPointTxnDefaultServer) CreateSomething(ctx context.Context, in *Something) (*Something, error) {
-	if custom, ok := interface{}(m).(IntPointTxnCreateSomethingCustomHandler); ok {
-		return custom.CustomCreateSomething(ctx, in)
-	}
 	return &Something{}, nil
 }
