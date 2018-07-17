@@ -204,14 +204,14 @@ func (p *OrmPlugin) parseBasicFields(msg *generator.Descriptor) {
 		tag := fieldOpts.GetTag()
 		fieldName := generator.CamelCase(field.GetName())
 		fieldType, _ := p.GoType(msg, field)
-		if *(field.Type) == typeEnum {
+		if (*(field.Type) != typeMessage || !p.isOrmable(fieldType)) && field.IsRepeated() {
+			// Not implemented yet
+			continue
+		} else if *(field.Type) == typeEnum {
 			fieldType = "int32"
 			if p.stringEnums {
 				fieldType = "string"
 			}
-		} else if *(field.Type) != typeMessage && field.IsRepeated() {
-			// Not implemented yet
-			continue
 		} else if *(field.Type) == typeMessage {
 			//Check for WKTs or fields of nonormable types
 			parts := strings.Split(fieldType, ".")
