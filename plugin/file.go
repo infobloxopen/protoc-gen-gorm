@@ -28,7 +28,7 @@ func (p *OrmPlugin) CleanFiles(response *plugin.CodeGeneratorResponse) {
 		sections := strings.SplitAfterN(file.GetContent(), "\n", 3)
 		versionString := ""
 		if ProtocGenGormVersion != "" {
-			versionString = fmt.Sprintf("// Generated with protoc-gen-gorm version: %s\n", ProtocGenGormVersion)
+			versionString = fmt.Sprintf("\n// Generated with protoc-gen-gorm version: %s\n", ProtocGenGormVersion)
 		}
 		if AtlasAppToolkitVersion != "" {
 			versionString = fmt.Sprintf("%s// Anticipating compatibility with atlas-app-toolkit version: %s\n", versionString, AtlasAppToolkitVersion)
