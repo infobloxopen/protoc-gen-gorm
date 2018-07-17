@@ -44,6 +44,10 @@
   packages = [
     "jsonpb",
     "proto",
+    "protoc-gen-go/descriptor",
+    "protoc-gen-go/generator",
+    "protoc-gen-go/generator/internal/remap",
+    "protoc-gen-go/plugin",
     "ptypes",
     "ptypes/any",
     "ptypes/duration",
@@ -52,7 +56,7 @@
     "ptypes/timestamp",
     "ptypes/wrappers"
   ]
-  revision = "9eb2c01ac278a5d89ce4b2be68fe4500955d8179"
+  revision = "1325a051a2753cd67556b182843b1b693d0854cd"
 
 [[projects]]
   name = "github.com/google/uuid"
@@ -102,7 +106,7 @@
     "rpc/errfields",
     "rpc/resource"
   ]
-  revision = "1498dd01b71c7ef524204741041ae42c77e8c60e"
+  revision = "286a0d8a6816d1ed18e53d87b630c5e93adc6a02"
 
 [[projects]]
   branch = "master"
@@ -137,7 +141,7 @@
     "pdp-service",
     "pep"
   ]
-  revision = "20649c5cb0c8eef9568422893d07808fd3243547"
+  revision = "1e83dfa8abb530682048ef4c21eb302c870ced10"
 
 [[projects]]
   name = "github.com/jinzhu/gorm"
@@ -204,7 +208,7 @@
     "internal/timeseries",
     "trace"
   ]
-  revision = "afe8f62b1d6bbd81f31868121a50b06d8188e1f9"
+  revision = "292b43bbf7cb8d35ddf40f8d5100ef3837cced3f"
 
 [[projects]]
   branch = "master"
@@ -213,7 +217,7 @@
     "unix",
     "windows"
   ]
-  revision = "63fc586f45fe72d95d5240a5d5eb95e6503907d3"
+  revision = "1b2967e3c290b7c545b3db0deeda16e9be4f98a2"
 
 [[projects]]
   name = "golang.org/x/text"
@@ -243,7 +247,7 @@
     "googleapis/rpc/code",
     "googleapis/rpc/status"
   ]
-  revision = "80063a038e333bbe006c878e4c5ce4c74d055498"
+  revision = "e92b116572682a5b432ddd840aeaba2a559eeff1"
 
 [[projects]]
   name = "google.golang.org/grpc"
@@ -280,6 +284,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "0de2acaeca0874d66b644064762116dd5aa766d52858ab82ab4eb8fa5b3aeb08"
+  inputs-digest = "bd18cd0c3eae5bc276438b4a452a06001c48f86ba0b3c40ab8a7cb57f3e8be6f"
   solver-name = "gps-cdcl"
   solver-version = 1

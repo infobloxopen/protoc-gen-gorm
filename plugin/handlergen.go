@@ -8,6 +8,43 @@ import (
 	jgorm "github.com/jinzhu/gorm"
 )
 
+var isCollectionFetcherGenerated bool
+
+func (p *OrmPlugin) generateCollectionOperatorsFetcher() {
+	if isCollectionFetcherGenerated == true {
+		return
+	}
+	isCollectionFetcherGenerated = true
+	p.P(`// getCollectionOperators takes collection operator values from corresponding message fields`)
+	p.P(`func getCollectionOperators(in interface{}) (*`, p.Import(queryImport), `.Filtering, *`, p.Import(queryImport), `.Sorting, *`, p.Import(queryImport), `.Pagination, *`, p.Import(queryImport), `.FieldSelection, error) {`)
+	p.P(`f := &`, p.Import(queryImport), `.Filtering{}`)
+	p.P(`err := `, p.Import(gatewayImport), `.GetCollectionOp(in, f)`)
+	p.P(`if err != nil {`)
+	p.P(`return nil, nil, nil, nil, err`)
+	p.P(`}`)
+
+	p.P(`s := &`, p.Import(queryImport), `.Sorting{}`)
+	p.P(`err = `, p.Import(gatewayImport), `.GetCollectionOp(in, s)`)
+	p.P(`if err != nil {`)
+	p.P(`return nil, nil, nil, nil, err`)
+	p.P(`}`)
+
+	p.P(`p := &`, p.Import(queryImport), `.Pagination{}`)
+	p.P(`err = `, p.Import(gatewayImport), `.GetCollectionOp(in, p)`)
+	p.P(`if err != nil {`)
+	p.P(`return nil, nil, nil, nil, err`)
+	p.P(`}`)
+
+	p.P(`fs := &`, p.Import(queryImport), `.FieldSelection{}`)
+	p.P(`err = `, p.Import(gatewayImport), `.GetCollectionOp(in, fs)`)
+	p.P(`if err != nil {`)
+	p.P(`return nil, nil, nil, nil, err`)
+	p.P(`}`)
+
+	p.P(`return f, s, p, fs, nil`)
+	p.P(`}`)
+}
+
 func (p *OrmPlugin) generateDefaultHandlers(file *generator.FileDescriptor) {
 	for _, message := range file.Messages() {
 		if getMessageOptions(message).GetOrmable() {
@@ -21,6 +58,7 @@ func (p *OrmPlugin) generateDefaultHandlers(file *generator.FileDescriptor) {
 				p.generateStrictUpdateHandler(message)
 				p.generatePatchHandler(message)
 			}
+			p.generateCollectionOperatorsFetcher()
 			p.generateListHandler(message)
 		}
 	}
@@ -62,7 +100,6 @@ func (p *OrmPlugin) generateReadHandler(message *generator.Descriptor) {
 	p.P(`return nil, err`)
 	p.P(`}`)
 	p.sortOrderedHasMany(message)
-	p.generatePreloading(ormable)
 	p.P(`ormResponse := `, ormable.Name, `{}`)
 	p.P(`if err = db.Where(&ormParams).First(&ormResponse).Error; err != nil {`)
 	p.P(`return nil, err`)
@@ -122,8 +159,6 @@ func (p *OrmPlugin) generatePatchHandler(message *generator.Descriptor) {
 	if isMultiAccount {
 		p.P(`db = db.Where(&`, typeName, `ORM{AccountID: accountID})`)
 	}
-
-	p.generatePreloading(ormable)
 
 	p.P(`ormObj := `, ormable.Name, `{}`)
 	p.P(`if err := db.Where(&ormParams).First(&ormObj).Error; err != nil {`)
@@ -266,9 +301,15 @@ func (p *OrmPlugin) generateListHandler(message *generator.Descriptor) {
 
 	p.P(`// DefaultList`, typeName, ` executes a gorm list call`)
 	p.P(`func DefaultList`, typeName, `(ctx context.Context, db *`, p.Import(gormImport), ``,
-		`.DB) ([]*`, typeName, `, error) {`)
+		`.DB, req interface{}) ([]*`, typeName, `, error) {`)
 	p.P(`ormResponse := []`, ormable.Name, `{}`)
-	p.P(`db, err := `, p.Import(tkgormImport), `.ApplyCollectionOperators(db, ctx)`)
+
+	p.P(`f, s, p, fs, err := getCollectionOperators(req)`)
+	p.P(`if err != nil {`)
+	p.P(`return nil, err`)
+	p.P(`}`)
+
+	p.P(`db, err = `, p.Import(tkgormImport), `.ApplyCollectionOperators(db, &`, ormable.Name, `{}, f, s, p, fs)`)
 	p.P(`if err != nil {`)
 	p.P(`return nil, err`)
 	p.P(`}`)
@@ -279,7 +320,6 @@ func (p *OrmPlugin) generateListHandler(message *generator.Descriptor) {
 	p.P(`}`)
 	p.P(`db = db.Where(&ormParams)`)
 	p.sortOrderedHasMany(message)
-	p.generatePreloading(ormable)
 
 	// add default ordering by primary key
 	if p.hasPrimaryKey(ormable) {
@@ -313,12 +353,28 @@ func (p *OrmPlugin) generateStrictUpdateHandler(message *generator.Descriptor) {
 	p.P(`func DefaultStrictUpdate`, typeName, `(ctx context.Context, in *`,
 		typeName, `, db *`, p.Import(gormImport), `.DB) (*`, typeName, `, error) {`)
 	p.P(`if in == nil {`)
-	p.P(`return nil, fmt.Errorf("Nil argument to DefaultCascadedUpdate`, typeName, `")`)
+	p.P(`return nil, fmt.Errorf("Nil argument to DefaultStrictUpdate`, typeName, `")`)
 	p.P(`}`)
 	p.P(`ormObj, err := in.ToORM(ctx)`)
 	p.P(`if err != nil {`)
 	p.P(`return nil, err`)
 	p.P(`}`)
+
+	p.P(`count := 1`)
+	// add default ordering by primary key
+	ormable := p.getOrmable(typeName)
+	if p.hasPrimaryKey(ormable) {
+		pkName, pk := p.findPrimaryKey(ormable)
+		column := pk.GetTag().GetColumn()
+		if len(column) == 0 {
+			column = jgorm.ToDBName(pkName)
+		}
+		p.P(`err = db.Model(&ormObj).Where("`, column, `=?", ormObj.`, pkName, `).Count(&count).Error`)
+		p.P(`if err != nil {`)
+		p.P(`return nil, err`)
+		p.P(`}`)
+	}
+
 	p.removeChildAssociations(message)
 	if getMessageOptions(message).GetMultiAccount() {
 		p.P(`db = db.Where(&`, typeName, `ORM{AccountID: ormObj.AccountID})`)
@@ -331,26 +387,14 @@ func (p *OrmPlugin) generateStrictUpdateHandler(message *generator.Descriptor) {
 	p.P(`if err != nil {`)
 	p.P(`return nil, err`)
 	p.P(`}`)
-	p.P(`return &pbResponse, nil`)
+
+	p.P(`if count == 0 {`)
+	p.P(`err = `, p.Import(gatewayImport), `.SetCreated(ctx, "")`)
+	p.P(`}`)
+
+	p.P(`return &pbResponse, err`)
 	p.P(`}`)
 	p.P()
-}
-
-func (p *OrmPlugin) generatePreloading(ormable *OrmableType) {
-	var assocList []string
-	for _, fieldName := range p.getSortedFieldNames(ormable.Fields) {
-		field := ormable.Fields[fieldName]
-		if field.GetAssociation() != nil && field.GetHasMany().GetPositionField() == "" {
-			assocList = append(assocList, fieldName)
-		}
-	}
-	if len(assocList) != 0 {
-		preload := ""
-		for _, assoc := range assocList {
-			preload += fmt.Sprintf(`.Preload("%s")`, assoc)
-		}
-		p.P(`db = db`, preload)
-	}
 }
 
 func (p *OrmPlugin) setupOrderedHasMany(message *generator.Descriptor) {

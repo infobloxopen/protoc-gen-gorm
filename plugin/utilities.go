@@ -1,11 +1,19 @@
 package plugin
 
 import (
+	"strings"
+
 	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/protoc-gen-gogo/descriptor"
 	"github.com/gogo/protobuf/protoc-gen-gogo/generator"
 	gorm "github.com/infobloxopen/protoc-gen-gorm/options"
 )
+
+func (p *OrmPlugin) getMsgName(o generator.Object) string {
+	fqTypeName := p.TypeName(o)
+	a := strings.Split(fqTypeName, ".")
+	return a[len(a)-1]
+}
 
 // retrieves the GormMessageOptions from a message
 func getMessageOptions(message *generator.Descriptor) *gorm.GormMessageOptions {
