@@ -43,18 +43,10 @@ message ReadIntPointResponse {
 
 message UpdateIntPointRequest {
     IntPoint payload = 1;
+    google.protobuf.FieldMask gerogeri_gegege = 2;
 }
 
 message UpdateIntPointResponse {
-    IntPoint result = 1;
-}
-
-message PatchIntPointRequest {
-    IntPoint payload = 1;
-    google.protobuf.FieldMask update_mask = 2;
-}
-
-message PatchIntPointResponse {
     IntPoint result = 1;
 }
 
@@ -87,7 +79,6 @@ service IntPointService {
   rpc Create ( CreateIntPointRequest ) returns ( CreateIntPointResponse ) {}
   rpc Read ( ReadIntPointRequest ) returns ( ReadIntPointResponse ) {}
   rpc Update ( UpdateIntPointRequest ) returns ( UpdateIntPointResponse ) {}
-  rpc Patch ( PatchIntPointRequest ) returns ( PatchIntPointResponse ) {}
   rpc List ( google.protobuf.Empty ) returns ( ListIntPointResponse ) {}
   rpc Delete ( DeleteIntPointRequest ) returns  ( DeleteIntPointResponse ) {
       // This option is required because the type/table can't be inferred
@@ -112,7 +103,6 @@ service IntPointTxn {
   rpc Create ( CreateIntPointRequest ) returns ( CreateIntPointResponse ) {}
   rpc Read ( ReadIntPointRequest ) returns ( ReadIntPointResponse ) {}
   rpc Update ( UpdateIntPointRequest ) returns ( UpdateIntPointResponse ) {}
-  rpc Patch ( PatchIntPointRequest ) returns ( PatchIntPointResponse ) {}
   rpc List ( google.protobuf.Empty ) returns ( ListIntPointResponse ) {}
   rpc Delete ( DeleteIntPointRequest ) returns  ( DeleteIntPointResponse ) {
       // This option is required because the type/table can't be inferred

@@ -291,28 +291,11 @@ func (m *IntPointServiceDefaultServer) Update(ctx context.Context, in *UpdateInt
 		return custom.CustomUpdate(ctx, in)
 	}
 	db := m.DB
-	res, err := DefaultStrictUpdateIntPoint(ctx, in.GetPayload(), db)
+	res, err := DefaultPatchIntPoint(ctx, in.GetPayload(), in.GetGerogeriGegege(), db)
 	if err != nil {
 		return nil, err
 	}
 	return &UpdateIntPointResponse{Result: res}, nil
-}
-
-type IntPointServicePatchCustomHandler interface {
-	CustomPatch(context.Context, *PatchIntPointRequest) (*PatchIntPointResponse, error)
-}
-
-// Patch ...
-func (m *IntPointServiceDefaultServer) Patch(ctx context.Context, in *PatchIntPointRequest) (*PatchIntPointResponse, error) {
-	if custom, ok := interface{}(m).(IntPointServicePatchCustomHandler); ok {
-		return custom.CustomPatch(ctx, in)
-	}
-	db := m.DB
-	res, err := DefaultPatchIntPoint(ctx, in.GetPayload(), in.GetUpdateMask(), db)
-	if err != nil {
-		return nil, err
-	}
-	return &PatchIntPointResponse{Result: res}, nil
 }
 
 type IntPointServiceListCustomHandler interface {
@@ -436,35 +419,11 @@ func (m *IntPointTxnDefaultServer) Update(ctx context.Context, in *UpdateIntPoin
 	if db.Error != nil {
 		return nil, db.Error
 	}
-	res, err := DefaultStrictUpdateIntPoint(ctx, in.GetPayload(), db)
+	res, err := DefaultPatchIntPoint(ctx, in.GetPayload(), in.GetGerogeriGegege(), db)
 	if err != nil {
 		return nil, err
 	}
 	return &UpdateIntPointResponse{Result: res}, nil
-}
-
-type IntPointTxnPatchCustomHandler interface {
-	CustomPatch(context.Context, *PatchIntPointRequest) (*PatchIntPointResponse, error)
-}
-
-// Patch ...
-func (m *IntPointTxnDefaultServer) Patch(ctx context.Context, in *PatchIntPointRequest) (*PatchIntPointResponse, error) {
-	if custom, ok := interface{}(m).(IntPointTxnPatchCustomHandler); ok {
-		return custom.CustomPatch(ctx, in)
-	}
-	txn, ok := gorm2.FromContext(ctx)
-	if !ok {
-		return nil, errors.New("Database Transaction For Request Missing")
-	}
-	db := txn.Begin()
-	if db.Error != nil {
-		return nil, db.Error
-	}
-	res, err := DefaultPatchIntPoint(ctx, in.GetPayload(), in.GetUpdateMask(), db)
-	if err != nil {
-		return nil, err
-	}
-	return &PatchIntPointResponse{Result: res}, nil
 }
 
 type IntPointTxnListCustomHandler interface {

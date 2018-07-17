@@ -77,7 +77,6 @@ func (p *OrmPlugin) generatePatchHandler(message *generator.Descriptor) {
 	var isMultiAccount bool
 	var hasIDField bool
 
-
 	typeName := p.TypeName(message)
 	ormable := p.getOrmable(typeName)
 

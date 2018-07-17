@@ -21,8 +21,6 @@ It has these top-level messages:
 	ReadIntPointResponse
 	UpdateIntPointRequest
 	UpdateIntPointResponse
-	PatchIntPointRequest
-	PatchIntPointResponse
 	DeleteIntPointRequest
 	DeleteIntPointResponse
 	ListIntPointResponse
