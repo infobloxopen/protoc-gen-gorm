@@ -349,7 +349,7 @@ func (p *OrmPlugin) addIncludedField(ormable *OrmableType, field *gorm.ExtraFiel
 		} else if rawType == "Inet" {
 			rawType = fmt.Sprintf("%s.Inet", p.Import(gtypesImport))
 		} else {
-			log.Printf(`WARNING: included field %q of type %q is not a recognized special type, and no package specified. This type is assumed to be in the same package as the generated code`,
+			p.warning(`included field %q of type %q is not a recognized special type, and no package specified. This type is assumed to be in the same package as the generated code`,
 				field.GetName(), field.GetType())
 		}
 	}
@@ -816,4 +816,8 @@ func (p *OrmPlugin) generateHookInterfaces(message *generator.Descriptor) {
 		p.P(`}`)
 		p.P()
 	}
+}
+
+func (p *OrmPlugin) warning(format string, v ...interface{}) {
+	log.Printf("WARNING: "+format, v...)
 }
