@@ -102,6 +102,23 @@ func (p *OrmPlugin) countManyToManyAssociationDimension(msg *generator.Descripto
 	return dim
 }
 
+func (p *OrmPlugin) resolveAliasName(goType, goPackage string, file *generator.FileDescriptor) string {
+	originFile := p.currentFile
+	p.setFile(file)
+	typeParts := strings.Split(goType, ".")
+	if len(typeParts) == 2 {
+		if strings.Contains(goPackage, "github.com") {
+			return p.Import(goPackage) + "." + typeParts[1]
+		} else {
+			p.UsingGoImports(goPackage)
+			packageParts := strings.Split(goPackage, "/")
+			return packageParts[len(packageParts)-1] + "." + typeParts[1]
+		}
+	}
+	p.setFile(originFile)
+	return goType
+}
+
 func (p *OrmPlugin) parseHasMany(msg *generator.Descriptor, parent *OrmableType, fieldName string, fieldType string, child *OrmableType, opts *gorm.GormFieldOptions) {
 	typeName := generator.CamelCaseSlice(msg.TypeName())
 	hasMany := opts.GetHasMany()
@@ -131,7 +148,8 @@ func (p *OrmPlugin) parseHasMany(msg *generator.Descriptor, parent *OrmableType,
 	} else {
 		foreignKeyType = "*" + assocKey.Type
 	}
-	foreignKey := &Field{Type: foreignKeyType, GormFieldOptions: &gorm.GormFieldOptions{Tag: hasMany.GetForeignkeyTag()}}
+	foreignKeyType = p.resolveAliasName(foreignKeyType, assocKey.Package, child.File)
+	foreignKey := &Field{Type: foreignKeyType, Package: assocKey.Package, GormFieldOptions: &gorm.GormFieldOptions{Tag: hasMany.GetForeignkeyTag()}}
 	var foreignKeyName string
 	if foreignKeyName = hasMany.GetForeignkey(); foreignKeyName == "" {
 		if p.countHasAssociationDimension(msg, fieldType) == 1 {
@@ -198,7 +216,8 @@ func (p *OrmPlugin) parseHasOne(msg *generator.Descriptor, parent *OrmableType, 
 	} else {
 		foreignKeyType = "*" + assocKey.Type
 	}
-	foreignKey := &Field{Type: foreignKeyType, GormFieldOptions: &gorm.GormFieldOptions{Tag: hasOne.GetForeignkeyTag()}}
+	foreignKeyType = p.resolveAliasName(foreignKeyType, assocKey.Package, child.File)
+	foreignKey := &Field{Type: foreignKeyType, Package: assocKey.Package, GormFieldOptions: &gorm.GormFieldOptions{Tag: hasOne.GetForeignkeyTag()}}
 	var foreignKeyName string
 	if foreignKeyName = generator.CamelCase(hasOne.GetForeignkey()); foreignKeyName == "" {
 		if p.countHasAssociationDimension(msg, fieldType) == 1 {
@@ -252,7 +271,8 @@ func (p *OrmPlugin) parseBelongsTo(msg *generator.Descriptor, child *OrmableType
 	} else {
 		foreignKeyType = "*" + assocKey.Type
 	}
-	foreignKey := &Field{Type: foreignKeyType, GormFieldOptions: &gorm.GormFieldOptions{Tag: belongsTo.GetForeignkeyTag()}}
+	foreignKeyType = p.resolveAliasName(foreignKeyType, assocKey.Package, child.File)
+	foreignKey := &Field{Type: foreignKeyType, Package: assocKey.Package, GormFieldOptions: &gorm.GormFieldOptions{Tag: belongsTo.GetForeignkeyTag()}}
 	var foreignKeyName string
 	if foreignKeyName = generator.CamelCase(belongsTo.GetForeignkey()); foreignKeyName == "" {
 		if p.countBelongsToAssociationDimension(msg, fieldType) == 1 {

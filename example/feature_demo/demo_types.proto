@@ -8,6 +8,7 @@ import "google/protobuf/empty.proto";
 import "google/protobuf/timestamp.proto";
 import "example/feature_demo/demo_service.proto";
 import "github.com/infobloxopen/protoc-gen-gorm/example/user/user.proto";
+import "example/feature_demo/demo_multi_file.proto";
 
 option go_package = "github.com/infobloxopen/protoc-gen-gorm/example/feature_demo;example";
 
@@ -123,4 +124,13 @@ message APIOnlyType {
   // repeated field in another message that field will be dropped in the Orm
   // model, and would have to be set by hook
   string contents = 1;
+}
+
+
+message PrimaryUUIDType {
+  option (gorm.opts) = {
+    ormable: true,
+  };
+  gorm.types.UUIDValue id = 1;
+  ExternalChild child = 2;
 }
