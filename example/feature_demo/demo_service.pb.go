@@ -41,7 +41,7 @@ func (m *IntPoint) Reset()         { *m = IntPoint{} }
 func (m *IntPoint) String() string { return proto.CompactTextString(m) }
 func (*IntPoint) ProtoMessage()    {}
 func (*IntPoint) Descriptor() ([]byte, []int) {
-	return fileDescriptor_demo_service_ad2e77bb3754d04a, []int{0}
+	return fileDescriptor_demo_service_96736b0ed0bd100b, []int{0}
 }
 func (m *IntPoint) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_IntPoint.Unmarshal(m, b)
@@ -95,7 +95,7 @@ func (m *CreateIntPointRequest) Reset()         { *m = CreateIntPointRequest{} }
 func (m *CreateIntPointRequest) String() string { return proto.CompactTextString(m) }
 func (*CreateIntPointRequest) ProtoMessage()    {}
 func (*CreateIntPointRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_demo_service_ad2e77bb3754d04a, []int{1}
+	return fileDescriptor_demo_service_96736b0ed0bd100b, []int{1}
 }
 func (m *CreateIntPointRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_CreateIntPointRequest.Unmarshal(m, b)
@@ -134,7 +134,7 @@ func (m *CreateIntPointResponse) Reset()         { *m = CreateIntPointResponse{}
 func (m *CreateIntPointResponse) String() string { return proto.CompactTextString(m) }
 func (*CreateIntPointResponse) ProtoMessage()    {}
 func (*CreateIntPointResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_demo_service_ad2e77bb3754d04a, []int{2}
+	return fileDescriptor_demo_service_96736b0ed0bd100b, []int{2}
 }
 func (m *CreateIntPointResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_CreateIntPointResponse.Unmarshal(m, b)
@@ -173,7 +173,7 @@ func (m *ReadIntPointRequest) Reset()         { *m = ReadIntPointRequest{} }
 func (m *ReadIntPointRequest) String() string { return proto.CompactTextString(m) }
 func (*ReadIntPointRequest) ProtoMessage()    {}
 func (*ReadIntPointRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_demo_service_ad2e77bb3754d04a, []int{3}
+	return fileDescriptor_demo_service_96736b0ed0bd100b, []int{3}
 }
 func (m *ReadIntPointRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ReadIntPointRequest.Unmarshal(m, b)
@@ -212,7 +212,7 @@ func (m *ReadIntPointResponse) Reset()         { *m = ReadIntPointResponse{} }
 func (m *ReadIntPointResponse) String() string { return proto.CompactTextString(m) }
 func (*ReadIntPointResponse) ProtoMessage()    {}
 func (*ReadIntPointResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_demo_service_ad2e77bb3754d04a, []int{4}
+	return fileDescriptor_demo_service_96736b0ed0bd100b, []int{4}
 }
 func (m *ReadIntPointResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ReadIntPointResponse.Unmarshal(m, b)
@@ -250,7 +250,7 @@ func (m *UpdateIntPointRequest) Reset()         { *m = UpdateIntPointRequest{} }
 func (m *UpdateIntPointRequest) String() string { return proto.CompactTextString(m) }
 func (*UpdateIntPointRequest) ProtoMessage()    {}
 func (*UpdateIntPointRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_demo_service_ad2e77bb3754d04a, []int{5}
+	return fileDescriptor_demo_service_96736b0ed0bd100b, []int{5}
 }
 func (m *UpdateIntPointRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_UpdateIntPointRequest.Unmarshal(m, b)
@@ -288,7 +288,7 @@ func (m *UpdateIntPointResponse) Reset()         { *m = UpdateIntPointResponse{}
 func (m *UpdateIntPointResponse) String() string { return proto.CompactTextString(m) }
 func (*UpdateIntPointResponse) ProtoMessage()    {}
 func (*UpdateIntPointResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_demo_service_ad2e77bb3754d04a, []int{6}
+	return fileDescriptor_demo_service_96736b0ed0bd100b, []int{6}
 }
 func (m *UpdateIntPointResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_UpdateIntPointResponse.Unmarshal(m, b)
@@ -327,7 +327,7 @@ func (m *DeleteIntPointRequest) Reset()         { *m = DeleteIntPointRequest{} }
 func (m *DeleteIntPointRequest) String() string { return proto.CompactTextString(m) }
 func (*DeleteIntPointRequest) ProtoMessage()    {}
 func (*DeleteIntPointRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_demo_service_ad2e77bb3754d04a, []int{7}
+	return fileDescriptor_demo_service_96736b0ed0bd100b, []int{7}
 }
 func (m *DeleteIntPointRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_DeleteIntPointRequest.Unmarshal(m, b)
@@ -366,7 +366,7 @@ func (m *DeleteIntPointResponse) Reset()         { *m = DeleteIntPointResponse{}
 func (m *DeleteIntPointResponse) String() string { return proto.CompactTextString(m) }
 func (*DeleteIntPointResponse) ProtoMessage()    {}
 func (*DeleteIntPointResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_demo_service_ad2e77bb3754d04a, []int{8}
+	return fileDescriptor_demo_service_96736b0ed0bd100b, []int{8}
 }
 func (m *DeleteIntPointResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_DeleteIntPointResponse.Unmarshal(m, b)
@@ -398,7 +398,7 @@ func (m *ListIntPointResponse) Reset()         { *m = ListIntPointResponse{} }
 func (m *ListIntPointResponse) String() string { return proto.CompactTextString(m) }
 func (*ListIntPointResponse) ProtoMessage()    {}
 func (*ListIntPointResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_demo_service_ad2e77bb3754d04a, []int{9}
+	return fileDescriptor_demo_service_96736b0ed0bd100b, []int{9}
 }
 func (m *ListIntPointResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ListIntPointResponse.Unmarshal(m, b)
@@ -436,7 +436,7 @@ func (m *Something) Reset()         { *m = Something{} }
 func (m *Something) String() string { return proto.CompactTextString(m) }
 func (*Something) ProtoMessage()    {}
 func (*Something) Descriptor() ([]byte, []int) {
-	return fileDescriptor_demo_service_ad2e77bb3754d04a, []int{10}
+	return fileDescriptor_demo_service_96736b0ed0bd100b, []int{10}
 }
 func (m *Something) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Something.Unmarshal(m, b)
@@ -470,7 +470,7 @@ func (m *ListIntPointRequest) Reset()         { *m = ListIntPointRequest{} }
 func (m *ListIntPointRequest) String() string { return proto.CompactTextString(m) }
 func (*ListIntPointRequest) ProtoMessage()    {}
 func (*ListIntPointRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_demo_service_ad2e77bb3754d04a, []int{11}
+	return fileDescriptor_demo_service_96736b0ed0bd100b, []int{11}
 }
 func (m *ListIntPointRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ListIntPointRequest.Unmarshal(m, b)
@@ -1094,10 +1094,10 @@ var _IntPointTxn_serviceDesc = grpc.ServiceDesc{
 }
 
 func init() {
-	proto.RegisterFile("example/feature_demo/demo_service.proto", fileDescriptor_demo_service_ad2e77bb3754d04a)
+	proto.RegisterFile("example/feature_demo/demo_service.proto", fileDescriptor_demo_service_96736b0ed0bd100b)
 }
 
-var fileDescriptor_demo_service_ad2e77bb3754d04a = []byte{
+var fileDescriptor_demo_service_96736b0ed0bd100b = []byte{
 	// 702 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xdc, 0x96, 0xdf, 0x6e, 0xda, 0x30,
 	0x14, 0xc6, 0x09, 0x65, 0x81, 0x1e, 0xba, 0x76, 0x73, 0x4b, 0x07, 0xac, 0xdb, 0xaa, 0x48, 0x53,
