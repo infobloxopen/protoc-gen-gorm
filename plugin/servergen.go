@@ -135,12 +135,18 @@ func (p *OrmPlugin) generateUpdateServerMethod(service *descriptor.ServiceDescri
 	p.generateMethodSignature(inType, outType, methodName, svcName)
 	follows, typeName, updateMask := p.followsUpdateConventions(inType, outType)
 	if follows {
+		p.P(`var err error`)
+		p.P(`var res *`, typeName)
 		p.generateDBSetup(service, outType)
 		p.generatePreserviceCall(svcName, typeName, "Update")
 		if updateMask != "" {
-			p.P(`res, err := DefaultPatch`, typeName, `(ctx, in.GetPayload(), in.Get`, generator.CamelCase(updateMask), `(), db)`)
+			p.P(`if len(in.Get`, generator.CamelCase(updateMask),`().GetPaths()) == 0 {`)
+			p.P(`res, err = DefaultStrictUpdate`, typeName, `(ctx, in.GetPayload(), db)`)
+			p.P(`} else {`)
+			p.P(`res, err = DefaultPatch`, typeName, `(ctx, in.GetPayload(), in.Get`, generator.CamelCase(updateMask), `(), db)`)
+			p.P(`}`)
 		} else {
-			p.P(`res, err := DefaultStrictUpdate`, typeName, `(ctx, in.GetPayload(), db)`)
+			p.P(`res, err = DefaultStrictUpdate`, typeName, `(ctx, in.GetPayload(), db)`)
 		}
 		p.P(`if err != nil {`)
 		p.P(`return nil, err`)

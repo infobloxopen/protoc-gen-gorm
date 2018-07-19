@@ -57,6 +57,7 @@ func (p *OrmPlugin) generateDefaultHandlers(file *generator.FileDescriptor) {
 				p.generateDeleteHandler(message)
 				p.generateStrictUpdateHandler(message)
 				p.generatePatchHandler(message)
+				p.generateApplyFieldMask(message)
 			}
 			p.generateCollectionOperatorsFetcher()
 			p.generateListHandler(message)
@@ -106,6 +107,35 @@ func (p *OrmPlugin) generateReadHandler(message *generator.Descriptor) {
 	p.P(`}`)
 	p.P(`pbResponse, err := ormResponse.ToPB(ctx)`)
 	p.P(`return &pbResponse, err`)
+	p.P(`}`)
+	p.P()
+}
+
+func (p *OrmPlugin) generateApplyFieldMask(message *generator.Descriptor) {
+	typeName := p.TypeName(message)
+
+	p.P(`// DefaultApplyFieldMask`, typeName, ` patches an pbObject with patcher according to a field mask.`)
+	p.P(`func DefaultApplyFieldMask`, typeName, `(ctx context.Context, patchee *`,
+		typeName, `,ormObj *`, typeName, `ORM, patcher *`,
+		typeName, `, updateMask *`, p.Import(fmImport),
+		`.FieldMask, db *`, p.Import(gormImport), `.DB) (*`, typeName, `, error) {`)
+	p.P(`var err error`)
+
+	// Patch pbObj with input according to a field mask.
+	p.P(`for _, f := range updateMask.GetPaths() {`)
+	for _, field := range message.GetField() {
+		ccName := generator.CamelCase(field.GetName())
+		p.P(`if f == "`, ccName, `" {`)
+		p.P(`patchee.`, ccName, ` = patcher.`, ccName)
+		p.removeChildAssociationsByName(message, ccName)
+		p.setupOrderedHasManyByName(message, ccName)
+		p.P(`}`)
+	}
+	p.P(`}`)
+	p.P(`if err != nil {`)
+	p.P(`return nil, err`)
+	p.P(`}`)
+	p.P(`return patchee, nil`)
 	p.P(`}`)
 	p.P()
 }
@@ -173,16 +203,8 @@ func (p *OrmPlugin) generatePatchHandler(message *generator.Descriptor) {
 	p.P(`return nil, err`)
 	p.P(`}`)
 
-	// Patch pbObj with input according to a field mask.
-	p.P(`for _, f := range updateMask.GetPaths() {`)
-	for _, field := range message.GetField() {
-		ccName := generator.CamelCase(field.GetName())
-		p.P(`if f == "`, ccName, `" {`)
-		p.P(`pbObj.`, ccName, ` = in.`, ccName)
-		p.removeChildAssociationsByName(message, ccName)
-		p.setupOrderedHasManyByName(message, ccName)
-		p.P(`}`)
-	}
+	p.P(`if _, err := DefaultApplyFieldMask`, typeName, `(ctx, &pbObj, &ormObj, in, updateMask, db); err != nil {`)
+	p.P(`return nil, err`)
 	p.P(`}`)
 
 	// Convert pbObj back to ormObj to trigger any logic that was

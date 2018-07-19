@@ -645,49 +645,8 @@ func DefaultPatchTypeWithID(ctx context.Context, in *TypeWithID, updateMask *fie
 	if err != nil {
 		return nil, err
 	}
-	for _, f := range updateMask.GetPaths() {
-		if f == "Id" {
-			pbObj.Id = in.Id
-		}
-		if f == "Ip" {
-			pbObj.Ip = in.Ip
-		}
-		if f == "Things" {
-			pbObj.Things = in.Things
-			filterThings := TestTypesORM{}
-			if ormObj.Id == 0 {
-				return nil, errors.New("Can't do overwriting update with no Id value for TypeWithIDORM")
-			}
-			filterThings.ThingsTypeWithIDId = new(uint32)
-			*filterThings.ThingsTypeWithIDId = ormObj.Id
-			if err = db.Where(filterThings).Delete(TestTypesORM{}).Error; err != nil {
-				return nil, err
-			}
-		}
-		if f == "ANestedObject" {
-			pbObj.ANestedObject = in.ANestedObject
-			filterANestedObject := TestTypesORM{}
-			if ormObj.Id == 0 {
-				return nil, errors.New("Can't do overwriting update with no Id value for TypeWithIDORM")
-			}
-			filterANestedObject.ANestedObjectTypeWithIDId = new(uint32)
-			*filterANestedObject.ANestedObjectTypeWithIDId = ormObj.Id
-			if err = db.Where(filterANestedObject).Delete(TestTypesORM{}).Error; err != nil {
-				return nil, err
-			}
-		}
-		if f == "Point" {
-			pbObj.Point = in.Point
-		}
-		if f == "User" {
-			pbObj.User = in.User
-		}
-		if f == "Address" {
-			pbObj.Address = in.Address
-		}
-		if f == "MultiaccountTypeIds" {
-			pbObj.MultiaccountTypeIds = in.MultiaccountTypeIds
-		}
+	if _, err := DefaultApplyFieldMaskTypeWithID(ctx, &pbObj, &ormObj, in, updateMask, db); err != nil {
+		return nil, err
 	}
 	ormObj, err = pbObj.ToORM(ctx)
 	if err != nil {
@@ -701,6 +660,59 @@ func DefaultPatchTypeWithID(ctx context.Context, in *TypeWithID, updateMask *fie
 		return nil, err
 	}
 	return &pbObj, err
+}
+
+// DefaultApplyFieldMaskTypeWithID patches an pbObject with patcher according to a field mask.
+func DefaultApplyFieldMaskTypeWithID(ctx context.Context, patchee *TypeWithID, ormObj *TypeWithIDORM, patcher *TypeWithID, updateMask *field_mask1.FieldMask, db *gorm1.DB) (*TypeWithID, error) {
+	var err error
+	for _, f := range updateMask.GetPaths() {
+		if f == "Id" {
+			patchee.Id = patcher.Id
+		}
+		if f == "Ip" {
+			patchee.Ip = patcher.Ip
+		}
+		if f == "Things" {
+			patchee.Things = patcher.Things
+			filterThings := TestTypesORM{}
+			if ormObj.Id == 0 {
+				return nil, errors.New("Can't do overwriting update with no Id value for TypeWithIDORM")
+			}
+			filterThings.ThingsTypeWithIDId = new(uint32)
+			*filterThings.ThingsTypeWithIDId = ormObj.Id
+			if err = db.Where(filterThings).Delete(TestTypesORM{}).Error; err != nil {
+				return nil, err
+			}
+		}
+		if f == "ANestedObject" {
+			patchee.ANestedObject = patcher.ANestedObject
+			filterANestedObject := TestTypesORM{}
+			if ormObj.Id == 0 {
+				return nil, errors.New("Can't do overwriting update with no Id value for TypeWithIDORM")
+			}
+			filterANestedObject.ANestedObjectTypeWithIDId = new(uint32)
+			*filterANestedObject.ANestedObjectTypeWithIDId = ormObj.Id
+			if err = db.Where(filterANestedObject).Delete(TestTypesORM{}).Error; err != nil {
+				return nil, err
+			}
+		}
+		if f == "Point" {
+			patchee.Point = patcher.Point
+		}
+		if f == "User" {
+			patchee.User = patcher.User
+		}
+		if f == "Address" {
+			patchee.Address = patcher.Address
+		}
+		if f == "MultiaccountTypeIds" {
+			patchee.MultiaccountTypeIds = patcher.MultiaccountTypeIds
+		}
+	}
+	if err != nil {
+		return nil, err
+	}
+	return patchee, nil
 }
 
 // DefaultListTypeWithID executes a gorm list call
@@ -860,13 +872,8 @@ func DefaultPatchMultiaccountTypeWithID(ctx context.Context, in *MultiaccountTyp
 	if err != nil {
 		return nil, err
 	}
-	for _, f := range updateMask.GetPaths() {
-		if f == "Id" {
-			pbObj.Id = in.Id
-		}
-		if f == "SomeField" {
-			pbObj.SomeField = in.SomeField
-		}
+	if _, err := DefaultApplyFieldMaskMultiaccountTypeWithID(ctx, &pbObj, &ormObj, in, updateMask, db); err != nil {
+		return nil, err
 	}
 	ormObj, err = pbObj.ToORM(ctx)
 	if err != nil {
@@ -881,6 +888,23 @@ func DefaultPatchMultiaccountTypeWithID(ctx context.Context, in *MultiaccountTyp
 		return nil, err
 	}
 	return &pbObj, err
+}
+
+// DefaultApplyFieldMaskMultiaccountTypeWithID patches an pbObject with patcher according to a field mask.
+func DefaultApplyFieldMaskMultiaccountTypeWithID(ctx context.Context, patchee *MultiaccountTypeWithID, ormObj *MultiaccountTypeWithIDORM, patcher *MultiaccountTypeWithID, updateMask *field_mask1.FieldMask, db *gorm1.DB) (*MultiaccountTypeWithID, error) {
+	var err error
+	for _, f := range updateMask.GetPaths() {
+		if f == "Id" {
+			patchee.Id = patcher.Id
+		}
+		if f == "SomeField" {
+			patchee.SomeField = patcher.SomeField
+		}
+	}
+	if err != nil {
+		return nil, err
+	}
+	return patchee, nil
 }
 
 // DefaultListMultiaccountTypeWithID executes a gorm list call

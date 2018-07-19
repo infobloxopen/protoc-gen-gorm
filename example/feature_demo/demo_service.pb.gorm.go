@@ -202,16 +202,8 @@ func DefaultPatchIntPoint(ctx context.Context, in *IntPoint, updateMask *field_m
 	if err != nil {
 		return nil, err
 	}
-	for _, f := range updateMask.GetPaths() {
-		if f == "Id" {
-			pbObj.Id = in.Id
-		}
-		if f == "X" {
-			pbObj.X = in.X
-		}
-		if f == "Y" {
-			pbObj.Y = in.Y
-		}
+	if _, err := DefaultApplyFieldMaskIntPoint(ctx, &pbObj, &ormObj, in, updateMask, db); err != nil {
+		return nil, err
 	}
 	ormObj, err = pbObj.ToORM(ctx)
 	if err != nil {
@@ -225,6 +217,26 @@ func DefaultPatchIntPoint(ctx context.Context, in *IntPoint, updateMask *field_m
 		return nil, err
 	}
 	return &pbObj, err
+}
+
+// DefaultApplyFieldMaskIntPoint patches an pbObject with patcher according to a field mask.
+func DefaultApplyFieldMaskIntPoint(ctx context.Context, patchee *IntPoint, ormObj *IntPointORM, patcher *IntPoint, updateMask *field_mask1.FieldMask, db *gorm1.DB) (*IntPoint, error) {
+	var err error
+	for _, f := range updateMask.GetPaths() {
+		if f == "Id" {
+			patchee.Id = patcher.Id
+		}
+		if f == "X" {
+			patchee.X = patcher.X
+		}
+		if f == "Y" {
+			patchee.Y = patcher.Y
+		}
+	}
+	if err != nil {
+		return nil, err
+	}
+	return patchee, nil
 }
 
 // getCollectionOperators takes collection operator values from corresponding message fields
@@ -334,6 +346,8 @@ type IntPointServiceIntPointWithBeforeRead interface {
 
 // Update ...
 func (m *IntPointServiceDefaultServer) Update(ctx context.Context, in *UpdateIntPointRequest) (*UpdateIntPointResponse, error) {
+	var err error
+	var res *IntPoint
 	db := m.DB
 	if custom, ok := interface{}(in).(IntPointServiceIntPointWithBeforeUpdate); ok {
 		var err error
@@ -342,7 +356,11 @@ func (m *IntPointServiceDefaultServer) Update(ctx context.Context, in *UpdateInt
 			return nil, err
 		}
 	}
-	res, err := DefaultPatchIntPoint(ctx, in.GetPayload(), in.GetGerogeriGegege(), db)
+	if len(in.GetGerogeriGegege().GetPaths()) == 0 {
+		res, err = DefaultStrictUpdateIntPoint(ctx, in.GetPayload(), db)
+	} else {
+		res, err = DefaultPatchIntPoint(ctx, in.GetPayload(), in.GetGerogeriGegege(), db)
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -467,6 +485,8 @@ type IntPointTxnIntPointWithBeforeRead interface {
 
 // Update ...
 func (m *IntPointTxnDefaultServer) Update(ctx context.Context, in *UpdateIntPointRequest) (*UpdateIntPointResponse, error) {
+	var err error
+	var res *IntPoint
 	txn, ok := gorm2.FromContext(ctx)
 	if !ok {
 		return nil, errors.New("Database Transaction For Request Missing")
@@ -482,7 +502,11 @@ func (m *IntPointTxnDefaultServer) Update(ctx context.Context, in *UpdateIntPoin
 			return nil, err
 		}
 	}
-	res, err := DefaultPatchIntPoint(ctx, in.GetPayload(), in.GetGerogeriGegege(), db)
+	if len(in.GetGerogeriGegege().GetPaths()) == 0 {
+		res, err = DefaultStrictUpdateIntPoint(ctx, in.GetPayload(), db)
+	} else {
+		res, err = DefaultPatchIntPoint(ctx, in.GetPayload(), in.GetGerogeriGegege(), db)
+	}
 	if err != nil {
 		return nil, err
 	}

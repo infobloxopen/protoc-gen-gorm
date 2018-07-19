@@ -1048,84 +1048,8 @@ func DefaultPatchUser(ctx context.Context, in *User, updateMask *field_mask1.Fie
 	if err != nil {
 		return nil, err
 	}
-	for _, f := range updateMask.GetPaths() {
-		if f == "Id" {
-			pbObj.Id = in.Id
-		}
-		if f == "CreatedAt" {
-			pbObj.CreatedAt = in.CreatedAt
-		}
-		if f == "UpdatedAt" {
-			pbObj.UpdatedAt = in.UpdatedAt
-		}
-		if f == "Birthday" {
-			pbObj.Birthday = in.Birthday
-		}
-		if f == "Age" {
-			pbObj.Age = in.Age
-		}
-		if f == "Num" {
-			pbObj.Num = in.Num
-		}
-		if f == "CreditCard" {
-			pbObj.CreditCard = in.CreditCard
-			filterCreditCard := CreditCardORM{}
-			if ormObj.Id == "" {
-				return nil, errors.New("Can't do overwriting update with no Id value for UserORM")
-			}
-			filterCreditCard.UserId = new(string)
-			*filterCreditCard.UserId = ormObj.Id
-			filterCreditCard.AccountID = ormObj.AccountID
-			if err = db.Where(filterCreditCard).Delete(CreditCardORM{}).Error; err != nil {
-				return nil, err
-			}
-		}
-		if f == "Emails" {
-			pbObj.Emails = in.Emails
-			filterEmails := EmailORM{}
-			if ormObj.Id == "" {
-				return nil, errors.New("Can't do overwriting update with no Id value for UserORM")
-			}
-			filterEmails.UserId = new(string)
-			*filterEmails.UserId = ormObj.Id
-			filterEmails.AccountID = ormObj.AccountID
-			if err = db.Where(filterEmails).Delete(EmailORM{}).Error; err != nil {
-				return nil, err
-			}
-		}
-		if f == "Tasks" {
-			pbObj.Tasks = in.Tasks
-			filterTasks := TaskORM{}
-			if ormObj.Id == "" {
-				return nil, errors.New("Can't do overwriting update with no Id value for UserORM")
-			}
-			filterTasks.UserId = ormObj.Id
-			filterTasks.AccountID = ormObj.AccountID
-			if err = db.Where(filterTasks).Delete(TaskORM{}).Error; err != nil {
-				return nil, err
-			}
-			for i, e := range ormObj.Tasks {
-				e.Priority = int64(i)
-			}
-		}
-		if f == "BillingAddress" {
-			pbObj.BillingAddress = in.BillingAddress
-		}
-		if f == "ShippingAddress" {
-			pbObj.ShippingAddress = in.ShippingAddress
-		}
-		if f == "Languages" {
-			pbObj.Languages = in.Languages
-		}
-		if f == "Friends" {
-			pbObj.Friends = in.Friends
-		}
-		if f == "ShippingAddressId" {
-			pbObj.ShippingAddressId = in.ShippingAddressId
-		}
-		if f == "ExternalUuid" {
-			pbObj.ExternalUuid = in.ExternalUuid
-		}
+	if _, err := DefaultApplyFieldMaskUser(ctx, &pbObj, &ormObj, in, updateMask, db); err != nil {
+		return nil, err
 	}
 	ormObj, err = pbObj.ToORM(ctx)
 	if err != nil {
@@ -1140,6 +1064,94 @@ func DefaultPatchUser(ctx context.Context, in *User, updateMask *field_mask1.Fie
 		return nil, err
 	}
 	return &pbObj, err
+}
+
+// DefaultApplyFieldMaskUser patches an pbObject with patcher according to a field mask.
+func DefaultApplyFieldMaskUser(ctx context.Context, patchee *User, ormObj *UserORM, patcher *User, updateMask *field_mask1.FieldMask, db *gorm1.DB) (*User, error) {
+	var err error
+	for _, f := range updateMask.GetPaths() {
+		if f == "Id" {
+			patchee.Id = patcher.Id
+		}
+		if f == "CreatedAt" {
+			patchee.CreatedAt = patcher.CreatedAt
+		}
+		if f == "UpdatedAt" {
+			patchee.UpdatedAt = patcher.UpdatedAt
+		}
+		if f == "Birthday" {
+			patchee.Birthday = patcher.Birthday
+		}
+		if f == "Age" {
+			patchee.Age = patcher.Age
+		}
+		if f == "Num" {
+			patchee.Num = patcher.Num
+		}
+		if f == "CreditCard" {
+			patchee.CreditCard = patcher.CreditCard
+			filterCreditCard := CreditCardORM{}
+			if ormObj.Id == "" {
+				return nil, errors.New("Can't do overwriting update with no Id value for UserORM")
+			}
+			filterCreditCard.UserId = new(string)
+			*filterCreditCard.UserId = ormObj.Id
+			filterCreditCard.AccountID = ormObj.AccountID
+			if err = db.Where(filterCreditCard).Delete(CreditCardORM{}).Error; err != nil {
+				return nil, err
+			}
+		}
+		if f == "Emails" {
+			patchee.Emails = patcher.Emails
+			filterEmails := EmailORM{}
+			if ormObj.Id == "" {
+				return nil, errors.New("Can't do overwriting update with no Id value for UserORM")
+			}
+			filterEmails.UserId = new(string)
+			*filterEmails.UserId = ormObj.Id
+			filterEmails.AccountID = ormObj.AccountID
+			if err = db.Where(filterEmails).Delete(EmailORM{}).Error; err != nil {
+				return nil, err
+			}
+		}
+		if f == "Tasks" {
+			patchee.Tasks = patcher.Tasks
+			filterTasks := TaskORM{}
+			if ormObj.Id == "" {
+				return nil, errors.New("Can't do overwriting update with no Id value for UserORM")
+			}
+			filterTasks.UserId = ormObj.Id
+			filterTasks.AccountID = ormObj.AccountID
+			if err = db.Where(filterTasks).Delete(TaskORM{}).Error; err != nil {
+				return nil, err
+			}
+			for i, e := range ormObj.Tasks {
+				e.Priority = int64(i)
+			}
+		}
+		if f == "BillingAddress" {
+			patchee.BillingAddress = patcher.BillingAddress
+		}
+		if f == "ShippingAddress" {
+			patchee.ShippingAddress = patcher.ShippingAddress
+		}
+		if f == "Languages" {
+			patchee.Languages = patcher.Languages
+		}
+		if f == "Friends" {
+			patchee.Friends = patcher.Friends
+		}
+		if f == "ShippingAddressId" {
+			patchee.ShippingAddressId = patcher.ShippingAddressId
+		}
+		if f == "ExternalUuid" {
+			patchee.ExternalUuid = patcher.ExternalUuid
+		}
+	}
+	if err != nil {
+		return nil, err
+	}
+	return patchee, nil
 }
 
 // getCollectionOperators takes collection operator values from corresponding message fields
@@ -1327,22 +1339,8 @@ func DefaultPatchEmail(ctx context.Context, in *Email, updateMask *field_mask1.F
 	if err != nil {
 		return nil, err
 	}
-	for _, f := range updateMask.GetPaths() {
-		if f == "Id" {
-			pbObj.Id = in.Id
-		}
-		if f == "Email" {
-			pbObj.Email = in.Email
-		}
-		if f == "Subscribed" {
-			pbObj.Subscribed = in.Subscribed
-		}
-		if f == "UserId" {
-			pbObj.UserId = in.UserId
-		}
-		if f == "ExternalNotNull" {
-			pbObj.ExternalNotNull = in.ExternalNotNull
-		}
+	if _, err := DefaultApplyFieldMaskEmail(ctx, &pbObj, &ormObj, in, updateMask, db); err != nil {
+		return nil, err
 	}
 	ormObj, err = pbObj.ToORM(ctx)
 	if err != nil {
@@ -1357,6 +1355,32 @@ func DefaultPatchEmail(ctx context.Context, in *Email, updateMask *field_mask1.F
 		return nil, err
 	}
 	return &pbObj, err
+}
+
+// DefaultApplyFieldMaskEmail patches an pbObject with patcher according to a field mask.
+func DefaultApplyFieldMaskEmail(ctx context.Context, patchee *Email, ormObj *EmailORM, patcher *Email, updateMask *field_mask1.FieldMask, db *gorm1.DB) (*Email, error) {
+	var err error
+	for _, f := range updateMask.GetPaths() {
+		if f == "Id" {
+			patchee.Id = patcher.Id
+		}
+		if f == "Email" {
+			patchee.Email = patcher.Email
+		}
+		if f == "Subscribed" {
+			patchee.Subscribed = patcher.Subscribed
+		}
+		if f == "UserId" {
+			patchee.UserId = patcher.UserId
+		}
+		if f == "ExternalNotNull" {
+			patchee.ExternalNotNull = patcher.ExternalNotNull
+		}
+	}
+	if err != nil {
+		return nil, err
+	}
+	return patchee, nil
 }
 
 // DefaultListEmail executes a gorm list call
@@ -1516,25 +1540,8 @@ func DefaultPatchAddress(ctx context.Context, in *Address, updateMask *field_mas
 	if err != nil {
 		return nil, err
 	}
-	for _, f := range updateMask.GetPaths() {
-		if f == "Id" {
-			pbObj.Id = in.Id
-		}
-		if f == "Address_1" {
-			pbObj.Address_1 = in.Address_1
-		}
-		if f == "Address_2" {
-			pbObj.Address_2 = in.Address_2
-		}
-		if f == "Post" {
-			pbObj.Post = in.Post
-		}
-		if f == "External" {
-			pbObj.External = in.External
-		}
-		if f == "ImplicitFk" {
-			pbObj.ImplicitFk = in.ImplicitFk
-		}
+	if _, err := DefaultApplyFieldMaskAddress(ctx, &pbObj, &ormObj, in, updateMask, db); err != nil {
+		return nil, err
 	}
 	ormObj, err = pbObj.ToORM(ctx)
 	if err != nil {
@@ -1549,6 +1556,35 @@ func DefaultPatchAddress(ctx context.Context, in *Address, updateMask *field_mas
 		return nil, err
 	}
 	return &pbObj, err
+}
+
+// DefaultApplyFieldMaskAddress patches an pbObject with patcher according to a field mask.
+func DefaultApplyFieldMaskAddress(ctx context.Context, patchee *Address, ormObj *AddressORM, patcher *Address, updateMask *field_mask1.FieldMask, db *gorm1.DB) (*Address, error) {
+	var err error
+	for _, f := range updateMask.GetPaths() {
+		if f == "Id" {
+			patchee.Id = patcher.Id
+		}
+		if f == "Address_1" {
+			patchee.Address_1 = patcher.Address_1
+		}
+		if f == "Address_2" {
+			patchee.Address_2 = patcher.Address_2
+		}
+		if f == "Post" {
+			patchee.Post = patcher.Post
+		}
+		if f == "External" {
+			patchee.External = patcher.External
+		}
+		if f == "ImplicitFk" {
+			patchee.ImplicitFk = patcher.ImplicitFk
+		}
+	}
+	if err != nil {
+		return nil, err
+	}
+	return patchee, nil
 }
 
 // DefaultListAddress executes a gorm list call
@@ -1708,19 +1744,8 @@ func DefaultPatchLanguage(ctx context.Context, in *Language, updateMask *field_m
 	if err != nil {
 		return nil, err
 	}
-	for _, f := range updateMask.GetPaths() {
-		if f == "Id" {
-			pbObj.Id = in.Id
-		}
-		if f == "Name" {
-			pbObj.Name = in.Name
-		}
-		if f == "Code" {
-			pbObj.Code = in.Code
-		}
-		if f == "ExternalInt" {
-			pbObj.ExternalInt = in.ExternalInt
-		}
+	if _, err := DefaultApplyFieldMaskLanguage(ctx, &pbObj, &ormObj, in, updateMask, db); err != nil {
+		return nil, err
 	}
 	ormObj, err = pbObj.ToORM(ctx)
 	if err != nil {
@@ -1735,6 +1760,29 @@ func DefaultPatchLanguage(ctx context.Context, in *Language, updateMask *field_m
 		return nil, err
 	}
 	return &pbObj, err
+}
+
+// DefaultApplyFieldMaskLanguage patches an pbObject with patcher according to a field mask.
+func DefaultApplyFieldMaskLanguage(ctx context.Context, patchee *Language, ormObj *LanguageORM, patcher *Language, updateMask *field_mask1.FieldMask, db *gorm1.DB) (*Language, error) {
+	var err error
+	for _, f := range updateMask.GetPaths() {
+		if f == "Id" {
+			patchee.Id = patcher.Id
+		}
+		if f == "Name" {
+			patchee.Name = patcher.Name
+		}
+		if f == "Code" {
+			patchee.Code = patcher.Code
+		}
+		if f == "ExternalInt" {
+			patchee.ExternalInt = patcher.ExternalInt
+		}
+	}
+	if err != nil {
+		return nil, err
+	}
+	return patchee, nil
 }
 
 // DefaultListLanguage executes a gorm list call
@@ -1894,22 +1942,8 @@ func DefaultPatchCreditCard(ctx context.Context, in *CreditCard, updateMask *fie
 	if err != nil {
 		return nil, err
 	}
-	for _, f := range updateMask.GetPaths() {
-		if f == "Id" {
-			pbObj.Id = in.Id
-		}
-		if f == "CreatedAt" {
-			pbObj.CreatedAt = in.CreatedAt
-		}
-		if f == "UpdatedAt" {
-			pbObj.UpdatedAt = in.UpdatedAt
-		}
-		if f == "Number" {
-			pbObj.Number = in.Number
-		}
-		if f == "UserId" {
-			pbObj.UserId = in.UserId
-		}
+	if _, err := DefaultApplyFieldMaskCreditCard(ctx, &pbObj, &ormObj, in, updateMask, db); err != nil {
+		return nil, err
 	}
 	ormObj, err = pbObj.ToORM(ctx)
 	if err != nil {
@@ -1924,6 +1958,32 @@ func DefaultPatchCreditCard(ctx context.Context, in *CreditCard, updateMask *fie
 		return nil, err
 	}
 	return &pbObj, err
+}
+
+// DefaultApplyFieldMaskCreditCard patches an pbObject with patcher according to a field mask.
+func DefaultApplyFieldMaskCreditCard(ctx context.Context, patchee *CreditCard, ormObj *CreditCardORM, patcher *CreditCard, updateMask *field_mask1.FieldMask, db *gorm1.DB) (*CreditCard, error) {
+	var err error
+	for _, f := range updateMask.GetPaths() {
+		if f == "Id" {
+			patchee.Id = patcher.Id
+		}
+		if f == "CreatedAt" {
+			patchee.CreatedAt = patcher.CreatedAt
+		}
+		if f == "UpdatedAt" {
+			patchee.UpdatedAt = patcher.UpdatedAt
+		}
+		if f == "Number" {
+			patchee.Number = patcher.Number
+		}
+		if f == "UserId" {
+			patchee.UserId = patcher.UserId
+		}
+	}
+	if err != nil {
+		return nil, err
+	}
+	return patchee, nil
 }
 
 // DefaultListCreditCard executes a gorm list call
