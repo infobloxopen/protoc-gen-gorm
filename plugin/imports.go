@@ -42,6 +42,7 @@ var (
 	gormpqImport   = "github.com/jinzhu/gorm/dialects/postgres"
 	gtypesImport   = "github.com/infobloxopen/protoc-gen-gorm/types"
 	ptypesImport   = "github.com/golang/protobuf/ptypes"
+	wktImport      = "github.com/golang/protobuf/ptypes/wrappers"
 	resourceImport = "github.com/infobloxopen/atlas-app-toolkit/gorm/resource"
 	fmImport       = "google.golang.org/genproto/protobuf/field_mask"
 	queryImport    = "github.com/infobloxopen/atlas-app-toolkit/query"

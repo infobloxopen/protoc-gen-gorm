@@ -3,10 +3,8 @@ package plugin
 import (
 	"strings"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/protoc-gen-gogo/descriptor"
 	"github.com/gogo/protobuf/protoc-gen-gogo/generator"
-	gorm "github.com/infobloxopen/protoc-gen-gorm/options"
 )
 
 func (p *OrmPlugin) generateDefaultServer(file *generator.FileDescriptor) {
@@ -42,7 +40,7 @@ func (p *OrmPlugin) generateDefaultServer(file *generator.FileDescriptor) {
 func (p *OrmPlugin) generateCreateServerMethod(service *descriptor.ServiceDescriptorProto, method *descriptor.MethodDescriptorProto) {
 	inType, outType, methodName, svcName := p.getMethodProps(service, method)
 	p.generateMethodSignature(inType, outType, methodName, svcName)
-	follows, typeName := p.followsCreateConventions(inType, outType)
+	follows, typeName := p.followsCreateConventions(inType, outType, methodName)
 	if follows {
 		p.generateDBSetup(service, outType)
 		p.generatePreserviceCall(svcName, typeName, "Create")
@@ -58,7 +56,7 @@ func (p *OrmPlugin) generateCreateServerMethod(service *descriptor.ServiceDescri
 	}
 }
 
-func (p *OrmPlugin) followsCreateConventions(inType generator.Object, outType generator.Object) (bool, string) {
+func (p *OrmPlugin) followsCreateConventions(inType generator.Object, outType generator.Object, methodName string) (bool, string) {
 	inMsg := inType.(*generator.Descriptor)
 	outMsg := outType.(*generator.Descriptor)
 	var inTypeName string
@@ -72,6 +70,10 @@ func (p *OrmPlugin) followsCreateConventions(inType generator.Object, outType ge
 			}
 		}
 	}
+	if !typeOrmable {
+		p.warning(`stub will be generated for %s since %s incoming message doesn't have "payload" field of ormable type`, methodName, p.TypeName(inType))
+		return false, ""
+	}
 	var outTypeName string
 	for _, field := range outMsg.Field {
 		if field.GetName() == "result" {
@@ -79,16 +81,17 @@ func (p *OrmPlugin) followsCreateConventions(inType generator.Object, outType ge
 			outTypeName = strings.TrimPrefix(gType, "*")
 		}
 	}
-	if inTypeName == outTypeName && typeOrmable {
-		return true, inTypeName
+	if inTypeName != outTypeName {
+		p.warning(`stub will be generated for %s since "payload" field type of %s incoming message type doesn't match "result" field type of %s outcoming message`, methodName, p.TypeName(inType), p.TypeName(outType))
+		return false, ""
 	}
-	return false, ""
+	return true, inTypeName
 }
 
 func (p *OrmPlugin) generateReadServerMethod(service *descriptor.ServiceDescriptorProto, method *descriptor.MethodDescriptorProto) {
 	inType, outType, methodName, svcName := p.getMethodProps(service, method)
 	p.generateMethodSignature(inType, outType, methodName, svcName)
-	follows, typeName := p.followsReadConventions(inType, outType)
+	follows, typeName := p.followsReadConventions(inType, outType, methodName)
 	if follows {
 		p.generateDBSetup(service, outType)
 		p.generatePreserviceCall(svcName, typeName, "Read")
@@ -104,7 +107,7 @@ func (p *OrmPlugin) generateReadServerMethod(service *descriptor.ServiceDescript
 	}
 }
 
-func (p *OrmPlugin) followsReadConventions(inType generator.Object, outType generator.Object) (bool, string) {
+func (p *OrmPlugin) followsReadConventions(inType generator.Object, outType generator.Object, methodName string) (bool, string) {
 	inMsg := inType.(*generator.Descriptor)
 	outMsg := outType.(*generator.Descriptor)
 	var hasID bool
@@ -112,6 +115,10 @@ func (p *OrmPlugin) followsReadConventions(inType generator.Object, outType gene
 		if field.GetName() == "id" {
 			hasID = true
 		}
+	}
+	if !hasID {
+		p.warning(`stub will be generated for %s since %s incoming message doesn't have "id" field`, methodName, p.TypeName(inType))
+		return false, ""
 	}
 	var outTypeName string
 	var typeOrmable bool
@@ -124,16 +131,21 @@ func (p *OrmPlugin) followsReadConventions(inType generator.Object, outType gene
 			}
 		}
 	}
-	if hasID && typeOrmable && p.hasPrimaryKey(p.getOrmable(outTypeName)) {
-		return true, outTypeName
+	if !typeOrmable {
+		p.warning(`stub will be generated for %s since %s outcoming message doesn't have "result" field of ormable type`, methodName, p.TypeName(outType))
+		return false, ""
 	}
-	return false, ""
+	if !p.hasPrimaryKey(p.getOrmable(outTypeName)) {
+		p.warning(`stub will be generated for %s since %s ormable type doesn't have a primary key`, methodName, outTypeName)
+		return false, ""
+	}
+	return true, outTypeName
 }
 
 func (p *OrmPlugin) generateUpdateServerMethod(service *descriptor.ServiceDescriptorProto, method *descriptor.MethodDescriptorProto) {
 	inType, outType, methodName, svcName := p.getMethodProps(service, method)
 	p.generateMethodSignature(inType, outType, methodName, svcName)
-	follows, typeName, updateMask := p.followsUpdateConventions(inType, outType)
+	follows, typeName, updateMask := p.followsUpdateConventions(inType, outType, methodName)
 	if follows {
 		p.P(`var err error`)
 		p.P(`var res *`, typeName)
@@ -159,7 +171,7 @@ func (p *OrmPlugin) generateUpdateServerMethod(service *descriptor.ServiceDescri
 	}
 }
 
-func (p *OrmPlugin) followsUpdateConventions(inType generator.Object, outType generator.Object) (bool, string, string) {
+func (p *OrmPlugin) followsUpdateConventions(inType generator.Object, outType generator.Object, methodName string) (bool, string, string) {
 	inMsg := inType.(*generator.Descriptor)
 	outMsg := outType.(*generator.Descriptor)
 	var inTypeName string
@@ -184,6 +196,10 @@ func (p *OrmPlugin) followsUpdateConventions(inType generator.Object, outType ge
 		}
 
 	}
+	if !typeOrmable {
+		p.warning(`stub will be generated for %s since %s incoming message doesn't have "payload" field of ormable type`, methodName, p.TypeName(inType))
+		return false, "", ""
+	}
 	var outTypeName string
 	for _, field := range outMsg.Field {
 		if field.GetName() == "result" {
@@ -191,10 +207,15 @@ func (p *OrmPlugin) followsUpdateConventions(inType generator.Object, outType ge
 			outTypeName = strings.TrimPrefix(gType, "*")
 		}
 	}
-	if inTypeName == outTypeName && typeOrmable && p.hasPrimaryKey(p.getOrmable(outTypeName)) {
-		return true, inTypeName, updateMask
+	if inTypeName != outTypeName {
+		p.warning(`stub will be generated for %s since "payload" field type of %s incoming message doesn't match "result" field type of %s outcoming message`, methodName, p.TypeName(inType), p.TypeName(outType))
+		return false, "", ""
 	}
-	return false, "", ""
+	if !p.hasPrimaryKey(p.getOrmable(inTypeName)) {
+		p.warning(`stub will be generated for %s since %s ormable type doesn't have a primary key`, methodName, outTypeName)
+		return false, "", ""
+	}
+	return true, inTypeName, updateMask
 }
 
 func (p *OrmPlugin) generateDeleteServerMethod(service *descriptor.ServiceDescriptorProto, method *descriptor.MethodDescriptorProto) {
@@ -214,35 +235,37 @@ func (p *OrmPlugin) generateDeleteServerMethod(service *descriptor.ServiceDescri
 
 func (p *OrmPlugin) followsDeleteConventions(inType generator.Object, outType generator.Object, method *descriptor.MethodDescriptorProto) (bool, string) {
 	inMsg := inType.(*generator.Descriptor)
+	methodName := generator.CamelCase(method.GetName())
 	var hasID bool
 	for _, field := range inMsg.Field {
 		if field.GetName() == "id" {
 			hasID = true
 		}
 	}
-	var typeName string
-	if method.GetOptions() != nil {
-		v, err := proto.GetExtension(method.GetOptions(), gorm.E_Method)
-		if err != nil {
-			return false, ""
-		}
-		opts := v.(*gorm.MethodOptions)
-		typeName = generator.CamelCase(opts.GetObjectType())
+	if !hasID {
+		p.warning(`stub will be generated for %s since %s incoming message doesn't have "id" field`, methodName, p.TypeName(inType))
+		return false, ""
 	}
-	var typeOrmable bool
-	if p.isOrmable(typeName) {
-		typeOrmable = true
+	typeName := generator.CamelCase(getMethodOptions(method).GetObjectType())
+	if typeName == "" {
+		p.warning(`stub will be generated for %s since (gorm.method).object_type option is not specified`, methodName)
+		return false, ""
 	}
-	if hasID && typeOrmable && p.hasPrimaryKey(p.getOrmable(typeName)) {
-		return true, typeName
+	if !p.isOrmable(typeName) {
+		p.warning(`stub will be generated for %s since %s is not an ormable type`, methodName, typeName)
+		return false, ""
 	}
-	return false, ""
+	if !p.hasPrimaryKey(p.getOrmable(typeName)) {
+		p.warning(`stub will be generated for %s since %s ormable type doesn't have a primary key`, methodName, typeName)
+		return false, ""
+	}
+	return true, typeName
 }
 
 func (p *OrmPlugin) generateListServerMethod(service *descriptor.ServiceDescriptorProto, method *descriptor.MethodDescriptorProto) {
 	inType, outType, methodName, svcName := p.getMethodProps(service, method)
 	p.generateMethodSignature(inType, outType, methodName, svcName)
-	follows, typeName := p.followsListConventions(inType, outType)
+	follows, typeName := p.followsListConventions(inType, outType, methodName)
 	if follows {
 		p.generateDBSetup(service, outType)
 		p.generatePreserviceCall(svcName, typeName, "List")
@@ -258,7 +281,7 @@ func (p *OrmPlugin) generateListServerMethod(service *descriptor.ServiceDescript
 	}
 }
 
-func (p *OrmPlugin) followsListConventions(inType generator.Object, outType generator.Object) (bool, string) {
+func (p *OrmPlugin) followsListConventions(inType generator.Object, outType generator.Object, methodName string) (bool, string) {
 	outMsg := outType.(*generator.Descriptor)
 	var outTypeName string
 	var typeOrmable bool
@@ -271,10 +294,11 @@ func (p *OrmPlugin) followsListConventions(inType generator.Object, outType gene
 			}
 		}
 	}
-	if typeOrmable {
-		return true, outTypeName
+	if !typeOrmable {
+		p.warning(`stub will be generated for %s since %s incoming message doesn't have "results" field of ormable type`, methodName, p.TypeName(outType))
+		return false, ""
 	}
-	return false, ""
+	return true, outTypeName
 }
 
 func (p *OrmPlugin) generateMethodStub(service *descriptor.ServiceDescriptorProto, method *descriptor.MethodDescriptorProto) {

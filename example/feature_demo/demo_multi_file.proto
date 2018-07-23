@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package example;
+import "github.com/infobloxopen/protoc-gen-gorm/options/gorm.proto";
+
+option go_package = "github.com/infobloxopen/protoc-gen-gorm/example/feature_demo;example";
+
+message ExternalChild {
+  option (gorm.opts) = {
+    ormable: true,
+  };
+  string id = 1;
+}

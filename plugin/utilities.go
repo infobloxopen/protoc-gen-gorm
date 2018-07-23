@@ -60,3 +60,18 @@ func getServiceOptions(service *descriptor.ServiceDescriptorProto) *gorm.AutoSer
 	}
 	return opts
 }
+
+func getMethodOptions(method *descriptor.MethodDescriptorProto) *gorm.MethodOptions {
+	if method.Options == nil {
+		return nil
+	}
+	v, err := proto.GetExtension(method.Options, gorm.E_Method)
+	if err != nil {
+		return nil
+	}
+	opts, ok := v.(*gorm.MethodOptions)
+	if !ok {
+		return nil
+	}
+	return opts
+}

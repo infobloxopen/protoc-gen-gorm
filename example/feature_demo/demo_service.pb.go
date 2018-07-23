@@ -33,7 +33,7 @@ type IntPoint struct {
 func (m *IntPoint) Reset()                    { *m = IntPoint{} }
 func (m *IntPoint) String() string            { return proto.CompactTextString(m) }
 func (*IntPoint) ProtoMessage()               {}
-func (*IntPoint) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{0} }
+func (*IntPoint) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{0} }
 
 func (m *IntPoint) GetId() uint32 {
 	if m != nil {
@@ -65,7 +65,7 @@ type CreateIntPointRequest struct {
 func (m *CreateIntPointRequest) Reset()                    { *m = CreateIntPointRequest{} }
 func (m *CreateIntPointRequest) String() string            { return proto.CompactTextString(m) }
 func (*CreateIntPointRequest) ProtoMessage()               {}
-func (*CreateIntPointRequest) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{1} }
+func (*CreateIntPointRequest) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{1} }
 
 func (m *CreateIntPointRequest) GetPayload() *IntPoint {
 	if m != nil {
@@ -82,7 +82,7 @@ type CreateIntPointResponse struct {
 func (m *CreateIntPointResponse) Reset()                    { *m = CreateIntPointResponse{} }
 func (m *CreateIntPointResponse) String() string            { return proto.CompactTextString(m) }
 func (*CreateIntPointResponse) ProtoMessage()               {}
-func (*CreateIntPointResponse) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{2} }
+func (*CreateIntPointResponse) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{2} }
 
 func (m *CreateIntPointResponse) GetResult() *IntPoint {
 	if m != nil {
@@ -99,7 +99,7 @@ type ReadIntPointRequest struct {
 func (m *ReadIntPointRequest) Reset()                    { *m = ReadIntPointRequest{} }
 func (m *ReadIntPointRequest) String() string            { return proto.CompactTextString(m) }
 func (*ReadIntPointRequest) ProtoMessage()               {}
-func (*ReadIntPointRequest) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{3} }
+func (*ReadIntPointRequest) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{3} }
 
 func (m *ReadIntPointRequest) GetId() uint32 {
 	if m != nil {
@@ -116,7 +116,7 @@ type ReadIntPointResponse struct {
 func (m *ReadIntPointResponse) Reset()                    { *m = ReadIntPointResponse{} }
 func (m *ReadIntPointResponse) String() string            { return proto.CompactTextString(m) }
 func (*ReadIntPointResponse) ProtoMessage()               {}
-func (*ReadIntPointResponse) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{4} }
+func (*ReadIntPointResponse) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{4} }
 
 func (m *ReadIntPointResponse) GetResult() *IntPoint {
 	if m != nil {
@@ -133,7 +133,7 @@ type UpdateIntPointRequest struct {
 func (m *UpdateIntPointRequest) Reset()                    { *m = UpdateIntPointRequest{} }
 func (m *UpdateIntPointRequest) String() string            { return proto.CompactTextString(m) }
 func (*UpdateIntPointRequest) ProtoMessage()               {}
-func (*UpdateIntPointRequest) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{5} }
+func (*UpdateIntPointRequest) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{5} }
 
 func (m *UpdateIntPointRequest) GetPayload() *IntPoint {
 	if m != nil {
@@ -156,7 +156,7 @@ type UpdateIntPointResponse struct {
 func (m *UpdateIntPointResponse) Reset()                    { *m = UpdateIntPointResponse{} }
 func (m *UpdateIntPointResponse) String() string            { return proto.CompactTextString(m) }
 func (*UpdateIntPointResponse) ProtoMessage()               {}
-func (*UpdateIntPointResponse) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{6} }
+func (*UpdateIntPointResponse) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{6} }
 
 func (m *UpdateIntPointResponse) GetResult() *IntPoint {
 	if m != nil {
@@ -173,7 +173,7 @@ type DeleteIntPointRequest struct {
 func (m *DeleteIntPointRequest) Reset()                    { *m = DeleteIntPointRequest{} }
 func (m *DeleteIntPointRequest) String() string            { return proto.CompactTextString(m) }
 func (*DeleteIntPointRequest) ProtoMessage()               {}
-func (*DeleteIntPointRequest) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{7} }
+func (*DeleteIntPointRequest) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{7} }
 
 func (m *DeleteIntPointRequest) GetId() uint32 {
 	if m != nil {
@@ -190,7 +190,7 @@ type DeleteIntPointResponse struct {
 func (m *DeleteIntPointResponse) Reset()                    { *m = DeleteIntPointResponse{} }
 func (m *DeleteIntPointResponse) String() string            { return proto.CompactTextString(m) }
 func (*DeleteIntPointResponse) ProtoMessage()               {}
-func (*DeleteIntPointResponse) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{8} }
+func (*DeleteIntPointResponse) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{8} }
 
 type ListIntPointResponse struct {
 	// Note repeated field and plural name 'results'
@@ -200,7 +200,7 @@ type ListIntPointResponse struct {
 func (m *ListIntPointResponse) Reset()                    { *m = ListIntPointResponse{} }
 func (m *ListIntPointResponse) String() string            { return proto.CompactTextString(m) }
 func (*ListIntPointResponse) ProtoMessage()               {}
-func (*ListIntPointResponse) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{9} }
+func (*ListIntPointResponse) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{9} }
 
 func (m *ListIntPointResponse) GetResults() []*IntPoint {
 	if m != nil {
@@ -216,7 +216,7 @@ type Something struct {
 func (m *Something) Reset()                    { *m = Something{} }
 func (m *Something) String() string            { return proto.CompactTextString(m) }
 func (*Something) ProtoMessage()               {}
-func (*Something) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{10} }
+func (*Something) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{10} }
 
 type ListIntPointRequest struct {
 	Filter  *infoblox_api.Filtering      `protobuf:"bytes,1,opt,name=filter" json:"filter,omitempty"`
@@ -228,7 +228,7 @@ type ListIntPointRequest struct {
 func (m *ListIntPointRequest) Reset()                    { *m = ListIntPointRequest{} }
 func (m *ListIntPointRequest) String() string            { return proto.CompactTextString(m) }
 func (*ListIntPointRequest) ProtoMessage()               {}
-func (*ListIntPointRequest) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{11} }
+func (*ListIntPointRequest) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{11} }
 
 func (m *ListIntPointRequest) GetFilter() *infoblox_api.Filtering {
 	if m != nil {
@@ -833,9 +833,9 @@ var _IntPointTxn_serviceDesc = grpc.ServiceDesc{
 	Metadata: "example/feature_demo/demo_service.proto",
 }
 
-func init() { proto.RegisterFile("example/feature_demo/demo_service.proto", fileDescriptor1) }
+func init() { proto.RegisterFile("example/feature_demo/demo_service.proto", fileDescriptor2) }
 
-var fileDescriptor1 = []byte{
+var fileDescriptor2 = []byte{
 	// 755 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xdc, 0x56, 0xdd, 0x6e, 0xda, 0x48,
 	0x14, 0xc6, 0x84, 0x35, 0xe4, 0x90, 0x0d, 0xbb, 0x93, 0x90, 0x05, 0x6f, 0x76, 0x17, 0x59, 0x5a,

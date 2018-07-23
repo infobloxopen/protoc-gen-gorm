@@ -10,7 +10,6 @@ import field_mask1 "google.golang.org/genproto/protobuf/field_mask"
 import gateway1 "github.com/infobloxopen/atlas-app-toolkit/gateway"
 import gorm1 "github.com/jinzhu/gorm"
 import gorm2 "github.com/infobloxopen/atlas-app-toolkit/gorm"
-import query1 "github.com/infobloxopen/atlas-app-toolkit/query"
 
 import fmt "fmt"
 import math "math"
@@ -237,31 +236,6 @@ func DefaultApplyFieldMaskIntPoint(ctx context.Context, patchee *IntPoint, ormOb
 		return nil, err
 	}
 	return patchee, nil
-}
-
-// getCollectionOperators takes collection operator values from corresponding message fields
-func getCollectionOperators(in interface{}) (*query1.Filtering, *query1.Sorting, *query1.Pagination, *query1.FieldSelection, error) {
-	f := &query1.Filtering{}
-	err := gateway1.GetCollectionOp(in, f)
-	if err != nil {
-		return nil, nil, nil, nil, err
-	}
-	s := &query1.Sorting{}
-	err = gateway1.GetCollectionOp(in, s)
-	if err != nil {
-		return nil, nil, nil, nil, err
-	}
-	p := &query1.Pagination{}
-	err = gateway1.GetCollectionOp(in, p)
-	if err != nil {
-		return nil, nil, nil, nil, err
-	}
-	fs := &query1.FieldSelection{}
-	err = gateway1.GetCollectionOp(in, fs)
-	if err != nil {
-		return nil, nil, nil, nil, err
-	}
-	return f, s, p, fs, nil
 }
 
 // DefaultListIntPoint executes a gorm list call
