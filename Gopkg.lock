@@ -2,10 +2,10 @@
 
 
 [[projects]]
+  branch = "master"
   name = "github.com/dgrijalva/jwt-go"
   packages = ["."]
-  revision = "06ea1031745cb8b3dab3f6a236daf2b0aa468b7e"
-  version = "v3.2.0"
+  revision = "0b96aaa707760d6ab28d9b9d1913ff5993328bae"
 
 [[projects]]
   name = "github.com/gogo/protobuf"
@@ -245,7 +245,8 @@
   name = "google.golang.org/genproto"
   packages = [
     "googleapis/rpc/code",
-    "googleapis/rpc/status"
+    "googleapis/rpc/status",
+    "protobuf/field_mask"
   ]
   revision = "e92b116572682a5b432ddd840aeaba2a559eeff1"
 
@@ -284,6 +285,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "bd18cd0c3eae5bc276438b4a452a06001c48f86ba0b3c40ab8a7cb57f3e8be6f"
+  inputs-digest = "8888e62a401bf487f47949e684d4de99ed81ff2219a191fce91e482d7e0f0925"
   solver-name = "gps-cdcl"
   solver-version = 1
