@@ -1131,8 +1131,7 @@ func DefaultStrictUpdatePrimaryUUIDType(ctx context.Context, in *PrimaryUUIDType
 	if ormObj.Id == nil || *ormObj.Id == go_uuid1.Nil {
 		return nil, errors.New("Can't do overwriting update with no Id value for PrimaryUUIDTypeORM")
 	}
-	filterChild.PrimaryUUIDTypeId = new(go_uuid1.UUID)
-	*filterChild.PrimaryUUIDTypeId = *ormObj.Id
+	filterChild.PrimaryUUIDTypeId = *ormObj.Id
 	if err = db.Where(filterChild).Delete(ExternalChildORM{}).Error; err != nil {
 		return nil, err
 	}
@@ -1196,8 +1195,7 @@ func DefaultApplyFieldMaskPrimaryUUIDType(ctx context.Context, patchee *PrimaryU
 			if ormObj.Id == nil || *ormObj.Id == go_uuid1.Nil {
 				return nil, errors.New("Can't do overwriting update with no Id value for PrimaryUUIDTypeORM")
 			}
-			filterChild.PrimaryUUIDTypeId = new(go_uuid1.UUID)
-			*filterChild.PrimaryUUIDTypeId = *ormObj.Id
+			filterChild.PrimaryUUIDTypeId = *ormObj.Id
 			if err = db.Where(filterChild).Delete(ExternalChildORM{}).Error; err != nil {
 				return nil, err
 			}
