@@ -94,10 +94,13 @@ func (p *OrmPlugin) generateReadHandler(message *generator.Descriptor) {
 	p.P(`if in == nil {`)
 	p.P(`return nil, errors.New("Nil argument to DefaultRead`, typeName, `")`)
 	p.P(`}`)
+	p.generatePreloading()
+
 	p.P(`ormParams, err := in.ToORM(ctx)`)
 	p.P(`if err != nil {`)
 	p.P(`return nil, err`)
 	p.P(`}`)
+
 	p.sortOrderedHasMany(message)
 	p.P(`ormResponse := `, ormable.Name, `{}`)
 	p.P(`if err = db.Where(&ormParams).First(&ormResponse).Error; err != nil {`)
@@ -210,6 +213,9 @@ func (p *OrmPlugin) generateListHandler(message *generator.Descriptor) {
 	p.P(`if err != nil {`)
 	p.P(`return nil, err`)
 	p.P(`}`)
+	p.P(`if fs.GetFields() == nil {`)
+	p.generatePreloading()
+	p.P(`}`)
 	p.P(`in := `, typeName, `{}`)
 	p.P(`ormParams, err := in.ToORM(ctx)`)
 	p.P(`if err != nil {`)
@@ -292,6 +298,10 @@ func (p *OrmPlugin) generateStrictUpdateHandler(message *generator.Descriptor) {
 	p.P(`return &pbResponse, err`)
 	p.P(`}`)
 	p.P()
+}
+
+func (p *OrmPlugin) generatePreloading() {
+	p.P(`db = db.Set("gorm:auto_preload", true)`)
 }
 
 func (p *OrmPlugin) setupOrderedHasMany(message *generator.Descriptor) {
