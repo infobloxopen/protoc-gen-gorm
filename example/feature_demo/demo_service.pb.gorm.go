@@ -6,6 +6,7 @@ package example
 import context "context"
 import errors "errors"
 
+import field_mask1 "google.golang.org/genproto/protobuf/field_mask"
 import gateway1 "github.com/infobloxopen/atlas-app-toolkit/gateway"
 import gorm1 "github.com/jinzhu/gorm"
 import gorm2 "github.com/infobloxopen/atlas-app-toolkit/gorm"
@@ -13,6 +14,7 @@ import gorm2 "github.com/infobloxopen/atlas-app-toolkit/gorm"
 import fmt "fmt"
 import math "math"
 import google_protobuf2 "github.com/golang/protobuf/ptypes/empty"
+import _ "google.golang.org/genproto/protobuf/field_mask"
 import _ "github.com/infobloxopen/atlas-app-toolkit/query"
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -183,6 +185,60 @@ func DefaultStrictUpdateIntPoint(ctx context.Context, in *IntPoint, db *gorm1.DB
 	return &pbResponse, err
 }
 
+// DefaultPatchIntPoint executes a basic gorm update call with patch behavior
+func DefaultPatchIntPoint(ctx context.Context, in *IntPoint, updateMask *field_mask1.FieldMask, db *gorm1.DB) (*IntPoint, error) {
+	if in == nil {
+		return nil, errors.New("Nil argument to DefaultPatchIntPoint")
+	}
+	ormParams, err := (&IntPoint{Id: in.GetId()}).ToORM(ctx)
+	if err != nil {
+		return nil, err
+	}
+	ormObj := IntPointORM{}
+	if err := db.Where(&ormParams).First(&ormObj).Error; err != nil {
+		return nil, err
+	}
+	pbObj, err := ormObj.ToPB(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if _, err := DefaultApplyFieldMaskIntPoint(ctx, &pbObj, &ormObj, in, updateMask, db); err != nil {
+		return nil, err
+	}
+	ormObj, err = pbObj.ToORM(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if err = db.Save(&ormObj).Error; err != nil {
+		return nil, err
+	}
+	pbObj, err = ormObj.ToPB(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return &pbObj, err
+}
+
+// DefaultApplyFieldMaskIntPoint patches an pbObject with patcher according to a field mask.
+func DefaultApplyFieldMaskIntPoint(ctx context.Context, patchee *IntPoint, ormObj *IntPointORM, patcher *IntPoint, updateMask *field_mask1.FieldMask, db *gorm1.DB) (*IntPoint, error) {
+	var err error
+	for _, f := range updateMask.GetPaths() {
+		if f == "Id" {
+			patchee.Id = patcher.Id
+		}
+		if f == "X" {
+			patchee.X = patcher.X
+		}
+		if f == "Y" {
+			patchee.Y = patcher.Y
+		}
+	}
+	if err != nil {
+		return nil, err
+	}
+	return patchee, nil
+}
+
 // DefaultListIntPoint executes a gorm list call
 func DefaultListIntPoint(ctx context.Context, db *gorm1.DB, req interface{}) ([]*IntPoint, error) {
 	ormResponse := []IntPointORM{}
@@ -268,6 +324,8 @@ type IntPointServiceIntPointWithBeforeRead interface {
 
 // Update ...
 func (m *IntPointServiceDefaultServer) Update(ctx context.Context, in *UpdateIntPointRequest) (*UpdateIntPointResponse, error) {
+	var err error
+	var res *IntPoint
 	db := m.DB
 	if custom, ok := interface{}(in).(IntPointServiceIntPointWithBeforeUpdate); ok {
 		var err error
@@ -276,7 +334,11 @@ func (m *IntPointServiceDefaultServer) Update(ctx context.Context, in *UpdateInt
 			return nil, err
 		}
 	}
-	res, err := DefaultStrictUpdateIntPoint(ctx, in.GetPayload(), db)
+	if in.GetGerogeriGegege() == nil || len(in.GetGerogeriGegege().GetPaths()) == 0 {
+		res, err = DefaultStrictUpdateIntPoint(ctx, in.GetPayload(), db)
+	} else {
+		res, err = DefaultPatchIntPoint(ctx, in.GetPayload(), in.GetGerogeriGegege(), db)
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -401,6 +463,8 @@ type IntPointTxnIntPointWithBeforeRead interface {
 
 // Update ...
 func (m *IntPointTxnDefaultServer) Update(ctx context.Context, in *UpdateIntPointRequest) (*UpdateIntPointResponse, error) {
+	var err error
+	var res *IntPoint
 	txn, ok := gorm2.FromContext(ctx)
 	if !ok {
 		return nil, errors.New("Database Transaction For Request Missing")
@@ -416,7 +480,11 @@ func (m *IntPointTxnDefaultServer) Update(ctx context.Context, in *UpdateIntPoin
 			return nil, err
 		}
 	}
-	res, err := DefaultStrictUpdateIntPoint(ctx, in.GetPayload(), db)
+	if in.GetGerogeriGegege() == nil || len(in.GetGerogeriGegege().GetPaths()) == 0 {
+		res, err = DefaultStrictUpdateIntPoint(ctx, in.GetPayload(), db)
+	} else {
+		res, err = DefaultPatchIntPoint(ctx, in.GetPayload(), in.GetGerogeriGegege(), db)
+	}
 	if err != nil {
 		return nil, err
 	}

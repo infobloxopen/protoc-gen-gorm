@@ -35,6 +35,7 @@ package example
 import context "context"
 import errors "errors"
 
+import field_mask1 "google.golang.org/genproto/protobuf/field_mask"
 import gateway1 "github.com/infobloxopen/atlas-app-toolkit/gateway"
 import go_uuid1 "github.com/satori/go.uuid"
 import gorm1 "github.com/jinzhu/gorm"
@@ -205,6 +206,54 @@ func DefaultStrictUpdateExternalChild(ctx context.Context, in *ExternalChild, db
 		err = gateway1.SetCreated(ctx, "")
 	}
 	return &pbResponse, err
+}
+
+// DefaultPatchExternalChild executes a basic gorm update call with patch behavior
+func DefaultPatchExternalChild(ctx context.Context, in *ExternalChild, updateMask *field_mask1.FieldMask, db *gorm1.DB) (*ExternalChild, error) {
+	if in == nil {
+		return nil, errors.New("Nil argument to DefaultPatchExternalChild")
+	}
+	ormParams, err := (&ExternalChild{Id: in.GetId()}).ToORM(ctx)
+	if err != nil {
+		return nil, err
+	}
+	ormObj := ExternalChildORM{}
+	if err := db.Where(&ormParams).First(&ormObj).Error; err != nil {
+		return nil, err
+	}
+	pbObj, err := ormObj.ToPB(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if _, err := DefaultApplyFieldMaskExternalChild(ctx, &pbObj, &ormObj, in, updateMask, db); err != nil {
+		return nil, err
+	}
+	ormObj, err = pbObj.ToORM(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if err = db.Save(&ormObj).Error; err != nil {
+		return nil, err
+	}
+	pbObj, err = ormObj.ToPB(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return &pbObj, err
+}
+
+// DefaultApplyFieldMaskExternalChild patches an pbObject with patcher according to a field mask.
+func DefaultApplyFieldMaskExternalChild(ctx context.Context, patchee *ExternalChild, ormObj *ExternalChildORM, patcher *ExternalChild, updateMask *field_mask1.FieldMask, db *gorm1.DB) (*ExternalChild, error) {
+	var err error
+	for _, f := range updateMask.GetPaths() {
+		if f == "Id" {
+			patchee.Id = patcher.Id
+		}
+	}
+	if err != nil {
+		return nil, err
+	}
+	return patchee, nil
 }
 
 // getCollectionOperators takes collection operator values from corresponding message fields

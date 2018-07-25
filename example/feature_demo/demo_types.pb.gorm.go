@@ -8,6 +8,7 @@ import errors "errors"
 import time "time"
 
 import auth1 "github.com/infobloxopen/atlas-app-toolkit/auth"
+import field_mask1 "google.golang.org/genproto/protobuf/field_mask"
 import gateway1 "github.com/infobloxopen/atlas-app-toolkit/gateway"
 import go_uuid1 "github.com/satori/go.uuid"
 import gorm1 "github.com/jinzhu/gorm"
@@ -694,6 +695,93 @@ func DefaultStrictUpdateTypeWithID(ctx context.Context, in *TypeWithID, db *gorm
 	return &pbResponse, err
 }
 
+// DefaultPatchTypeWithID executes a basic gorm update call with patch behavior
+func DefaultPatchTypeWithID(ctx context.Context, in *TypeWithID, updateMask *field_mask1.FieldMask, db *gorm1.DB) (*TypeWithID, error) {
+	if in == nil {
+		return nil, errors.New("Nil argument to DefaultPatchTypeWithID")
+	}
+	ormParams, err := (&TypeWithID{Id: in.GetId()}).ToORM(ctx)
+	if err != nil {
+		return nil, err
+	}
+	ormObj := TypeWithIDORM{}
+	if err := db.Where(&ormParams).First(&ormObj).Error; err != nil {
+		return nil, err
+	}
+	pbObj, err := ormObj.ToPB(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if _, err := DefaultApplyFieldMaskTypeWithID(ctx, &pbObj, &ormObj, in, updateMask, db); err != nil {
+		return nil, err
+	}
+	ormObj, err = pbObj.ToORM(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if err = db.Save(&ormObj).Error; err != nil {
+		return nil, err
+	}
+	pbObj, err = ormObj.ToPB(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return &pbObj, err
+}
+
+// DefaultApplyFieldMaskTypeWithID patches an pbObject with patcher according to a field mask.
+func DefaultApplyFieldMaskTypeWithID(ctx context.Context, patchee *TypeWithID, ormObj *TypeWithIDORM, patcher *TypeWithID, updateMask *field_mask1.FieldMask, db *gorm1.DB) (*TypeWithID, error) {
+	var err error
+	for _, f := range updateMask.GetPaths() {
+		if f == "Id" {
+			patchee.Id = patcher.Id
+		}
+		if f == "Ip" {
+			patchee.Ip = patcher.Ip
+		}
+		if f == "Things" {
+			patchee.Things = patcher.Things
+			filterThings := TestTypesORM{}
+			if ormObj.Id == 0 {
+				return nil, errors.New("Can't do overwriting update with no Id value for TypeWithIDORM")
+			}
+			filterThings.ThingsTypeWithIDId = new(uint32)
+			*filterThings.ThingsTypeWithIDId = ormObj.Id
+			if err = db.Where(filterThings).Delete(TestTypesORM{}).Error; err != nil {
+				return nil, err
+			}
+		}
+		if f == "ANestedObject" {
+			patchee.ANestedObject = patcher.ANestedObject
+			filterANestedObject := TestTypesORM{}
+			if ormObj.Id == 0 {
+				return nil, errors.New("Can't do overwriting update with no Id value for TypeWithIDORM")
+			}
+			filterANestedObject.ANestedObjectTypeWithIDId = new(uint32)
+			*filterANestedObject.ANestedObjectTypeWithIDId = ormObj.Id
+			if err = db.Where(filterANestedObject).Delete(TestTypesORM{}).Error; err != nil {
+				return nil, err
+			}
+		}
+		if f == "Point" {
+			patchee.Point = patcher.Point
+		}
+		if f == "User" {
+			patchee.User = patcher.User
+		}
+		if f == "Address" {
+			patchee.Address = patcher.Address
+		}
+		if f == "MultiaccountTypeIds" {
+			patchee.MultiaccountTypeIds = patcher.MultiaccountTypeIds
+		}
+	}
+	if err != nil {
+		return nil, err
+	}
+	return patchee, nil
+}
+
 // DefaultListTypeWithID executes a gorm list call
 func DefaultListTypeWithID(ctx context.Context, db *gorm1.DB, req interface{}) ([]*TypeWithID, error) {
 	ormResponse := []TypeWithIDORM{}
@@ -831,6 +919,63 @@ func DefaultStrictUpdateMultiaccountTypeWithID(ctx context.Context, in *Multiacc
 		err = gateway1.SetCreated(ctx, "")
 	}
 	return &pbResponse, err
+}
+
+// DefaultPatchMultiaccountTypeWithID executes a basic gorm update call with patch behavior
+func DefaultPatchMultiaccountTypeWithID(ctx context.Context, in *MultiaccountTypeWithID, updateMask *field_mask1.FieldMask, db *gorm1.DB) (*MultiaccountTypeWithID, error) {
+	if in == nil {
+		return nil, errors.New("Nil argument to DefaultPatchMultiaccountTypeWithID")
+	}
+	accountID, err := auth1.GetAccountID(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+	ormParams, err := (&MultiaccountTypeWithID{Id: in.GetId()}).ToORM(ctx)
+	if err != nil {
+		return nil, err
+	}
+	db = db.Where(&MultiaccountTypeWithIDORM{AccountID: accountID})
+	ormObj := MultiaccountTypeWithIDORM{}
+	if err := db.Where(&ormParams).First(&ormObj).Error; err != nil {
+		return nil, err
+	}
+	pbObj, err := ormObj.ToPB(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if _, err := DefaultApplyFieldMaskMultiaccountTypeWithID(ctx, &pbObj, &ormObj, in, updateMask, db); err != nil {
+		return nil, err
+	}
+	ormObj, err = pbObj.ToORM(ctx)
+	if err != nil {
+		return nil, err
+	}
+	db = db.Where(&MultiaccountTypeWithIDORM{AccountID: accountID})
+	if err = db.Save(&ormObj).Error; err != nil {
+		return nil, err
+	}
+	pbObj, err = ormObj.ToPB(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return &pbObj, err
+}
+
+// DefaultApplyFieldMaskMultiaccountTypeWithID patches an pbObject with patcher according to a field mask.
+func DefaultApplyFieldMaskMultiaccountTypeWithID(ctx context.Context, patchee *MultiaccountTypeWithID, ormObj *MultiaccountTypeWithIDORM, patcher *MultiaccountTypeWithID, updateMask *field_mask1.FieldMask, db *gorm1.DB) (*MultiaccountTypeWithID, error) {
+	var err error
+	for _, f := range updateMask.GetPaths() {
+		if f == "Id" {
+			patchee.Id = patcher.Id
+		}
+		if f == "SomeField" {
+			patchee.SomeField = patcher.SomeField
+		}
+	}
+	if err != nil {
+		return nil, err
+	}
+	return patchee, nil
 }
 
 // DefaultListMultiaccountTypeWithID executes a gorm list call
@@ -1016,6 +1161,65 @@ func DefaultStrictUpdatePrimaryUUIDType(ctx context.Context, in *PrimaryUUIDType
 		err = gateway1.SetCreated(ctx, "")
 	}
 	return &pbResponse, err
+}
+
+// DefaultPatchPrimaryUUIDType executes a basic gorm update call with patch behavior
+func DefaultPatchPrimaryUUIDType(ctx context.Context, in *PrimaryUUIDType, updateMask *field_mask1.FieldMask, db *gorm1.DB) (*PrimaryUUIDType, error) {
+	if in == nil {
+		return nil, errors.New("Nil argument to DefaultPatchPrimaryUUIDType")
+	}
+	ormParams, err := (&PrimaryUUIDType{Id: in.GetId()}).ToORM(ctx)
+	if err != nil {
+		return nil, err
+	}
+	ormObj := PrimaryUUIDTypeORM{}
+	if err := db.Where(&ormParams).First(&ormObj).Error; err != nil {
+		return nil, err
+	}
+	pbObj, err := ormObj.ToPB(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if _, err := DefaultApplyFieldMaskPrimaryUUIDType(ctx, &pbObj, &ormObj, in, updateMask, db); err != nil {
+		return nil, err
+	}
+	ormObj, err = pbObj.ToORM(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if err = db.Save(&ormObj).Error; err != nil {
+		return nil, err
+	}
+	pbObj, err = ormObj.ToPB(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return &pbObj, err
+}
+
+// DefaultApplyFieldMaskPrimaryUUIDType patches an pbObject with patcher according to a field mask.
+func DefaultApplyFieldMaskPrimaryUUIDType(ctx context.Context, patchee *PrimaryUUIDType, ormObj *PrimaryUUIDTypeORM, patcher *PrimaryUUIDType, updateMask *field_mask1.FieldMask, db *gorm1.DB) (*PrimaryUUIDType, error) {
+	var err error
+	for _, f := range updateMask.GetPaths() {
+		if f == "Id" {
+			patchee.Id = patcher.Id
+		}
+		if f == "Child" {
+			patchee.Child = patcher.Child
+			filterChild := ExternalChildORM{}
+			if ormObj.Id == nil || *ormObj.Id == go_uuid1.Nil {
+				return nil, errors.New("Can't do overwriting update with no Id value for PrimaryUUIDTypeORM")
+			}
+			filterChild.PrimaryUUIDTypeId = *ormObj.Id
+			if err = db.Where(filterChild).Delete(ExternalChildORM{}).Error; err != nil {
+				return nil, err
+			}
+		}
+	}
+	if err != nil {
+		return nil, err
+	}
+	return patchee, nil
 }
 
 // DefaultListPrimaryUUIDType executes a gorm list call

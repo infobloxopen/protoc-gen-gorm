@@ -145,11 +145,21 @@ func (p *OrmPlugin) followsReadConventions(inType generator.Object, outType gene
 func (p *OrmPlugin) generateUpdateServerMethod(service *descriptor.ServiceDescriptorProto, method *descriptor.MethodDescriptorProto) {
 	inType, outType, methodName, svcName := p.getMethodProps(service, method)
 	p.generateMethodSignature(inType, outType, methodName, svcName)
-	follows, typeName := p.followsUpdateConventions(inType, outType, methodName)
+	follows, typeName, updateMask := p.followsUpdateConventions(inType, outType, methodName)
 	if follows {
+		p.P(`var err error`)
+		p.P(`var res *`, typeName)
 		p.generateDBSetup(service, outType)
 		p.generatePreserviceCall(svcName, typeName, "Update")
-		p.P(`res, err := DefaultStrictUpdate`, typeName, `(ctx, in.GetPayload(), db)`)
+		if updateMask != "" {
+			p.P(`if in.Get`, generator.CamelCase(updateMask), `() == nil || len(in.Get`, generator.CamelCase(updateMask), `().GetPaths()) == 0 {`)
+			p.P(`res, err = DefaultStrictUpdate`, typeName, `(ctx, in.GetPayload(), db)`)
+			p.P(`} else {`)
+			p.P(`res, err = DefaultPatch`, typeName, `(ctx, in.GetPayload(), in.Get`, generator.CamelCase(updateMask), `(), db)`)
+			p.P(`}`)
+		} else {
+			p.P(`res, err = DefaultStrictUpdate`, typeName, `(ctx, in.GetPayload(), db)`)
+		}
 		p.P(`if err != nil {`)
 		p.P(`return nil, err`)
 		p.P(`}`)
@@ -161,11 +171,12 @@ func (p *OrmPlugin) generateUpdateServerMethod(service *descriptor.ServiceDescri
 	}
 }
 
-func (p *OrmPlugin) followsUpdateConventions(inType generator.Object, outType generator.Object, methodName string) (bool, string) {
+func (p *OrmPlugin) followsUpdateConventions(inType generator.Object, outType generator.Object, methodName string) (bool, string, string) {
 	inMsg := inType.(*generator.Descriptor)
 	outMsg := outType.(*generator.Descriptor)
 	var inTypeName string
 	var typeOrmable bool
+	var updateMask string
 	for _, field := range inMsg.Field {
 		if field.GetName() == "payload" {
 			gType, _ := p.GoType(inMsg, field)
@@ -174,10 +185,20 @@ func (p *OrmPlugin) followsUpdateConventions(inType generator.Object, outType ge
 				typeOrmable = true
 			}
 		}
+
+		// Check that type of field is a FieldMask
+		if field.GetTypeName() == ".google.protobuf.FieldMask" {
+			// More than one mask in request is not allowed.
+			if updateMask != "" {
+				return false, "", ""
+			}
+			updateMask = field.GetName()
+		}
+
 	}
 	if !typeOrmable {
 		p.warning(`stub will be generated for %s since %s incoming message doesn't have "payload" field of ormable type`, methodName, p.TypeName(inType))
-		return false, ""
+		return false, "", ""
 	}
 	var outTypeName string
 	for _, field := range outMsg.Field {
@@ -188,13 +209,13 @@ func (p *OrmPlugin) followsUpdateConventions(inType generator.Object, outType ge
 	}
 	if inTypeName != outTypeName {
 		p.warning(`stub will be generated for %s since "payload" field type of %s incoming message doesn't match "result" field type of %s outcoming message`, methodName, p.TypeName(inType), p.TypeName(outType))
-		return false, ""
+		return false, "", ""
 	}
 	if !p.hasPrimaryKey(p.getOrmable(inTypeName)) {
 		p.warning(`stub will be generated for %s since %s ormable type doesn't have a primary key`, methodName, outTypeName)
-		return false, ""
+		return false, "", ""
 	}
-	return true, inTypeName
+	return true, inTypeName, updateMask
 }
 
 func (p *OrmPlugin) generateDeleteServerMethod(service *descriptor.ServiceDescriptorProto, method *descriptor.MethodDescriptorProto) {
