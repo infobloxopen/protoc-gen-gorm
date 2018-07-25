@@ -114,6 +114,7 @@ func DefaultReadIntPoint(ctx context.Context, in *IntPoint, db *gorm1.DB) (*IntP
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultReadIntPoint")
 	}
+	db = db.Set("gorm:auto_preload", true)
 	ormParams, err := in.ToORM(ctx)
 	if err != nil {
 		return nil, err
@@ -248,6 +249,9 @@ func DefaultListIntPoint(ctx context.Context, db *gorm1.DB, req interface{}) ([]
 	db, err = gorm2.ApplyCollectionOperators(db, &IntPointORM{}, f, s, p, fs)
 	if err != nil {
 		return nil, err
+	}
+	if fs.GetFields() == nil {
+		db = db.Set("gorm:auto_preload", true)
 	}
 	in := IntPoint{}
 	ormParams, err := in.ToORM(ctx)

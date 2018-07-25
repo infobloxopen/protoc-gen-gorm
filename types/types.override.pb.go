@@ -82,7 +82,7 @@ func (m *InetValue) MarshalJSONPB(*jsonpb.Marshaler) ([]byte, error) {
 	if len(m.Value) == 0 {
 		return []byte("null"), nil
 	}
-	return []byte(m.Value), nil
+	return []byte(fmt.Sprintf(`%q`, m.Value)), nil
 }
 
 // UnmarshalJSONPB overloads InetValue's standard JSON -> PB conversion. If
@@ -92,6 +92,12 @@ func (m *InetValue) UnmarshalJSONPB(_ *jsonpb.Unmarshaler, data []byte) error {
 		m.Value = ""
 		return nil
 	}
-	m.Value = string(data)
+	// Very minimal check for validity, if not a quoted string fails
+	// Additional validation as a valid inet done in conversion to ORM type or
+	// must be performed manually
+	if data[0] != '"' && data[len(data)-1] != '"' {
+		return fmt.Errorf(`invalid inet '%s' does not match accepted format`, data)
+	}
+	m.Value = strings.Trim(string(data), `"`)
 	return nil
 }

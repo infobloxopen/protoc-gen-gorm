@@ -40,6 +40,9 @@ func (i *Inet) Scan(value interface{}) error {
 
 // ParseInet will return the Inet address/netmask represented in the input string
 func ParseInet(addr string) (*Inet, error) {
+	if len(addr) == 0 {
+		return nil, nil
+	}
 	ip, cidr, err := net.ParseCIDR(addr)
 	var mask net.IPMask
 	if err != nil {

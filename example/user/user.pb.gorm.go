@@ -906,6 +906,7 @@ func DefaultReadUser(ctx context.Context, in *User, db *gorm1.DB) (*User, error)
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultReadUser")
 	}
+	db = db.Set("gorm:auto_preload", true)
 	ormParams, err := in.ToORM(ctx)
 	if err != nil {
 		return nil, err
@@ -1190,6 +1191,9 @@ func DefaultListUser(ctx context.Context, db *gorm1.DB, req interface{}) ([]*Use
 	if err != nil {
 		return nil, err
 	}
+	if fs.GetFields() == nil {
+		db = db.Set("gorm:auto_preload", true)
+	}
 	in := User{}
 	ormParams, err := in.ToORM(ctx)
 	if err != nil {
@@ -1235,6 +1239,7 @@ func DefaultReadEmail(ctx context.Context, in *Email, db *gorm1.DB) (*Email, err
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultReadEmail")
 	}
+	db = db.Set("gorm:auto_preload", true)
 	ormParams, err := in.ToORM(ctx)
 	if err != nil {
 		return nil, err
@@ -1394,6 +1399,9 @@ func DefaultListEmail(ctx context.Context, db *gorm1.DB, req interface{}) ([]*Em
 	if err != nil {
 		return nil, err
 	}
+	if fs.GetFields() == nil {
+		db = db.Set("gorm:auto_preload", true)
+	}
 	in := Email{}
 	ormParams, err := in.ToORM(ctx)
 	if err != nil {
@@ -1436,6 +1444,7 @@ func DefaultReadAddress(ctx context.Context, in *Address, db *gorm1.DB) (*Addres
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultReadAddress")
 	}
+	db = db.Set("gorm:auto_preload", true)
 	ormParams, err := in.ToORM(ctx)
 	if err != nil {
 		return nil, err
@@ -1598,6 +1607,9 @@ func DefaultListAddress(ctx context.Context, db *gorm1.DB, req interface{}) ([]*
 	if err != nil {
 		return nil, err
 	}
+	if fs.GetFields() == nil {
+		db = db.Set("gorm:auto_preload", true)
+	}
 	in := Address{}
 	ormParams, err := in.ToORM(ctx)
 	if err != nil {
@@ -1640,6 +1652,7 @@ func DefaultReadLanguage(ctx context.Context, in *Language, db *gorm1.DB) (*Lang
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultReadLanguage")
 	}
+	db = db.Set("gorm:auto_preload", true)
 	ormParams, err := in.ToORM(ctx)
 	if err != nil {
 		return nil, err
@@ -1796,6 +1809,9 @@ func DefaultListLanguage(ctx context.Context, db *gorm1.DB, req interface{}) ([]
 	if err != nil {
 		return nil, err
 	}
+	if fs.GetFields() == nil {
+		db = db.Set("gorm:auto_preload", true)
+	}
 	in := Language{}
 	ormParams, err := in.ToORM(ctx)
 	if err != nil {
@@ -1838,6 +1854,7 @@ func DefaultReadCreditCard(ctx context.Context, in *CreditCard, db *gorm1.DB) (*
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultReadCreditCard")
 	}
+	db = db.Set("gorm:auto_preload", true)
 	ormParams, err := in.ToORM(ctx)
 	if err != nil {
 		return nil, err
@@ -1997,6 +2014,9 @@ func DefaultListCreditCard(ctx context.Context, db *gorm1.DB, req interface{}) (
 	if err != nil {
 		return nil, err
 	}
+	if fs.GetFields() == nil {
+		db = db.Set("gorm:auto_preload", true)
+	}
 	in := CreditCard{}
 	ormParams, err := in.ToORM(ctx)
 	if err != nil {
@@ -2044,6 +2064,9 @@ func DefaultListTask(ctx context.Context, db *gorm1.DB, req interface{}) ([]*Tas
 	db, err = gorm2.ApplyCollectionOperators(db, &TaskORM{}, f, s, p, fs)
 	if err != nil {
 		return nil, err
+	}
+	if fs.GetFields() == nil {
+		db = db.Set("gorm:auto_preload", true)
 	}
 	in := Task{}
 	ormParams, err := in.ToORM(ctx)
