@@ -75,8 +75,6 @@ func (m *User) ToORM(ctx context.Context) (UserORM, error) {
 	}
 	if v, err := resource1.Decode(&User{}, m.Id); err != nil {
 		return to, err
-	} else if v == nil {
-		to.Id = ""
 	} else {
 		to.Id = v.(string)
 	}
@@ -161,18 +159,20 @@ func (m *User) ToORM(ctx context.Context) (UserORM, error) {
 			to.Friends = append(to.Friends, nil)
 		}
 	}
-	if v, err := resource1.DecodeInt64(&Address{}, m.ShippingAddressId); err != nil {
-		return to, err
-	} else {
-		to.ShippingAddressId = &v
+	if m.ShippingAddressId != nil {
+		if v, err := resource1.DecodeInt64(&Address{}, m.ShippingAddressId); err != nil {
+			return to, err
+		} else {
+			to.ShippingAddressId = &v
+		}
 	}
-	if v, err := resource1.Decode(nil, m.ExternalUuid); err != nil {
-		return to, err
-	} else if v == nil {
-		to.ExternalUuid = nil
-	} else {
-		vv := v.(string)
-		to.ExternalUuid = &vv
+	if m.ExternalUuid != nil {
+		if v, err := resource1.Decode(nil, m.ExternalUuid); err != nil {
+			return to, err
+		} else {
+			vv := v.(string)
+			to.ExternalUuid = &vv
+		}
 	}
 	accountID, err := auth1.GetAccountID(ctx, nil)
 	if err != nil {
@@ -281,21 +281,9 @@ func (m *UserORM) ToPB(ctx context.Context) (User, error) {
 		} else {
 			to.ShippingAddressId = v
 		}
-	} else {
-		if v, err := resource1.Encode(&Address{}, nil); err != nil {
-			return to, err
-		} else {
-			to.ShippingAddressId = v
-		}
 	}
 	if m.ExternalUuid != nil {
 		if v, err := resource1.Encode(nil, *m.ExternalUuid); err != nil {
-			return to, err
-		} else {
-			to.ExternalUuid = v
-		}
-	} else {
-		if v, err := resource1.Encode(nil, nil); err != nil {
 			return to, err
 		} else {
 			to.ExternalUuid = v
@@ -356,25 +344,21 @@ func (m *Email) ToORM(ctx context.Context) (EmailORM, error) {
 	}
 	if v, err := resource1.Decode(&Email{}, m.Id); err != nil {
 		return to, err
-	} else if v == nil {
-		to.Id = ""
 	} else {
 		to.Id = v.(string)
 	}
 	to.Email = m.Email
 	to.Subscribed = m.Subscribed
-	if v, err := resource1.Decode(&User{}, m.UserId); err != nil {
-		return to, err
-	} else if v == nil {
-		to.UserId = nil
-	} else {
-		vv := v.(string)
-		to.UserId = &vv
+	if m.UserId != nil {
+		if v, err := resource1.Decode(&User{}, m.UserId); err != nil {
+			return to, err
+		} else {
+			vv := v.(string)
+			to.UserId = &vv
+		}
 	}
 	if v, err := resource1.Decode(nil, m.ExternalNotNull); err != nil {
 		return to, err
-	} else if v == nil {
-		to.ExternalNotNull = ""
 	} else {
 		to.ExternalNotNull = v.(string)
 	}
@@ -408,12 +392,6 @@ func (m *EmailORM) ToPB(ctx context.Context) (Email, error) {
 	to.Subscribed = m.Subscribed
 	if m.UserId != nil {
 		if v, err := resource1.Encode(&User{}, *m.UserId); err != nil {
-			return to, err
-		} else {
-			to.UserId = v
-		}
-	} else {
-		if v, err := resource1.Encode(&User{}, nil); err != nil {
 			return to, err
 		} else {
 			to.UserId = v
@@ -491,13 +469,13 @@ func (m *Address) ToORM(ctx context.Context) (AddressORM, error) {
 	} else {
 		to.External = v
 	}
-	if v, err := resource1.Decode(&Email{}, m.ImplicitFk); err != nil {
-		return to, err
-	} else if v == nil {
-		to.ImplicitFk = nil
-	} else {
-		vv := v.(string)
-		to.ImplicitFk = &vv
+	if m.ImplicitFk != nil {
+		if v, err := resource1.Decode(&Email{}, m.ImplicitFk); err != nil {
+			return to, err
+		} else {
+			vv := v.(string)
+			to.ImplicitFk = &vv
+		}
 	}
 	accountID, err := auth1.GetAccountID(ctx, nil)
 	if err != nil {
@@ -535,12 +513,6 @@ func (m *AddressORM) ToPB(ctx context.Context) (Address, error) {
 	}
 	if m.ImplicitFk != nil {
 		if v, err := resource1.Encode(&Email{}, *m.ImplicitFk); err != nil {
-			return to, err
-		} else {
-			to.ImplicitFk = v
-		}
-	} else {
-		if v, err := resource1.Encode(&Email{}, nil); err != nil {
 			return to, err
 		} else {
 			to.ImplicitFk = v
@@ -605,10 +577,12 @@ func (m *Language) ToORM(ctx context.Context) (LanguageORM, error) {
 	}
 	to.Name = m.Name
 	to.Code = m.Code
-	if v, err := resource1.DecodeInt64(nil, m.ExternalInt); err != nil {
-		return to, err
-	} else {
-		to.ExternalInt = &v
+	if m.ExternalInt != nil {
+		if v, err := resource1.DecodeInt64(nil, m.ExternalInt); err != nil {
+			return to, err
+		} else {
+			to.ExternalInt = &v
+		}
 	}
 	accountID, err := auth1.GetAccountID(ctx, nil)
 	if err != nil {
@@ -640,12 +614,6 @@ func (m *LanguageORM) ToPB(ctx context.Context) (Language, error) {
 	to.Code = m.Code
 	if m.ExternalInt != nil {
 		if v, err := resource1.Encode(nil, *m.ExternalInt); err != nil {
-			return to, err
-		} else {
-			to.ExternalInt = v
-		}
-	} else {
-		if v, err := resource1.Encode(nil, nil); err != nil {
 			return to, err
 		} else {
 			to.ExternalInt = v
@@ -720,13 +688,13 @@ func (m *CreditCard) ToORM(ctx context.Context) (CreditCardORM, error) {
 		}
 	}
 	to.Number = m.Number
-	if v, err := resource1.Decode(&User{}, m.UserId); err != nil {
-		return to, err
-	} else if v == nil {
-		to.UserId = nil
-	} else {
-		vv := v.(string)
-		to.UserId = &vv
+	if m.UserId != nil {
+		if v, err := resource1.Decode(&User{}, m.UserId); err != nil {
+			return to, err
+		} else {
+			vv := v.(string)
+			to.UserId = &vv
+		}
 	}
 	accountID, err := auth1.GetAccountID(ctx, nil)
 	if err != nil {
@@ -763,12 +731,6 @@ func (m *CreditCardORM) ToPB(ctx context.Context) (CreditCard, error) {
 	to.Number = m.Number
 	if m.UserId != nil {
 		if v, err := resource1.Encode(&User{}, *m.UserId); err != nil {
-			return to, err
-		} else {
-			to.UserId = v
-		}
-	} else {
-		if v, err := resource1.Encode(&User{}, nil); err != nil {
 			return to, err
 		} else {
 			to.UserId = v

@@ -697,9 +697,12 @@ func (p *OrmPlugin) generateFieldConversion(message *generator.Descriptor, field
 			nillable := strings.HasPrefix(ofield.Type, "*")
 			iface := ofield.Type == "interface{}"
 
-			switch btype {
-			case "int64":
-				if toORM {
+			if toORM {
+				if nillable {
+					p.P(`if m.`, fieldName, ` != nil {`)
+				}
+				switch btype {
+				case "int64":
 					p.P(`if v, err :=`, p.Import(resourceImport), `.DecodeInt64(`, resource, `, m.`, fieldName, `); err != nil {`)
 					p.P(`	return to, err`)
 					p.P(`} else {`)
@@ -709,27 +712,15 @@ func (p *OrmPlugin) generateFieldConversion(message *generator.Descriptor, field
 						p.P(`to.`, fieldName, ` = v`)
 					}
 					p.P(`}`)
-				}
-			case "[]byte":
-				if toORM {
+				case "[]byte":
 					p.P(`if v, err :=`, p.Import(resourceImport), `.DecodeBytes(`, resource, `, m.`, fieldName, `); err != nil {`)
 					p.P(`	return to, err`)
 					p.P(`} else {`)
 					p.P(`	to.`, fieldName, ` = v`)
 					p.P(`}`)
-				}
-			default:
-				if toORM {
+				default:
 					p.P(`if v, err :=`, p.Import(resourceImport), `.Decode(`, resource, `, m.`, fieldName, `); err != nil {`)
 					p.P(`return to, err`)
-					p.P(`} else if v == nil {`)
-					if nillable {
-						p.P(`to.`, fieldName, ` = nil`)
-					} else if iface {
-						p.P(`to.`, fieldName, `= nil`)
-					} else {
-						p.P(`to.`, fieldName, ` = `, p.guessZeroValue(btype))
-					}
 					p.P(`} else {`)
 					if nillable {
 						p.P(`vv := v.(`, btype, `)`)
@@ -741,18 +732,15 @@ func (p *OrmPlugin) generateFieldConversion(message *generator.Descriptor, field
 					}
 					p.P(`}`)
 				}
+				if nillable {
+					p.P(`}`)
+				}
 			}
 
 			if !toORM {
 				if nillable {
 					p.P(`if m.`, fieldName, `!= nil {`)
 					p.P(`	if v, err := `, p.Import(resourceImport), `.Encode(`, resource, `, *m.`, fieldName, `); err != nil {`)
-					p.P(`		return to, err`)
-					p.P(`	} else {`)
-					p.P(`		to.`, fieldName, ` = v`)
-					p.P(`	}`)
-					p.P(`} else {`)
-					p.P(`	if v, err := `, p.Import(resourceImport), `.Encode(`, resource, `, nil); err != nil {`)
 					p.P(`		return to, err`)
 					p.P(`	} else {`)
 					p.P(`		to.`, fieldName, ` = v`)
