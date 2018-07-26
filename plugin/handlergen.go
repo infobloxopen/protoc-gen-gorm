@@ -51,7 +51,9 @@ func (p *OrmPlugin) generateDefaultHandlers(file *generator.FileDescriptor) {
 			p.UsingGoImports("context", "errors")
 
 			p.generateCreateHandler(message)
-			if p.hasPrimaryKey(p.getOrmable(p.TypeName(message))) {
+			// FIXME: Temporary fix for Ormable objects that have no ID field but
+			// have pk.
+			if p.hasPrimaryKey(p.getOrmable(p.TypeName(message))) && p.hasIDField(message) {
 				p.generateReadHandler(message)
 				p.generateUpdateHandler(message)
 				p.generateDeleteHandler(message)
@@ -143,25 +145,27 @@ func (p *OrmPlugin) generateApplyFieldMask(message *generator.Descriptor) {
 	p.P()
 }
 
+func (p *OrmPlugin) hasIDField(message *generator.Descriptor) bool {
+	for _, field := range message.GetField() {
+		if strings.ToLower(field.GetName()) == "id" {
+			return true
+		}
+	}
+
+	return false
+}
+
 func (p *OrmPlugin) generatePatchHandler(message *generator.Descriptor) {
 	var isMultiAccount bool
-	var hasIDField bool
 
 	typeName := p.TypeName(message)
 	ormable := p.getOrmable(typeName)
-
-	for _, field := range message.GetField() {
-		if strings.ToLower(field.GetName()) == "id" {
-			hasIDField = true
-			break
-		}
-	}
 
 	if opts := getMessageOptions(message); opts != nil && opts.GetMultiAccount() {
 		isMultiAccount = true
 	}
 
-	if isMultiAccount && !hasIDField {
+	if isMultiAccount && !p.hasIDField(message) {
 		p.P(fmt.Sprintf("// Cannot autogen DefaultPatch%s: this is a multi-account table without an \"id\" field in the message.\n", typeName))
 		return
 	}
@@ -240,19 +244,12 @@ func (p *OrmPlugin) generatePatchHandler(message *generator.Descriptor) {
 func (p *OrmPlugin) generateUpdateHandler(message *generator.Descriptor) {
 	typeName := p.TypeName(message)
 
-	hasIDField := false
-	for _, field := range message.GetField() {
-		if strings.ToLower(field.GetName()) == "id" {
-			hasIDField = true
-			break
-		}
-	}
 	isMultiAccount := false
 	if opts := getMessageOptions(message); opts != nil && opts.GetMultiAccount() {
 		isMultiAccount = true
 	}
 
-	if isMultiAccount && !hasIDField {
+	if isMultiAccount && !p.hasIDField(message) {
 		p.P(fmt.Sprintf("// Cannot autogen DefaultUpdate%s: this is a multi-account table without an \"id\" field in the message.\n", typeName))
 		return
 	}
