@@ -134,3 +134,11 @@ message PrimaryUUIDType {
   gorm.types.UUIDValue id = 1;
   ExternalChild child = 2;
 }
+
+message PrimaryStringType {
+  option (gorm.opts) = {
+    ormable: true,
+  };
+  string id = 1;
+  ExternalChild child = 2;
+}
