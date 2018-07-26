@@ -17,6 +17,7 @@ It has these top-level messages:
 	MultiaccountTypeWithoutID
 	APIOnlyType
 	PrimaryUUIDType
+	PrimaryStringType
 	IntPoint
 	CreateIntPointRequest
 	CreateIntPointResponse

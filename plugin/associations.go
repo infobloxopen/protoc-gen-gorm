@@ -105,15 +105,21 @@ func (p *OrmPlugin) countManyToManyAssociationDimension(msg *generator.Descripto
 func (p *OrmPlugin) resolveAliasName(goType, goPackage string, file *generator.FileDescriptor) string {
 	originFile := p.currentFile
 	p.setFile(file)
+	isPointer := strings.HasPrefix(goType, "*")
 	typeParts := strings.Split(goType, ".")
 	if len(typeParts) == 2 {
+		var newType string
 		if strings.Contains(goPackage, "github.com") {
-			return p.Import(goPackage) + "." + typeParts[1]
+			newType = p.Import(goPackage) + "." + typeParts[1]
 		} else {
 			p.UsingGoImports(goPackage)
 			packageParts := strings.Split(goPackage, "/")
-			return packageParts[len(packageParts)-1] + "." + typeParts[1]
+			newType = packageParts[len(packageParts)-1] + "." + typeParts[1]
 		}
+		if isPointer {
+			return "*" + newType
+		}
+		return newType
 	}
 	p.setFile(originFile)
 	return goType
