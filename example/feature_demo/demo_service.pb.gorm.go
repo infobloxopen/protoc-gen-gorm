@@ -334,7 +334,7 @@ func (m *IntPointServiceDefaultServer) Update(ctx context.Context, in *UpdateInt
 			return nil, err
 		}
 	}
-	if in.GetGerogeriGegege() == nil || len(in.GetGerogeriGegege().GetPaths()) == 0 {
+	if in.GetGerogeriGegege() == nil {
 		res, err = DefaultStrictUpdateIntPoint(ctx, in.GetPayload(), db)
 	} else {
 		res, err = DefaultPatchIntPoint(ctx, in.GetPayload(), in.GetGerogeriGegege(), db)
@@ -480,7 +480,7 @@ func (m *IntPointTxnDefaultServer) Update(ctx context.Context, in *UpdateIntPoin
 			return nil, err
 		}
 	}
-	if in.GetGerogeriGegege() == nil || len(in.GetGerogeriGegege().GetPaths()) == 0 {
+	if in.GetGerogeriGegege() == nil {
 		res, err = DefaultStrictUpdateIntPoint(ctx, in.GetPayload(), db)
 	} else {
 		res, err = DefaultPatchIntPoint(ctx, in.GetPayload(), in.GetGerogeriGegege(), db)

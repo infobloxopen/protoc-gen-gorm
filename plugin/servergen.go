@@ -152,7 +152,7 @@ func (p *OrmPlugin) generateUpdateServerMethod(service *descriptor.ServiceDescri
 		p.generateDBSetup(service, outType)
 		p.generatePreserviceCall(svcName, typeName, "Update")
 		if updateMask != "" {
-			p.P(`if in.Get`, generator.CamelCase(updateMask), `() == nil || len(in.Get`, generator.CamelCase(updateMask), `().GetPaths()) == 0 {`)
+			p.P(`if in.Get`, generator.CamelCase(updateMask), `() == nil {`)
 			p.P(`res, err = DefaultStrictUpdate`, typeName, `(ctx, in.GetPayload(), db)`)
 			p.P(`} else {`)
 			p.P(`res, err = DefaultPatch`, typeName, `(ctx, in.GetPayload(), in.Get`, generator.CamelCase(updateMask), `(), db)`)
