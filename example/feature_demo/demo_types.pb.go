@@ -50,7 +50,7 @@ func (x TestTypesStatus) String() string {
 	return proto.EnumName(TestTypesStatus_name, int32(x))
 }
 func (TestTypesStatus) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_demo_types_ddef1bc3999a33ed, []int{0, 0}
+	return fileDescriptor_demo_types_840eb830c7043c64, []int{0, 0}
 }
 
 // test_types is a message that includes a representative sample of the
@@ -91,7 +91,7 @@ func (m *TestTypes) Reset()         { *m = TestTypes{} }
 func (m *TestTypes) String() string { return proto.CompactTextString(m) }
 func (*TestTypes) ProtoMessage()    {}
 func (*TestTypes) Descriptor() ([]byte, []int) {
-	return fileDescriptor_demo_types_ddef1bc3999a33ed, []int{0}
+	return fileDescriptor_demo_types_840eb830c7043c64, []int{0}
 }
 func (m *TestTypes) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_TestTypes.Unmarshal(m, b)
@@ -210,7 +210,7 @@ func (m *TypeWithID) Reset()         { *m = TypeWithID{} }
 func (m *TypeWithID) String() string { return proto.CompactTextString(m) }
 func (*TypeWithID) ProtoMessage()    {}
 func (*TypeWithID) Descriptor() ([]byte, []int) {
-	return fileDescriptor_demo_types_ddef1bc3999a33ed, []int{1}
+	return fileDescriptor_demo_types_840eb830c7043c64, []int{1}
 }
 func (m *TypeWithID) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_TypeWithID.Unmarshal(m, b)
@@ -299,7 +299,7 @@ func (m *MultiaccountTypeWithID) Reset()         { *m = MultiaccountTypeWithID{}
 func (m *MultiaccountTypeWithID) String() string { return proto.CompactTextString(m) }
 func (*MultiaccountTypeWithID) ProtoMessage()    {}
 func (*MultiaccountTypeWithID) Descriptor() ([]byte, []int) {
-	return fileDescriptor_demo_types_ddef1bc3999a33ed, []int{2}
+	return fileDescriptor_demo_types_840eb830c7043c64, []int{2}
 }
 func (m *MultiaccountTypeWithID) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_MultiaccountTypeWithID.Unmarshal(m, b)
@@ -344,7 +344,7 @@ func (m *MultiaccountTypeWithoutID) Reset()         { *m = MultiaccountTypeWitho
 func (m *MultiaccountTypeWithoutID) String() string { return proto.CompactTextString(m) }
 func (*MultiaccountTypeWithoutID) ProtoMessage()    {}
 func (*MultiaccountTypeWithoutID) Descriptor() ([]byte, []int) {
-	return fileDescriptor_demo_types_ddef1bc3999a33ed, []int{3}
+	return fileDescriptor_demo_types_840eb830c7043c64, []int{3}
 }
 func (m *MultiaccountTypeWithoutID) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_MultiaccountTypeWithoutID.Unmarshal(m, b)
@@ -386,7 +386,7 @@ func (m *APIOnlyType) Reset()         { *m = APIOnlyType{} }
 func (m *APIOnlyType) String() string { return proto.CompactTextString(m) }
 func (*APIOnlyType) ProtoMessage()    {}
 func (*APIOnlyType) Descriptor() ([]byte, []int) {
-	return fileDescriptor_demo_types_ddef1bc3999a33ed, []int{4}
+	return fileDescriptor_demo_types_840eb830c7043c64, []int{4}
 }
 func (m *APIOnlyType) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_APIOnlyType.Unmarshal(m, b)
@@ -425,7 +425,7 @@ func (m *PrimaryUUIDType) Reset()         { *m = PrimaryUUIDType{} }
 func (m *PrimaryUUIDType) String() string { return proto.CompactTextString(m) }
 func (*PrimaryUUIDType) ProtoMessage()    {}
 func (*PrimaryUUIDType) Descriptor() ([]byte, []int) {
-	return fileDescriptor_demo_types_ddef1bc3999a33ed, []int{5}
+	return fileDescriptor_demo_types_840eb830c7043c64, []int{5}
 }
 func (m *PrimaryUUIDType) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_PrimaryUUIDType.Unmarshal(m, b)
@@ -471,7 +471,7 @@ func (m *PrimaryStringType) Reset()         { *m = PrimaryStringType{} }
 func (m *PrimaryStringType) String() string { return proto.CompactTextString(m) }
 func (*PrimaryStringType) ProtoMessage()    {}
 func (*PrimaryStringType) Descriptor() ([]byte, []int) {
-	return fileDescriptor_demo_types_ddef1bc3999a33ed, []int{6}
+	return fileDescriptor_demo_types_840eb830c7043c64, []int{6}
 }
 func (m *PrimaryStringType) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_PrimaryStringType.Unmarshal(m, b)
@@ -517,10 +517,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("example/feature_demo/demo_types.proto", fileDescriptor_demo_types_ddef1bc3999a33ed)
+	proto.RegisterFile("example/feature_demo/demo_types.proto", fileDescriptor_demo_types_840eb830c7043c64)
 }
 
-var fileDescriptor_demo_types_ddef1bc3999a33ed = []byte{
+var fileDescriptor_demo_types_840eb830c7043c64 = []byte{
 	// 972 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x9c, 0x95, 0x6d, 0x6f, 0xe3, 0x44,
 	0x10, 0xc7, 0xcf, 0x79, 0xce, 0xa4, 0x69, 0xda, 0x45, 0x77, 0x38, 0xe1, 0xe1, 0xa2, 0x88, 0x72,

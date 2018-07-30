@@ -796,6 +796,11 @@ func DefaultPatchTypeWithID(ctx context.Context, in *TypeWithID, updateMask *fie
 	if _, err := DefaultApplyFieldMaskTypeWithID(ctx, &pbObj, &ormObj, in, updateMask, db); err != nil {
 		return nil, err
 	}
+	if hook, ok := interface{}(&pbObj).(TypeWithIDWithBeforePatchSave); ok {
+		if ctx, db, err = hook.BeforePatchSave(ctx, in, updateMask, db); err != nil {
+			return nil, err
+		}
+	}
 	ormObj, err = pbObj.ToORM(ctx)
 	if err != nil {
 		return nil, err
@@ -808,6 +813,10 @@ func DefaultPatchTypeWithID(ctx context.Context, in *TypeWithID, updateMask *fie
 		return nil, err
 	}
 	return &pbObj, err
+}
+
+type TypeWithIDWithBeforePatchSave interface {
+	BeforePatchSave(context.Context, *TypeWithID, *field_mask1.FieldMask, *gorm1.DB) (context.Context, *gorm1.DB, error)
 }
 
 // DefaultApplyFieldMaskTypeWithID patches an pbObject with patcher according to a field mask.
@@ -1027,6 +1036,11 @@ func DefaultPatchMultiaccountTypeWithID(ctx context.Context, in *MultiaccountTyp
 	if _, err := DefaultApplyFieldMaskMultiaccountTypeWithID(ctx, &pbObj, &ormObj, in, updateMask, db); err != nil {
 		return nil, err
 	}
+	if hook, ok := interface{}(&pbObj).(MultiaccountTypeWithIDWithBeforePatchSave); ok {
+		if ctx, db, err = hook.BeforePatchSave(ctx, in, updateMask, db); err != nil {
+			return nil, err
+		}
+	}
 	ormObj, err = pbObj.ToORM(ctx)
 	if err != nil {
 		return nil, err
@@ -1040,6 +1054,10 @@ func DefaultPatchMultiaccountTypeWithID(ctx context.Context, in *MultiaccountTyp
 		return nil, err
 	}
 	return &pbObj, err
+}
+
+type MultiaccountTypeWithIDWithBeforePatchSave interface {
+	BeforePatchSave(context.Context, *MultiaccountTypeWithID, *field_mask1.FieldMask, *gorm1.DB) (context.Context, *gorm1.DB, error)
 }
 
 // DefaultApplyFieldMaskMultiaccountTypeWithID patches an pbObject with patcher according to a field mask.
@@ -1265,6 +1283,11 @@ func DefaultPatchPrimaryUUIDType(ctx context.Context, in *PrimaryUUIDType, updat
 	if _, err := DefaultApplyFieldMaskPrimaryUUIDType(ctx, &pbObj, &ormObj, in, updateMask, db); err != nil {
 		return nil, err
 	}
+	if hook, ok := interface{}(&pbObj).(PrimaryUUIDTypeWithBeforePatchSave); ok {
+		if ctx, db, err = hook.BeforePatchSave(ctx, in, updateMask, db); err != nil {
+			return nil, err
+		}
+	}
 	ormObj, err = pbObj.ToORM(ctx)
 	if err != nil {
 		return nil, err
@@ -1277,6 +1300,10 @@ func DefaultPatchPrimaryUUIDType(ctx context.Context, in *PrimaryUUIDType, updat
 		return nil, err
 	}
 	return &pbObj, err
+}
+
+type PrimaryUUIDTypeWithBeforePatchSave interface {
+	BeforePatchSave(context.Context, *PrimaryUUIDType, *field_mask1.FieldMask, *gorm1.DB) (context.Context, *gorm1.DB, error)
 }
 
 // DefaultApplyFieldMaskPrimaryUUIDType patches an pbObject with patcher according to a field mask.
@@ -1461,6 +1488,11 @@ func DefaultPatchPrimaryStringType(ctx context.Context, in *PrimaryStringType, u
 	if _, err := DefaultApplyFieldMaskPrimaryStringType(ctx, &pbObj, &ormObj, in, updateMask, db); err != nil {
 		return nil, err
 	}
+	if hook, ok := interface{}(&pbObj).(PrimaryStringTypeWithBeforePatchSave); ok {
+		if ctx, db, err = hook.BeforePatchSave(ctx, in, updateMask, db); err != nil {
+			return nil, err
+		}
+	}
 	ormObj, err = pbObj.ToORM(ctx)
 	if err != nil {
 		return nil, err
@@ -1473,6 +1505,10 @@ func DefaultPatchPrimaryStringType(ctx context.Context, in *PrimaryStringType, u
 		return nil, err
 	}
 	return &pbObj, err
+}
+
+type PrimaryStringTypeWithBeforePatchSave interface {
+	BeforePatchSave(context.Context, *PrimaryStringType, *field_mask1.FieldMask, *gorm1.DB) (context.Context, *gorm1.DB, error)
 }
 
 // DefaultApplyFieldMaskPrimaryStringType patches an pbObject with patcher according to a field mask.

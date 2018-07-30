@@ -230,6 +230,11 @@ func DefaultPatchExternalChild(ctx context.Context, in *ExternalChild, updateMas
 	if _, err := DefaultApplyFieldMaskExternalChild(ctx, &pbObj, &ormObj, in, updateMask, db); err != nil {
 		return nil, err
 	}
+	if hook, ok := interface{}(&pbObj).(ExternalChildWithBeforePatchSave); ok {
+		if ctx, db, err = hook.BeforePatchSave(ctx, in, updateMask, db); err != nil {
+			return nil, err
+		}
+	}
 	ormObj, err = pbObj.ToORM(ctx)
 	if err != nil {
 		return nil, err
@@ -242,6 +247,10 @@ func DefaultPatchExternalChild(ctx context.Context, in *ExternalChild, updateMas
 		return nil, err
 	}
 	return &pbObj, err
+}
+
+type ExternalChildWithBeforePatchSave interface {
+	BeforePatchSave(context.Context, *ExternalChild, *field_mask1.FieldMask, *gorm1.DB) (context.Context, *gorm1.DB, error)
 }
 
 // DefaultApplyFieldMaskExternalChild patches an pbObject with patcher according to a field mask.
