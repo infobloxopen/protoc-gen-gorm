@@ -214,6 +214,12 @@ func (p *OrmPlugin) generatePatchHandler(message *generator.Descriptor) {
 	p.P(`return nil, err`)
 	p.P(`}`)
 
+	p.P(`if hook, ok := interface{}(&pbObj).(`, typeName, `WithBeforePatchSave); ok {`)
+	p.P(`if ctx, db, err = hook.BeforePatchSave(ctx, in, updateMask, db); err != nil {`)
+	p.P(`return nil, err`)
+	p.P(`}`)
+	p.P(`}`)
+
 	// Convert pbObj back to ormObj to trigger any logic that was
 	// written for BeforeToORM/AfterToORM and perform db.Save call.
 	p.P(`ormObj, err = pbObj.ToORM(ctx)`)
@@ -239,6 +245,12 @@ func (p *OrmPlugin) generatePatchHandler(message *generator.Descriptor) {
 	p.P(`return &pbObj, err`)
 	p.P(`}`)
 	p.P()
+
+	p.P(`type `, typeName, `WithBeforePatchSave interface {`)
+	p.P(`BeforePatchSave(context.Context, *`,
+		typeName, `, *`, p.Import(fmImport), `.FieldMask, *`, p.Import(gormImport),
+		`.DB) (context.Context, *`, p.Import(gormImport), `.DB, error)`)
+	p.P(`}`)
 }
 
 func (p *OrmPlugin) generateUpdateHandler(message *generator.Descriptor) {

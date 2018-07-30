@@ -1014,6 +1014,11 @@ func DefaultPatchUser(ctx context.Context, in *User, updateMask *field_mask1.Fie
 	if _, err := DefaultApplyFieldMaskUser(ctx, &pbObj, &ormObj, in, updateMask, db); err != nil {
 		return nil, err
 	}
+	if hook, ok := interface{}(&pbObj).(UserWithBeforePatchSave); ok {
+		if ctx, db, err = hook.BeforePatchSave(ctx, in, updateMask, db); err != nil {
+			return nil, err
+		}
+	}
 	ormObj, err = pbObj.ToORM(ctx)
 	if err != nil {
 		return nil, err
@@ -1027,6 +1032,10 @@ func DefaultPatchUser(ctx context.Context, in *User, updateMask *field_mask1.Fie
 		return nil, err
 	}
 	return &pbObj, err
+}
+
+type UserWithBeforePatchSave interface {
+	BeforePatchSave(context.Context, *User, *field_mask1.FieldMask, *gorm1.DB) (context.Context, *gorm1.DB, error)
 }
 
 // DefaultApplyFieldMaskUser patches an pbObject with patcher according to a field mask.
@@ -1309,6 +1318,11 @@ func DefaultPatchEmail(ctx context.Context, in *Email, updateMask *field_mask1.F
 	if _, err := DefaultApplyFieldMaskEmail(ctx, &pbObj, &ormObj, in, updateMask, db); err != nil {
 		return nil, err
 	}
+	if hook, ok := interface{}(&pbObj).(EmailWithBeforePatchSave); ok {
+		if ctx, db, err = hook.BeforePatchSave(ctx, in, updateMask, db); err != nil {
+			return nil, err
+		}
+	}
 	ormObj, err = pbObj.ToORM(ctx)
 	if err != nil {
 		return nil, err
@@ -1322,6 +1336,10 @@ func DefaultPatchEmail(ctx context.Context, in *Email, updateMask *field_mask1.F
 		return nil, err
 	}
 	return &pbObj, err
+}
+
+type EmailWithBeforePatchSave interface {
+	BeforePatchSave(context.Context, *Email, *field_mask1.FieldMask, *gorm1.DB) (context.Context, *gorm1.DB, error)
 }
 
 // DefaultApplyFieldMaskEmail patches an pbObject with patcher according to a field mask.
@@ -1514,6 +1532,11 @@ func DefaultPatchAddress(ctx context.Context, in *Address, updateMask *field_mas
 	if _, err := DefaultApplyFieldMaskAddress(ctx, &pbObj, &ormObj, in, updateMask, db); err != nil {
 		return nil, err
 	}
+	if hook, ok := interface{}(&pbObj).(AddressWithBeforePatchSave); ok {
+		if ctx, db, err = hook.BeforePatchSave(ctx, in, updateMask, db); err != nil {
+			return nil, err
+		}
+	}
 	ormObj, err = pbObj.ToORM(ctx)
 	if err != nil {
 		return nil, err
@@ -1527,6 +1550,10 @@ func DefaultPatchAddress(ctx context.Context, in *Address, updateMask *field_mas
 		return nil, err
 	}
 	return &pbObj, err
+}
+
+type AddressWithBeforePatchSave interface {
+	BeforePatchSave(context.Context, *Address, *field_mask1.FieldMask, *gorm1.DB) (context.Context, *gorm1.DB, error)
 }
 
 // DefaultApplyFieldMaskAddress patches an pbObject with patcher according to a field mask.
@@ -1722,6 +1749,11 @@ func DefaultPatchLanguage(ctx context.Context, in *Language, updateMask *field_m
 	if _, err := DefaultApplyFieldMaskLanguage(ctx, &pbObj, &ormObj, in, updateMask, db); err != nil {
 		return nil, err
 	}
+	if hook, ok := interface{}(&pbObj).(LanguageWithBeforePatchSave); ok {
+		if ctx, db, err = hook.BeforePatchSave(ctx, in, updateMask, db); err != nil {
+			return nil, err
+		}
+	}
 	ormObj, err = pbObj.ToORM(ctx)
 	if err != nil {
 		return nil, err
@@ -1735,6 +1767,10 @@ func DefaultPatchLanguage(ctx context.Context, in *Language, updateMask *field_m
 		return nil, err
 	}
 	return &pbObj, err
+}
+
+type LanguageWithBeforePatchSave interface {
+	BeforePatchSave(context.Context, *Language, *field_mask1.FieldMask, *gorm1.DB) (context.Context, *gorm1.DB, error)
 }
 
 // DefaultApplyFieldMaskLanguage patches an pbObject with patcher according to a field mask.
@@ -1924,6 +1960,11 @@ func DefaultPatchCreditCard(ctx context.Context, in *CreditCard, updateMask *fie
 	if _, err := DefaultApplyFieldMaskCreditCard(ctx, &pbObj, &ormObj, in, updateMask, db); err != nil {
 		return nil, err
 	}
+	if hook, ok := interface{}(&pbObj).(CreditCardWithBeforePatchSave); ok {
+		if ctx, db, err = hook.BeforePatchSave(ctx, in, updateMask, db); err != nil {
+			return nil, err
+		}
+	}
 	ormObj, err = pbObj.ToORM(ctx)
 	if err != nil {
 		return nil, err
@@ -1937,6 +1978,10 @@ func DefaultPatchCreditCard(ctx context.Context, in *CreditCard, updateMask *fie
 		return nil, err
 	}
 	return &pbObj, err
+}
+
+type CreditCardWithBeforePatchSave interface {
+	BeforePatchSave(context.Context, *CreditCard, *field_mask1.FieldMask, *gorm1.DB) (context.Context, *gorm1.DB, error)
 }
 
 // DefaultApplyFieldMaskCreditCard patches an pbObject with patcher according to a field mask.

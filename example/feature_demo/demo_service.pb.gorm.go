@@ -205,6 +205,11 @@ func DefaultPatchIntPoint(ctx context.Context, in *IntPoint, updateMask *field_m
 	if _, err := DefaultApplyFieldMaskIntPoint(ctx, &pbObj, &ormObj, in, updateMask, db); err != nil {
 		return nil, err
 	}
+	if hook, ok := interface{}(&pbObj).(IntPointWithBeforePatchSave); ok {
+		if ctx, db, err = hook.BeforePatchSave(ctx, in, updateMask, db); err != nil {
+			return nil, err
+		}
+	}
 	ormObj, err = pbObj.ToORM(ctx)
 	if err != nil {
 		return nil, err
@@ -217,6 +222,10 @@ func DefaultPatchIntPoint(ctx context.Context, in *IntPoint, updateMask *field_m
 		return nil, err
 	}
 	return &pbObj, err
+}
+
+type IntPointWithBeforePatchSave interface {
+	BeforePatchSave(context.Context, *IntPoint, *field_mask1.FieldMask, *gorm1.DB) (context.Context, *gorm1.DB, error)
 }
 
 // DefaultApplyFieldMaskIntPoint patches an pbObject with patcher according to a field mask.
