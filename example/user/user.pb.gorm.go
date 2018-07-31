@@ -994,6 +994,7 @@ func DefaultPatchUser(ctx context.Context, in *User, updateMask *field_mask1.Fie
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultPatchUser")
 	}
+	db = db.Set("gorm:auto_preload", true)
 	accountID, err := auth1.GetAccountID(ctx, nil)
 	if err != nil {
 		return nil, err
@@ -1298,6 +1299,7 @@ func DefaultPatchEmail(ctx context.Context, in *Email, updateMask *field_mask1.F
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultPatchEmail")
 	}
+	db = db.Set("gorm:auto_preload", true)
 	accountID, err := auth1.GetAccountID(ctx, nil)
 	if err != nil {
 		return nil, err
@@ -1512,6 +1514,7 @@ func DefaultPatchAddress(ctx context.Context, in *Address, updateMask *field_mas
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultPatchAddress")
 	}
+	db = db.Set("gorm:auto_preload", true)
 	accountID, err := auth1.GetAccountID(ctx, nil)
 	if err != nil {
 		return nil, err
@@ -1729,6 +1732,7 @@ func DefaultPatchLanguage(ctx context.Context, in *Language, updateMask *field_m
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultPatchLanguage")
 	}
+	db = db.Set("gorm:auto_preload", true)
 	accountID, err := auth1.GetAccountID(ctx, nil)
 	if err != nil {
 		return nil, err
@@ -1940,6 +1944,7 @@ func DefaultPatchCreditCard(ctx context.Context, in *CreditCard, updateMask *fie
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultPatchCreditCard")
 	}
+	db = db.Set("gorm:auto_preload", true)
 	accountID, err := auth1.GetAccountID(ctx, nil)
 	if err != nil {
 		return nil, err

@@ -177,6 +177,7 @@ func (p *OrmPlugin) generatePatchHandler(message *generator.Descriptor) {
 	p.P(`if in == nil {`)
 	p.P(`return nil, errors.New("Nil argument to DefaultPatch`, typeName, `")`)
 	p.P(`}`)
+	p.generatePreloading()
 	if isMultiAccount {
 		p.P("accountID, err := ", p.Import(authImport), ".GetAccountID(ctx, nil)")
 		p.P("if err != nil {")

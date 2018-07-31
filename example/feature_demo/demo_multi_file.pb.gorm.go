@@ -215,6 +215,7 @@ func DefaultPatchExternalChild(ctx context.Context, in *ExternalChild, updateMas
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultPatchExternalChild")
 	}
+	db = db.Set("gorm:auto_preload", true)
 	ormParams, err := (&ExternalChild{Id: in.GetId()}).ToORM(ctx)
 	if err != nil {
 		return nil, err

@@ -781,6 +781,7 @@ func DefaultPatchTypeWithID(ctx context.Context, in *TypeWithID, updateMask *fie
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultPatchTypeWithID")
 	}
+	db = db.Set("gorm:auto_preload", true)
 	ormParams, err := (&TypeWithID{Id: in.GetId()}).ToORM(ctx)
 	if err != nil {
 		return nil, err
@@ -1016,6 +1017,7 @@ func DefaultPatchMultiaccountTypeWithID(ctx context.Context, in *MultiaccountTyp
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultPatchMultiaccountTypeWithID")
 	}
+	db = db.Set("gorm:auto_preload", true)
 	accountID, err := auth1.GetAccountID(ctx, nil)
 	if err != nil {
 		return nil, err
@@ -1268,6 +1270,7 @@ func DefaultPatchPrimaryUUIDType(ctx context.Context, in *PrimaryUUIDType, updat
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultPatchPrimaryUUIDType")
 	}
+	db = db.Set("gorm:auto_preload", true)
 	ormParams, err := (&PrimaryUUIDType{Id: in.GetId()}).ToORM(ctx)
 	if err != nil {
 		return nil, err
@@ -1473,6 +1476,7 @@ func DefaultPatchPrimaryStringType(ctx context.Context, in *PrimaryStringType, u
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultPatchPrimaryStringType")
 	}
+	db = db.Set("gorm:auto_preload", true)
 	ormParams, err := (&PrimaryStringType{Id: in.GetId()}).ToORM(ctx)
 	if err != nil {
 		return nil, err
