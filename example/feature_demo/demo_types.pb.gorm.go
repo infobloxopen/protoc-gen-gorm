@@ -781,16 +781,12 @@ func DefaultPatchTypeWithID(ctx context.Context, in *TypeWithID, updateMask *fie
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultPatchTypeWithID")
 	}
-	db = db.Set("gorm:auto_preload", true)
-	ormParams, err := (&TypeWithID{Id: in.GetId()}).ToORM(ctx)
+	pbReadRes, err := DefaultReadTypeWithID(ctx, &TypeWithID{Id: in.GetId()}, db)
 	if err != nil {
 		return nil, err
 	}
-	ormObj := TypeWithIDORM{}
-	if err := db.Where(&ormParams).First(&ormObj).Error; err != nil {
-		return nil, err
-	}
-	pbObj, err := ormObj.ToPB(ctx)
+	pbObj := *pbReadRes
+	ormObj, err := pbObj.ToORM(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -1017,21 +1013,16 @@ func DefaultPatchMultiaccountTypeWithID(ctx context.Context, in *MultiaccountTyp
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultPatchMultiaccountTypeWithID")
 	}
-	db = db.Set("gorm:auto_preload", true)
 	accountID, err := auth1.GetAccountID(ctx, nil)
 	if err != nil {
 		return nil, err
 	}
-	ormParams, err := (&MultiaccountTypeWithID{Id: in.GetId()}).ToORM(ctx)
+	pbReadRes, err := DefaultReadMultiaccountTypeWithID(ctx, &MultiaccountTypeWithID{Id: in.GetId()}, db)
 	if err != nil {
 		return nil, err
 	}
-	db = db.Where(&MultiaccountTypeWithIDORM{AccountID: accountID})
-	ormObj := MultiaccountTypeWithIDORM{}
-	if err := db.Where(&ormParams).First(&ormObj).Error; err != nil {
-		return nil, err
-	}
-	pbObj, err := ormObj.ToPB(ctx)
+	pbObj := *pbReadRes
+	ormObj, err := pbObj.ToORM(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -1270,16 +1261,12 @@ func DefaultPatchPrimaryUUIDType(ctx context.Context, in *PrimaryUUIDType, updat
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultPatchPrimaryUUIDType")
 	}
-	db = db.Set("gorm:auto_preload", true)
-	ormParams, err := (&PrimaryUUIDType{Id: in.GetId()}).ToORM(ctx)
+	pbReadRes, err := DefaultReadPrimaryUUIDType(ctx, &PrimaryUUIDType{Id: in.GetId()}, db)
 	if err != nil {
 		return nil, err
 	}
-	ormObj := PrimaryUUIDTypeORM{}
-	if err := db.Where(&ormParams).First(&ormObj).Error; err != nil {
-		return nil, err
-	}
-	pbObj, err := ormObj.ToPB(ctx)
+	pbObj := *pbReadRes
+	ormObj, err := pbObj.ToORM(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -1476,16 +1463,12 @@ func DefaultPatchPrimaryStringType(ctx context.Context, in *PrimaryStringType, u
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultPatchPrimaryStringType")
 	}
-	db = db.Set("gorm:auto_preload", true)
-	ormParams, err := (&PrimaryStringType{Id: in.GetId()}).ToORM(ctx)
+	pbReadRes, err := DefaultReadPrimaryStringType(ctx, &PrimaryStringType{Id: in.GetId()}, db)
 	if err != nil {
 		return nil, err
 	}
-	ormObj := PrimaryStringTypeORM{}
-	if err := db.Where(&ormParams).First(&ormObj).Error; err != nil {
-		return nil, err
-	}
-	pbObj, err := ormObj.ToPB(ctx)
+	pbObj := *pbReadRes
+	ormObj, err := pbObj.ToORM(ctx)
 	if err != nil {
 		return nil, err
 	}

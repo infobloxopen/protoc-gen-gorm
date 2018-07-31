@@ -190,16 +190,12 @@ func DefaultPatchIntPoint(ctx context.Context, in *IntPoint, updateMask *field_m
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultPatchIntPoint")
 	}
-	db = db.Set("gorm:auto_preload", true)
-	ormParams, err := (&IntPoint{Id: in.GetId()}).ToORM(ctx)
+	pbReadRes, err := DefaultReadIntPoint(ctx, &IntPoint{Id: in.GetId()}, db)
 	if err != nil {
 		return nil, err
 	}
-	ormObj := IntPointORM{}
-	if err := db.Where(&ormParams).First(&ormObj).Error; err != nil {
-		return nil, err
-	}
-	pbObj, err := ormObj.ToPB(ctx)
+	pbObj := *pbReadRes
+	ormObj, err := pbObj.ToORM(ctx)
 	if err != nil {
 		return nil, err
 	}

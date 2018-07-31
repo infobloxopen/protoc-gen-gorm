@@ -159,7 +159,7 @@ func (p *OrmPlugin) generatePatchHandler(message *generator.Descriptor) {
 	var isMultiAccount bool
 
 	typeName := p.TypeName(message)
-	ormable := p.getOrmable(typeName)
+	//ormable := p.getOrmable(typeName)
 
 	if opts := getMessageOptions(message); opts != nil && opts.GetMultiAccount() {
 		isMultiAccount = true
@@ -177,7 +177,7 @@ func (p *OrmPlugin) generatePatchHandler(message *generator.Descriptor) {
 	p.P(`if in == nil {`)
 	p.P(`return nil, errors.New("Nil argument to DefaultPatch`, typeName, `")`)
 	p.P(`}`)
-	p.generatePreloading()
+
 	if isMultiAccount {
 		p.P("accountID, err := ", p.Import(authImport), ".GetAccountID(ctx, nil)")
 		p.P("if err != nil {")
@@ -185,28 +185,14 @@ func (p *OrmPlugin) generatePatchHandler(message *generator.Descriptor) {
 		p.P("}")
 	}
 
-	// Read ORM object with preloaded subobjects. For simplicity we
-	// put the DefaultRead body here to have an ormObj to operate with
-	// in child association removals.
-
-	p.P(`ormParams, err := (&`, typeName, `{Id: in.GetId()}).ToORM(ctx)`)
+	p.P(`pbReadRes, err := DefaultRead`, typeName, `(ctx, &`, typeName, `{Id: in.GetId()}, db)`)
 	p.P(`if err != nil {`)
 	p.P(`return nil, err`)
 	p.P(`}`)
 
-	if isMultiAccount {
-		p.P(`db = db.Where(&`, typeName, `ORM{AccountID: accountID})`)
-	}
+	p.P(`pbObj := *pbReadRes`)
 
-	p.P(`ormObj := `, ormable.Name, `{}`)
-	p.P(`if err := db.Where(&ormParams).First(&ormObj).Error; err != nil {`)
-	p.P(`return nil, err`)
-	p.P(`}`)
-
-	// Convert ormObject to protobuf to apply field mask.
-	// Note that due to synthetic fields support we cannot patch
-	// ormObj directly.
-	p.P(`pbObj, err := ormObj.ToPB(ctx)`)
+	p.P(`ormObj, err := pbObj.ToORM(ctx)`)
 	p.P(`if err != nil {`)
 	p.P(`return nil, err`)
 	p.P(`}`)
