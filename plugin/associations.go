@@ -125,6 +125,20 @@ func (p *OrmPlugin) resolveAliasName(goType, goPackage string, file *generator.F
 	return goType
 }
 
+func (p *OrmPlugin) sameType(field1 *Field, field2 *Field) bool {
+	isPointer1 := strings.HasPrefix(field1.Type, "*")
+	typeParts1 := strings.Split(field1.Type, ".")
+	if len(typeParts1) == 2 {
+		isPointer2 := strings.HasPrefix(field2.Type, "*")
+		typeParts2 := strings.Split(field2.Type, ".")
+		if len(typeParts2) == 2 && isPointer1 == isPointer2 && typeParts1[1] == typeParts2[1] && field1.Package == field2.Package {
+			return true
+		}
+		return false
+	}
+	return field1.Type == field2.Type
+}
+
 func (p *OrmPlugin) parseHasMany(msg *generator.Descriptor, parent *OrmableType, fieldName string, fieldType string, child *OrmableType, opts *gorm.GormFieldOptions) {
 	typeName := generator.CamelCaseSlice(msg.TypeName())
 	hasMany := opts.GetHasMany()
@@ -174,7 +188,7 @@ func (p *OrmPlugin) parseHasMany(msg *generator.Descriptor, parent *OrmableType,
 	} else {
 		if exField.Type == "interface{}" {
 			exField.Type = foreignKey.Type
-		} else if exField.Type != foreignKey.Type {
+		} else if !p.sameType(exField, foreignKey) {
 			p.Fail("Cannot include", foreignKeyName, "field into", child.Name, "as it already exists there with a different type:", exField.Type, foreignKey.Type)
 		}
 	}
@@ -242,7 +256,7 @@ func (p *OrmPlugin) parseHasOne(msg *generator.Descriptor, parent *OrmableType, 
 	} else {
 		if exField.Type == "interface{}" {
 			exField.Type = foreignKey.Type
-		} else if exField.Type != foreignKey.Type {
+		} else if !p.sameType(exField, foreignKey) {
 			p.Fail("Cannot include", foreignKeyName, "field into", child.Name, "as it already exists there with a different type:", exField.Type, foreignKey.Type)
 		}
 	}
@@ -293,7 +307,7 @@ func (p *OrmPlugin) parseBelongsTo(msg *generator.Descriptor, child *OrmableType
 	} else {
 		if exField.Type == "interface{}" {
 			exField.Type = foreignKeyType
-		} else if exField.Type != foreignKey.Type {
+		} else if !p.sameType(exField, foreignKey) {
 			p.Fail("Cannot include", foreignKeyName, "field into", child.Name, "as it already exists there with a different type:", exField.Type, foreignKey.Type)
 		}
 	}
