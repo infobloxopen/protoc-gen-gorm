@@ -215,15 +215,12 @@ func DefaultPatchExternalChild(ctx context.Context, in *ExternalChild, updateMas
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultPatchExternalChild")
 	}
-	ormParams, err := (&ExternalChild{Id: in.GetId()}).ToORM(ctx)
+	pbReadRes, err := DefaultReadExternalChild(ctx, &ExternalChild{Id: in.GetId()}, db)
 	if err != nil {
 		return nil, err
 	}
-	ormObj := ExternalChildORM{}
-	if err := db.Where(&ormParams).First(&ormObj).Error; err != nil {
-		return nil, err
-	}
-	pbObj, err := ormObj.ToPB(ctx)
+	pbObj := *pbReadRes
+	ormObj, err := pbObj.ToORM(ctx)
 	if err != nil {
 		return nil, err
 	}
