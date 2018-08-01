@@ -998,16 +998,12 @@ func DefaultPatchUser(ctx context.Context, in *User, updateMask *field_mask1.Fie
 	if err != nil {
 		return nil, err
 	}
-	ormParams, err := (&User{Id: in.GetId()}).ToORM(ctx)
+	pbReadRes, err := DefaultReadUser(ctx, &User{Id: in.GetId()}, db)
 	if err != nil {
 		return nil, err
 	}
-	db = db.Where(&UserORM{AccountID: accountID})
-	ormObj := UserORM{}
-	if err := db.Where(&ormParams).First(&ormObj).Error; err != nil {
-		return nil, err
-	}
-	pbObj, err := ormObj.ToPB(ctx)
+	pbObj := *pbReadRes
+	ormObj, err := pbObj.ToORM(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -1302,16 +1298,12 @@ func DefaultPatchEmail(ctx context.Context, in *Email, updateMask *field_mask1.F
 	if err != nil {
 		return nil, err
 	}
-	ormParams, err := (&Email{Id: in.GetId()}).ToORM(ctx)
+	pbReadRes, err := DefaultReadEmail(ctx, &Email{Id: in.GetId()}, db)
 	if err != nil {
 		return nil, err
 	}
-	db = db.Where(&EmailORM{AccountID: accountID})
-	ormObj := EmailORM{}
-	if err := db.Where(&ormParams).First(&ormObj).Error; err != nil {
-		return nil, err
-	}
-	pbObj, err := ormObj.ToPB(ctx)
+	pbObj := *pbReadRes
+	ormObj, err := pbObj.ToORM(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -1516,16 +1508,12 @@ func DefaultPatchAddress(ctx context.Context, in *Address, updateMask *field_mas
 	if err != nil {
 		return nil, err
 	}
-	ormParams, err := (&Address{Id: in.GetId()}).ToORM(ctx)
+	pbReadRes, err := DefaultReadAddress(ctx, &Address{Id: in.GetId()}, db)
 	if err != nil {
 		return nil, err
 	}
-	db = db.Where(&AddressORM{AccountID: accountID})
-	ormObj := AddressORM{}
-	if err := db.Where(&ormParams).First(&ormObj).Error; err != nil {
-		return nil, err
-	}
-	pbObj, err := ormObj.ToPB(ctx)
+	pbObj := *pbReadRes
+	ormObj, err := pbObj.ToORM(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -1733,16 +1721,12 @@ func DefaultPatchLanguage(ctx context.Context, in *Language, updateMask *field_m
 	if err != nil {
 		return nil, err
 	}
-	ormParams, err := (&Language{Id: in.GetId()}).ToORM(ctx)
+	pbReadRes, err := DefaultReadLanguage(ctx, &Language{Id: in.GetId()}, db)
 	if err != nil {
 		return nil, err
 	}
-	db = db.Where(&LanguageORM{AccountID: accountID})
-	ormObj := LanguageORM{}
-	if err := db.Where(&ormParams).First(&ormObj).Error; err != nil {
-		return nil, err
-	}
-	pbObj, err := ormObj.ToPB(ctx)
+	pbObj := *pbReadRes
+	ormObj, err := pbObj.ToORM(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -1944,16 +1928,12 @@ func DefaultPatchCreditCard(ctx context.Context, in *CreditCard, updateMask *fie
 	if err != nil {
 		return nil, err
 	}
-	ormParams, err := (&CreditCard{Id: in.GetId()}).ToORM(ctx)
+	pbReadRes, err := DefaultReadCreditCard(ctx, &CreditCard{Id: in.GetId()}, db)
 	if err != nil {
 		return nil, err
 	}
-	db = db.Where(&CreditCardORM{AccountID: accountID})
-	ormObj := CreditCardORM{}
-	if err := db.Where(&ormParams).First(&ormObj).Error; err != nil {
-		return nil, err
-	}
-	pbObj, err := ormObj.ToPB(ctx)
+	pbObj := *pbReadRes
+	ormObj, err := pbObj.ToORM(ctx)
 	if err != nil {
 		return nil, err
 	}
