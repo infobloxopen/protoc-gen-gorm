@@ -727,7 +727,7 @@ func (p *OrmPlugin) generateFieldConversion(message *generator.Descriptor, field
 				default:
 					p.P(`if v, err :=`, p.Import(resourceImport), `.Decode(`, resource, `, m.`, fieldName, `); err != nil {`)
 					p.P(`return to, err`)
-					p.P(`} else {`)
+					p.P(`} else if v != nil {`)
 					if nillable {
 						p.P(`vv := v.(`, btype, `)`)
 						p.P(`to.`, fieldName, ` = &vv`)

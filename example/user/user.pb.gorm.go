@@ -75,7 +75,7 @@ func (m *User) ToORM(ctx context.Context) (UserORM, error) {
 	}
 	if v, err := resource1.Decode(&User{}, m.Id); err != nil {
 		return to, err
-	} else {
+	} else if v != nil {
 		to.Id = v.(string)
 	}
 	if m.CreatedAt != nil {
@@ -169,7 +169,7 @@ func (m *User) ToORM(ctx context.Context) (UserORM, error) {
 	if m.ExternalUuid != nil {
 		if v, err := resource1.Decode(nil, m.ExternalUuid); err != nil {
 			return to, err
-		} else {
+		} else if v != nil {
 			vv := v.(string)
 			to.ExternalUuid = &vv
 		}
@@ -344,7 +344,7 @@ func (m *Email) ToORM(ctx context.Context) (EmailORM, error) {
 	}
 	if v, err := resource1.Decode(&Email{}, m.Id); err != nil {
 		return to, err
-	} else {
+	} else if v != nil {
 		to.Id = v.(string)
 	}
 	to.Email = m.Email
@@ -352,14 +352,14 @@ func (m *Email) ToORM(ctx context.Context) (EmailORM, error) {
 	if m.UserId != nil {
 		if v, err := resource1.Decode(&User{}, m.UserId); err != nil {
 			return to, err
-		} else {
+		} else if v != nil {
 			vv := v.(string)
 			to.UserId = &vv
 		}
 	}
 	if v, err := resource1.Decode(nil, m.ExternalNotNull); err != nil {
 		return to, err
-	} else {
+	} else if v != nil {
 		to.ExternalNotNull = v.(string)
 	}
 	accountID, err := auth1.GetAccountID(ctx, nil)
@@ -472,7 +472,7 @@ func (m *Address) ToORM(ctx context.Context) (AddressORM, error) {
 	if m.ImplicitFk != nil {
 		if v, err := resource1.Decode(&Email{}, m.ImplicitFk); err != nil {
 			return to, err
-		} else {
+		} else if v != nil {
 			vv := v.(string)
 			to.ImplicitFk = &vv
 		}
@@ -691,7 +691,7 @@ func (m *CreditCard) ToORM(ctx context.Context) (CreditCardORM, error) {
 	if m.UserId != nil {
 		if v, err := resource1.Decode(&User{}, m.UserId); err != nil {
 			return to, err
-		} else {
+		} else if v != nil {
 			vv := v.(string)
 			to.UserId = &vv
 		}
