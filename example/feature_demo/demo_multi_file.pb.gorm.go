@@ -18,6 +18,7 @@ It has these top-level messages:
 	APIOnlyType
 	PrimaryUUIDType
 	PrimaryStringType
+	PrimaryIncluded
 	IntPoint
 	CreateIntPointRequest
 	CreateIntPointResponse
@@ -52,6 +53,7 @@ var _ = math.Inf
 
 type ExternalChildORM struct {
 	Id                  string
+	PrimaryIncludedId   *go_uuid1.UUID
 	PrimaryStringTypeId *string
 	PrimaryUUIDTypeId   *go_uuid1.UUID
 }

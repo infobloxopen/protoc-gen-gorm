@@ -142,3 +142,12 @@ message PrimaryStringType {
   string id = 1;
   ExternalChild child = 2;
 }
+
+message PrimaryIncluded {
+    option(gorm.opts) = {
+      ormable: true,
+      include: [
+        {type: "UUID", name: "id"}]
+    };
+    ExternalChild child = 1;
+}

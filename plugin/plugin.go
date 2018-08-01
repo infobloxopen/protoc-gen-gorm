@@ -331,23 +331,29 @@ func (p *OrmPlugin) addIncludedField(ormable *OrmableType, field *gorm.ExtraFiel
 	rawType := strings.TrimPrefix(field.GetType(), "*")
 	// cut off any package subpaths
 	rawType = rawType[strings.LastIndex(rawType, ".")+1:]
+	var typePackage string
 	// Handle types with a package defined
 	if field.GetPackage() != "" {
 		alias := p.Import(field.GetPackage())
 		rawType = fmt.Sprintf("%s.%s", alias, rawType)
+		typePackage = field.GetPackage()
 	} else {
 		// Handle types without a package defined
 		if _, ok := builtinTypes[rawType]; ok {
-			// basic type, 100% okay, no imports or changes needed needed
+			// basic type, 100% okay, no imports or changes needed
 		} else if rawType == "Time" {
 			p.UsingGoImports("time")
 			rawType = "time.Time"
+			typePackage = "time"
 		} else if rawType == "UUID" {
 			rawType = fmt.Sprintf("%s.UUID", p.Import(uuidImport))
+			typePackage = uuidImport
 		} else if field.GetType() == "Jsonb" && p.dbEngine == ENGINE_POSTGRES {
 			rawType = fmt.Sprintf("%s.Jsonb", p.Import(gormpqImport))
+			typePackage = gormpqImport
 		} else if rawType == "Inet" {
 			rawType = fmt.Sprintf("%s.Inet", p.Import(gtypesImport))
+			typePackage = gtypesImport
 		} else {
 			p.warning(`included field %q of type %q is not a recognized special type, and no package specified. This type is assumed to be in the same package as the generated code`,
 				field.GetName(), field.GetType())
@@ -356,7 +362,7 @@ func (p *OrmPlugin) addIncludedField(ormable *OrmableType, field *gorm.ExtraFiel
 	if isPtr {
 		rawType = fmt.Sprintf("*%s", rawType)
 	}
-	ormable.Fields[fieldName] = &Field{Type: rawType, GormFieldOptions: &gorm.GormFieldOptions{Tag: field.GetTag()}}
+	ormable.Fields[fieldName] = &Field{Type: rawType, Package: typePackage, GormFieldOptions: &gorm.GormFieldOptions{Tag: field.GetTag()}}
 }
 
 func (p *OrmPlugin) isOrmable(typeName string) bool {
@@ -721,7 +727,7 @@ func (p *OrmPlugin) generateFieldConversion(message *generator.Descriptor, field
 				default:
 					p.P(`if v, err :=`, p.Import(resourceImport), `.Decode(`, resource, `, m.`, fieldName, `); err != nil {`)
 					p.P(`return to, err`)
-					p.P(`} else {`)
+					p.P(`} else if v != nil {`)
 					if nillable {
 						p.P(`vv := v.(`, btype, `)`)
 						p.P(`to.`, fieldName, ` = &vv`)
