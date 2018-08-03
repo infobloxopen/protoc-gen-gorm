@@ -19,6 +19,7 @@ package user
 
 import context "context"
 import errors "errors"
+import strings "strings"
 import time "time"
 
 import auth1 "github.com/infobloxopen/atlas-app-toolkit/auth"
@@ -1007,7 +1008,7 @@ func DefaultPatchUser(ctx context.Context, in *User, updateMask *field_mask1.Fie
 	if err != nil {
 		return nil, err
 	}
-	if _, err := DefaultApplyFieldMaskUser(ctx, &pbObj, &ormObj, in, updateMask, db); err != nil {
+	if _, err := DefaultApplyFieldMaskUser(ctx, &pbObj, &ormObj, in, updateMask, "", db); err != nil {
 		return nil, err
 	}
 	if hook, ok := interface{}(&pbObj).(UserWithBeforePatchSave); ok {
@@ -1035,41 +1036,39 @@ type UserWithBeforePatchSave interface {
 }
 
 // DefaultApplyFieldMaskUser patches an pbObject with patcher according to a field mask.
-func DefaultApplyFieldMaskUser(ctx context.Context, patchee *User, ormObj *UserORM, patcher *User, updateMask *field_mask1.FieldMask, db *gorm1.DB) (*User, error) {
+func DefaultApplyFieldMaskUser(ctx context.Context, patchee *User, ormObj *UserORM, patcher *User, updateMask *field_mask1.FieldMask, prefix string, db *gorm1.DB) (*User, error) {
 	var err error
-	for _, f := range updateMask.GetPaths() {
-		if f == "Id" {
+	var updatedCreditCard bool
+	var updatedBillingAddress bool
+	var updatedShippingAddress bool
+	for i, f := range updateMask.Paths {
+		if f == prefix+"Id" {
 			patchee.Id = patcher.Id
 		}
-		if f == "CreatedAt" {
+		if f == prefix+"CreatedAt" {
 			patchee.CreatedAt = patcher.CreatedAt
 		}
-		if f == "UpdatedAt" {
+		if f == prefix+"UpdatedAt" {
 			patchee.UpdatedAt = patcher.UpdatedAt
 		}
-		if f == "Birthday" {
+		if f == prefix+"Birthday" {
 			patchee.Birthday = patcher.Birthday
 		}
-		if f == "Age" {
+		if f == prefix+"Age" {
 			patchee.Age = patcher.Age
 		}
-		if f == "Num" {
+		if f == prefix+"Num" {
 			patchee.Num = patcher.Num
 		}
-		if f == "CreditCard" {
-			patchee.CreditCard = patcher.CreditCard
-			filterCreditCard := CreditCardORM{}
-			if ormObj.Id == "" {
-				return nil, errors.New("Can't do overwriting update with no Id value for UserORM")
-			}
-			filterCreditCard.UserId = new(string)
-			*filterCreditCard.UserId = ormObj.Id
-			filterCreditCard.AccountID = ormObj.AccountID
-			if err = db.Where(filterCreditCard).Delete(CreditCardORM{}).Error; err != nil {
+		if strings.HasPrefix(f, prefix+"CreditCard.") && !updatedCreditCard {
+			updatedCreditCard = true
+			if o, err := DefaultApplyFieldMaskCreditCard(ctx, patchee.CreditCard, ormObj.CreditCard, patcher.CreditCard, &field_mask1.FieldMask{Paths: updateMask.Paths[i:]}, prefix+"CreditCard.", db); err != nil {
 				return nil, err
+			} else {
+				patchee.CreditCard = o
 			}
 		}
-		if f == "Emails" {
+		if f == prefix+"Emails" {
 			patchee.Emails = patcher.Emails
 			filterEmails := EmailORM{}
 			if ormObj.Id == "" {
@@ -1082,7 +1081,7 @@ func DefaultApplyFieldMaskUser(ctx context.Context, patchee *User, ormObj *UserO
 				return nil, err
 			}
 		}
-		if f == "Tasks" {
+		if f == prefix+"Tasks" {
 			patchee.Tasks = patcher.Tasks
 			filterTasks := TaskORM{}
 			if ormObj.Id == "" {
@@ -1097,22 +1096,32 @@ func DefaultApplyFieldMaskUser(ctx context.Context, patchee *User, ormObj *UserO
 				e.Priority = int64(i)
 			}
 		}
-		if f == "BillingAddress" {
-			patchee.BillingAddress = patcher.BillingAddress
+		if strings.HasPrefix(f, prefix+"BillingAddress.") && !updatedBillingAddress {
+			updatedBillingAddress = true
+			if o, err := DefaultApplyFieldMaskAddress(ctx, patchee.BillingAddress, ormObj.BillingAddress, patcher.BillingAddress, &field_mask1.FieldMask{Paths: updateMask.Paths[i:]}, prefix+"BillingAddress.", db); err != nil {
+				return nil, err
+			} else {
+				patchee.BillingAddress = o
+			}
 		}
-		if f == "ShippingAddress" {
-			patchee.ShippingAddress = patcher.ShippingAddress
+		if strings.HasPrefix(f, prefix+"ShippingAddress.") && !updatedShippingAddress {
+			updatedShippingAddress = true
+			if o, err := DefaultApplyFieldMaskAddress(ctx, patchee.ShippingAddress, ormObj.ShippingAddress, patcher.ShippingAddress, &field_mask1.FieldMask{Paths: updateMask.Paths[i:]}, prefix+"ShippingAddress.", db); err != nil {
+				return nil, err
+			} else {
+				patchee.ShippingAddress = o
+			}
 		}
-		if f == "Languages" {
+		if f == prefix+"Languages" {
 			patchee.Languages = patcher.Languages
 		}
-		if f == "Friends" {
+		if f == prefix+"Friends" {
 			patchee.Friends = patcher.Friends
 		}
-		if f == "ShippingAddressId" {
+		if f == prefix+"ShippingAddressId" {
 			patchee.ShippingAddressId = patcher.ShippingAddressId
 		}
-		if f == "ExternalUuid" {
+		if f == prefix+"ExternalUuid" {
 			patchee.ExternalUuid = patcher.ExternalUuid
 		}
 	}
@@ -1307,7 +1316,7 @@ func DefaultPatchEmail(ctx context.Context, in *Email, updateMask *field_mask1.F
 	if err != nil {
 		return nil, err
 	}
-	if _, err := DefaultApplyFieldMaskEmail(ctx, &pbObj, &ormObj, in, updateMask, db); err != nil {
+	if _, err := DefaultApplyFieldMaskEmail(ctx, &pbObj, &ormObj, in, updateMask, "", db); err != nil {
 		return nil, err
 	}
 	if hook, ok := interface{}(&pbObj).(EmailWithBeforePatchSave); ok {
@@ -1335,22 +1344,22 @@ type EmailWithBeforePatchSave interface {
 }
 
 // DefaultApplyFieldMaskEmail patches an pbObject with patcher according to a field mask.
-func DefaultApplyFieldMaskEmail(ctx context.Context, patchee *Email, ormObj *EmailORM, patcher *Email, updateMask *field_mask1.FieldMask, db *gorm1.DB) (*Email, error) {
+func DefaultApplyFieldMaskEmail(ctx context.Context, patchee *Email, ormObj *EmailORM, patcher *Email, updateMask *field_mask1.FieldMask, prefix string, db *gorm1.DB) (*Email, error) {
 	var err error
-	for _, f := range updateMask.GetPaths() {
-		if f == "Id" {
+	for _, f := range updateMask.Paths {
+		if f == prefix+"Id" {
 			patchee.Id = patcher.Id
 		}
-		if f == "Email" {
+		if f == prefix+"Email" {
 			patchee.Email = patcher.Email
 		}
-		if f == "Subscribed" {
+		if f == prefix+"Subscribed" {
 			patchee.Subscribed = patcher.Subscribed
 		}
-		if f == "UserId" {
+		if f == prefix+"UserId" {
 			patchee.UserId = patcher.UserId
 		}
-		if f == "ExternalNotNull" {
+		if f == prefix+"ExternalNotNull" {
 			patchee.ExternalNotNull = patcher.ExternalNotNull
 		}
 	}
@@ -1517,7 +1526,7 @@ func DefaultPatchAddress(ctx context.Context, in *Address, updateMask *field_mas
 	if err != nil {
 		return nil, err
 	}
-	if _, err := DefaultApplyFieldMaskAddress(ctx, &pbObj, &ormObj, in, updateMask, db); err != nil {
+	if _, err := DefaultApplyFieldMaskAddress(ctx, &pbObj, &ormObj, in, updateMask, "", db); err != nil {
 		return nil, err
 	}
 	if hook, ok := interface{}(&pbObj).(AddressWithBeforePatchSave); ok {
@@ -1545,25 +1554,25 @@ type AddressWithBeforePatchSave interface {
 }
 
 // DefaultApplyFieldMaskAddress patches an pbObject with patcher according to a field mask.
-func DefaultApplyFieldMaskAddress(ctx context.Context, patchee *Address, ormObj *AddressORM, patcher *Address, updateMask *field_mask1.FieldMask, db *gorm1.DB) (*Address, error) {
+func DefaultApplyFieldMaskAddress(ctx context.Context, patchee *Address, ormObj *AddressORM, patcher *Address, updateMask *field_mask1.FieldMask, prefix string, db *gorm1.DB) (*Address, error) {
 	var err error
-	for _, f := range updateMask.GetPaths() {
-		if f == "Id" {
+	for _, f := range updateMask.Paths {
+		if f == prefix+"Id" {
 			patchee.Id = patcher.Id
 		}
-		if f == "Address_1" {
+		if f == prefix+"Address_1" {
 			patchee.Address_1 = patcher.Address_1
 		}
-		if f == "Address_2" {
+		if f == prefix+"Address_2" {
 			patchee.Address_2 = patcher.Address_2
 		}
-		if f == "Post" {
+		if f == prefix+"Post" {
 			patchee.Post = patcher.Post
 		}
-		if f == "External" {
+		if f == prefix+"External" {
 			patchee.External = patcher.External
 		}
-		if f == "ImplicitFk" {
+		if f == prefix+"ImplicitFk" {
 			patchee.ImplicitFk = patcher.ImplicitFk
 		}
 	}
@@ -1730,7 +1739,7 @@ func DefaultPatchLanguage(ctx context.Context, in *Language, updateMask *field_m
 	if err != nil {
 		return nil, err
 	}
-	if _, err := DefaultApplyFieldMaskLanguage(ctx, &pbObj, &ormObj, in, updateMask, db); err != nil {
+	if _, err := DefaultApplyFieldMaskLanguage(ctx, &pbObj, &ormObj, in, updateMask, "", db); err != nil {
 		return nil, err
 	}
 	if hook, ok := interface{}(&pbObj).(LanguageWithBeforePatchSave); ok {
@@ -1758,19 +1767,19 @@ type LanguageWithBeforePatchSave interface {
 }
 
 // DefaultApplyFieldMaskLanguage patches an pbObject with patcher according to a field mask.
-func DefaultApplyFieldMaskLanguage(ctx context.Context, patchee *Language, ormObj *LanguageORM, patcher *Language, updateMask *field_mask1.FieldMask, db *gorm1.DB) (*Language, error) {
+func DefaultApplyFieldMaskLanguage(ctx context.Context, patchee *Language, ormObj *LanguageORM, patcher *Language, updateMask *field_mask1.FieldMask, prefix string, db *gorm1.DB) (*Language, error) {
 	var err error
-	for _, f := range updateMask.GetPaths() {
-		if f == "Id" {
+	for _, f := range updateMask.Paths {
+		if f == prefix+"Id" {
 			patchee.Id = patcher.Id
 		}
-		if f == "Name" {
+		if f == prefix+"Name" {
 			patchee.Name = patcher.Name
 		}
-		if f == "Code" {
+		if f == prefix+"Code" {
 			patchee.Code = patcher.Code
 		}
-		if f == "ExternalInt" {
+		if f == prefix+"ExternalInt" {
 			patchee.ExternalInt = patcher.ExternalInt
 		}
 	}
@@ -1937,7 +1946,7 @@ func DefaultPatchCreditCard(ctx context.Context, in *CreditCard, updateMask *fie
 	if err != nil {
 		return nil, err
 	}
-	if _, err := DefaultApplyFieldMaskCreditCard(ctx, &pbObj, &ormObj, in, updateMask, db); err != nil {
+	if _, err := DefaultApplyFieldMaskCreditCard(ctx, &pbObj, &ormObj, in, updateMask, "", db); err != nil {
 		return nil, err
 	}
 	if hook, ok := interface{}(&pbObj).(CreditCardWithBeforePatchSave); ok {
@@ -1965,22 +1974,22 @@ type CreditCardWithBeforePatchSave interface {
 }
 
 // DefaultApplyFieldMaskCreditCard patches an pbObject with patcher according to a field mask.
-func DefaultApplyFieldMaskCreditCard(ctx context.Context, patchee *CreditCard, ormObj *CreditCardORM, patcher *CreditCard, updateMask *field_mask1.FieldMask, db *gorm1.DB) (*CreditCard, error) {
+func DefaultApplyFieldMaskCreditCard(ctx context.Context, patchee *CreditCard, ormObj *CreditCardORM, patcher *CreditCard, updateMask *field_mask1.FieldMask, prefix string, db *gorm1.DB) (*CreditCard, error) {
 	var err error
-	for _, f := range updateMask.GetPaths() {
-		if f == "Id" {
+	for _, f := range updateMask.Paths {
+		if f == prefix+"Id" {
 			patchee.Id = patcher.Id
 		}
-		if f == "CreatedAt" {
+		if f == prefix+"CreatedAt" {
 			patchee.CreatedAt = patcher.CreatedAt
 		}
-		if f == "UpdatedAt" {
+		if f == prefix+"UpdatedAt" {
 			patchee.UpdatedAt = patcher.UpdatedAt
 		}
-		if f == "Number" {
+		if f == prefix+"Number" {
 			patchee.Number = patcher.Number
 		}
-		if f == "UserId" {
+		if f == prefix+"UserId" {
 			patchee.UserId = patcher.UserId
 		}
 	}
@@ -2039,6 +2048,26 @@ func DefaultCreateTask(ctx context.Context, in *Task, db *gorm1.DB) (*Task, erro
 	}
 	pbResponse, err := ormObj.ToPB(ctx)
 	return &pbResponse, err
+}
+
+// DefaultApplyFieldMaskTask patches an pbObject with patcher according to a field mask.
+func DefaultApplyFieldMaskTask(ctx context.Context, patchee *Task, ormObj *TaskORM, patcher *Task, updateMask *field_mask1.FieldMask, prefix string, db *gorm1.DB) (*Task, error) {
+	var err error
+	for _, f := range updateMask.Paths {
+		if f == prefix+"Name" {
+			patchee.Name = patcher.Name
+		}
+		if f == prefix+"Description" {
+			patchee.Description = patcher.Description
+		}
+		if f == prefix+"Priority" {
+			patchee.Priority = patcher.Priority
+		}
+	}
+	if err != nil {
+		return nil, err
+	}
+	return patchee, nil
 }
 
 // DefaultListTask executes a gorm list call

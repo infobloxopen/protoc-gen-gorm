@@ -199,7 +199,7 @@ func DefaultPatchIntPoint(ctx context.Context, in *IntPoint, updateMask *field_m
 	if err != nil {
 		return nil, err
 	}
-	if _, err := DefaultApplyFieldMaskIntPoint(ctx, &pbObj, &ormObj, in, updateMask, db); err != nil {
+	if _, err := DefaultApplyFieldMaskIntPoint(ctx, &pbObj, &ormObj, in, updateMask, "", db); err != nil {
 		return nil, err
 	}
 	if hook, ok := interface{}(&pbObj).(IntPointWithBeforePatchSave); ok {
@@ -226,16 +226,16 @@ type IntPointWithBeforePatchSave interface {
 }
 
 // DefaultApplyFieldMaskIntPoint patches an pbObject with patcher according to a field mask.
-func DefaultApplyFieldMaskIntPoint(ctx context.Context, patchee *IntPoint, ormObj *IntPointORM, patcher *IntPoint, updateMask *field_mask1.FieldMask, db *gorm1.DB) (*IntPoint, error) {
+func DefaultApplyFieldMaskIntPoint(ctx context.Context, patchee *IntPoint, ormObj *IntPointORM, patcher *IntPoint, updateMask *field_mask1.FieldMask, prefix string, db *gorm1.DB) (*IntPoint, error) {
 	var err error
-	for _, f := range updateMask.GetPaths() {
-		if f == "Id" {
+	for _, f := range updateMask.Paths {
+		if f == prefix+"Id" {
 			patchee.Id = patcher.Id
 		}
-		if f == "X" {
+		if f == prefix+"X" {
 			patchee.X = patcher.X
 		}
-		if f == "Y" {
+		if f == prefix+"Y" {
 			patchee.Y = patcher.Y
 		}
 	}
