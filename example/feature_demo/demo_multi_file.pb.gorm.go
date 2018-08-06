@@ -254,10 +254,16 @@ type ExternalChildWithBeforePatchSave interface {
 
 // DefaultApplyFieldMaskExternalChild patches an pbObject with patcher according to a field mask.
 func DefaultApplyFieldMaskExternalChild(ctx context.Context, patchee *ExternalChild, ormObj *ExternalChildORM, patcher *ExternalChild, updateMask *field_mask1.FieldMask, prefix string, db *gorm1.DB) (*ExternalChild, error) {
+	if patcher == nil {
+		return nil, nil
+	} else if patchee == nil || ormObj == nil {
+		return nil, errors.New("Patchee and ormObj inputs to DefaultApplyFieldMaskExternalChild must be non-nil")
+	}
 	var err error
 	for _, f := range updateMask.Paths {
 		if f == prefix+"Id" {
 			patchee.Id = patcher.Id
+			continue
 		}
 	}
 	if err != nil {

@@ -227,16 +227,24 @@ type IntPointWithBeforePatchSave interface {
 
 // DefaultApplyFieldMaskIntPoint patches an pbObject with patcher according to a field mask.
 func DefaultApplyFieldMaskIntPoint(ctx context.Context, patchee *IntPoint, ormObj *IntPointORM, patcher *IntPoint, updateMask *field_mask1.FieldMask, prefix string, db *gorm1.DB) (*IntPoint, error) {
+	if patcher == nil {
+		return nil, nil
+	} else if patchee == nil || ormObj == nil {
+		return nil, errors.New("Patchee and ormObj inputs to DefaultApplyFieldMaskIntPoint must be non-nil")
+	}
 	var err error
 	for _, f := range updateMask.Paths {
 		if f == prefix+"Id" {
 			patchee.Id = patcher.Id
+			continue
 		}
 		if f == prefix+"X" {
 			patchee.X = patcher.X
+			continue
 		}
 		if f == prefix+"Y" {
 			patchee.Y = patcher.Y
+			continue
 		}
 	}
 	if err != nil {

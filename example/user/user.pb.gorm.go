@@ -1037,6 +1037,11 @@ type UserWithBeforePatchSave interface {
 
 // DefaultApplyFieldMaskUser patches an pbObject with patcher according to a field mask.
 func DefaultApplyFieldMaskUser(ctx context.Context, patchee *User, ormObj *UserORM, patcher *User, updateMask *field_mask1.FieldMask, prefix string, db *gorm1.DB) (*User, error) {
+	if patcher == nil {
+		return nil, nil
+	} else if patchee == nil || ormObj == nil {
+		return nil, errors.New("Patchee and ormObj inputs to DefaultApplyFieldMaskUser must be non-nil")
+	}
 	var err error
 	var updatedCreditCard bool
 	var updatedBillingAddress bool
@@ -1044,29 +1049,43 @@ func DefaultApplyFieldMaskUser(ctx context.Context, patchee *User, ormObj *UserO
 	for i, f := range updateMask.Paths {
 		if f == prefix+"Id" {
 			patchee.Id = patcher.Id
+			continue
 		}
 		if f == prefix+"CreatedAt" {
 			patchee.CreatedAt = patcher.CreatedAt
+			continue
 		}
 		if f == prefix+"UpdatedAt" {
 			patchee.UpdatedAt = patcher.UpdatedAt
+			continue
 		}
 		if f == prefix+"Birthday" {
 			patchee.Birthday = patcher.Birthday
+			continue
 		}
 		if f == prefix+"Age" {
 			patchee.Age = patcher.Age
+			continue
 		}
 		if f == prefix+"Num" {
 			patchee.Num = patcher.Num
+			continue
 		}
 		if strings.HasPrefix(f, prefix+"CreditCard.") && !updatedCreditCard {
 			updatedCreditCard = true
+			if patcher.CreditCard == nil {
+				patchee.CreditCard = nil
+				continue
+			}
+			if patchee.CreditCard == nil {
+				patchee.CreditCard = &CreditCard{}
+			}
 			if o, err := DefaultApplyFieldMaskCreditCard(ctx, patchee.CreditCard, ormObj.CreditCard, patcher.CreditCard, &field_mask1.FieldMask{Paths: updateMask.Paths[i:]}, prefix+"CreditCard.", db); err != nil {
 				return nil, err
 			} else {
 				patchee.CreditCard = o
 			}
+			continue
 		}
 		if f == prefix+"Emails" {
 			patchee.Emails = patcher.Emails
@@ -1080,6 +1099,7 @@ func DefaultApplyFieldMaskUser(ctx context.Context, patchee *User, ormObj *UserO
 			if err = db.Where(filterEmails).Delete(EmailORM{}).Error; err != nil {
 				return nil, err
 			}
+			continue
 		}
 		if f == prefix+"Tasks" {
 			patchee.Tasks = patcher.Tasks
@@ -1095,34 +1115,55 @@ func DefaultApplyFieldMaskUser(ctx context.Context, patchee *User, ormObj *UserO
 			for i, e := range ormObj.Tasks {
 				e.Priority = int64(i)
 			}
+			continue
 		}
 		if strings.HasPrefix(f, prefix+"BillingAddress.") && !updatedBillingAddress {
 			updatedBillingAddress = true
+			if patcher.BillingAddress == nil {
+				patchee.BillingAddress = nil
+				continue
+			}
+			if patchee.BillingAddress == nil {
+				patchee.BillingAddress = &Address{}
+			}
 			if o, err := DefaultApplyFieldMaskAddress(ctx, patchee.BillingAddress, ormObj.BillingAddress, patcher.BillingAddress, &field_mask1.FieldMask{Paths: updateMask.Paths[i:]}, prefix+"BillingAddress.", db); err != nil {
 				return nil, err
 			} else {
 				patchee.BillingAddress = o
 			}
+			continue
 		}
 		if strings.HasPrefix(f, prefix+"ShippingAddress.") && !updatedShippingAddress {
 			updatedShippingAddress = true
+			if patcher.ShippingAddress == nil {
+				patchee.ShippingAddress = nil
+				continue
+			}
+			if patchee.ShippingAddress == nil {
+				patchee.ShippingAddress = &Address{}
+			}
 			if o, err := DefaultApplyFieldMaskAddress(ctx, patchee.ShippingAddress, ormObj.ShippingAddress, patcher.ShippingAddress, &field_mask1.FieldMask{Paths: updateMask.Paths[i:]}, prefix+"ShippingAddress.", db); err != nil {
 				return nil, err
 			} else {
 				patchee.ShippingAddress = o
 			}
+			continue
 		}
 		if f == prefix+"Languages" {
 			patchee.Languages = patcher.Languages
+			continue
 		}
 		if f == prefix+"Friends" {
 			patchee.Friends = patcher.Friends
+			continue
 		}
 		if f == prefix+"ShippingAddressId" {
 			patchee.ShippingAddressId = patcher.ShippingAddressId
+			continue
 		}
 		if f == prefix+"ExternalUuid" {
 			patchee.ExternalUuid = patcher.ExternalUuid
+			continue
 		}
 	}
 	if err != nil {
@@ -1345,22 +1386,32 @@ type EmailWithBeforePatchSave interface {
 
 // DefaultApplyFieldMaskEmail patches an pbObject with patcher according to a field mask.
 func DefaultApplyFieldMaskEmail(ctx context.Context, patchee *Email, ormObj *EmailORM, patcher *Email, updateMask *field_mask1.FieldMask, prefix string, db *gorm1.DB) (*Email, error) {
+	if patcher == nil {
+		return nil, nil
+	} else if patchee == nil || ormObj == nil {
+		return nil, errors.New("Patchee and ormObj inputs to DefaultApplyFieldMaskEmail must be non-nil")
+	}
 	var err error
 	for _, f := range updateMask.Paths {
 		if f == prefix+"Id" {
 			patchee.Id = patcher.Id
+			continue
 		}
 		if f == prefix+"Email" {
 			patchee.Email = patcher.Email
+			continue
 		}
 		if f == prefix+"Subscribed" {
 			patchee.Subscribed = patcher.Subscribed
+			continue
 		}
 		if f == prefix+"UserId" {
 			patchee.UserId = patcher.UserId
+			continue
 		}
 		if f == prefix+"ExternalNotNull" {
 			patchee.ExternalNotNull = patcher.ExternalNotNull
+			continue
 		}
 	}
 	if err != nil {
@@ -1555,25 +1606,36 @@ type AddressWithBeforePatchSave interface {
 
 // DefaultApplyFieldMaskAddress patches an pbObject with patcher according to a field mask.
 func DefaultApplyFieldMaskAddress(ctx context.Context, patchee *Address, ormObj *AddressORM, patcher *Address, updateMask *field_mask1.FieldMask, prefix string, db *gorm1.DB) (*Address, error) {
+	if patcher == nil {
+		return nil, nil
+	} else if patchee == nil || ormObj == nil {
+		return nil, errors.New("Patchee and ormObj inputs to DefaultApplyFieldMaskAddress must be non-nil")
+	}
 	var err error
 	for _, f := range updateMask.Paths {
 		if f == prefix+"Id" {
 			patchee.Id = patcher.Id
+			continue
 		}
 		if f == prefix+"Address_1" {
 			patchee.Address_1 = patcher.Address_1
+			continue
 		}
 		if f == prefix+"Address_2" {
 			patchee.Address_2 = patcher.Address_2
+			continue
 		}
 		if f == prefix+"Post" {
 			patchee.Post = patcher.Post
+			continue
 		}
 		if f == prefix+"External" {
 			patchee.External = patcher.External
+			continue
 		}
 		if f == prefix+"ImplicitFk" {
 			patchee.ImplicitFk = patcher.ImplicitFk
+			continue
 		}
 	}
 	if err != nil {
@@ -1768,19 +1830,28 @@ type LanguageWithBeforePatchSave interface {
 
 // DefaultApplyFieldMaskLanguage patches an pbObject with patcher according to a field mask.
 func DefaultApplyFieldMaskLanguage(ctx context.Context, patchee *Language, ormObj *LanguageORM, patcher *Language, updateMask *field_mask1.FieldMask, prefix string, db *gorm1.DB) (*Language, error) {
+	if patcher == nil {
+		return nil, nil
+	} else if patchee == nil || ormObj == nil {
+		return nil, errors.New("Patchee and ormObj inputs to DefaultApplyFieldMaskLanguage must be non-nil")
+	}
 	var err error
 	for _, f := range updateMask.Paths {
 		if f == prefix+"Id" {
 			patchee.Id = patcher.Id
+			continue
 		}
 		if f == prefix+"Name" {
 			patchee.Name = patcher.Name
+			continue
 		}
 		if f == prefix+"Code" {
 			patchee.Code = patcher.Code
+			continue
 		}
 		if f == prefix+"ExternalInt" {
 			patchee.ExternalInt = patcher.ExternalInt
+			continue
 		}
 	}
 	if err != nil {
@@ -1975,22 +2046,32 @@ type CreditCardWithBeforePatchSave interface {
 
 // DefaultApplyFieldMaskCreditCard patches an pbObject with patcher according to a field mask.
 func DefaultApplyFieldMaskCreditCard(ctx context.Context, patchee *CreditCard, ormObj *CreditCardORM, patcher *CreditCard, updateMask *field_mask1.FieldMask, prefix string, db *gorm1.DB) (*CreditCard, error) {
+	if patcher == nil {
+		return nil, nil
+	} else if patchee == nil || ormObj == nil {
+		return nil, errors.New("Patchee and ormObj inputs to DefaultApplyFieldMaskCreditCard must be non-nil")
+	}
 	var err error
 	for _, f := range updateMask.Paths {
 		if f == prefix+"Id" {
 			patchee.Id = patcher.Id
+			continue
 		}
 		if f == prefix+"CreatedAt" {
 			patchee.CreatedAt = patcher.CreatedAt
+			continue
 		}
 		if f == prefix+"UpdatedAt" {
 			patchee.UpdatedAt = patcher.UpdatedAt
+			continue
 		}
 		if f == prefix+"Number" {
 			patchee.Number = patcher.Number
+			continue
 		}
 		if f == prefix+"UserId" {
 			patchee.UserId = patcher.UserId
+			continue
 		}
 	}
 	if err != nil {
@@ -2052,16 +2133,24 @@ func DefaultCreateTask(ctx context.Context, in *Task, db *gorm1.DB) (*Task, erro
 
 // DefaultApplyFieldMaskTask patches an pbObject with patcher according to a field mask.
 func DefaultApplyFieldMaskTask(ctx context.Context, patchee *Task, ormObj *TaskORM, patcher *Task, updateMask *field_mask1.FieldMask, prefix string, db *gorm1.DB) (*Task, error) {
+	if patcher == nil {
+		return nil, nil
+	} else if patchee == nil || ormObj == nil {
+		return nil, errors.New("Patchee and ormObj inputs to DefaultApplyFieldMaskTask must be non-nil")
+	}
 	var err error
 	for _, f := range updateMask.Paths {
 		if f == prefix+"Name" {
 			patchee.Name = patcher.Name
+			continue
 		}
 		if f == prefix+"Description" {
 			patchee.Description = patcher.Description
+			continue
 		}
 		if f == prefix+"Priority" {
 			patchee.Priority = patcher.Priority
+			continue
 		}
 	}
 	if err != nil {

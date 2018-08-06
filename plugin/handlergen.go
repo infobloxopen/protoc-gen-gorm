@@ -123,6 +123,13 @@ func (p *OrmPlugin) generateApplyFieldMask(message *generator.Descriptor) {
 		typeName, `,ormObj *`, typeName, `ORM, patcher *`,
 		typeName, `, updateMask *`, p.Import(fmImport),
 		`.FieldMask, prefix string, db *`, p.Import(gormImport), `.DB) (*`, typeName, `, error) {`)
+
+	p.P(`if patcher == nil {`)
+	p.P(`return nil, nil`)
+	p.P(`} else if patchee == nil || ormObj == nil {`)
+	p.P(`return nil, errors.New("Patchee and ormObj inputs to DefaultApplyFieldMask`,
+		typeName, ` must be non-nil")`)
+	p.P(`}`)
 	p.P(`var err error`)
 	hasNested := false
 	for _, field := range message.GetField() {
@@ -146,6 +153,13 @@ func (p *OrmPlugin) generateApplyFieldMask(message *generator.Descriptor) {
 			p.UsingGoImports("strings")
 			p.P(`if strings.HasPrefix(f, prefix+"`, ccName, `.") && !updated`, ccName, ` {`)
 			p.P(`updated`, ccName, ` = true`)
+			p.P(`if patcher.`, ccName, ` == nil {`)
+			p.P(`patchee.`, ccName, ` = nil`)
+			p.P(`continue`)
+			p.P(`}`)
+			p.P(`if patchee.`, ccName, ` == nil {`)
+			p.P(`patchee.`, ccName, ` = &`, strings.TrimPrefix(fieldType, "*"), `{}`)
+			p.P(`}`)
 			if s := strings.Split(fieldType, "."); len(s) == 2 {
 				p.P(`if o, err := `, strings.TrimLeft(s[0], "*"), `.DefaultApplyFieldMask`, s[1], `(ctx, patchee.`, ccName,
 					`, ormObj.`, ccName, `, patcher.`, ccName, `, &`, p.Import(fmImport),
@@ -159,12 +173,14 @@ func (p *OrmPlugin) generateApplyFieldMask(message *generator.Descriptor) {
 			p.P(`} else {`)
 			p.P(`patchee.`, ccName, ` = o`)
 			p.P(`}`)
+			p.P(`continue`)
 			p.P(`}`)
 		} else {
 			p.P(`if f == prefix+"`, ccName, `" {`)
 			p.P(`patchee.`, ccName, ` = patcher.`, ccName)
 			p.removeChildAssociationsByName(message, ccName)
 			p.setupOrderedHasManyByName(message, ccName)
+			p.P(`continue`)
 			p.P(`}`)
 		}
 	}
