@@ -762,11 +762,13 @@ func DefaultCreateTypeWithID(ctx context.Context, in *TypeWithID, db *gorm1.DB) 
 }
 
 // DefaultReadTypeWithID executes a basic gorm read call
-func DefaultReadTypeWithID(ctx context.Context, in *TypeWithID, db *gorm1.DB) (*TypeWithID, error) {
+func DefaultReadTypeWithID(ctx context.Context, in *TypeWithID, db *gorm1.DB, preload bool) (*TypeWithID, error) {
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultReadTypeWithID")
 	}
-	db = db.Set("gorm:auto_preload", true)
+	if preload {
+		db = db.Set("gorm:auto_preload", true)
+	}
 	ormParams, err := in.ToORM(ctx)
 	if err != nil {
 		return nil, err
@@ -860,7 +862,7 @@ func DefaultPatchTypeWithID(ctx context.Context, in *TypeWithID, updateMask *fie
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultPatchTypeWithID")
 	}
-	pbReadRes, err := DefaultReadTypeWithID(ctx, &TypeWithID{Id: in.GetId()}, db)
+	pbReadRes, err := DefaultReadTypeWithID(ctx, &TypeWithID{Id: in.GetId()}, db, true)
 	if err != nil {
 		return nil, err
 	}
@@ -1000,11 +1002,13 @@ func DefaultCreateMultiaccountTypeWithID(ctx context.Context, in *MultiaccountTy
 }
 
 // DefaultReadMultiaccountTypeWithID executes a basic gorm read call
-func DefaultReadMultiaccountTypeWithID(ctx context.Context, in *MultiaccountTypeWithID, db *gorm1.DB) (*MultiaccountTypeWithID, error) {
+func DefaultReadMultiaccountTypeWithID(ctx context.Context, in *MultiaccountTypeWithID, db *gorm1.DB, preload bool) (*MultiaccountTypeWithID, error) {
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultReadMultiaccountTypeWithID")
 	}
-	db = db.Set("gorm:auto_preload", true)
+	if preload {
+		db = db.Set("gorm:auto_preload", true)
+	}
 	ormParams, err := in.ToORM(ctx)
 	if err != nil {
 		return nil, err
@@ -1026,7 +1030,7 @@ func DefaultUpdateMultiaccountTypeWithID(ctx context.Context, in *MultiaccountTy
 	if err != nil {
 		return nil, err
 	}
-	if exists, err := DefaultReadMultiaccountTypeWithID(ctx, &MultiaccountTypeWithID{Id: in.GetId()}, db); err != nil {
+	if exists, err := DefaultReadMultiaccountTypeWithID(ctx, &MultiaccountTypeWithID{Id: in.GetId()}, db, true); err != nil {
 		return nil, err
 	} else if exists == nil {
 		return nil, errors.New("MultiaccountTypeWithID not found")
@@ -1096,7 +1100,7 @@ func DefaultPatchMultiaccountTypeWithID(ctx context.Context, in *MultiaccountTyp
 	if err != nil {
 		return nil, err
 	}
-	pbReadRes, err := DefaultReadMultiaccountTypeWithID(ctx, &MultiaccountTypeWithID{Id: in.GetId()}, db)
+	pbReadRes, err := DefaultReadMultiaccountTypeWithID(ctx, &MultiaccountTypeWithID{Id: in.GetId()}, db, true)
 	if err != nil {
 		return nil, err
 	}
@@ -1251,11 +1255,13 @@ func DefaultCreatePrimaryUUIDType(ctx context.Context, in *PrimaryUUIDType, db *
 }
 
 // DefaultReadPrimaryUUIDType executes a basic gorm read call
-func DefaultReadPrimaryUUIDType(ctx context.Context, in *PrimaryUUIDType, db *gorm1.DB) (*PrimaryUUIDType, error) {
+func DefaultReadPrimaryUUIDType(ctx context.Context, in *PrimaryUUIDType, db *gorm1.DB, preload bool) (*PrimaryUUIDType, error) {
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultReadPrimaryUUIDType")
 	}
-	db = db.Set("gorm:auto_preload", true)
+	if preload {
+		db = db.Set("gorm:auto_preload", true)
+	}
 	ormParams, err := in.ToORM(ctx)
 	if err != nil {
 		return nil, err
@@ -1340,7 +1346,7 @@ func DefaultPatchPrimaryUUIDType(ctx context.Context, in *PrimaryUUIDType, updat
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultPatchPrimaryUUIDType")
 	}
-	pbReadRes, err := DefaultReadPrimaryUUIDType(ctx, &PrimaryUUIDType{Id: in.GetId()}, db)
+	pbReadRes, err := DefaultReadPrimaryUUIDType(ctx, &PrimaryUUIDType{Id: in.GetId()}, db, true)
 	if err != nil {
 		return nil, err
 	}
@@ -1453,11 +1459,13 @@ func DefaultCreatePrimaryStringType(ctx context.Context, in *PrimaryStringType, 
 }
 
 // DefaultReadPrimaryStringType executes a basic gorm read call
-func DefaultReadPrimaryStringType(ctx context.Context, in *PrimaryStringType, db *gorm1.DB) (*PrimaryStringType, error) {
+func DefaultReadPrimaryStringType(ctx context.Context, in *PrimaryStringType, db *gorm1.DB, preload bool) (*PrimaryStringType, error) {
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultReadPrimaryStringType")
 	}
-	db = db.Set("gorm:auto_preload", true)
+	if preload {
+		db = db.Set("gorm:auto_preload", true)
+	}
 	ormParams, err := in.ToORM(ctx)
 	if err != nil {
 		return nil, err
@@ -1542,7 +1550,7 @@ func DefaultPatchPrimaryStringType(ctx context.Context, in *PrimaryStringType, u
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultPatchPrimaryStringType")
 	}
-	pbReadRes, err := DefaultReadPrimaryStringType(ctx, &PrimaryStringType{Id: in.GetId()}, db)
+	pbReadRes, err := DefaultReadPrimaryStringType(ctx, &PrimaryStringType{Id: in.GetId()}, db, true)
 	if err != nil {
 		return nil, err
 	}

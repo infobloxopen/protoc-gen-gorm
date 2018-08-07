@@ -95,7 +95,18 @@ func (p *OrmPlugin) generateReadServerMethod(service *descriptor.ServiceDescript
 	if follows {
 		p.generateDBSetup(service, outType)
 		p.generatePreserviceCall(svcName, typeName, "Read")
-		p.P(`res, err := DefaultRead`, typeName, `(ctx, &`, typeName, `{Id: in.GetId()}, db)`)
+
+		if fields := p.hasFieldsSelecter(inType); fields != "" {
+			p.P(`var err error`)
+			p.P(`if in.`, fields, ` == nil {`)
+			p.generatePreloading()
+			p.P(`} else if db, err = `, p.Import(tkgormImport), `.ApplyFieldSelection(db, in.`, fields, `, &`, typeName, `{}); err != nil {`)
+			p.P(`return nil, err`)
+			p.P(`}`)
+			p.P(`res, err := DefaultRead`, typeName, `(ctx, &`, typeName, `{Id: in.GetId()}, db, false)`)
+		} else {
+			p.P(`res, err := DefaultRead`, typeName, `(ctx, &`, typeName, `{Id: in.GetId()}, db, true)`)
+		}
 		p.P(`if err != nil {`)
 		p.P(`return nil, err`)
 		p.P(`}`)
@@ -360,4 +371,17 @@ func (p *OrmPlugin) generatePreserviceHook(svc, typeName, inTypeName, mthd strin
 	p.P(`type `, svc, typeName, `WithBefore`, mthd, ` interface {`)
 	p.P(`Before`, mthd, `(context.Context, *`, inTypeName, `, *`, p.Import(gormImport), `.DB) (context.Context, *`, p.Import(gormImport), `.DB, error)`)
 	p.P(`}`)
+}
+
+func (p *OrmPlugin) hasFieldsSelecter(object generator.Object) string {
+	msg := object.(*generator.Descriptor)
+	for _, field := range msg.Field {
+		fieldName := generator.CamelCase(field.GetName())
+		fieldType, _ := p.GoType(msg, field)
+		parts := strings.Split(fieldType, ".")
+		if parts[len(parts)-1] == "FieldSelection" {
+			return fieldName
+		}
+	}
+	return ""
 }

@@ -94,11 +94,13 @@ func (p *OrmPlugin) generateReadHandler(message *generator.Descriptor) {
 	ormable := p.getOrmable(typeName)
 	p.P(`// DefaultRead`, typeName, ` executes a basic gorm read call`)
 	p.P(`func DefaultRead`, typeName, `(ctx context.Context, in *`,
-		typeName, `, db *`, p.Import(gormImport), `.DB) (*`, typeName, `, error) {`)
+		typeName, `, db *`, p.Import(gormImport), `.DB, preload bool) (*`, typeName, `, error) {`)
 	p.P(`if in == nil {`)
 	p.P(`return nil, errors.New("Nil argument to DefaultRead`, typeName, `")`)
 	p.P(`}`)
+	p.P(`if preload {`)
 	p.generatePreloading()
+	p.P(`}`)
 
 	p.P(`ormParams, err := in.ToORM(ctx)`)
 	p.P(`if err != nil {`)
@@ -185,7 +187,7 @@ func (p *OrmPlugin) generatePatchHandler(message *generator.Descriptor) {
 		p.P("}")
 	}
 
-	p.P(`pbReadRes, err := DefaultRead`, typeName, `(ctx, &`, typeName, `{Id: in.GetId()}, db)`)
+	p.P(`pbReadRes, err := DefaultRead`, typeName, `(ctx, &`, typeName, `{Id: in.GetId()}, db, true)`)
 	p.P(`if err != nil {`)
 	p.P(`return nil, err`)
 	p.P(`}`)
@@ -264,7 +266,7 @@ func (p *OrmPlugin) generateUpdateHandler(message *generator.Descriptor) {
 		p.P("if err != nil {")
 		p.P("return nil, err")
 		p.P("}")
-		p.P(fmt.Sprintf("if exists, err := DefaultRead%s(ctx, &%s{Id: in.GetId()}, db); err != nil {",
+		p.P(fmt.Sprintf("if exists, err := DefaultRead%s(ctx, &%s{Id: in.GetId()}, db, true); err != nil {",
 			typeName, typeName))
 		p.P("return nil, err")
 		p.P("} else if exists == nil {")

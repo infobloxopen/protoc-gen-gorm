@@ -110,11 +110,13 @@ func DefaultCreateIntPoint(ctx context.Context, in *IntPoint, db *gorm1.DB) (*In
 }
 
 // DefaultReadIntPoint executes a basic gorm read call
-func DefaultReadIntPoint(ctx context.Context, in *IntPoint, db *gorm1.DB) (*IntPoint, error) {
+func DefaultReadIntPoint(ctx context.Context, in *IntPoint, db *gorm1.DB, preload bool) (*IntPoint, error) {
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultReadIntPoint")
 	}
-	db = db.Set("gorm:auto_preload", true)
+	if preload {
+		db = db.Set("gorm:auto_preload", true)
+	}
 	ormParams, err := in.ToORM(ctx)
 	if err != nil {
 		return nil, err
@@ -190,7 +192,7 @@ func DefaultPatchIntPoint(ctx context.Context, in *IntPoint, updateMask *field_m
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultPatchIntPoint")
 	}
-	pbReadRes, err := DefaultReadIntPoint(ctx, &IntPoint{Id: in.GetId()}, db)
+	pbReadRes, err := DefaultReadIntPoint(ctx, &IntPoint{Id: in.GetId()}, db, true)
 	if err != nil {
 		return nil, err
 	}
@@ -316,7 +318,13 @@ func (m *IntPointServiceDefaultServer) Read(ctx context.Context, in *ReadIntPoin
 			return nil, err
 		}
 	}
-	res, err := DefaultReadIntPoint(ctx, &IntPoint{Id: in.GetId()}, db)
+	var err error
+	if in.Arbitrary == nil {
+		db = db.Set("gorm:auto_preload", true)
+	} else if db, err = gorm2.ApplyFieldSelection(db, in.Arbitrary, &IntPoint{}); err != nil {
+		return nil, err
+	}
+	res, err := DefaultReadIntPoint(ctx, &IntPoint{Id: in.GetId()}, db, false)
 	if err != nil {
 		return nil, err
 	}
@@ -455,7 +463,13 @@ func (m *IntPointTxnDefaultServer) Read(ctx context.Context, in *ReadIntPointReq
 			return nil, err
 		}
 	}
-	res, err := DefaultReadIntPoint(ctx, &IntPoint{Id: in.GetId()}, db)
+	var err error
+	if in.Arbitrary == nil {
+		db = db.Set("gorm:auto_preload", true)
+	} else if db, err = gorm2.ApplyFieldSelection(db, in.Arbitrary, &IntPoint{}); err != nil {
+		return nil, err
+	}
+	res, err := DefaultReadIntPoint(ctx, &IntPoint{Id: in.GetId()}, db, false)
 	if err != nil {
 		return nil, err
 	}
