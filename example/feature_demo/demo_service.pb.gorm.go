@@ -120,7 +120,6 @@ func DefaultReadIntPoint(ctx context.Context, in *IntPoint, db *gorm1.DB) (*IntP
 		return nil, err
 	}
 	if ormParams.Id == 0 {
-		// uint32
 		return nil, errors.New("Read requires a non-zero primary key")
 	}
 	ormResponse := IntPointORM{}

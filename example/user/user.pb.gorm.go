@@ -875,7 +875,6 @@ func DefaultReadUser(ctx context.Context, in *User, db *gorm1.DB) (*User, error)
 		return nil, err
 	}
 	if ormParams.Id == "" {
-		// string
 		return nil, errors.New("Read requires a non-zero primary key")
 	}
 	db = db.Preload("Tasks", func(db *gorm1.DB) *gorm1.DB {
@@ -1291,7 +1290,6 @@ func DefaultReadEmail(ctx context.Context, in *Email, db *gorm1.DB) (*Email, err
 		return nil, err
 	}
 	if ormParams.Id == "" {
-		// string
 		return nil, errors.New("Read requires a non-zero primary key")
 	}
 	ormResponse := EmailORM{}
@@ -1515,7 +1513,6 @@ func DefaultReadAddress(ctx context.Context, in *Address, db *gorm1.DB) (*Addres
 		return nil, err
 	}
 	if ormParams.Id == 0 {
-		// int64
 		return nil, errors.New("Read requires a non-zero primary key")
 	}
 	ormResponse := AddressORM{}
@@ -1743,7 +1740,6 @@ func DefaultReadLanguage(ctx context.Context, in *Language, db *gorm1.DB) (*Lang
 		return nil, err
 	}
 	if ormParams.Id == 0 {
-		// int64
 		return nil, errors.New("Read requires a non-zero primary key")
 	}
 	ormResponse := LanguageORM{}
@@ -1963,7 +1959,6 @@ func DefaultReadCreditCard(ctx context.Context, in *CreditCard, db *gorm1.DB) (*
 		return nil, err
 	}
 	if ormParams.Id == 0 {
-		// int64
 		return nil, errors.New("Read requires a non-zero primary key")
 	}
 	ormResponse := CreditCardORM{}

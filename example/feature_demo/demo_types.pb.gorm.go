@@ -829,7 +829,6 @@ func DefaultReadTypeWithID(ctx context.Context, in *TypeWithID, db *gorm1.DB) (*
 		return nil, err
 	}
 	if ormParams.Id == 0 {
-		// uint32
 		return nil, errors.New("Read requires a non-zero primary key")
 	}
 	ormResponse := TypeWithIDORM{}
@@ -1138,7 +1137,6 @@ func DefaultReadMultiaccountTypeWithID(ctx context.Context, in *MultiaccountType
 		return nil, err
 	}
 	if ormParams.Id == 0 {
-		// uint64
 		return nil, errors.New("Read requires a non-zero primary key")
 	}
 	ormResponse := MultiaccountTypeWithIDORM{}
@@ -1420,7 +1418,6 @@ func DefaultReadPrimaryUUIDType(ctx context.Context, in *PrimaryUUIDType, db *go
 		return nil, err
 	}
 	if ormParams.Id == nil || *ormParams.Id == go_uuid1.Nil {
-		// *go_uuid1.UUID
 		return nil, errors.New("Read requires a non-zero primary key")
 	}
 	ormResponse := PrimaryUUIDTypeORM{}
@@ -1651,7 +1648,6 @@ func DefaultReadPrimaryStringType(ctx context.Context, in *PrimaryStringType, db
 		return nil, err
 	}
 	if ormParams.Id == "" {
-		// string
 		return nil, errors.New("Read requires a non-zero primary key")
 	}
 	ormResponse := PrimaryStringTypeORM{}
