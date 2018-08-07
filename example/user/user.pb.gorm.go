@@ -1087,6 +1087,21 @@ func DefaultApplyFieldMaskUser(ctx context.Context, patchee *User, ormObj *UserO
 			}
 			continue
 		}
+		if f == prefix+"CreditCard" {
+			updatedCreditCard = true
+			patchee.CreditCard = patcher.CreditCard
+			filterCreditCard := CreditCardORM{}
+			if ormObj.Id == "" {
+				return nil, errors.New("Can't do overwriting update with no Id value for UserORM")
+			}
+			filterCreditCard.UserId = new(string)
+			*filterCreditCard.UserId = ormObj.Id
+			filterCreditCard.AccountID = ormObj.AccountID
+			if err = db.Where(filterCreditCard).Delete(CreditCardORM{}).Error; err != nil {
+				return nil, err
+			}
+			continue
+		}
 		if f == prefix+"Emails" {
 			patchee.Emails = patcher.Emails
 			filterEmails := EmailORM{}
@@ -1133,6 +1148,11 @@ func DefaultApplyFieldMaskUser(ctx context.Context, patchee *User, ormObj *UserO
 			}
 			continue
 		}
+		if f == prefix+"BillingAddress" {
+			updatedBillingAddress = true
+			patchee.BillingAddress = patcher.BillingAddress
+			continue
+		}
 		if strings.HasPrefix(f, prefix+"ShippingAddress.") && !updatedShippingAddress {
 			updatedShippingAddress = true
 			if patcher.ShippingAddress == nil {
@@ -1147,6 +1167,11 @@ func DefaultApplyFieldMaskUser(ctx context.Context, patchee *User, ormObj *UserO
 			} else {
 				patchee.ShippingAddress = o
 			}
+			continue
+		}
+		if f == prefix+"ShippingAddress" {
+			updatedShippingAddress = true
+			patchee.ShippingAddress = patcher.ShippingAddress
 			continue
 		}
 		if f == prefix+"Languages" {

@@ -1001,6 +1001,20 @@ func DefaultApplyFieldMaskTypeWithID(ctx context.Context, patchee *TypeWithID, o
 			}
 			continue
 		}
+		if f == prefix+"ANestedObject" {
+			updatedANestedObject = true
+			patchee.ANestedObject = patcher.ANestedObject
+			filterANestedObject := TestTypesORM{}
+			if ormObj.Id == 0 {
+				return nil, errors.New("Can't do overwriting update with no Id value for TypeWithIDORM")
+			}
+			filterANestedObject.ANestedObjectTypeWithIDId = new(uint32)
+			*filterANestedObject.ANestedObjectTypeWithIDId = ormObj.Id
+			if err = db.Where(filterANestedObject).Delete(TestTypesORM{}).Error; err != nil {
+				return nil, err
+			}
+			continue
+		}
 		if strings.HasPrefix(f, prefix+"Point.") && !updatedPoint {
 			updatedPoint = true
 			if patcher.Point == nil {
@@ -1017,6 +1031,11 @@ func DefaultApplyFieldMaskTypeWithID(ctx context.Context, patchee *TypeWithID, o
 			}
 			continue
 		}
+		if f == prefix+"Point" {
+			updatedPoint = true
+			patchee.Point = patcher.Point
+			continue
+		}
 		if strings.HasPrefix(f, prefix+"User.") && !updatedUser {
 			updatedUser = true
 			if patcher.User == nil {
@@ -1031,6 +1050,11 @@ func DefaultApplyFieldMaskTypeWithID(ctx context.Context, patchee *TypeWithID, o
 			} else {
 				patchee.User = o
 			}
+			continue
+		}
+		if f == prefix+"User" {
+			updatedUser = true
+			patchee.User = patcher.User
 			continue
 		}
 		if f == prefix+"Address" {
@@ -1532,6 +1556,20 @@ func DefaultApplyFieldMaskPrimaryUUIDType(ctx context.Context, patchee *PrimaryU
 			}
 			continue
 		}
+		if f == prefix+"Child" {
+			updatedChild = true
+			patchee.Child = patcher.Child
+			filterChild := ExternalChildORM{}
+			if ormObj.Id == nil || *ormObj.Id == go_uuid1.Nil {
+				return nil, errors.New("Can't do overwriting update with no Id value for PrimaryUUIDTypeORM")
+			}
+			filterChild.PrimaryUUIDTypeId = new(go_uuid1.UUID)
+			*filterChild.PrimaryUUIDTypeId = *ormObj.Id
+			if err = db.Where(filterChild).Delete(ExternalChildORM{}).Error; err != nil {
+				return nil, err
+			}
+			continue
+		}
 	}
 	if err != nil {
 		return nil, err
@@ -1745,6 +1783,20 @@ func DefaultApplyFieldMaskPrimaryStringType(ctx context.Context, patchee *Primar
 			}
 			continue
 		}
+		if f == prefix+"Child" {
+			updatedChild = true
+			patchee.Child = patcher.Child
+			filterChild := ExternalChildORM{}
+			if ormObj.Id == "" {
+				return nil, errors.New("Can't do overwriting update with no Id value for PrimaryStringTypeORM")
+			}
+			filterChild.PrimaryStringTypeId = new(string)
+			*filterChild.PrimaryStringTypeId = ormObj.Id
+			if err = db.Where(filterChild).Delete(ExternalChildORM{}).Error; err != nil {
+				return nil, err
+			}
+			continue
+		}
 	}
 	if err != nil {
 		return nil, err
@@ -1826,6 +1878,20 @@ func DefaultApplyFieldMaskPrimaryIncluded(ctx context.Context, patchee *PrimaryI
 				return nil, err
 			} else {
 				patchee.Child = o
+			}
+			continue
+		}
+		if f == prefix+"Child" {
+			updatedChild = true
+			patchee.Child = patcher.Child
+			filterChild := ExternalChildORM{}
+			if ormObj.Id == go_uuid1.Nil {
+				return nil, errors.New("Can't do overwriting update with no Id value for PrimaryIncludedORM")
+			}
+			filterChild.PrimaryIncludedId = new(go_uuid1.UUID)
+			*filterChild.PrimaryIncludedId = ormObj.Id
+			if err = db.Where(filterChild).Delete(ExternalChildORM{}).Error; err != nil {
+				return nil, err
 			}
 			continue
 		}

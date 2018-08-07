@@ -175,6 +175,13 @@ func (p *OrmPlugin) generateApplyFieldMask(message *generator.Descriptor) {
 			p.P(`}`)
 			p.P(`continue`)
 			p.P(`}`)
+			p.P(`if f == prefix+"`, ccName, `" {`)
+			p.P(`updated`, ccName, ` = true`)
+			p.P(`patchee.`, ccName, ` = patcher.`, ccName)
+			p.removeChildAssociationsByName(message, ccName)
+			p.setupOrderedHasManyByName(message, ccName)
+			p.P(`continue`)
+			p.P(`}`)
 		} else {
 			p.P(`if f == prefix+"`, ccName, `" {`)
 			p.P(`patchee.`, ccName, ` = patcher.`, ccName)
