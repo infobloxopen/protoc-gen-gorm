@@ -230,7 +230,7 @@ func DefaultPatchExternalChild(ctx context.Context, in *ExternalChild, updateMas
 	if err != nil {
 		return nil, err
 	}
-	if _, err := DefaultApplyFieldMaskExternalChild(ctx, &pbObj, &ormObj, in, updateMask, db); err != nil {
+	if _, err := DefaultApplyFieldMaskExternalChild(ctx, &pbObj, &ormObj, in, updateMask, "", db); err != nil {
 		return nil, err
 	}
 	if hook, ok := interface{}(&pbObj).(ExternalChildWithBeforePatchSave); ok {
@@ -257,11 +257,17 @@ type ExternalChildWithBeforePatchSave interface {
 }
 
 // DefaultApplyFieldMaskExternalChild patches an pbObject with patcher according to a field mask.
-func DefaultApplyFieldMaskExternalChild(ctx context.Context, patchee *ExternalChild, ormObj *ExternalChildORM, patcher *ExternalChild, updateMask *field_mask1.FieldMask, db *gorm1.DB) (*ExternalChild, error) {
+func DefaultApplyFieldMaskExternalChild(ctx context.Context, patchee *ExternalChild, ormObj *ExternalChildORM, patcher *ExternalChild, updateMask *field_mask1.FieldMask, prefix string, db *gorm1.DB) (*ExternalChild, error) {
+	if patcher == nil {
+		return nil, nil
+	} else if patchee == nil || ormObj == nil {
+		return nil, errors.New("Patchee and ormObj inputs to DefaultApplyFieldMaskExternalChild must be non-nil")
+	}
 	var err error
-	for _, f := range updateMask.GetPaths() {
-		if f == "Id" {
+	for _, f := range updateMask.Paths {
+		if f == prefix+"Id" {
 			patchee.Id = patcher.Id
+			continue
 		}
 	}
 	if err != nil {
