@@ -104,6 +104,14 @@ func (p *OrmPlugin) generateReadHandler(message *generator.Descriptor) {
 	p.P(`if err != nil {`)
 	p.P(`return nil, err`)
 	p.P(`}`)
+	k, f := p.findPrimaryKey(ormable)
+	if strings.Contains(f.Type, "*") {
+		p.P(`if ormParams.`, k, ` == nil || *ormParams.`, k, ` == `, p.guessZeroValue(f.Type), ` {`)
+	} else {
+		p.P(`if ormParams.`, k, ` == `, p.guessZeroValue(f.Type), ` {`)
+	}
+	p.P(`return nil, errors.New("Read requires a non-zero primary key")`)
+	p.P(`}`)
 
 	p.sortOrderedHasMany(message)
 	p.P(`ormResponse := `, ormable.Name, `{}`)

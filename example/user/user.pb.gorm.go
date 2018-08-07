@@ -874,6 +874,9 @@ func DefaultReadUser(ctx context.Context, in *User, db *gorm1.DB) (*User, error)
 	if err != nil {
 		return nil, err
 	}
+	if ormParams.Id == "" {
+		return nil, errors.New("Read requires a non-zero primary key")
+	}
 	db = db.Preload("Tasks", func(db *gorm1.DB) *gorm1.DB {
 		return db.Order("priority")
 	})
@@ -1286,6 +1289,9 @@ func DefaultReadEmail(ctx context.Context, in *Email, db *gorm1.DB) (*Email, err
 	if err != nil {
 		return nil, err
 	}
+	if ormParams.Id == "" {
+		return nil, errors.New("Read requires a non-zero primary key")
+	}
 	ormResponse := EmailORM{}
 	if err = db.Where(&ormParams).First(&ormResponse).Error; err != nil {
 		return nil, err
@@ -1505,6 +1511,9 @@ func DefaultReadAddress(ctx context.Context, in *Address, db *gorm1.DB) (*Addres
 	ormParams, err := in.ToORM(ctx)
 	if err != nil {
 		return nil, err
+	}
+	if ormParams.Id == 0 {
+		return nil, errors.New("Read requires a non-zero primary key")
 	}
 	ormResponse := AddressORM{}
 	if err = db.Where(&ormParams).First(&ormResponse).Error; err != nil {
@@ -1730,6 +1739,9 @@ func DefaultReadLanguage(ctx context.Context, in *Language, db *gorm1.DB) (*Lang
 	if err != nil {
 		return nil, err
 	}
+	if ormParams.Id == 0 {
+		return nil, errors.New("Read requires a non-zero primary key")
+	}
 	ormResponse := LanguageORM{}
 	if err = db.Where(&ormParams).First(&ormResponse).Error; err != nil {
 		return nil, err
@@ -1945,6 +1957,9 @@ func DefaultReadCreditCard(ctx context.Context, in *CreditCard, db *gorm1.DB) (*
 	ormParams, err := in.ToORM(ctx)
 	if err != nil {
 		return nil, err
+	}
+	if ormParams.Id == 0 {
+		return nil, errors.New("Read requires a non-zero primary key")
 	}
 	ormResponse := CreditCardORM{}
 	if err = db.Where(&ormParams).First(&ormResponse).Error; err != nil {
