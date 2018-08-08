@@ -96,7 +96,7 @@ func (p *OrmPlugin) generateReadServerMethod(service *descriptor.ServiceDescript
 		p.generateDBSetup(service, outType)
 		p.generatePreserviceCall(svcName, typeName, "Read")
 
-		if fields := p.hasFieldsSelecter(inType); fields != "" {
+		if fields := p.hasFieldsSelector(inType); fields != "" {
 			p.P(`var err error`)
 			p.P(`if in.`, fields, ` == nil {`)
 			p.generatePreloading()
@@ -373,7 +373,7 @@ func (p *OrmPlugin) generatePreserviceHook(svc, typeName, inTypeName, mthd strin
 	p.P(`}`)
 }
 
-func (p *OrmPlugin) hasFieldsSelecter(object generator.Object) string {
+func (p *OrmPlugin) hasFieldsSelector(object generator.Object) string {
 	msg := object.(*generator.Descriptor)
 	for _, field := range msg.Field {
 		fieldName := generator.CamelCase(field.GetName())
