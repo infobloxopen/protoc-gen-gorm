@@ -59,8 +59,8 @@ func (p *OrmPlugin) generateDefaultHandlers(file *generator.FileDescriptor) {
 				p.generateDeleteHandler(message)
 				p.generateStrictUpdateHandler(message)
 				p.generatePatchHandler(message)
-				p.generateApplyFieldMask(message)
 			}
+			p.generateApplyFieldMask(message)
 			p.generateCollectionOperatorsFetcher()
 			p.generateListHandler(message)
 		}
@@ -106,6 +106,14 @@ func (p *OrmPlugin) generateReadHandler(message *generator.Descriptor) {
 	p.P(`if err != nil {`)
 	p.P(`return nil, err`)
 	p.P(`}`)
+	k, f := p.findPrimaryKey(ormable)
+	if strings.Contains(f.Type, "*") {
+		p.P(`if ormParams.`, k, ` == nil || *ormParams.`, k, ` == `, p.guessZeroValue(f.Type), ` {`)
+	} else {
+		p.P(`if ormParams.`, k, ` == `, p.guessZeroValue(f.Type), ` {`)
+	}
+	p.P(`return nil, errors.New("Read requires a non-zero primary key")`)
+	p.P(`}`)
 
 	p.sortOrderedHasMany(message)
 	p.P(`ormResponse := `, ormable.Name, `{}`)
@@ -120,23 +128,78 @@ func (p *OrmPlugin) generateReadHandler(message *generator.Descriptor) {
 
 func (p *OrmPlugin) generateApplyFieldMask(message *generator.Descriptor) {
 	typeName := p.TypeName(message)
-
 	p.P(`// DefaultApplyFieldMask`, typeName, ` patches an pbObject with patcher according to a field mask.`)
 	p.P(`func DefaultApplyFieldMask`, typeName, `(ctx context.Context, patchee *`,
 		typeName, `,ormObj *`, typeName, `ORM, patcher *`,
 		typeName, `, updateMask *`, p.Import(fmImport),
-		`.FieldMask, db *`, p.Import(gormImport), `.DB) (*`, typeName, `, error) {`)
-	p.P(`var err error`)
+		`.FieldMask, prefix string, db *`, p.Import(gormImport), `.DB) (*`, typeName, `, error) {`)
 
+	p.P(`if patcher == nil {`)
+	p.P(`return nil, nil`)
+	p.P(`} else if patchee == nil || ormObj == nil {`)
+	p.P(`return nil, errors.New("Patchee and ormObj inputs to DefaultApplyFieldMask`,
+		typeName, ` must be non-nil")`)
+	p.P(`}`)
+	p.P(`var err error`)
+	hasNested := false
+	for _, field := range message.GetField() {
+		fieldType, _ := p.GoType(message, field)
+		if field.IsMessage() && p.isOrmable(generator.CamelCase(fieldType)) && !field.IsRepeated() {
+			p.P(`var updated`, generator.CamelCase(field.GetName()), ` bool`)
+			hasNested = true
+		}
+	}
 	// Patch pbObj with input according to a field mask.
-	p.P(`for _, f := range updateMask.GetPaths() {`)
+	if hasNested {
+		p.P(`for i, f := range updateMask.Paths {`)
+	} else {
+		p.P(`for _, f := range updateMask.Paths {`)
+	}
 	for _, field := range message.GetField() {
 		ccName := generator.CamelCase(field.GetName())
-		p.P(`if f == "`, ccName, `" {`)
-		p.P(`patchee.`, ccName, ` = patcher.`, ccName)
-		p.removeChildAssociationsByName(message, ccName)
-		p.setupOrderedHasManyByName(message, ccName)
-		p.P(`}`)
+		fieldType, _ := p.GoType(message, field)
+		//  for ormable message, do recursive patching
+		if field.IsMessage() && p.isOrmable(fieldType) && !field.IsRepeated() {
+			p.UsingGoImports("strings")
+			p.P(`if strings.HasPrefix(f, prefix+"`, ccName, `.") && !updated`, ccName, ` {`)
+			p.P(`updated`, ccName, ` = true`)
+			p.P(`if patcher.`, ccName, ` == nil {`)
+			p.P(`patchee.`, ccName, ` = nil`)
+			p.P(`continue`)
+			p.P(`}`)
+			p.P(`if patchee.`, ccName, ` == nil {`)
+			p.P(`patchee.`, ccName, ` = &`, strings.TrimPrefix(fieldType, "*"), `{}`)
+			p.P(`}`)
+			if s := strings.Split(fieldType, "."); len(s) == 2 {
+				p.P(`if o, err := `, strings.TrimLeft(s[0], "*"), `.DefaultApplyFieldMask`, s[1], `(ctx, patchee.`, ccName,
+					`, ormObj.`, ccName, `, patcher.`, ccName, `, &`, p.Import(fmImport),
+					`.FieldMask{Paths:updateMask.Paths[i:]}, prefix+"`, ccName, `.", db); err != nil {`)
+			} else {
+				p.P(`if o, err := DefaultApplyFieldMask`, strings.TrimPrefix(fieldType, "*"), `(ctx, patchee.`, ccName,
+					`, ormObj.`, ccName, `, patcher.`, ccName, `, &`, p.Import(fmImport),
+					`.FieldMask{Paths:updateMask.Paths[i:]}, prefix+"`, ccName, `.", db); err != nil {`)
+			}
+			p.P(`return nil, err`)
+			p.P(`} else {`)
+			p.P(`patchee.`, ccName, ` = o`)
+			p.P(`}`)
+			p.P(`continue`)
+			p.P(`}`)
+			p.P(`if f == prefix+"`, ccName, `" {`)
+			p.P(`updated`, ccName, ` = true`)
+			p.P(`patchee.`, ccName, ` = patcher.`, ccName)
+			p.removeChildAssociationsByName(message, ccName)
+			p.setupOrderedHasManyByName(message, ccName)
+			p.P(`continue`)
+			p.P(`}`)
+		} else {
+			p.P(`if f == prefix+"`, ccName, `" {`)
+			p.P(`patchee.`, ccName, ` = patcher.`, ccName)
+			p.removeChildAssociationsByName(message, ccName)
+			p.setupOrderedHasManyByName(message, ccName)
+			p.P(`continue`)
+			p.P(`}`)
+		}
 	}
 	p.P(`}`)
 	p.P(`if err != nil {`)
@@ -199,7 +262,7 @@ func (p *OrmPlugin) generatePatchHandler(message *generator.Descriptor) {
 	p.P(`return nil, err`)
 	p.P(`}`)
 
-	p.P(`if _, err := DefaultApplyFieldMask`, typeName, `(ctx, &pbObj, &ormObj, in, updateMask, db); err != nil {`)
+	p.P(`if _, err := DefaultApplyFieldMask`, typeName, `(ctx, &pbObj, &ormObj, in, updateMask, "", db); err != nil {`)
 	p.P(`return nil, err`)
 	p.P(`}`)
 
