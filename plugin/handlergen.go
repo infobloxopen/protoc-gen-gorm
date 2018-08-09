@@ -393,7 +393,7 @@ func (p *OrmPlugin) generateListHandler(message *generator.Descriptor) {
 	p.P(`return nil, err`)
 	p.P(`}`)
 
-	p.P(`db, err = `, p.Import(tkgormImport), `.ApplyCollectionOperators(db, &`, ormable.Name, `{}, f, s, p, fs)`)
+	p.P(`db, err = `, p.Import(tkgormImport), `.ApplyCollectionOperators(ctx, db, &`, ormable.Name, `{}, &`, typeName, `{},f, s, p, fs)`)
 	p.P(`if err != nil {`)
 	p.P(`return nil, err`)
 	p.P(`}`)
