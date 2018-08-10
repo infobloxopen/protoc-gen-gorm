@@ -210,18 +210,7 @@ func DefaultPatchIntPoint(ctx context.Context, in *IntPoint, updateMask *field_m
 			return nil, err
 		}
 	}
-	ormObj, err = pbObj.ToORM(ctx)
-	if err != nil {
-		return nil, err
-	}
-	if err = db.Save(&ormObj).Error; err != nil {
-		return nil, err
-	}
-	pbObj, err = ormObj.ToPB(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return &pbObj, err
+	return DefaultStrictUpdateIntPoint(ctx, &pbObj, db)
 }
 
 type IntPointWithBeforePatchSave interface {

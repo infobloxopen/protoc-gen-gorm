@@ -937,18 +937,7 @@ func DefaultPatchTypeWithID(ctx context.Context, in *TypeWithID, updateMask *fie
 			return nil, err
 		}
 	}
-	ormObj, err = pbObj.ToORM(ctx)
-	if err != nil {
-		return nil, err
-	}
-	if err = db.Save(&ormObj).Error; err != nil {
-		return nil, err
-	}
-	pbObj, err = ormObj.ToPB(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return &pbObj, err
+	return DefaultStrictUpdateTypeWithID(ctx, &pbObj, db)
 }
 
 type TypeWithIDWithBeforePatchSave interface {
@@ -977,15 +966,6 @@ func DefaultApplyFieldMaskTypeWithID(ctx context.Context, patchee *TypeWithID, o
 		}
 		if f == prefix+"Things" {
 			patchee.Things = patcher.Things
-			filterThings := TestTypesORM{}
-			if ormObj.Id == 0 {
-				return nil, errors.New("Can't do overwriting update with no Id value for TypeWithIDORM")
-			}
-			filterThings.ThingsTypeWithIDId = new(uint32)
-			*filterThings.ThingsTypeWithIDId = ormObj.Id
-			if err = db.Where(filterThings).Delete(TestTypesORM{}).Error; err != nil {
-				return nil, err
-			}
 			continue
 		}
 		if strings.HasPrefix(f, prefix+"ANestedObject.") && !updatedANestedObject {
@@ -1007,15 +987,6 @@ func DefaultApplyFieldMaskTypeWithID(ctx context.Context, patchee *TypeWithID, o
 		if f == prefix+"ANestedObject" {
 			updatedANestedObject = true
 			patchee.ANestedObject = patcher.ANestedObject
-			filterANestedObject := TestTypesORM{}
-			if ormObj.Id == 0 {
-				return nil, errors.New("Can't do overwriting update with no Id value for TypeWithIDORM")
-			}
-			filterANestedObject.ANestedObjectTypeWithIDId = new(uint32)
-			*filterANestedObject.ANestedObjectTypeWithIDId = ormObj.Id
-			if err = db.Where(filterANestedObject).Delete(TestTypesORM{}).Error; err != nil {
-				return nil, err
-			}
 			continue
 		}
 		if strings.HasPrefix(f, prefix+"Point.") && !updatedPoint {
@@ -1222,10 +1193,6 @@ func DefaultPatchMultiaccountTypeWithID(ctx context.Context, in *MultiaccountTyp
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultPatchMultiaccountTypeWithID")
 	}
-	accountID, err := auth1.GetAccountID(ctx, nil)
-	if err != nil {
-		return nil, err
-	}
 	pbReadRes, err := DefaultReadMultiaccountTypeWithID(ctx, &MultiaccountTypeWithID{Id: in.GetId()}, db)
 	if err != nil {
 		return nil, err
@@ -1243,19 +1210,7 @@ func DefaultPatchMultiaccountTypeWithID(ctx context.Context, in *MultiaccountTyp
 			return nil, err
 		}
 	}
-	ormObj, err = pbObj.ToORM(ctx)
-	if err != nil {
-		return nil, err
-	}
-	db = db.Where(&MultiaccountTypeWithIDORM{AccountID: accountID})
-	if err = db.Save(&ormObj).Error; err != nil {
-		return nil, err
-	}
-	pbObj, err = ormObj.ToPB(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return &pbObj, err
+	return DefaultStrictUpdateMultiaccountTypeWithID(ctx, &pbObj, db)
 }
 
 type MultiaccountTypeWithIDWithBeforePatchSave interface {
@@ -1517,18 +1472,7 @@ func DefaultPatchPrimaryUUIDType(ctx context.Context, in *PrimaryUUIDType, updat
 			return nil, err
 		}
 	}
-	ormObj, err = pbObj.ToORM(ctx)
-	if err != nil {
-		return nil, err
-	}
-	if err = db.Save(&ormObj).Error; err != nil {
-		return nil, err
-	}
-	pbObj, err = ormObj.ToPB(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return &pbObj, err
+	return DefaultStrictUpdatePrimaryUUIDType(ctx, &pbObj, db)
 }
 
 type PrimaryUUIDTypeWithBeforePatchSave interface {
@@ -1568,15 +1512,6 @@ func DefaultApplyFieldMaskPrimaryUUIDType(ctx context.Context, patchee *PrimaryU
 		if f == prefix+"Child" {
 			updatedChild = true
 			patchee.Child = patcher.Child
-			filterChild := ExternalChildORM{}
-			if ormObj.Id == nil || *ormObj.Id == go_uuid1.Nil {
-				return nil, errors.New("Can't do overwriting update with no Id value for PrimaryUUIDTypeORM")
-			}
-			filterChild.PrimaryUUIDTypeId = new(go_uuid1.UUID)
-			*filterChild.PrimaryUUIDTypeId = *ormObj.Id
-			if err = db.Where(filterChild).Delete(ExternalChildORM{}).Error; err != nil {
-				return nil, err
-			}
 			continue
 		}
 	}
@@ -1747,18 +1682,7 @@ func DefaultPatchPrimaryStringType(ctx context.Context, in *PrimaryStringType, u
 			return nil, err
 		}
 	}
-	ormObj, err = pbObj.ToORM(ctx)
-	if err != nil {
-		return nil, err
-	}
-	if err = db.Save(&ormObj).Error; err != nil {
-		return nil, err
-	}
-	pbObj, err = ormObj.ToPB(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return &pbObj, err
+	return DefaultStrictUpdatePrimaryStringType(ctx, &pbObj, db)
 }
 
 type PrimaryStringTypeWithBeforePatchSave interface {
@@ -1798,15 +1722,6 @@ func DefaultApplyFieldMaskPrimaryStringType(ctx context.Context, patchee *Primar
 		if f == prefix+"Child" {
 			updatedChild = true
 			patchee.Child = patcher.Child
-			filterChild := ExternalChildORM{}
-			if ormObj.Id == "" {
-				return nil, errors.New("Can't do overwriting update with no Id value for PrimaryStringTypeORM")
-			}
-			filterChild.PrimaryStringTypeId = new(string)
-			*filterChild.PrimaryStringTypeId = ormObj.Id
-			if err = db.Where(filterChild).Delete(ExternalChildORM{}).Error; err != nil {
-				return nil, err
-			}
 			continue
 		}
 	}
@@ -1896,15 +1811,6 @@ func DefaultApplyFieldMaskPrimaryIncluded(ctx context.Context, patchee *PrimaryI
 		if f == prefix+"Child" {
 			updatedChild = true
 			patchee.Child = patcher.Child
-			filterChild := ExternalChildORM{}
-			if ormObj.Id == go_uuid1.Nil {
-				return nil, errors.New("Can't do overwriting update with no Id value for PrimaryIncludedORM")
-			}
-			filterChild.PrimaryIncludedId = new(go_uuid1.UUID)
-			*filterChild.PrimaryIncludedId = ormObj.Id
-			if err = db.Where(filterChild).Delete(ExternalChildORM{}).Error; err != nil {
-				return nil, err
-			}
 			continue
 		}
 	}

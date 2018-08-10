@@ -237,18 +237,7 @@ func DefaultPatchExternalChild(ctx context.Context, in *ExternalChild, updateMas
 			return nil, err
 		}
 	}
-	ormObj, err = pbObj.ToORM(ctx)
-	if err != nil {
-		return nil, err
-	}
-	if err = db.Save(&ormObj).Error; err != nil {
-		return nil, err
-	}
-	pbObj, err = ormObj.ToPB(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return &pbObj, err
+	return DefaultStrictUpdateExternalChild(ctx, &pbObj, db)
 }
 
 type ExternalChildWithBeforePatchSave interface {

@@ -186,15 +186,11 @@ func (p *OrmPlugin) generateApplyFieldMask(message *generator.Descriptor) {
 			p.P(`if f == prefix+"`, ccName, `" {`)
 			p.P(`updated`, ccName, ` = true`)
 			p.P(`patchee.`, ccName, ` = patcher.`, ccName)
-			p.removeChildAssociationsByName(message, ccName)
-			p.setupOrderedHasManyByName(message, ccName)
 			p.P(`continue`)
 			p.P(`}`)
 		} else {
 			p.P(`if f == prefix+"`, ccName, `" {`)
 			p.P(`patchee.`, ccName, ` = patcher.`, ccName)
-			p.removeChildAssociationsByName(message, ccName)
-			p.setupOrderedHasManyByName(message, ccName)
 			p.P(`continue`)
 			p.P(`}`)
 		}
@@ -241,13 +237,6 @@ func (p *OrmPlugin) generatePatchHandler(message *generator.Descriptor) {
 	p.P(`return nil, errors.New("Nil argument to DefaultPatch`, typeName, `")`)
 	p.P(`}`)
 
-	if isMultiAccount {
-		p.P("accountID, err := ", p.Import(authImport), ".GetAccountID(ctx, nil)")
-		p.P("if err != nil {")
-		p.P("return nil, err")
-		p.P("}")
-	}
-
 	p.P(`pbReadRes, err := DefaultRead`, typeName, `(ctx, &`, typeName, `{Id: in.GetId()}, db)`)
 	p.P(`if err != nil {`)
 	p.P(`return nil, err`)
@@ -270,29 +259,8 @@ func (p *OrmPlugin) generatePatchHandler(message *generator.Descriptor) {
 	p.P(`}`)
 	p.P(`}`)
 
-	// Convert pbObj back to ormObj to trigger any logic that was
-	// written for BeforeToORM/AfterToORM and perform db.Save call.
-	p.P(`ormObj, err = pbObj.ToORM(ctx)`)
-	p.P(`if err != nil {`)
-	p.P(`return nil, err`)
-	p.P(`}`)
+	p.P(`return DefaultStrictUpdate`, typeName, `(ctx, &pbObj, db)`)
 
-	if isMultiAccount {
-		p.P(`db = db.Where(&`, typeName, `ORM{AccountID: accountID})`)
-	}
-
-	p.P(`if err = db.Save(&ormObj).Error; err != nil {`)
-	p.P(`return nil, err`)
-	p.P(`}`)
-
-	// convert ormObj to pbObj again (sic!) to trigger any logic that was
-	// written for AfterToPB/BeforeToPB.
-	p.P(`pbObj, err = ormObj.ToPB(ctx)`)
-	p.P(`if err != nil {`)
-	p.P(`return nil, err`)
-	p.P(`}`)
-
-	p.P(`return &pbObj, err`)
 	p.P(`}`)
 	p.P()
 
