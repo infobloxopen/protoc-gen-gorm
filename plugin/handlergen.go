@@ -128,14 +128,13 @@ func (p *OrmPlugin) generateApplyFieldMask(message *generator.Descriptor) {
 	typeName := p.TypeName(message)
 	p.P(`// DefaultApplyFieldMask`, typeName, ` patches an pbObject with patcher according to a field mask.`)
 	p.P(`func DefaultApplyFieldMask`, typeName, `(ctx context.Context, patchee *`,
-		typeName, `,ormObj *`, typeName, `ORM, patcher *`,
-		typeName, `, updateMask *`, p.Import(fmImport),
+		typeName, `, patcher *`, typeName, `, updateMask *`, p.Import(fmImport),
 		`.FieldMask, prefix string, db *`, p.Import(gormImport), `.DB) (*`, typeName, `, error) {`)
 
 	p.P(`if patcher == nil {`)
 	p.P(`return nil, nil`)
-	p.P(`} else if patchee == nil || ormObj == nil {`)
-	p.P(`return nil, errors.New("Patchee and ormObj inputs to DefaultApplyFieldMask`,
+	p.P(`} else if patchee == nil {`)
+	p.P(`return nil, errors.New("Patchee inputs to DefaultApplyFieldMask`,
 		typeName, ` must be non-nil")`)
 	p.P(`}`)
 	p.P(`var err error`)
@@ -170,11 +169,11 @@ func (p *OrmPlugin) generateApplyFieldMask(message *generator.Descriptor) {
 			p.P(`}`)
 			if s := strings.Split(fieldType, "."); len(s) == 2 {
 				p.P(`if o, err := `, strings.TrimLeft(s[0], "*"), `.DefaultApplyFieldMask`, s[1], `(ctx, patchee.`, ccName,
-					`, ormObj.`, ccName, `, patcher.`, ccName, `, &`, p.Import(fmImport),
+					`, patcher.`, ccName, `, &`, p.Import(fmImport),
 					`.FieldMask{Paths:updateMask.Paths[i:]}, prefix+"`, ccName, `.", db); err != nil {`)
 			} else {
 				p.P(`if o, err := DefaultApplyFieldMask`, strings.TrimPrefix(fieldType, "*"), `(ctx, patchee.`, ccName,
-					`, ormObj.`, ccName, `, patcher.`, ccName, `, &`, p.Import(fmImport),
+					`, patcher.`, ccName, `, &`, p.Import(fmImport),
 					`.FieldMask{Paths:updateMask.Paths[i:]}, prefix+"`, ccName, `.", db); err != nil {`)
 			}
 			p.P(`return nil, err`)
@@ -244,12 +243,7 @@ func (p *OrmPlugin) generatePatchHandler(message *generator.Descriptor) {
 
 	p.P(`pbObj := *pbReadRes`)
 
-	p.P(`ormObj, err := pbObj.ToORM(ctx)`)
-	p.P(`if err != nil {`)
-	p.P(`return nil, err`)
-	p.P(`}`)
-
-	p.P(`if _, err := DefaultApplyFieldMask`, typeName, `(ctx, &pbObj, &ormObj, in, updateMask, "", db); err != nil {`)
+	p.P(`if _, err := DefaultApplyFieldMask`, typeName, `(ctx, &pbObj, in, updateMask, "", db); err != nil {`)
 	p.P(`return nil, err`)
 	p.P(`}`)
 
