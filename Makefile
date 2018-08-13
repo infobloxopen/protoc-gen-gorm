@@ -5,7 +5,7 @@ PROJECT_ROOT := github.com/infobloxopen/protoc-gen-gorm
 
 DOCKERFILE_PATH := $(CURDIR)/docker
 IMAGE_REGISTRY ?= infoblox
-IMAGE_VERSION  ?= latest
+IMAGE_VERSION  ?= dev-gengorm
 
 # configuration for the protobuf gentool
 SRCROOT_ON_HOST      := $(shell dirname $(abspath $(lastword $(MAKEFILE_LIST))))
@@ -13,10 +13,10 @@ SRCROOT_IN_CONTAINER := /home/go/src/$(PROJECT_ROOT)
 DOCKERPATH           := /home/go/src
 DOCKER_RUNNER        := docker run --rm
 DOCKER_RUNNER        += -v $(SRCROOT_ON_HOST):$(SRCROOT_IN_CONTAINER)
-DOCKER_GENERATOR     := infoblox/atlas-gentool-gengorm:latest
+DOCKER_GENERATOR     := infoblox/atlas-gentool:dev-gengorm
 GENERATOR            := $(DOCKER_RUNNER) $(DOCKER_GENERATOR)
 
-GENGORM_IMAGE      := $(IMAGE_REGISTRY)/atlas-gentool-gengorm
+GENGORM_IMAGE      := $(IMAGE_REGISTRY)/atlas-gentool
 GENGORM_DOCKERFILE := $(DOCKERFILE_PATH)/Dockerfile
 
 default: vendor options install
@@ -72,6 +72,11 @@ gentool-example: gentool
 			example/feature_demo/demo_multi_file.proto \
 			example/feature_demo/demo_types.proto \
 			example/feature_demo/demo_service.proto
+
+	@$(GENERATOR) \
+		--go_out="plugins=grpc:$(DOCKERPATH)" \
+		--gorm_out="$(DOCKERPATH)" \
+			example/user/user.proto
 
 gentool-types:
 	@$(GENERATOR) --go_out=$(DOCKERPATH) types/types.proto
