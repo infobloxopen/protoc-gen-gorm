@@ -1,24 +1,6 @@
 GOPATH ?= $(HOME)/go
 SRCPATH := $(patsubst %/,%,$(GOPATH))/src
 
-PROJECT_ROOT := github.com/infobloxopen/protoc-gen-gorm
-
-DOCKERFILE_PATH := $(CURDIR)/docker
-IMAGE_REGISTRY ?= infoblox
-IMAGE_VERSION  ?= latest
-
-# configuration for the protobuf gentool
-SRCROOT_ON_HOST      := $(shell dirname $(abspath $(lastword $(MAKEFILE_LIST))))
-SRCROOT_IN_CONTAINER := /home/go/src/$(PROJECT_ROOT)
-DOCKERPATH           := /home/go/src
-DOCKER_RUNNER        := docker run --rm
-DOCKER_RUNNER        += -v $(SRCROOT_ON_HOST):$(SRCROOT_IN_CONTAINER)
-DOCKER_GENERATOR     := infoblox/atlas-gentool-gengorm:latest
-GENERATOR            := $(DOCKER_RUNNER) $(DOCKER_GENERATOR)
-
-GENGORM_IMAGE      := $(IMAGE_REGISTRY)/atlas-gentool-gengorm
-GENGORM_DOCKERFILE := $(DOCKERFILE_PATH)/Dockerfile
-
 default: vendor options install
 
 .PHONY: vendor
@@ -57,26 +39,3 @@ test: example
 	go test -v ./...
 	go build ./example/user
 	go build ./example/feature_demo
-
-.PHONY: gentool
-gentool:
-	@docker build -f $(GENGORM_DOCKERFILE) -t $(GENGORM_IMAGE):$(IMAGE_VERSION) .
-	@docker tag $(GENGORM_IMAGE):$(IMAGE_VERSION) $(GENGORM_IMAGE):latest
-	@docker image prune -f --filter label=stage=server-intermediate
-
-
-gentool-example: gentool
-	@$(GENERATOR) \
-		--go_out="plugins=grpc:$(DOCKERPATH)" \
-		--gorm_out="engine=postgres,enums=string:$(DOCKERPATH)" \
-			example/feature_demo/demo_multi_file.proto \
-			example/feature_demo/demo_types.proto \
-			example/feature_demo/demo_service.proto
-
-gentool-types:
-	@$(GENERATOR) --go_out=$(DOCKERPATH) types/types.proto
-
-gentool-options:
-	@$(GENERATOR) \
-                --gogo_out="Mgoogle/protobuf/descriptor.proto=github.com/gogo/protobuf/protoc-gen-gogo/descriptor:$(DOCKERPATH)" \
-                options/gorm.proto
