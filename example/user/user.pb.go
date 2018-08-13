@@ -36,6 +36,7 @@ var _ = math.Inf
 const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 
 type User struct {
+<<<<<<< HEAD
 	Id                *atlas_rpc.Identifier       `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
 	CreatedAt         *google_protobuf1.Timestamp `protobuf:"bytes,2,opt,name=created_at,json=createdAt" json:"created_at,omitempty"`
 	UpdatedAt         *google_protobuf1.Timestamp `protobuf:"bytes,3,opt,name=updated_at,json=updatedAt" json:"updated_at,omitempty"`
@@ -59,6 +60,53 @@ func (*User) ProtoMessage()               {}
 func (*User) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{0} }
 
 func (m *User) GetId() *atlas_rpc.Identifier {
+=======
+	Id                   *resource.Identifier `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	CreatedAt            *timestamp.Timestamp `protobuf:"bytes,2,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	UpdatedAt            *timestamp.Timestamp `protobuf:"bytes,3,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	Birthday             *timestamp.Timestamp `protobuf:"bytes,4,opt,name=birthday,proto3" json:"birthday,omitempty"`
+	Age                  uint32               `protobuf:"varint,5,opt,name=age,proto3" json:"age,omitempty"`
+	Num                  uint32               `protobuf:"varint,6,opt,name=num,proto3" json:"num,omitempty"`
+	CreditCard           *CreditCard          `protobuf:"bytes,7,opt,name=credit_card,json=creditCard,proto3" json:"credit_card,omitempty"`
+	Emails               []*Email             `protobuf:"bytes,8,rep,name=emails,proto3" json:"emails,omitempty"`
+	Tasks                []*Task              `protobuf:"bytes,9,rep,name=tasks,proto3" json:"tasks,omitempty"`
+	BillingAddress       *Address             `protobuf:"bytes,10,opt,name=billing_address,json=billingAddress,proto3" json:"billing_address,omitempty"`
+	ShippingAddress      *Address             `protobuf:"bytes,11,opt,name=shipping_address,json=shippingAddress,proto3" json:"shipping_address,omitempty"`
+	Languages            []*Language          `protobuf:"bytes,12,rep,name=languages,proto3" json:"languages,omitempty"`
+	Friends              []*User              `protobuf:"bytes,13,rep,name=friends,proto3" json:"friends,omitempty"`
+	ShippingAddressId    *resource.Identifier `protobuf:"bytes,14,opt,name=shipping_address_id,json=shippingAddressId,proto3" json:"shipping_address_id,omitempty"`
+	ExternalUuid         *resource.Identifier `protobuf:"bytes,15,opt,name=external_uuid,json=externalUuid,proto3" json:"external_uuid,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}             `json:"-"`
+	XXX_unrecognized     []byte               `json:"-"`
+	XXX_sizecache        int32                `json:"-"`
+}
+
+func (m *User) Reset()         { *m = User{} }
+func (m *User) String() string { return proto.CompactTextString(m) }
+func (*User) ProtoMessage()    {}
+func (*User) Descriptor() ([]byte, []int) {
+	return fileDescriptor_user_d630848ebf7ad1fc, []int{0}
+}
+func (m *User) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_User.Unmarshal(m, b)
+}
+func (m *User) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_User.Marshal(b, m, deterministic)
+}
+func (dst *User) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_User.Merge(dst, src)
+}
+func (m *User) XXX_Size() int {
+	return xxx_messageInfo_User.Size(m)
+}
+func (m *User) XXX_DiscardUnknown() {
+	xxx_messageInfo_User.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_User proto.InternalMessageInfo
+
+func (m *User) GetId() *resource.Identifier {
+>>>>>>> master
 	if m != nil {
 		return m.Id
 	}
@@ -164,6 +212,7 @@ func (m *User) GetExternalUuid() *atlas_rpc.Identifier {
 }
 
 type Email struct {
+<<<<<<< HEAD
 	Id              *atlas_rpc.Identifier `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
 	Email           string                `protobuf:"bytes,2,opt,name=email" json:"email,omitempty"`
 	Subscribed      bool                  `protobuf:"varint,3,opt,name=subscribed" json:"subscribed,omitempty"`
@@ -175,6 +224,41 @@ func (m *Email) Reset()                    { *m = Email{} }
 func (m *Email) String() string            { return proto.CompactTextString(m) }
 func (*Email) ProtoMessage()               {}
 func (*Email) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{1} }
+=======
+	Id                   *resource.Identifier `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Email                string               `protobuf:"bytes,2,opt,name=email,proto3" json:"email,omitempty"`
+	Subscribed           bool                 `protobuf:"varint,3,opt,name=subscribed,proto3" json:"subscribed,omitempty"`
+	UserId               *resource.Identifier `protobuf:"bytes,4,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	ExternalNotNull      *resource.Identifier `protobuf:"bytes,5,opt,name=external_not_null,json=externalNotNull,proto3" json:"external_not_null,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}             `json:"-"`
+	XXX_unrecognized     []byte               `json:"-"`
+	XXX_sizecache        int32                `json:"-"`
+}
+
+func (m *Email) Reset()         { *m = Email{} }
+func (m *Email) String() string { return proto.CompactTextString(m) }
+func (*Email) ProtoMessage()    {}
+func (*Email) Descriptor() ([]byte, []int) {
+	return fileDescriptor_user_d630848ebf7ad1fc, []int{1}
+}
+func (m *Email) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Email.Unmarshal(m, b)
+}
+func (m *Email) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Email.Marshal(b, m, deterministic)
+}
+func (dst *Email) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Email.Merge(dst, src)
+}
+func (m *Email) XXX_Size() int {
+	return xxx_messageInfo_Email.Size(m)
+}
+func (m *Email) XXX_DiscardUnknown() {
+	xxx_messageInfo_Email.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Email proto.InternalMessageInfo
+>>>>>>> master
 
 func (m *Email) GetId() *atlas_rpc.Identifier {
 	if m != nil {
@@ -212,6 +296,7 @@ func (m *Email) GetExternalNotNull() *atlas_rpc.Identifier {
 }
 
 type Address struct {
+<<<<<<< HEAD
 	Id         *atlas_rpc.Identifier `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
 	Address_1  string                `protobuf:"bytes,2,opt,name=address_1,json=address1" json:"address_1,omitempty"`
 	Address_2  string                `protobuf:"bytes,3,opt,name=address_2,json=address2" json:"address_2,omitempty"`
@@ -224,6 +309,40 @@ func (m *Address) Reset()                    { *m = Address{} }
 func (m *Address) String() string            { return proto.CompactTextString(m) }
 func (*Address) ProtoMessage()               {}
 func (*Address) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{2} }
+=======
+	Id                   *resource.Identifier `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Address_1            string               `protobuf:"bytes,2,opt,name=address_1,json=address1,proto3" json:"address_1,omitempty"`
+	Address_2            string               `protobuf:"bytes,3,opt,name=address_2,json=address2,proto3" json:"address_2,omitempty"`
+	Post                 string               `protobuf:"bytes,4,opt,name=post,proto3" json:"post,omitempty"`
+	External             *resource.Identifier `protobuf:"bytes,5,opt,name=external,proto3" json:"external,omitempty"`
+	ImplicitFk           *resource.Identifier `protobuf:"bytes,6,opt,name=implicit_fk,json=implicitFk,proto3" json:"implicit_fk,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}             `json:"-"`
+	XXX_unrecognized     []byte               `json:"-"`
+	XXX_sizecache        int32                `json:"-"`
+}
+
+func (m *Address) Reset()         { *m = Address{} }
+func (m *Address) String() string { return proto.CompactTextString(m) }
+func (*Address) ProtoMessage()    {}
+func (*Address) Descriptor() ([]byte, []int) {
+	return fileDescriptor_user_d630848ebf7ad1fc, []int{2}
+}
+func (m *Address) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Address.Unmarshal(m, b)
+}
+func (m *Address) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Address.Marshal(b, m, deterministic)
+}
+func (dst *Address) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Address.Merge(dst, src)
+}
+func (m *Address) XXX_Size() int {
+	return xxx_messageInfo_Address.Size(m)
+}
+func (m *Address) XXX_DiscardUnknown() {
+	xxx_messageInfo_Address.DiscardUnknown(m)
+}
+>>>>>>> master
 
 func (m *Address) GetId() *atlas_rpc.Identifier {
 	if m != nil {
@@ -268,6 +387,7 @@ func (m *Address) GetImplicitFk() *atlas_rpc.Identifier {
 }
 
 type Language struct {
+<<<<<<< HEAD
 	Id          *atlas_rpc.Identifier `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
 	Name        string                `protobuf:"bytes,2,opt,name=name" json:"name,omitempty"`
 	Code        string                `protobuf:"bytes,3,opt,name=code" json:"code,omitempty"`
@@ -278,6 +398,40 @@ func (m *Language) Reset()                    { *m = Language{} }
 func (m *Language) String() string            { return proto.CompactTextString(m) }
 func (*Language) ProtoMessage()               {}
 func (*Language) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{3} }
+=======
+	Id                   *resource.Identifier `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Name                 string               `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	Code                 string               `protobuf:"bytes,3,opt,name=code,proto3" json:"code,omitempty"`
+	ExternalInt          *resource.Identifier `protobuf:"bytes,4,opt,name=external_int,json=externalInt,proto3" json:"external_int,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}             `json:"-"`
+	XXX_unrecognized     []byte               `json:"-"`
+	XXX_sizecache        int32                `json:"-"`
+}
+
+func (m *Language) Reset()         { *m = Language{} }
+func (m *Language) String() string { return proto.CompactTextString(m) }
+func (*Language) ProtoMessage()    {}
+func (*Language) Descriptor() ([]byte, []int) {
+	return fileDescriptor_user_d630848ebf7ad1fc, []int{3}
+}
+func (m *Language) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Language.Unmarshal(m, b)
+}
+func (m *Language) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Language.Marshal(b, m, deterministic)
+}
+func (dst *Language) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Language.Merge(dst, src)
+}
+func (m *Language) XXX_Size() int {
+	return xxx_messageInfo_Language.Size(m)
+}
+func (m *Language) XXX_DiscardUnknown() {
+	xxx_messageInfo_Language.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Language proto.InternalMessageInfo
+>>>>>>> master
 
 func (m *Language) GetId() *atlas_rpc.Identifier {
 	if m != nil {
@@ -308,11 +462,44 @@ func (m *Language) GetExternalInt() *atlas_rpc.Identifier {
 }
 
 type CreditCard struct {
+<<<<<<< HEAD
 	Id        *atlas_rpc.Identifier       `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
 	CreatedAt *google_protobuf1.Timestamp `protobuf:"bytes,2,opt,name=created_at,json=createdAt" json:"created_at,omitempty"`
 	UpdatedAt *google_protobuf1.Timestamp `protobuf:"bytes,3,opt,name=updated_at,json=updatedAt" json:"updated_at,omitempty"`
 	Number    string                      `protobuf:"bytes,4,opt,name=number" json:"number,omitempty"`
 	UserId    *atlas_rpc.Identifier       `protobuf:"bytes,5,opt,name=user_id,json=userId" json:"user_id,omitempty"`
+=======
+	Id                   *resource.Identifier `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	CreatedAt            *timestamp.Timestamp `protobuf:"bytes,2,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	UpdatedAt            *timestamp.Timestamp `protobuf:"bytes,3,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	Number               string               `protobuf:"bytes,4,opt,name=number,proto3" json:"number,omitempty"`
+	UserId               *resource.Identifier `protobuf:"bytes,5,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}             `json:"-"`
+	XXX_unrecognized     []byte               `json:"-"`
+	XXX_sizecache        int32                `json:"-"`
+}
+
+func (m *CreditCard) Reset()         { *m = CreditCard{} }
+func (m *CreditCard) String() string { return proto.CompactTextString(m) }
+func (*CreditCard) ProtoMessage()    {}
+func (*CreditCard) Descriptor() ([]byte, []int) {
+	return fileDescriptor_user_d630848ebf7ad1fc, []int{4}
+}
+func (m *CreditCard) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_CreditCard.Unmarshal(m, b)
+}
+func (m *CreditCard) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_CreditCard.Marshal(b, m, deterministic)
+}
+func (dst *CreditCard) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CreditCard.Merge(dst, src)
+}
+func (m *CreditCard) XXX_Size() int {
+	return xxx_messageInfo_CreditCard.Size(m)
+}
+func (m *CreditCard) XXX_DiscardUnknown() {
+	xxx_messageInfo_CreditCard.DiscardUnknown(m)
+>>>>>>> master
 }
 
 func (m *CreditCard) Reset()                    { *m = CreditCard{} }
@@ -356,9 +543,40 @@ func (m *CreditCard) GetUserId() *atlas_rpc.Identifier {
 }
 
 type Task struct {
+<<<<<<< HEAD
 	Name        string `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
 	Description string `protobuf:"bytes,2,opt,name=description" json:"description,omitempty"`
 	Priority    int64  `protobuf:"varint,3,opt,name=priority" json:"priority,omitempty"`
+=======
+	Name                 string   `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Description          string   `protobuf:"bytes,2,opt,name=description,proto3" json:"description,omitempty"`
+	Priority             int64    `protobuf:"varint,3,opt,name=priority,proto3" json:"priority,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *Task) Reset()         { *m = Task{} }
+func (m *Task) String() string { return proto.CompactTextString(m) }
+func (*Task) ProtoMessage()    {}
+func (*Task) Descriptor() ([]byte, []int) {
+	return fileDescriptor_user_d630848ebf7ad1fc, []int{5}
+}
+func (m *Task) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Task.Unmarshal(m, b)
+}
+func (m *Task) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Task.Marshal(b, m, deterministic)
+}
+func (dst *Task) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Task.Merge(dst, src)
+}
+func (m *Task) XXX_Size() int {
+	return xxx_messageInfo_Task.Size(m)
+}
+func (m *Task) XXX_DiscardUnknown() {
+	xxx_messageInfo_Task.DiscardUnknown(m)
+>>>>>>> master
 }
 
 func (m *Task) Reset()                    { *m = Task{} }
@@ -396,9 +614,15 @@ func init() {
 	proto.RegisterType((*Task)(nil), "user.Task")
 }
 
+<<<<<<< HEAD
 func init() { proto.RegisterFile("example/user/user.proto", fileDescriptor0) }
 
 var fileDescriptor0 = []byte{
+=======
+func init() { proto.RegisterFile("example/user/user.proto", fileDescriptor_user_d630848ebf7ad1fc) }
+
+var fileDescriptor_user_d630848ebf7ad1fc = []byte{
+>>>>>>> master
 	// 889 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xc4, 0x56, 0x4d, 0x6f, 0xe3, 0x36,
 	0x13, 0x5e, 0xf9, 0x53, 0x1e, 0xc5, 0x1f, 0xe1, 0xee, 0xfb, 0x56, 0x4e, 0x81, 0xd6, 0x48, 0x2f,

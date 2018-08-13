@@ -43,13 +43,13 @@ install:
 	go install
 
 example: default
-	protoc -I. -I$(SRCPATH) -I./vendor \
+	protoc -I. -I$(SRCPATH) -I./vendor -I./vendor/github.com/grpc-ecosystem/grpc-gateway \
 		--go_out="plugins=grpc:$(SRCPATH)" --gorm_out="engine=postgres,enums=string:$(SRCPATH)" \
 		example/feature_demo/demo_multi_file.proto \
 		example/feature_demo/demo_types.proto \
 		example/feature_demo/demo_service.proto
 
-	protoc -I. -I$(SRCPATH) -I./vendor \
+	protoc -I. -I$(SRCPATH) -I./vendor -I./vendor -I./vendor/github.com/grpc-ecosystem/grpc-gateway \
 		--go_out="plugins=grpc:$(SRCPATH)" --gorm_out="$(SRCPATH)" \
 		example/user/user.proto
 

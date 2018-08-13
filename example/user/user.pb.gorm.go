@@ -1180,7 +1180,7 @@ func DefaultListUser(ctx context.Context, db *gorm1.DB, req interface{}) ([]*Use
 	if err != nil {
 		return nil, err
 	}
-	db, err = gorm2.ApplyCollectionOperators(db, &UserORM{}, f, s, p, fs)
+	db, err = gorm2.ApplyCollectionOperators(ctx, db, &UserORM{}, &User{}, f, s, p, fs)
 	if err != nil {
 		return nil, err
 	}
@@ -1386,7 +1386,7 @@ func DefaultListEmail(ctx context.Context, db *gorm1.DB, req interface{}) ([]*Em
 	if err != nil {
 		return nil, err
 	}
-	db, err = gorm2.ApplyCollectionOperators(db, &EmailORM{}, f, s, p, fs)
+	db, err = gorm2.ApplyCollectionOperators(ctx, db, &EmailORM{}, &Email{}, f, s, p, fs)
 	if err != nil {
 		return nil, err
 	}
@@ -1593,7 +1593,7 @@ func DefaultListAddress(ctx context.Context, db *gorm1.DB, req interface{}) ([]*
 	if err != nil {
 		return nil, err
 	}
-	db, err = gorm2.ApplyCollectionOperators(db, &AddressORM{}, f, s, p, fs)
+	db, err = gorm2.ApplyCollectionOperators(ctx, db, &AddressORM{}, &Address{}, f, s, p, fs)
 	if err != nil {
 		return nil, err
 	}
@@ -1792,7 +1792,7 @@ func DefaultListLanguage(ctx context.Context, db *gorm1.DB, req interface{}) ([]
 	if err != nil {
 		return nil, err
 	}
-	db, err = gorm2.ApplyCollectionOperators(db, &LanguageORM{}, f, s, p, fs)
+	db, err = gorm2.ApplyCollectionOperators(ctx, db, &LanguageORM{}, &Language{}, f, s, p, fs)
 	if err != nil {
 		return nil, err
 	}
@@ -1995,7 +1995,7 @@ func DefaultListCreditCard(ctx context.Context, db *gorm1.DB, req interface{}) (
 	if err != nil {
 		return nil, err
 	}
-	db, err = gorm2.ApplyCollectionOperators(db, &CreditCardORM{}, f, s, p, fs)
+	db, err = gorm2.ApplyCollectionOperators(ctx, db, &CreditCardORM{}, &CreditCard{}, f, s, p, fs)
 	if err != nil {
 		return nil, err
 	}
@@ -2074,7 +2074,7 @@ func DefaultListTask(ctx context.Context, db *gorm1.DB, req interface{}) ([]*Tas
 	if err != nil {
 		return nil, err
 	}
-	db, err = gorm2.ApplyCollectionOperators(db, &TaskORM{}, f, s, p, fs)
+	db, err = gorm2.ApplyCollectionOperators(ctx, db, &TaskORM{}, &Task{}, f, s, p, fs)
 	if err != nil {
 		return nil, err
 	}
