@@ -225,11 +225,7 @@ func DefaultPatchExternalChild(ctx context.Context, in *ExternalChild, updateMas
 		return nil, err
 	}
 	pbObj := *pbReadRes
-	ormObj, err := pbObj.ToORM(ctx)
-	if err != nil {
-		return nil, err
-	}
-	if _, err := DefaultApplyFieldMaskExternalChild(ctx, &pbObj, &ormObj, in, updateMask, "", db); err != nil {
+	if _, err := DefaultApplyFieldMaskExternalChild(ctx, &pbObj, in, updateMask, "", db); err != nil {
 		return nil, err
 	}
 	if hook, ok := interface{}(&pbObj).(ExternalChildWithBeforePatchSave); ok {
@@ -237,18 +233,7 @@ func DefaultPatchExternalChild(ctx context.Context, in *ExternalChild, updateMas
 			return nil, err
 		}
 	}
-	ormObj, err = pbObj.ToORM(ctx)
-	if err != nil {
-		return nil, err
-	}
-	if err = db.Save(&ormObj).Error; err != nil {
-		return nil, err
-	}
-	pbObj, err = ormObj.ToPB(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return &pbObj, err
+	return DefaultStrictUpdateExternalChild(ctx, &pbObj, db)
 }
 
 type ExternalChildWithBeforePatchSave interface {
@@ -256,11 +241,11 @@ type ExternalChildWithBeforePatchSave interface {
 }
 
 // DefaultApplyFieldMaskExternalChild patches an pbObject with patcher according to a field mask.
-func DefaultApplyFieldMaskExternalChild(ctx context.Context, patchee *ExternalChild, ormObj *ExternalChildORM, patcher *ExternalChild, updateMask *field_mask1.FieldMask, prefix string, db *gorm1.DB) (*ExternalChild, error) {
+func DefaultApplyFieldMaskExternalChild(ctx context.Context, patchee *ExternalChild, patcher *ExternalChild, updateMask *field_mask1.FieldMask, prefix string, db *gorm1.DB) (*ExternalChild, error) {
 	if patcher == nil {
 		return nil, nil
-	} else if patchee == nil || ormObj == nil {
-		return nil, errors.New("Patchee and ormObj inputs to DefaultApplyFieldMaskExternalChild must be non-nil")
+	} else if patchee == nil {
+		return nil, errors.New("Patchee inputs to DefaultApplyFieldMaskExternalChild must be non-nil")
 	}
 	var err error
 	for _, f := range updateMask.Paths {
@@ -307,7 +292,7 @@ func DefaultListExternalChild(ctx context.Context, db *gorm1.DB, req interface{}
 	if err != nil {
 		return nil, err
 	}
-	db, err = gorm2.ApplyCollectionOperators(db, &ExternalChildORM{}, f, s, p, fs)
+	db, err = gorm2.ApplyCollectionOperators(ctx, db, &ExternalChildORM{}, &ExternalChild{}, f, s, p, fs)
 	if err != nil {
 		return nil, err
 	}
