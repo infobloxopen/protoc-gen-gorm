@@ -100,7 +100,7 @@ func (p *OrmPlugin) generateReadServerMethod(service *descriptor.ServiceDescript
 			p.P(`var err error`)
 			p.P(`if in.`, fields, ` == nil {`)
 			p.generatePreloading()
-			p.P(`} else if db, err = `, p.Import(tkgormImport), `.ApplyFieldSelection(db, in.`, fields, `, &`, typeName, `{}); err != nil {`)
+			p.P(`} else if db, err = `, p.Import(tkgormImport), `.ApplyFieldSelection(ctx, db, in.`, fields, `, &`, typeName, `{}); err != nil {`)
 			p.P(`return nil, err`)
 			p.P(`}`)
 			p.P(`res, err := DefaultRead`, typeName, `(ctx, &`, typeName, `{Id: in.GetId()}, db, false)`)
