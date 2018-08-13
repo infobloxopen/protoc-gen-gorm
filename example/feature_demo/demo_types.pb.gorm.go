@@ -775,7 +775,7 @@ func DefaultListTestTypes(ctx context.Context, db *gorm1.DB, req interface{}) ([
 	if err != nil {
 		return nil, err
 	}
-	db, err = gorm2.ApplyCollectionOperators(db, &TestTypesORM{}, f, s, p, fs)
+	db, err = gorm2.ApplyCollectionOperators(ctx, db, &TestTypesORM{}, &TestTypes{}, f, s, p, fs)
 	if err != nil {
 		return nil, err
 	}
@@ -1082,7 +1082,7 @@ func DefaultListTypeWithID(ctx context.Context, db *gorm1.DB, req interface{}) (
 	if err != nil {
 		return nil, err
 	}
-	db, err = gorm2.ApplyCollectionOperators(db, &TypeWithIDORM{}, f, s, p, fs)
+	db, err = gorm2.ApplyCollectionOperators(ctx, db, &TypeWithIDORM{}, &TypeWithID{}, f, s, p, fs)
 	if err != nil {
 		return nil, err
 	}
@@ -1293,7 +1293,7 @@ func DefaultListMultiaccountTypeWithID(ctx context.Context, db *gorm1.DB, req in
 	if err != nil {
 		return nil, err
 	}
-	db, err = gorm2.ApplyCollectionOperators(db, &MultiaccountTypeWithIDORM{}, f, s, p, fs)
+	db, err = gorm2.ApplyCollectionOperators(ctx, db, &MultiaccountTypeWithIDORM{}, &MultiaccountTypeWithID{}, f, s, p, fs)
 	if err != nil {
 		return nil, err
 	}
@@ -1364,7 +1364,7 @@ func DefaultListMultiaccountTypeWithoutID(ctx context.Context, db *gorm1.DB, req
 	if err != nil {
 		return nil, err
 	}
-	db, err = gorm2.ApplyCollectionOperators(db, &MultiaccountTypeWithoutIDORM{}, f, s, p, fs)
+	db, err = gorm2.ApplyCollectionOperators(ctx, db, &MultiaccountTypeWithoutIDORM{}, &MultiaccountTypeWithoutID{}, f, s, p, fs)
 	if err != nil {
 		return nil, err
 	}
@@ -1593,7 +1593,7 @@ func DefaultListPrimaryUUIDType(ctx context.Context, db *gorm1.DB, req interface
 	if err != nil {
 		return nil, err
 	}
-	db, err = gorm2.ApplyCollectionOperators(db, &PrimaryUUIDTypeORM{}, f, s, p, fs)
+	db, err = gorm2.ApplyCollectionOperators(ctx, db, &PrimaryUUIDTypeORM{}, &PrimaryUUIDType{}, f, s, p, fs)
 	if err != nil {
 		return nil, err
 	}
@@ -1823,7 +1823,7 @@ func DefaultListPrimaryStringType(ctx context.Context, db *gorm1.DB, req interfa
 	if err != nil {
 		return nil, err
 	}
-	db, err = gorm2.ApplyCollectionOperators(db, &PrimaryStringTypeORM{}, f, s, p, fs)
+	db, err = gorm2.ApplyCollectionOperators(ctx, db, &PrimaryStringTypeORM{}, &PrimaryStringType{}, f, s, p, fs)
 	if err != nil {
 		return nil, err
 	}
@@ -1921,7 +1921,7 @@ func DefaultListPrimaryIncluded(ctx context.Context, db *gorm1.DB, req interface
 	if err != nil {
 		return nil, err
 	}
-	db, err = gorm2.ApplyCollectionOperators(db, &PrimaryIncludedORM{}, f, s, p, fs)
+	db, err = gorm2.ApplyCollectionOperators(ctx, db, &PrimaryIncludedORM{}, &PrimaryIncluded{}, f, s, p, fs)
 	if err != nil {
 		return nil, err
 	}
