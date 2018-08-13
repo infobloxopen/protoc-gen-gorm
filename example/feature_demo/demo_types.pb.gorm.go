@@ -713,11 +713,11 @@ func DefaultCreateTestTypes(ctx context.Context, in *TestTypes, db *gorm1.DB) (*
 }
 
 // DefaultApplyFieldMaskTestTypes patches an pbObject with patcher according to a field mask.
-func DefaultApplyFieldMaskTestTypes(ctx context.Context, patchee *TestTypes, ormObj *TestTypesORM, patcher *TestTypes, updateMask *field_mask1.FieldMask, prefix string, db *gorm1.DB) (*TestTypes, error) {
+func DefaultApplyFieldMaskTestTypes(ctx context.Context, patchee *TestTypes, patcher *TestTypes, updateMask *field_mask1.FieldMask, prefix string, db *gorm1.DB) (*TestTypes, error) {
 	if patcher == nil {
 		return nil, nil
-	} else if patchee == nil || ormObj == nil {
-		return nil, errors.New("Patchee and ormObj inputs to DefaultApplyFieldMaskTestTypes must be non-nil")
+	} else if patchee == nil {
+		return nil, errors.New("Patchee inputs to DefaultApplyFieldMaskTestTypes must be non-nil")
 	}
 	var err error
 	for _, f := range updateMask.Paths {
@@ -925,11 +925,7 @@ func DefaultPatchTypeWithID(ctx context.Context, in *TypeWithID, updateMask *fie
 		return nil, err
 	}
 	pbObj := *pbReadRes
-	ormObj, err := pbObj.ToORM(ctx)
-	if err != nil {
-		return nil, err
-	}
-	if _, err := DefaultApplyFieldMaskTypeWithID(ctx, &pbObj, &ormObj, in, updateMask, "", db); err != nil {
+	if _, err := DefaultApplyFieldMaskTypeWithID(ctx, &pbObj, in, updateMask, "", db); err != nil {
 		return nil, err
 	}
 	if hook, ok := interface{}(&pbObj).(TypeWithIDWithBeforePatchSave); ok {
@@ -937,18 +933,7 @@ func DefaultPatchTypeWithID(ctx context.Context, in *TypeWithID, updateMask *fie
 			return nil, err
 		}
 	}
-	ormObj, err = pbObj.ToORM(ctx)
-	if err != nil {
-		return nil, err
-	}
-	if err = db.Save(&ormObj).Error; err != nil {
-		return nil, err
-	}
-	pbObj, err = ormObj.ToPB(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return &pbObj, err
+	return DefaultStrictUpdateTypeWithID(ctx, &pbObj, db)
 }
 
 type TypeWithIDWithBeforePatchSave interface {
@@ -956,11 +941,11 @@ type TypeWithIDWithBeforePatchSave interface {
 }
 
 // DefaultApplyFieldMaskTypeWithID patches an pbObject with patcher according to a field mask.
-func DefaultApplyFieldMaskTypeWithID(ctx context.Context, patchee *TypeWithID, ormObj *TypeWithIDORM, patcher *TypeWithID, updateMask *field_mask1.FieldMask, prefix string, db *gorm1.DB) (*TypeWithID, error) {
+func DefaultApplyFieldMaskTypeWithID(ctx context.Context, patchee *TypeWithID, patcher *TypeWithID, updateMask *field_mask1.FieldMask, prefix string, db *gorm1.DB) (*TypeWithID, error) {
 	if patcher == nil {
 		return nil, nil
-	} else if patchee == nil || ormObj == nil {
-		return nil, errors.New("Patchee and ormObj inputs to DefaultApplyFieldMaskTypeWithID must be non-nil")
+	} else if patchee == nil {
+		return nil, errors.New("Patchee inputs to DefaultApplyFieldMaskTypeWithID must be non-nil")
 	}
 	var err error
 	var updatedANestedObject bool
@@ -977,15 +962,6 @@ func DefaultApplyFieldMaskTypeWithID(ctx context.Context, patchee *TypeWithID, o
 		}
 		if f == prefix+"Things" {
 			patchee.Things = patcher.Things
-			filterThings := TestTypesORM{}
-			if ormObj.Id == 0 {
-				return nil, errors.New("Can't do overwriting update with no Id value for TypeWithIDORM")
-			}
-			filterThings.ThingsTypeWithIDId = new(uint32)
-			*filterThings.ThingsTypeWithIDId = ormObj.Id
-			if err = db.Where(filterThings).Delete(TestTypesORM{}).Error; err != nil {
-				return nil, err
-			}
 			continue
 		}
 		if strings.HasPrefix(f, prefix+"ANestedObject.") && !updatedANestedObject {
@@ -997,7 +973,7 @@ func DefaultApplyFieldMaskTypeWithID(ctx context.Context, patchee *TypeWithID, o
 			if patchee.ANestedObject == nil {
 				patchee.ANestedObject = &TestTypes{}
 			}
-			if o, err := DefaultApplyFieldMaskTestTypes(ctx, patchee.ANestedObject, ormObj.ANestedObject, patcher.ANestedObject, &field_mask1.FieldMask{Paths: updateMask.Paths[i:]}, prefix+"ANestedObject.", db); err != nil {
+			if o, err := DefaultApplyFieldMaskTestTypes(ctx, patchee.ANestedObject, patcher.ANestedObject, &field_mask1.FieldMask{Paths: updateMask.Paths[i:]}, prefix+"ANestedObject.", db); err != nil {
 				return nil, err
 			} else {
 				patchee.ANestedObject = o
@@ -1007,15 +983,6 @@ func DefaultApplyFieldMaskTypeWithID(ctx context.Context, patchee *TypeWithID, o
 		if f == prefix+"ANestedObject" {
 			updatedANestedObject = true
 			patchee.ANestedObject = patcher.ANestedObject
-			filterANestedObject := TestTypesORM{}
-			if ormObj.Id == 0 {
-				return nil, errors.New("Can't do overwriting update with no Id value for TypeWithIDORM")
-			}
-			filterANestedObject.ANestedObjectTypeWithIDId = new(uint32)
-			*filterANestedObject.ANestedObjectTypeWithIDId = ormObj.Id
-			if err = db.Where(filterANestedObject).Delete(TestTypesORM{}).Error; err != nil {
-				return nil, err
-			}
 			continue
 		}
 		if strings.HasPrefix(f, prefix+"Point.") && !updatedPoint {
@@ -1027,7 +994,7 @@ func DefaultApplyFieldMaskTypeWithID(ctx context.Context, patchee *TypeWithID, o
 			if patchee.Point == nil {
 				patchee.Point = &IntPoint{}
 			}
-			if o, err := DefaultApplyFieldMaskIntPoint(ctx, patchee.Point, ormObj.Point, patcher.Point, &field_mask1.FieldMask{Paths: updateMask.Paths[i:]}, prefix+"Point.", db); err != nil {
+			if o, err := DefaultApplyFieldMaskIntPoint(ctx, patchee.Point, patcher.Point, &field_mask1.FieldMask{Paths: updateMask.Paths[i:]}, prefix+"Point.", db); err != nil {
 				return nil, err
 			} else {
 				patchee.Point = o
@@ -1048,7 +1015,7 @@ func DefaultApplyFieldMaskTypeWithID(ctx context.Context, patchee *TypeWithID, o
 			if patchee.User == nil {
 				patchee.User = &user.User{}
 			}
-			if o, err := user.DefaultApplyFieldMaskUser(ctx, patchee.User, ormObj.User, patcher.User, &field_mask1.FieldMask{Paths: updateMask.Paths[i:]}, prefix+"User.", db); err != nil {
+			if o, err := user.DefaultApplyFieldMaskUser(ctx, patchee.User, patcher.User, &field_mask1.FieldMask{Paths: updateMask.Paths[i:]}, prefix+"User.", db); err != nil {
 				return nil, err
 			} else {
 				patchee.User = o
@@ -1222,20 +1189,12 @@ func DefaultPatchMultiaccountTypeWithID(ctx context.Context, in *MultiaccountTyp
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultPatchMultiaccountTypeWithID")
 	}
-	accountID, err := auth1.GetAccountID(ctx, nil)
-	if err != nil {
-		return nil, err
-	}
 	pbReadRes, err := DefaultReadMultiaccountTypeWithID(ctx, &MultiaccountTypeWithID{Id: in.GetId()}, db)
 	if err != nil {
 		return nil, err
 	}
 	pbObj := *pbReadRes
-	ormObj, err := pbObj.ToORM(ctx)
-	if err != nil {
-		return nil, err
-	}
-	if _, err := DefaultApplyFieldMaskMultiaccountTypeWithID(ctx, &pbObj, &ormObj, in, updateMask, "", db); err != nil {
+	if _, err := DefaultApplyFieldMaskMultiaccountTypeWithID(ctx, &pbObj, in, updateMask, "", db); err != nil {
 		return nil, err
 	}
 	if hook, ok := interface{}(&pbObj).(MultiaccountTypeWithIDWithBeforePatchSave); ok {
@@ -1243,19 +1202,7 @@ func DefaultPatchMultiaccountTypeWithID(ctx context.Context, in *MultiaccountTyp
 			return nil, err
 		}
 	}
-	ormObj, err = pbObj.ToORM(ctx)
-	if err != nil {
-		return nil, err
-	}
-	db = db.Where(&MultiaccountTypeWithIDORM{AccountID: accountID})
-	if err = db.Save(&ormObj).Error; err != nil {
-		return nil, err
-	}
-	pbObj, err = ormObj.ToPB(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return &pbObj, err
+	return DefaultStrictUpdateMultiaccountTypeWithID(ctx, &pbObj, db)
 }
 
 type MultiaccountTypeWithIDWithBeforePatchSave interface {
@@ -1263,11 +1210,11 @@ type MultiaccountTypeWithIDWithBeforePatchSave interface {
 }
 
 // DefaultApplyFieldMaskMultiaccountTypeWithID patches an pbObject with patcher according to a field mask.
-func DefaultApplyFieldMaskMultiaccountTypeWithID(ctx context.Context, patchee *MultiaccountTypeWithID, ormObj *MultiaccountTypeWithIDORM, patcher *MultiaccountTypeWithID, updateMask *field_mask1.FieldMask, prefix string, db *gorm1.DB) (*MultiaccountTypeWithID, error) {
+func DefaultApplyFieldMaskMultiaccountTypeWithID(ctx context.Context, patchee *MultiaccountTypeWithID, patcher *MultiaccountTypeWithID, updateMask *field_mask1.FieldMask, prefix string, db *gorm1.DB) (*MultiaccountTypeWithID, error) {
 	if patcher == nil {
 		return nil, nil
-	} else if patchee == nil || ormObj == nil {
-		return nil, errors.New("Patchee and ormObj inputs to DefaultApplyFieldMaskMultiaccountTypeWithID must be non-nil")
+	} else if patchee == nil {
+		return nil, errors.New("Patchee inputs to DefaultApplyFieldMaskMultiaccountTypeWithID must be non-nil")
 	}
 	var err error
 	for _, f := range updateMask.Paths {
@@ -1338,11 +1285,11 @@ func DefaultCreateMultiaccountTypeWithoutID(ctx context.Context, in *Multiaccoun
 }
 
 // DefaultApplyFieldMaskMultiaccountTypeWithoutID patches an pbObject with patcher according to a field mask.
-func DefaultApplyFieldMaskMultiaccountTypeWithoutID(ctx context.Context, patchee *MultiaccountTypeWithoutID, ormObj *MultiaccountTypeWithoutIDORM, patcher *MultiaccountTypeWithoutID, updateMask *field_mask1.FieldMask, prefix string, db *gorm1.DB) (*MultiaccountTypeWithoutID, error) {
+func DefaultApplyFieldMaskMultiaccountTypeWithoutID(ctx context.Context, patchee *MultiaccountTypeWithoutID, patcher *MultiaccountTypeWithoutID, updateMask *field_mask1.FieldMask, prefix string, db *gorm1.DB) (*MultiaccountTypeWithoutID, error) {
 	if patcher == nil {
 		return nil, nil
-	} else if patchee == nil || ormObj == nil {
-		return nil, errors.New("Patchee and ormObj inputs to DefaultApplyFieldMaskMultiaccountTypeWithoutID must be non-nil")
+	} else if patchee == nil {
+		return nil, errors.New("Patchee inputs to DefaultApplyFieldMaskMultiaccountTypeWithoutID must be non-nil")
 	}
 	var err error
 	for _, f := range updateMask.Paths {
@@ -1505,11 +1452,7 @@ func DefaultPatchPrimaryUUIDType(ctx context.Context, in *PrimaryUUIDType, updat
 		return nil, err
 	}
 	pbObj := *pbReadRes
-	ormObj, err := pbObj.ToORM(ctx)
-	if err != nil {
-		return nil, err
-	}
-	if _, err := DefaultApplyFieldMaskPrimaryUUIDType(ctx, &pbObj, &ormObj, in, updateMask, "", db); err != nil {
+	if _, err := DefaultApplyFieldMaskPrimaryUUIDType(ctx, &pbObj, in, updateMask, "", db); err != nil {
 		return nil, err
 	}
 	if hook, ok := interface{}(&pbObj).(PrimaryUUIDTypeWithBeforePatchSave); ok {
@@ -1517,18 +1460,7 @@ func DefaultPatchPrimaryUUIDType(ctx context.Context, in *PrimaryUUIDType, updat
 			return nil, err
 		}
 	}
-	ormObj, err = pbObj.ToORM(ctx)
-	if err != nil {
-		return nil, err
-	}
-	if err = db.Save(&ormObj).Error; err != nil {
-		return nil, err
-	}
-	pbObj, err = ormObj.ToPB(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return &pbObj, err
+	return DefaultStrictUpdatePrimaryUUIDType(ctx, &pbObj, db)
 }
 
 type PrimaryUUIDTypeWithBeforePatchSave interface {
@@ -1536,11 +1468,11 @@ type PrimaryUUIDTypeWithBeforePatchSave interface {
 }
 
 // DefaultApplyFieldMaskPrimaryUUIDType patches an pbObject with patcher according to a field mask.
-func DefaultApplyFieldMaskPrimaryUUIDType(ctx context.Context, patchee *PrimaryUUIDType, ormObj *PrimaryUUIDTypeORM, patcher *PrimaryUUIDType, updateMask *field_mask1.FieldMask, prefix string, db *gorm1.DB) (*PrimaryUUIDType, error) {
+func DefaultApplyFieldMaskPrimaryUUIDType(ctx context.Context, patchee *PrimaryUUIDType, patcher *PrimaryUUIDType, updateMask *field_mask1.FieldMask, prefix string, db *gorm1.DB) (*PrimaryUUIDType, error) {
 	if patcher == nil {
 		return nil, nil
-	} else if patchee == nil || ormObj == nil {
-		return nil, errors.New("Patchee and ormObj inputs to DefaultApplyFieldMaskPrimaryUUIDType must be non-nil")
+	} else if patchee == nil {
+		return nil, errors.New("Patchee inputs to DefaultApplyFieldMaskPrimaryUUIDType must be non-nil")
 	}
 	var err error
 	var updatedChild bool
@@ -1558,7 +1490,7 @@ func DefaultApplyFieldMaskPrimaryUUIDType(ctx context.Context, patchee *PrimaryU
 			if patchee.Child == nil {
 				patchee.Child = &ExternalChild{}
 			}
-			if o, err := DefaultApplyFieldMaskExternalChild(ctx, patchee.Child, ormObj.Child, patcher.Child, &field_mask1.FieldMask{Paths: updateMask.Paths[i:]}, prefix+"Child.", db); err != nil {
+			if o, err := DefaultApplyFieldMaskExternalChild(ctx, patchee.Child, patcher.Child, &field_mask1.FieldMask{Paths: updateMask.Paths[i:]}, prefix+"Child.", db); err != nil {
 				return nil, err
 			} else {
 				patchee.Child = o
@@ -1568,15 +1500,6 @@ func DefaultApplyFieldMaskPrimaryUUIDType(ctx context.Context, patchee *PrimaryU
 		if f == prefix+"Child" {
 			updatedChild = true
 			patchee.Child = patcher.Child
-			filterChild := ExternalChildORM{}
-			if ormObj.Id == nil || *ormObj.Id == go_uuid1.Nil {
-				return nil, errors.New("Can't do overwriting update with no Id value for PrimaryUUIDTypeORM")
-			}
-			filterChild.PrimaryUUIDTypeId = new(go_uuid1.UUID)
-			*filterChild.PrimaryUUIDTypeId = *ormObj.Id
-			if err = db.Where(filterChild).Delete(ExternalChildORM{}).Error; err != nil {
-				return nil, err
-			}
 			continue
 		}
 	}
@@ -1735,11 +1658,7 @@ func DefaultPatchPrimaryStringType(ctx context.Context, in *PrimaryStringType, u
 		return nil, err
 	}
 	pbObj := *pbReadRes
-	ormObj, err := pbObj.ToORM(ctx)
-	if err != nil {
-		return nil, err
-	}
-	if _, err := DefaultApplyFieldMaskPrimaryStringType(ctx, &pbObj, &ormObj, in, updateMask, "", db); err != nil {
+	if _, err := DefaultApplyFieldMaskPrimaryStringType(ctx, &pbObj, in, updateMask, "", db); err != nil {
 		return nil, err
 	}
 	if hook, ok := interface{}(&pbObj).(PrimaryStringTypeWithBeforePatchSave); ok {
@@ -1747,18 +1666,7 @@ func DefaultPatchPrimaryStringType(ctx context.Context, in *PrimaryStringType, u
 			return nil, err
 		}
 	}
-	ormObj, err = pbObj.ToORM(ctx)
-	if err != nil {
-		return nil, err
-	}
-	if err = db.Save(&ormObj).Error; err != nil {
-		return nil, err
-	}
-	pbObj, err = ormObj.ToPB(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return &pbObj, err
+	return DefaultStrictUpdatePrimaryStringType(ctx, &pbObj, db)
 }
 
 type PrimaryStringTypeWithBeforePatchSave interface {
@@ -1766,11 +1674,11 @@ type PrimaryStringTypeWithBeforePatchSave interface {
 }
 
 // DefaultApplyFieldMaskPrimaryStringType patches an pbObject with patcher according to a field mask.
-func DefaultApplyFieldMaskPrimaryStringType(ctx context.Context, patchee *PrimaryStringType, ormObj *PrimaryStringTypeORM, patcher *PrimaryStringType, updateMask *field_mask1.FieldMask, prefix string, db *gorm1.DB) (*PrimaryStringType, error) {
+func DefaultApplyFieldMaskPrimaryStringType(ctx context.Context, patchee *PrimaryStringType, patcher *PrimaryStringType, updateMask *field_mask1.FieldMask, prefix string, db *gorm1.DB) (*PrimaryStringType, error) {
 	if patcher == nil {
 		return nil, nil
-	} else if patchee == nil || ormObj == nil {
-		return nil, errors.New("Patchee and ormObj inputs to DefaultApplyFieldMaskPrimaryStringType must be non-nil")
+	} else if patchee == nil {
+		return nil, errors.New("Patchee inputs to DefaultApplyFieldMaskPrimaryStringType must be non-nil")
 	}
 	var err error
 	var updatedChild bool
@@ -1788,7 +1696,7 @@ func DefaultApplyFieldMaskPrimaryStringType(ctx context.Context, patchee *Primar
 			if patchee.Child == nil {
 				patchee.Child = &ExternalChild{}
 			}
-			if o, err := DefaultApplyFieldMaskExternalChild(ctx, patchee.Child, ormObj.Child, patcher.Child, &field_mask1.FieldMask{Paths: updateMask.Paths[i:]}, prefix+"Child.", db); err != nil {
+			if o, err := DefaultApplyFieldMaskExternalChild(ctx, patchee.Child, patcher.Child, &field_mask1.FieldMask{Paths: updateMask.Paths[i:]}, prefix+"Child.", db); err != nil {
 				return nil, err
 			} else {
 				patchee.Child = o
@@ -1798,15 +1706,6 @@ func DefaultApplyFieldMaskPrimaryStringType(ctx context.Context, patchee *Primar
 		if f == prefix+"Child" {
 			updatedChild = true
 			patchee.Child = patcher.Child
-			filterChild := ExternalChildORM{}
-			if ormObj.Id == "" {
-				return nil, errors.New("Can't do overwriting update with no Id value for PrimaryStringTypeORM")
-			}
-			filterChild.PrimaryStringTypeId = new(string)
-			*filterChild.PrimaryStringTypeId = ormObj.Id
-			if err = db.Where(filterChild).Delete(ExternalChildORM{}).Error; err != nil {
-				return nil, err
-			}
 			continue
 		}
 	}
@@ -1868,11 +1767,11 @@ func DefaultCreatePrimaryIncluded(ctx context.Context, in *PrimaryIncluded, db *
 }
 
 // DefaultApplyFieldMaskPrimaryIncluded patches an pbObject with patcher according to a field mask.
-func DefaultApplyFieldMaskPrimaryIncluded(ctx context.Context, patchee *PrimaryIncluded, ormObj *PrimaryIncludedORM, patcher *PrimaryIncluded, updateMask *field_mask1.FieldMask, prefix string, db *gorm1.DB) (*PrimaryIncluded, error) {
+func DefaultApplyFieldMaskPrimaryIncluded(ctx context.Context, patchee *PrimaryIncluded, patcher *PrimaryIncluded, updateMask *field_mask1.FieldMask, prefix string, db *gorm1.DB) (*PrimaryIncluded, error) {
 	if patcher == nil {
 		return nil, nil
-	} else if patchee == nil || ormObj == nil {
-		return nil, errors.New("Patchee and ormObj inputs to DefaultApplyFieldMaskPrimaryIncluded must be non-nil")
+	} else if patchee == nil {
+		return nil, errors.New("Patchee inputs to DefaultApplyFieldMaskPrimaryIncluded must be non-nil")
 	}
 	var err error
 	var updatedChild bool
@@ -1886,7 +1785,7 @@ func DefaultApplyFieldMaskPrimaryIncluded(ctx context.Context, patchee *PrimaryI
 			if patchee.Child == nil {
 				patchee.Child = &ExternalChild{}
 			}
-			if o, err := DefaultApplyFieldMaskExternalChild(ctx, patchee.Child, ormObj.Child, patcher.Child, &field_mask1.FieldMask{Paths: updateMask.Paths[i:]}, prefix+"Child.", db); err != nil {
+			if o, err := DefaultApplyFieldMaskExternalChild(ctx, patchee.Child, patcher.Child, &field_mask1.FieldMask{Paths: updateMask.Paths[i:]}, prefix+"Child.", db); err != nil {
 				return nil, err
 			} else {
 				patchee.Child = o
@@ -1896,15 +1795,6 @@ func DefaultApplyFieldMaskPrimaryIncluded(ctx context.Context, patchee *PrimaryI
 		if f == prefix+"Child" {
 			updatedChild = true
 			patchee.Child = patcher.Child
-			filterChild := ExternalChildORM{}
-			if ormObj.Id == go_uuid1.Nil {
-				return nil, errors.New("Can't do overwriting update with no Id value for PrimaryIncludedORM")
-			}
-			filterChild.PrimaryIncludedId = new(go_uuid1.UUID)
-			*filterChild.PrimaryIncludedId = ormObj.Id
-			if err = db.Where(filterChild).Delete(ExternalChildORM{}).Error; err != nil {
-				return nil, err
-			}
 			continue
 		}
 	}
