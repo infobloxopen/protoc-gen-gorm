@@ -198,11 +198,7 @@ func DefaultPatchIntPoint(ctx context.Context, in *IntPoint, updateMask *field_m
 		return nil, err
 	}
 	pbObj := *pbReadRes
-	ormObj, err := pbObj.ToORM(ctx)
-	if err != nil {
-		return nil, err
-	}
-	if _, err := DefaultApplyFieldMaskIntPoint(ctx, &pbObj, &ormObj, in, updateMask, "", db); err != nil {
+	if _, err := DefaultApplyFieldMaskIntPoint(ctx, &pbObj, in, updateMask, "", db); err != nil {
 		return nil, err
 	}
 	if hook, ok := interface{}(&pbObj).(IntPointWithBeforePatchSave); ok {
@@ -210,18 +206,7 @@ func DefaultPatchIntPoint(ctx context.Context, in *IntPoint, updateMask *field_m
 			return nil, err
 		}
 	}
-	ormObj, err = pbObj.ToORM(ctx)
-	if err != nil {
-		return nil, err
-	}
-	if err = db.Save(&ormObj).Error; err != nil {
-		return nil, err
-	}
-	pbObj, err = ormObj.ToPB(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return &pbObj, err
+	return DefaultStrictUpdateIntPoint(ctx, &pbObj, db)
 }
 
 type IntPointWithBeforePatchSave interface {
@@ -229,11 +214,11 @@ type IntPointWithBeforePatchSave interface {
 }
 
 // DefaultApplyFieldMaskIntPoint patches an pbObject with patcher according to a field mask.
-func DefaultApplyFieldMaskIntPoint(ctx context.Context, patchee *IntPoint, ormObj *IntPointORM, patcher *IntPoint, updateMask *field_mask1.FieldMask, prefix string, db *gorm1.DB) (*IntPoint, error) {
+func DefaultApplyFieldMaskIntPoint(ctx context.Context, patchee *IntPoint, patcher *IntPoint, updateMask *field_mask1.FieldMask, prefix string, db *gorm1.DB) (*IntPoint, error) {
 	if patcher == nil {
 		return nil, nil
-	} else if patchee == nil || ormObj == nil {
-		return nil, errors.New("Patchee and ormObj inputs to DefaultApplyFieldMaskIntPoint must be non-nil")
+	} else if patchee == nil {
+		return nil, errors.New("Patchee inputs to DefaultApplyFieldMaskIntPoint must be non-nil")
 	}
 	var err error
 	for _, f := range updateMask.Paths {

@@ -128,14 +128,13 @@ func (p *OrmPlugin) generateApplyFieldMask(message *generator.Descriptor) {
 	typeName := p.TypeName(message)
 	p.P(`// DefaultApplyFieldMask`, typeName, ` patches an pbObject with patcher according to a field mask.`)
 	p.P(`func DefaultApplyFieldMask`, typeName, `(ctx context.Context, patchee *`,
-		typeName, `,ormObj *`, typeName, `ORM, patcher *`,
-		typeName, `, updateMask *`, p.Import(fmImport),
+		typeName, `, patcher *`, typeName, `, updateMask *`, p.Import(fmImport),
 		`.FieldMask, prefix string, db *`, p.Import(gormImport), `.DB) (*`, typeName, `, error) {`)
 
 	p.P(`if patcher == nil {`)
 	p.P(`return nil, nil`)
-	p.P(`} else if patchee == nil || ormObj == nil {`)
-	p.P(`return nil, errors.New("Patchee and ormObj inputs to DefaultApplyFieldMask`,
+	p.P(`} else if patchee == nil {`)
+	p.P(`return nil, errors.New("Patchee inputs to DefaultApplyFieldMask`,
 		typeName, ` must be non-nil")`)
 	p.P(`}`)
 	p.P(`var err error`)
@@ -170,11 +169,11 @@ func (p *OrmPlugin) generateApplyFieldMask(message *generator.Descriptor) {
 			p.P(`}`)
 			if s := strings.Split(fieldType, "."); len(s) == 2 {
 				p.P(`if o, err := `, strings.TrimLeft(s[0], "*"), `.DefaultApplyFieldMask`, s[1], `(ctx, patchee.`, ccName,
-					`, ormObj.`, ccName, `, patcher.`, ccName, `, &`, p.Import(fmImport),
+					`, patcher.`, ccName, `, &`, p.Import(fmImport),
 					`.FieldMask{Paths:updateMask.Paths[i:]}, prefix+"`, ccName, `.", db); err != nil {`)
 			} else {
 				p.P(`if o, err := DefaultApplyFieldMask`, strings.TrimPrefix(fieldType, "*"), `(ctx, patchee.`, ccName,
-					`, ormObj.`, ccName, `, patcher.`, ccName, `, &`, p.Import(fmImport),
+					`, patcher.`, ccName, `, &`, p.Import(fmImport),
 					`.FieldMask{Paths:updateMask.Paths[i:]}, prefix+"`, ccName, `.", db); err != nil {`)
 			}
 			p.P(`return nil, err`)
@@ -186,15 +185,11 @@ func (p *OrmPlugin) generateApplyFieldMask(message *generator.Descriptor) {
 			p.P(`if f == prefix+"`, ccName, `" {`)
 			p.P(`updated`, ccName, ` = true`)
 			p.P(`patchee.`, ccName, ` = patcher.`, ccName)
-			p.removeChildAssociationsByName(message, ccName)
-			p.setupOrderedHasManyByName(message, ccName)
 			p.P(`continue`)
 			p.P(`}`)
 		} else {
 			p.P(`if f == prefix+"`, ccName, `" {`)
 			p.P(`patchee.`, ccName, ` = patcher.`, ccName)
-			p.removeChildAssociationsByName(message, ccName)
-			p.setupOrderedHasManyByName(message, ccName)
 			p.P(`continue`)
 			p.P(`}`)
 		}
@@ -241,13 +236,6 @@ func (p *OrmPlugin) generatePatchHandler(message *generator.Descriptor) {
 	p.P(`return nil, errors.New("Nil argument to DefaultPatch`, typeName, `")`)
 	p.P(`}`)
 
-	if isMultiAccount {
-		p.P("accountID, err := ", p.Import(authImport), ".GetAccountID(ctx, nil)")
-		p.P("if err != nil {")
-		p.P("return nil, err")
-		p.P("}")
-	}
-
 	p.P(`pbReadRes, err := DefaultRead`, typeName, `(ctx, &`, typeName, `{Id: in.GetId()}, db)`)
 	p.P(`if err != nil {`)
 	p.P(`return nil, err`)
@@ -255,12 +243,7 @@ func (p *OrmPlugin) generatePatchHandler(message *generator.Descriptor) {
 
 	p.P(`pbObj := *pbReadRes`)
 
-	p.P(`ormObj, err := pbObj.ToORM(ctx)`)
-	p.P(`if err != nil {`)
-	p.P(`return nil, err`)
-	p.P(`}`)
-
-	p.P(`if _, err := DefaultApplyFieldMask`, typeName, `(ctx, &pbObj, &ormObj, in, updateMask, "", db); err != nil {`)
+	p.P(`if _, err := DefaultApplyFieldMask`, typeName, `(ctx, &pbObj, in, updateMask, "", db); err != nil {`)
 	p.P(`return nil, err`)
 	p.P(`}`)
 
@@ -270,29 +253,8 @@ func (p *OrmPlugin) generatePatchHandler(message *generator.Descriptor) {
 	p.P(`}`)
 	p.P(`}`)
 
-	// Convert pbObj back to ormObj to trigger any logic that was
-	// written for BeforeToORM/AfterToORM and perform db.Save call.
-	p.P(`ormObj, err = pbObj.ToORM(ctx)`)
-	p.P(`if err != nil {`)
-	p.P(`return nil, err`)
-	p.P(`}`)
+	p.P(`return DefaultStrictUpdate`, typeName, `(ctx, &pbObj, db)`)
 
-	if isMultiAccount {
-		p.P(`db = db.Where(&`, typeName, `ORM{AccountID: accountID})`)
-	}
-
-	p.P(`if err = db.Save(&ormObj).Error; err != nil {`)
-	p.P(`return nil, err`)
-	p.P(`}`)
-
-	// convert ormObj to pbObj again (sic!) to trigger any logic that was
-	// written for AfterToPB/BeforeToPB.
-	p.P(`pbObj, err = ormObj.ToPB(ctx)`)
-	p.P(`if err != nil {`)
-	p.P(`return nil, err`)
-	p.P(`}`)
-
-	p.P(`return &pbObj, err`)
 	p.P(`}`)
 	p.P()
 
