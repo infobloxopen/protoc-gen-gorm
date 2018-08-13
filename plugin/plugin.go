@@ -477,7 +477,7 @@ func (p *OrmPlugin) renderGormTag(field *Field) string {
 		associationJoinTableForeignKey = mtm.AssociationJointableForeignkey
 	} else {
 		foreignKey = tag.ForeignKey
-		associationForeignKey = tag.AssociationForeignKey
+		associationForeignKey = tag.AssociationForeignkey
 		joinTable = tag.ManyToMany
 		joinTableForeignKey = tag.JointableForeignkey
 		associationJoinTableForeignKey = tag.AssociationJointableForeignkey

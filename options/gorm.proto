@@ -68,7 +68,7 @@ message GormTag {
     optional string embedded_prefix = 13;
     optional bool ignore = 14;
     optional string foreign_key = 15;
-    optional string association_foreign_key = 16;
+    optional string association_foreignkey = 16;
     optional string many_to_many = 17;
     optional string jointable_foreignkey = 18;
     optional string association_jointable_foreignkey = 19;
