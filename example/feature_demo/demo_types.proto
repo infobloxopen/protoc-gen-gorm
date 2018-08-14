@@ -72,7 +72,7 @@ message TypeWithID {
     ormable: true,
     include: [
       {type: "int32", name: "secret_int", tag: {ignore: true}},
-      {type: "[]*JoinTable", name: "multi_account_types", tag: {foreign_key: "TypeWithIDID"}}
+      {type: "[]*JoinTable", name: "multi_account_types", tag: {foreignkey: "TypeWithIDID"}}
       ]
     };
   // any field named 'id' is assumed by gorm to be the primary key for the
