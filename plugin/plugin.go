@@ -66,6 +66,7 @@ type OrmableType struct {
 	Package    string
 	File       *generator.FileDescriptor
 	Fields     map[string]*Field
+	Methods    map[string]*autogenMethod
 }
 
 type Field struct {
@@ -82,6 +83,7 @@ func NewOrmableType(oname, pkg string, file *generator.FileDescriptor) *OrmableT
 		Package:    pkg,
 		File:       file,
 		Fields:     make(map[string]*Field),
+		Methods:    make(map[string]*autogenMethod),
 	}
 }
 
@@ -169,6 +171,11 @@ func (p *OrmPlugin) Generate(file *generator.FileDescriptor) {
 					}
 				}
 			}
+		}
+		for _, fileProto := range p.AllFiles().GetFile() {
+			file := p.FileOf(fileProto)
+			p.setFile(file)
+			p.parseServices(file)
 		}
 	}
 	// Return to the file at hand and then generate anything needed
