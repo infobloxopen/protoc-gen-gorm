@@ -875,7 +875,7 @@ func DefaultReadUser(ctx context.Context, in *User, db *gorm1.DB) (*User, error)
 		return nil, err
 	}
 	if ormParams.Id == "" {
-		return nil, errors.New("Read requires a non-zero primary key for DefaultReadUser")
+		return nil, errors.New("DefaultReadUser requires a non-zero primary key")
 	}
 	db = db.Preload("Tasks", func(db *gorm1.DB) *gorm1.DB {
 		return db.Order("priority")
@@ -1290,7 +1290,7 @@ func DefaultReadEmail(ctx context.Context, in *Email, db *gorm1.DB) (*Email, err
 		return nil, err
 	}
 	if ormParams.Id == "" {
-		return nil, errors.New("Read requires a non-zero primary key for DefaultReadEmail")
+		return nil, errors.New("DefaultReadEmail requires a non-zero primary key")
 	}
 	ormResponse := EmailORM{}
 	if err = db.Where(&ormParams).First(&ormResponse).Error; err != nil {
@@ -1513,7 +1513,7 @@ func DefaultReadAddress(ctx context.Context, in *Address, db *gorm1.DB) (*Addres
 		return nil, err
 	}
 	if ormParams.Id == 0 {
-		return nil, errors.New("Read requires a non-zero primary key for DefaultReadAddress")
+		return nil, errors.New("DefaultReadAddress requires a non-zero primary key")
 	}
 	ormResponse := AddressORM{}
 	if err = db.Where(&ormParams).First(&ormResponse).Error; err != nil {
@@ -1740,7 +1740,7 @@ func DefaultReadLanguage(ctx context.Context, in *Language, db *gorm1.DB) (*Lang
 		return nil, err
 	}
 	if ormParams.Id == 0 {
-		return nil, errors.New("Read requires a non-zero primary key for DefaultReadLanguage")
+		return nil, errors.New("DefaultReadLanguage requires a non-zero primary key")
 	}
 	ormResponse := LanguageORM{}
 	if err = db.Where(&ormParams).First(&ormResponse).Error; err != nil {
@@ -1959,7 +1959,7 @@ func DefaultReadCreditCard(ctx context.Context, in *CreditCard, db *gorm1.DB) (*
 		return nil, err
 	}
 	if ormParams.Id == 0 {
-		return nil, errors.New("Read requires a non-zero primary key for DefaultReadCreditCard")
+		return nil, errors.New("DefaultReadCreditCard requires a non-zero primary key")
 	}
 	ormResponse := CreditCardORM{}
 	if err = db.Where(&ormParams).First(&ormResponse).Error; err != nil {

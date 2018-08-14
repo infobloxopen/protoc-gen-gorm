@@ -110,7 +110,7 @@ func (p *OrmPlugin) generateReadHandler(message *generator.Descriptor) {
 	} else {
 		p.P(`if ormParams.`, k, ` == `, p.guessZeroValue(f.Type), ` {`)
 	}
-	p.P(`return nil, errors.New("Read requires a non-zero primary key for DefaultRead`, typeName, `")`)
+	p.P(`return nil, errors.New("DefaultRead`, typeName, ` requires a non-zero primary key")`)
 	p.P(`}`)
 
 	p.sortOrderedHasMany(message)
