@@ -66,7 +66,6 @@ func (p *OrmPlugin) parseServices(file *generator.FileDescriptor) {
 				} else if strings.HasPrefix(methodName, listService) {
 					verb = listService
 					follows, baseType = p.followsListConventions(inType, outType, methodName)
-				} else {
 				}
 				genMethod := autogenMethod{
 					MethodDescriptorProto: method,
@@ -174,15 +173,9 @@ func (p *OrmPlugin) generateReadServerMethod(service autogenService, method auto
 		p.generatePreserviceCall(service.ccName, method.baseType, readService)
 		typeName := method.baseType
 		if fields := p.hasFieldsSelector(method.inType); fields != "" {
-			p.P(`var err error`)
-			p.P(`if in.`, fields, ` == nil {`)
-			p.generatePreloading()
-			p.P(`} else if db, err = `, p.Import(tkgormImport), `.ApplyFieldSelection(ctx, db, in.`, fields, `, &`, typeName, `{}); err != nil {`)
-			p.P(`return nil, err`)
-			p.P(`}`)
-			p.P(`res, err := DefaultRead`, typeName, `(ctx, &`, typeName, `{Id: in.GetId()}, db, false)`)
+			p.P(`res, err := DefaultRead`, typeName, `Fields(ctx, &`, typeName, `{Id: in.GetId()}, db, in.`, fields, `)`)
 		} else {
-			p.P(`res, err := DefaultRead`, typeName, `(ctx, &`, typeName, `{Id: in.GetId()}, db, true)`)
+			p.P(`res, err := DefaultRead`, typeName, `(ctx, &`, typeName, `{Id: in.GetId()}, db)`)
 		}
 		p.P(`if err != nil {`)
 		p.P(`return nil, err`)

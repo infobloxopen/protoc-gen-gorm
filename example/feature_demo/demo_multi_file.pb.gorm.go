@@ -137,13 +137,11 @@ func DefaultCreateExternalChild(ctx context.Context, in *ExternalChild, db *gorm
 }
 
 // DefaultReadExternalChild executes a basic gorm read call
-func DefaultReadExternalChild(ctx context.Context, in *ExternalChild, db *gorm1.DB, preload bool) (*ExternalChild, error) {
+func DefaultReadExternalChild(ctx context.Context, in *ExternalChild, db *gorm1.DB) (*ExternalChild, error) {
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultReadExternalChild")
 	}
-	if preload {
-		db = db.Set("gorm:auto_preload", true)
-	}
+	db = db.Set("gorm:auto_preload", true)
 	ormParams, err := in.ToORM(ctx)
 	if err != nil {
 		return nil, err
@@ -222,7 +220,7 @@ func DefaultPatchExternalChild(ctx context.Context, in *ExternalChild, updateMas
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultPatchExternalChild")
 	}
-	pbReadRes, err := DefaultReadExternalChild(ctx, &ExternalChild{Id: in.GetId()}, db, true)
+	pbReadRes, err := DefaultReadExternalChild(ctx, &ExternalChild{Id: in.GetId()}, db)
 	if err != nil {
 		return nil, err
 	}

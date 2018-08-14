@@ -865,13 +865,11 @@ func DefaultCreateUser(ctx context.Context, in *User, db *gorm1.DB) (*User, erro
 }
 
 // DefaultReadUser executes a basic gorm read call
-func DefaultReadUser(ctx context.Context, in *User, db *gorm1.DB, preload bool) (*User, error) {
+func DefaultReadUser(ctx context.Context, in *User, db *gorm1.DB) (*User, error) {
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultReadUser")
 	}
-	if preload {
-		db = db.Set("gorm:auto_preload", true)
-	}
+	db = db.Set("gorm:auto_preload", true)
 	ormParams, err := in.ToORM(ctx)
 	if err != nil {
 		return nil, err
@@ -899,7 +897,7 @@ func DefaultUpdateUser(ctx context.Context, in *User, db *gorm1.DB) (*User, erro
 	if err != nil {
 		return nil, err
 	}
-	if exists, err := DefaultReadUser(ctx, &User{Id: in.GetId()}, db, true); err != nil {
+	if exists, err := DefaultReadUser(ctx, &User{Id: in.GetId()}, db); err != nil {
 		return nil, err
 	} else if exists == nil {
 		return nil, errors.New("User not found")
@@ -1000,7 +998,7 @@ func DefaultPatchUser(ctx context.Context, in *User, updateMask *field_mask1.Fie
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultPatchUser")
 	}
-	pbReadRes, err := DefaultReadUser(ctx, &User{Id: in.GetId()}, db, true)
+	pbReadRes, err := DefaultReadUser(ctx, &User{Id: in.GetId()}, db)
 	if err != nil {
 		return nil, err
 	}
@@ -1230,13 +1228,11 @@ func DefaultCreateEmail(ctx context.Context, in *Email, db *gorm1.DB) (*Email, e
 }
 
 // DefaultReadEmail executes a basic gorm read call
-func DefaultReadEmail(ctx context.Context, in *Email, db *gorm1.DB, preload bool) (*Email, error) {
+func DefaultReadEmail(ctx context.Context, in *Email, db *gorm1.DB) (*Email, error) {
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultReadEmail")
 	}
-	if preload {
-		db = db.Set("gorm:auto_preload", true)
-	}
+	db = db.Set("gorm:auto_preload", true)
 	ormParams, err := in.ToORM(ctx)
 	if err != nil {
 		return nil, err
@@ -1261,7 +1257,7 @@ func DefaultUpdateEmail(ctx context.Context, in *Email, db *gorm1.DB) (*Email, e
 	if err != nil {
 		return nil, err
 	}
-	if exists, err := DefaultReadEmail(ctx, &Email{Id: in.GetId()}, db, true); err != nil {
+	if exists, err := DefaultReadEmail(ctx, &Email{Id: in.GetId()}, db); err != nil {
 		return nil, err
 	} else if exists == nil {
 		return nil, errors.New("Email not found")
@@ -1327,7 +1323,7 @@ func DefaultPatchEmail(ctx context.Context, in *Email, updateMask *field_mask1.F
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultPatchEmail")
 	}
-	pbReadRes, err := DefaultReadEmail(ctx, &Email{Id: in.GetId()}, db, true)
+	pbReadRes, err := DefaultReadEmail(ctx, &Email{Id: in.GetId()}, db)
 	if err != nil {
 		return nil, err
 	}
@@ -1435,13 +1431,11 @@ func DefaultCreateAddress(ctx context.Context, in *Address, db *gorm1.DB) (*Addr
 }
 
 // DefaultReadAddress executes a basic gorm read call
-func DefaultReadAddress(ctx context.Context, in *Address, db *gorm1.DB, preload bool) (*Address, error) {
+func DefaultReadAddress(ctx context.Context, in *Address, db *gorm1.DB) (*Address, error) {
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultReadAddress")
 	}
-	if preload {
-		db = db.Set("gorm:auto_preload", true)
-	}
+	db = db.Set("gorm:auto_preload", true)
 	ormParams, err := in.ToORM(ctx)
 	if err != nil {
 		return nil, err
@@ -1466,7 +1460,7 @@ func DefaultUpdateAddress(ctx context.Context, in *Address, db *gorm1.DB) (*Addr
 	if err != nil {
 		return nil, err
 	}
-	if exists, err := DefaultReadAddress(ctx, &Address{Id: in.GetId()}, db, true); err != nil {
+	if exists, err := DefaultReadAddress(ctx, &Address{Id: in.GetId()}, db); err != nil {
 		return nil, err
 	} else if exists == nil {
 		return nil, errors.New("Address not found")
@@ -1532,7 +1526,7 @@ func DefaultPatchAddress(ctx context.Context, in *Address, updateMask *field_mas
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultPatchAddress")
 	}
-	pbReadRes, err := DefaultReadAddress(ctx, &Address{Id: in.GetId()}, db, true)
+	pbReadRes, err := DefaultReadAddress(ctx, &Address{Id: in.GetId()}, db)
 	if err != nil {
 		return nil, err
 	}
@@ -1644,13 +1638,11 @@ func DefaultCreateLanguage(ctx context.Context, in *Language, db *gorm1.DB) (*La
 }
 
 // DefaultReadLanguage executes a basic gorm read call
-func DefaultReadLanguage(ctx context.Context, in *Language, db *gorm1.DB, preload bool) (*Language, error) {
+func DefaultReadLanguage(ctx context.Context, in *Language, db *gorm1.DB) (*Language, error) {
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultReadLanguage")
 	}
-	if preload {
-		db = db.Set("gorm:auto_preload", true)
-	}
+	db = db.Set("gorm:auto_preload", true)
 	ormParams, err := in.ToORM(ctx)
 	if err != nil {
 		return nil, err
@@ -1675,7 +1667,7 @@ func DefaultUpdateLanguage(ctx context.Context, in *Language, db *gorm1.DB) (*La
 	if err != nil {
 		return nil, err
 	}
-	if exists, err := DefaultReadLanguage(ctx, &Language{Id: in.GetId()}, db, true); err != nil {
+	if exists, err := DefaultReadLanguage(ctx, &Language{Id: in.GetId()}, db); err != nil {
 		return nil, err
 	} else if exists == nil {
 		return nil, errors.New("Language not found")
@@ -1741,7 +1733,7 @@ func DefaultPatchLanguage(ctx context.Context, in *Language, updateMask *field_m
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultPatchLanguage")
 	}
-	pbReadRes, err := DefaultReadLanguage(ctx, &Language{Id: in.GetId()}, db, true)
+	pbReadRes, err := DefaultReadLanguage(ctx, &Language{Id: in.GetId()}, db)
 	if err != nil {
 		return nil, err
 	}
@@ -1845,13 +1837,11 @@ func DefaultCreateCreditCard(ctx context.Context, in *CreditCard, db *gorm1.DB) 
 }
 
 // DefaultReadCreditCard executes a basic gorm read call
-func DefaultReadCreditCard(ctx context.Context, in *CreditCard, db *gorm1.DB, preload bool) (*CreditCard, error) {
+func DefaultReadCreditCard(ctx context.Context, in *CreditCard, db *gorm1.DB) (*CreditCard, error) {
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultReadCreditCard")
 	}
-	if preload {
-		db = db.Set("gorm:auto_preload", true)
-	}
+	db = db.Set("gorm:auto_preload", true)
 	ormParams, err := in.ToORM(ctx)
 	if err != nil {
 		return nil, err
@@ -1876,7 +1866,7 @@ func DefaultUpdateCreditCard(ctx context.Context, in *CreditCard, db *gorm1.DB) 
 	if err != nil {
 		return nil, err
 	}
-	if exists, err := DefaultReadCreditCard(ctx, &CreditCard{Id: in.GetId()}, db, true); err != nil {
+	if exists, err := DefaultReadCreditCard(ctx, &CreditCard{Id: in.GetId()}, db); err != nil {
 		return nil, err
 	} else if exists == nil {
 		return nil, errors.New("CreditCard not found")
@@ -1942,7 +1932,7 @@ func DefaultPatchCreditCard(ctx context.Context, in *CreditCard, updateMask *fie
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultPatchCreditCard")
 	}
-	pbReadRes, err := DefaultReadCreditCard(ctx, &CreditCard{Id: in.GetId()}, db, true)
+	pbReadRes, err := DefaultReadCreditCard(ctx, &CreditCard{Id: in.GetId()}, db)
 	if err != nil {
 		return nil, err
 	}

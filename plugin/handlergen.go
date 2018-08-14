@@ -94,14 +94,11 @@ func (p *OrmPlugin) generateReadHandler(message *generator.Descriptor) {
 	ormable := p.getOrmable(typeName)
 	p.P(`// DefaultRead`, typeName, ` executes a basic gorm read call`)
 	p.P(`func DefaultRead`, typeName, `(ctx context.Context, in *`,
-		typeName, `, db *`, p.Import(gormImport), `.DB, preload bool) (*`, typeName, `, error) {`)
+		typeName, `, db *`, p.Import(gormImport), `.DB) (*`, typeName, `, error) {`)
 	p.P(`if in == nil {`)
 	p.P(`return nil, errors.New("Nil argument to DefaultRead`, typeName, `")`)
 	p.P(`}`)
-	p.P(`if preload {`)
 	p.generatePreloading()
-	p.P(`}`)
-
 	p.P(`ormParams, err := in.ToORM(ctx)`)
 	p.P(`if err != nil {`)
 	p.P(`return nil, err`)
@@ -124,6 +121,43 @@ func (p *OrmPlugin) generateReadHandler(message *generator.Descriptor) {
 	p.P(`return &pbResponse, err`)
 	p.P(`}`)
 	p.P()
+
+	if p.readHasSelection(ormable) {
+		p.P(`// DefaultRead`, typeName, `Fields executes a basic gorm read call`)
+		p.P(`func DefaultRead`, typeName, `Fields(ctx context.Context, in *`,
+			typeName, `, db *`, p.Import(gormImport), `.DB, fs *`, p.Import(queryImport), `.FieldSelection) (*`, typeName, `, error) {`)
+		p.P(`if in == nil {`)
+		p.P(`return nil, errors.New("Nil argument to DefaultRead`, typeName, `")`)
+		p.P(`}`)
+		p.P(`var err error`)
+		p.P(`if fs == nil {`)
+		p.generatePreloading()
+		p.P(`} else if db, err = `, p.Import(tkgormImport), `.ApplyFieldSelection(ctx, db, fs, &`, typeName, `{}); err != nil {`)
+		p.P(`return nil, err`)
+		p.P(`}`)
+		p.P(`ormParams, err := in.ToORM(ctx)`)
+		p.P(`if err != nil {`)
+		p.P(`return nil, err`)
+		p.P(`}`)
+		k, f := p.findPrimaryKey(ormable)
+		if strings.Contains(f.Type, "*") {
+			p.P(`if ormParams.`, k, ` == nil || *ormParams.`, k, ` == `, p.guessZeroValue(f.Type), ` {`)
+		} else {
+			p.P(`if ormParams.`, k, ` == `, p.guessZeroValue(f.Type), ` {`)
+		}
+		p.P(`return nil, errors.New("Read requires a non-zero primary key")`)
+		p.P(`}`)
+
+		p.sortOrderedHasMany(message)
+		p.P(`ormResponse := `, ormable.Name, `{}`)
+		p.P(`if err = db.Where(&ormParams).First(&ormResponse).Error; err != nil {`)
+		p.P(`return nil, err`)
+		p.P(`}`)
+		p.P(`pbResponse, err := ormResponse.ToPB(ctx)`)
+		p.P(`return &pbResponse, err`)
+		p.P(`}`)
+		p.P()
+	}
 }
 
 func (p *OrmPlugin) generateApplyFieldMask(message *generator.Descriptor) {
@@ -238,7 +272,7 @@ func (p *OrmPlugin) generatePatchHandler(message *generator.Descriptor) {
 	p.P(`return nil, errors.New("Nil argument to DefaultPatch`, typeName, `")`)
 	p.P(`}`)
 
-	p.P(`pbReadRes, err := DefaultRead`, typeName, `(ctx, &`, typeName, `{Id: in.GetId()}, db, true)`)
+	p.P(`pbReadRes, err := DefaultRead`, typeName, `(ctx, &`, typeName, `{Id: in.GetId()}, db)`)
 	p.P(`if err != nil {`)
 	p.P(`return nil, err`)
 	p.P(`}`)
@@ -291,7 +325,7 @@ func (p *OrmPlugin) generateUpdateHandler(message *generator.Descriptor) {
 		p.P("if err != nil {")
 		p.P("return nil, err")
 		p.P("}")
-		p.P(fmt.Sprintf("if exists, err := DefaultRead%s(ctx, &%s{Id: in.GetId()}, db, true); err != nil {",
+		p.P(fmt.Sprintf("if exists, err := DefaultRead%s(ctx, &%s{Id: in.GetId()}, db); err != nil {",
 			typeName, typeName))
 		p.P("return nil, err")
 		p.P("} else if exists == nil {")
@@ -569,4 +603,13 @@ func (p *OrmPlugin) guessZeroValue(typeName string) string {
 		return `false`
 	}
 	return ``
+}
+
+func (p *OrmPlugin) readHasSelection(ormable *OrmableType) bool {
+	if read, ok := ormable.Methods[readService]; ok {
+		if s := p.hasFieldsSelector(read.inType); s != "" {
+			return true
+		}
+	}
+	return false
 }

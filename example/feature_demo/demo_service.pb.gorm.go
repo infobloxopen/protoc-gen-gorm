@@ -10,6 +10,7 @@ import field_mask1 "google.golang.org/genproto/protobuf/field_mask"
 import gateway1 "github.com/infobloxopen/atlas-app-toolkit/gateway"
 import gorm1 "github.com/jinzhu/gorm"
 import gorm2 "github.com/infobloxopen/atlas-app-toolkit/gorm"
+import query1 "github.com/infobloxopen/atlas-app-toolkit/query"
 
 import fmt "fmt"
 import math "math"
@@ -110,12 +111,36 @@ func DefaultCreateIntPoint(ctx context.Context, in *IntPoint, db *gorm1.DB) (*In
 }
 
 // DefaultReadIntPoint executes a basic gorm read call
-func DefaultReadIntPoint(ctx context.Context, in *IntPoint, db *gorm1.DB, preload bool) (*IntPoint, error) {
+func DefaultReadIntPoint(ctx context.Context, in *IntPoint, db *gorm1.DB) (*IntPoint, error) {
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultReadIntPoint")
 	}
-	if preload {
+	db = db.Set("gorm:auto_preload", true)
+	ormParams, err := in.ToORM(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if ormParams.Id == 0 {
+		return nil, errors.New("Read requires a non-zero primary key")
+	}
+	ormResponse := IntPointORM{}
+	if err = db.Where(&ormParams).First(&ormResponse).Error; err != nil {
+		return nil, err
+	}
+	pbResponse, err := ormResponse.ToPB(ctx)
+	return &pbResponse, err
+}
+
+// DefaultReadIntPointFields executes a basic gorm read call
+func DefaultReadIntPointFields(ctx context.Context, in *IntPoint, db *gorm1.DB, fs *query1.FieldSelection) (*IntPoint, error) {
+	if in == nil {
+		return nil, errors.New("Nil argument to DefaultReadIntPoint")
+	}
+	var err error
+	if fs == nil {
 		db = db.Set("gorm:auto_preload", true)
+	} else if db, err = gorm2.ApplyFieldSelection(ctx, db, fs, &IntPoint{}); err != nil {
+		return nil, err
 	}
 	ormParams, err := in.ToORM(ctx)
 	if err != nil {
@@ -195,7 +220,7 @@ func DefaultPatchIntPoint(ctx context.Context, in *IntPoint, updateMask *field_m
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultPatchIntPoint")
 	}
-	pbReadRes, err := DefaultReadIntPoint(ctx, &IntPoint{Id: in.GetId()}, db, true)
+	pbReadRes, err := DefaultReadIntPoint(ctx, &IntPoint{Id: in.GetId()}, db)
 	if err != nil {
 		return nil, err
 	}
@@ -314,13 +339,7 @@ func (m *IntPointServiceDefaultServer) Read(ctx context.Context, in *ReadIntPoin
 			return nil, err
 		}
 	}
-	var err error
-	if in.Arbitrary == nil {
-		db = db.Set("gorm:auto_preload", true)
-	} else if db, err = gorm2.ApplyFieldSelection(ctx, db, in.Arbitrary, &IntPoint{}); err != nil {
-		return nil, err
-	}
-	res, err := DefaultReadIntPoint(ctx, &IntPoint{Id: in.GetId()}, db, false)
+	res, err := DefaultReadIntPointFields(ctx, &IntPoint{Id: in.GetId()}, db, in.Fields)
 	if err != nil {
 		return nil, err
 	}
@@ -459,13 +478,7 @@ func (m *IntPointTxnDefaultServer) Read(ctx context.Context, in *ReadIntPointReq
 			return nil, err
 		}
 	}
-	var err error
-	if in.Arbitrary == nil {
-		db = db.Set("gorm:auto_preload", true)
-	} else if db, err = gorm2.ApplyFieldSelection(ctx, db, in.Arbitrary, &IntPoint{}); err != nil {
-		return nil, err
-	}
-	res, err := DefaultReadIntPoint(ctx, &IntPoint{Id: in.GetId()}, db, false)
+	res, err := DefaultReadIntPointFields(ctx, &IntPoint{Id: in.GetId()}, db, in.Fields)
 	if err != nil {
 		return nil, err
 	}
