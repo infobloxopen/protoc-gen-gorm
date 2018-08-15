@@ -402,61 +402,61 @@ func (p *OrmPlugin) generateOrmable(message *generator.Descriptor) {
 }
 
 func (p *OrmPlugin) renderGormTag(field *Field) string {
-	res := ""
+	var gormRes, atlasRes string
 	tag := field.GetTag()
 	if tag == nil {
 		tag = &gorm.GormTag{}
 	}
 
 	if tag.Column != nil {
-		res += fmt.Sprintf("column:%s;", tag.GetColumn())
+		gormRes += fmt.Sprintf("column:%s;", tag.GetColumn())
 	}
 	if tag.Type != nil {
-		res += fmt.Sprintf("type:%s;", string(tag.GetType()))
+		gormRes += fmt.Sprintf("type:%s;", string(tag.GetType()))
 	}
 	if tag.Size_ != nil {
-		res += fmt.Sprintf("size:%s;", string(tag.GetSize_()))
+		gormRes += fmt.Sprintf("size:%s;", string(tag.GetSize_()))
 	}
 	if tag.Precision != nil {
-		res += fmt.Sprintf("precision:%s;", string(tag.GetPrecision()))
+		gormRes += fmt.Sprintf("precision:%s;", string(tag.GetPrecision()))
 	}
 	if tag.GetPrimaryKey() {
-		res += "primary_key;"
+		gormRes += "primary_key;"
 	}
 	if tag.GetUnique() {
-		res += "unique;"
+		gormRes += "unique;"
 	}
 	if tag.Default != nil {
-		res += fmt.Sprintf("default:%s;", tag.GetDefault())
+		gormRes += fmt.Sprintf("default:%s;", tag.GetDefault())
 	}
 	if tag.GetNotNull() {
-		res += "not null;"
+		gormRes += "not null;"
 	}
 	if tag.GetAutoIncrement() {
-		res += "auto_increment;"
+		gormRes += "auto_increment;"
 	}
 	if tag.Index != nil {
 		if tag.GetIndex() == "" {
-			res += "index;"
+			gormRes += "index;"
 		} else {
-			res += fmt.Sprintf("index:%s;", tag.GetIndex())
+			gormRes += fmt.Sprintf("index:%s;", tag.GetIndex())
 		}
 	}
 	if tag.UniqueIndex != nil {
 		if tag.GetUniqueIndex() == "" {
-			res += "unique_index;"
+			gormRes += "unique_index;"
 		} else {
-			res += fmt.Sprintf("unique_index:%s;", tag.GetUniqueIndex())
+			gormRes += fmt.Sprintf("unique_index:%s;", tag.GetUniqueIndex())
 		}
 	}
 	if tag.GetEmbedded() {
-		res += "embedded;"
+		gormRes += "embedded;"
 	}
 	if tag.EmbeddedPrefix != nil {
-		res += fmt.Sprintf("embedded_prefix:%s;", tag.GetEmbeddedPrefix())
+		gormRes += fmt.Sprintf("embedded_prefix:%s;", tag.GetEmbeddedPrefix())
 	}
 	if tag.GetIgnore() {
-		res += "-;"
+		gormRes += "-;"
 	}
 
 	var foreignKey, associationForeignKey, joinTable, joinTableForeignKey, associationJoinTableForeignKey *string
@@ -469,6 +469,9 @@ func (p *OrmPlugin) renderGormTag(field *Field) string {
 	} else if hasMany := field.GetHasMany(); hasMany != nil {
 		foreignKey = hasMany.Foreignkey
 		associationForeignKey = hasMany.AssociationForeignkey
+		if hasMany.PositionField != nil {
+			atlasRes += fmt.Sprintf("position:%s;", hasMany.GetPositionField())
+		}
 	} else if mtm := field.GetManyToMany(); mtm != nil {
 		foreignKey = mtm.Foreignkey
 		associationForeignKey = mtm.AssociationForeignkey
@@ -484,25 +487,34 @@ func (p *OrmPlugin) renderGormTag(field *Field) string {
 	}
 
 	if foreignKey != nil {
-		res += fmt.Sprintf("foreignkey:%s;", *foreignKey)
+		gormRes += fmt.Sprintf("foreignkey:%s;", *foreignKey)
 	}
 	if associationForeignKey != nil {
-		res += fmt.Sprintf("association_foreignkey:%s;", *associationForeignKey)
+		gormRes += fmt.Sprintf("association_foreignkey:%s;", *associationForeignKey)
 	}
 	if joinTable != nil {
-		res += fmt.Sprintf("many2many:%s;", *joinTable)
+		gormRes += fmt.Sprintf("many2many:%s;", *joinTable)
 	}
 	if joinTableForeignKey != nil {
-		res += fmt.Sprintf("jointable_foreignkey:%s;", *joinTableForeignKey)
+		gormRes += fmt.Sprintf("jointable_foreignkey:%s;", *joinTableForeignKey)
 	}
 	if associationJoinTableForeignKey != nil {
-		res += fmt.Sprintf("association_jointable_foreignkey:%s;", *associationJoinTableForeignKey)
+		gormRes += fmt.Sprintf("association_jointable_foreignkey:%s;", *associationJoinTableForeignKey)
 	}
 
-	if res == "" {
-		return ""
+	var gormTag, atlasTag string
+	if gormRes != "" {
+		gormTag = fmt.Sprintf("gorm:\"%s\"", strings.TrimRight(gormRes, ";"))
 	}
-	return fmt.Sprintf("`gorm:\"%s\"`", strings.TrimRight(res, ";"))
+	if atlasRes != "" {
+		atlasTag = fmt.Sprintf("atlas:\"%s\"", strings.TrimRight(atlasRes, ";"))
+	}
+	finalTag := strings.TrimSpace(strings.Join([]string{gormTag, atlasTag}, " "))
+	if finalTag == "" {
+		return ""
+	} else {
+		return fmt.Sprintf("`%s`", finalTag)
+	}
 }
 
 // generateTableNameFunction the function to set the gorm table name
