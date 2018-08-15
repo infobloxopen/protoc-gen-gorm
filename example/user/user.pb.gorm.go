@@ -180,6 +180,9 @@ func (m *User) ToORM(ctx context.Context) (UserORM, error) {
 		return to, err
 	}
 	to.AccountID = accountID
+	for i, e := range to.Tasks {
+		e.Priority = int64(i)
+	}
 	if posthook, ok := interface{}(m).(UserWithAfterToORM); ok {
 		err = posthook.AfterToORM(ctx, &to)
 	}
@@ -854,9 +857,6 @@ func DefaultCreateUser(ctx context.Context, in *User, db *gorm1.DB) (*User, erro
 	if err != nil {
 		return nil, err
 	}
-	for i, e := range ormObj.Tasks {
-		e.Priority = int64(i)
-	}
 	if err = db.Create(&ormObj).Error; err != nil {
 		return nil, err
 	}
@@ -880,9 +880,6 @@ func DefaultReadUser(ctx context.Context, in *User, db *gorm1.DB) (*User, error)
 	if ormParams.Id == "" {
 		return nil, errors.New("DefaultReadUser requires a non-zero primary key")
 	}
-	db = db.Preload("Tasks", func(db *gorm1.DB) *gorm1.DB {
-		return db.Order("priority")
-	})
 	ormResponse := UserORM{}
 	if err = db.Where(&ormParams).First(&ormResponse).Error; err != nil {
 		return nil, err
@@ -911,9 +908,6 @@ func DefaultUpdateUser(ctx context.Context, in *User, db *gorm1.DB) (*User, erro
 	}
 	ormObj.AccountID = accountID
 	db = db.Where(&UserORM{AccountID: accountID})
-	for i, e := range ormObj.Tasks {
-		e.Priority = int64(i)
-	}
 	if err = db.Save(&ormObj).Error; err != nil {
 		return nil, err
 	}
@@ -980,9 +974,6 @@ func DefaultStrictUpdateUser(ctx context.Context, in *User, db *gorm1.DB) (*User
 		return nil, err
 	}
 	db = db.Where(&UserORM{AccountID: ormObj.AccountID})
-	for i, e := range ormObj.Tasks {
-		e.Priority = int64(i)
-	}
 	if err = db.Save(&ormObj).Error; err != nil {
 		return nil, err
 	}
@@ -1193,9 +1184,6 @@ func DefaultListUser(ctx context.Context, db *gorm1.DB, req interface{}) ([]*Use
 		return nil, err
 	}
 	db = db.Where(&ormParams)
-	db = db.Preload("Tasks", func(db *gorm1.DB) *gorm1.DB {
-		return db.Order("priority")
-	})
 	db = db.Order("id")
 	if err := db.Find(&ormResponse).Error; err != nil {
 		return nil, err

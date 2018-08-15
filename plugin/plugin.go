@@ -564,6 +564,7 @@ func (p *OrmPlugin) generateConvertFunctions(message *generator.Descriptor) {
 		p.P("}")
 		p.P("to.AccountID = accountID")
 	}
+	p.setupOrderedHasMany(message)
 	p.P(`if posthook, ok := interface{}(m).(`, typeName, `WithAfterToORM); ok {`)
 	p.P(`err = posthook.AfterToORM(ctx, &to)`)
 	p.P(`}`)
@@ -821,6 +822,30 @@ func (p *OrmPlugin) generateHookInterfaces(message *generator.Descriptor) {
 		p.P(desc[0], `(context.Context, *`, desc[1], `) error`)
 		p.P(`}`)
 		p.P()
+	}
+}
+
+func (p *OrmPlugin) setupOrderedHasMany(message *generator.Descriptor) {
+	ormable := p.getOrmable(p.TypeName(message))
+	for _, fieldName := range p.getSortedFieldNames(ormable.Fields) {
+		p.setupOrderedHasManyByName(message, fieldName)
+	}
+}
+
+func (p *OrmPlugin) setupOrderedHasManyByName(message *generator.Descriptor, fieldName string) {
+	ormable := p.getOrmable(p.TypeName(message))
+	field := ormable.Fields[fieldName]
+
+	if field == nil {
+		return
+	}
+
+	if field.GetHasMany().GetPositionField() != "" {
+		positionField := field.GetHasMany().GetPositionField()
+		positionFieldType := p.getOrmable(field.Type).Fields[positionField].Type
+		p.P(`for i, e := range `, `to.`, fieldName, `{`)
+		p.P(`e.`, positionField, ` = `, positionFieldType, `(i)`)
+		p.P(`}`)
 	}
 }
 
