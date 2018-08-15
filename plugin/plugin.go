@@ -90,14 +90,15 @@ func NewOrmableType(oname, pkg string, file *generator.FileDescriptor) *OrmableT
 // OrmPlugin implements the plugin interface and creates GORM code from .protos
 type OrmPlugin struct {
 	*generator.Generator
-	dbEngine       int
-	stringEnums    bool
-	ormableTypes   map[string]*OrmableType
-	EmptyFiles     []string
-	currentPackage string
-	currentFile    *generator.FileDescriptor
-	fileImports    map[*generator.FileDescriptor]*fileImports
-	messages       map[string]struct{}
+	dbEngine        int
+	stringEnums     bool
+	ormableTypes    map[string]*OrmableType
+	EmptyFiles      []string
+	currentPackage  string
+	currentFile     *generator.FileDescriptor
+	fileImports     map[*generator.FileDescriptor]*fileImports
+	messages        map[string]struct{}
+	ormableServices []autogenService
 }
 
 func (p *OrmPlugin) setFile(file *generator.FileDescriptor) {

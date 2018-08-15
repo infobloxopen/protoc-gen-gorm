@@ -15,8 +15,6 @@ const (
 	listService   = "List"
 )
 
-var ormableServices []autogenService
-
 type autogenService struct {
 	*descriptor.ServiceDescriptorProto
 	ccName            string
@@ -83,13 +81,13 @@ func (p *OrmPlugin) parseServices(file *generator.FileDescriptor) {
 					p.getOrmable(genMethod.baseType).Methods[genMethod.verb] = &genMethod
 				}
 			}
-			ormableServices = append(ormableServices, genSvc)
+			p.ormableServices = append(p.ormableServices, genSvc)
 		}
 	}
 }
 
 func (p *OrmPlugin) generateDefaultServer(file *generator.FileDescriptor) {
-	for _, service := range ormableServices {
+	for _, service := range p.ormableServices {
 		if service.file != file {
 			continue
 		}
@@ -173,7 +171,7 @@ func (p *OrmPlugin) generateReadServerMethod(service autogenService, method auto
 		p.generatePreserviceCall(service.ccName, method.baseType, readService)
 		typeName := method.baseType
 		if fields := p.hasFieldsSelector(method.inType); fields != "" {
-			p.P(`res, err := DefaultRead`, typeName, `Fields(ctx, &`, typeName, `{Id: in.GetId()}, db, in.`, fields, `)`)
+			p.P(`res, err := DefaultRead`, typeName, `(ctx, &`, typeName, `{Id: in.GetId()}, db, in.`, fields, `)`)
 		} else {
 			p.P(`res, err := DefaultRead`, typeName, `(ctx, &`, typeName, `{Id: in.GetId()}, db)`)
 		}
