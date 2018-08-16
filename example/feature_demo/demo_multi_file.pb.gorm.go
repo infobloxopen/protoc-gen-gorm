@@ -141,11 +141,12 @@ func DefaultReadExternalChild(ctx context.Context, in *ExternalChild, db *gorm1.
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultReadExternalChild")
 	}
-	ormParams, err := in.ToORM(ctx)
+	var err error
+	db, err = gorm2.ApplyFieldSelection(ctx, db, nil, &ExternalChildORM{})
 	if err != nil {
 		return nil, err
 	}
-	db, err = gorm2.ApplyFieldSelection(ctx, db, nil, &ExternalChildORM{})
+	ormParams, err := in.ToORM(ctx)
 	if err != nil {
 		return nil, err
 	}

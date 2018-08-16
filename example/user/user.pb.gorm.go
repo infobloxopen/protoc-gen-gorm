@@ -869,11 +869,12 @@ func DefaultReadUser(ctx context.Context, in *User, db *gorm1.DB) (*User, error)
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultReadUser")
 	}
-	ormParams, err := in.ToORM(ctx)
+	var err error
+	db, err = gorm2.ApplyFieldSelection(ctx, db, nil, &UserORM{})
 	if err != nil {
 		return nil, err
 	}
-	db, err = gorm2.ApplyFieldSelection(ctx, db, nil, &UserORM{})
+	ormParams, err := in.ToORM(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -1220,11 +1221,12 @@ func DefaultReadEmail(ctx context.Context, in *Email, db *gorm1.DB) (*Email, err
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultReadEmail")
 	}
-	ormParams, err := in.ToORM(ctx)
+	var err error
+	db, err = gorm2.ApplyFieldSelection(ctx, db, nil, &EmailORM{})
 	if err != nil {
 		return nil, err
 	}
-	db, err = gorm2.ApplyFieldSelection(ctx, db, nil, &EmailORM{})
+	ormParams, err := in.ToORM(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -1423,11 +1425,12 @@ func DefaultReadAddress(ctx context.Context, in *Address, db *gorm1.DB) (*Addres
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultReadAddress")
 	}
-	ormParams, err := in.ToORM(ctx)
+	var err error
+	db, err = gorm2.ApplyFieldSelection(ctx, db, nil, &AddressORM{})
 	if err != nil {
 		return nil, err
 	}
-	db, err = gorm2.ApplyFieldSelection(ctx, db, nil, &AddressORM{})
+	ormParams, err := in.ToORM(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -1630,11 +1633,12 @@ func DefaultReadLanguage(ctx context.Context, in *Language, db *gorm1.DB) (*Lang
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultReadLanguage")
 	}
-	ormParams, err := in.ToORM(ctx)
+	var err error
+	db, err = gorm2.ApplyFieldSelection(ctx, db, nil, &LanguageORM{})
 	if err != nil {
 		return nil, err
 	}
-	db, err = gorm2.ApplyFieldSelection(ctx, db, nil, &LanguageORM{})
+	ormParams, err := in.ToORM(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -1829,11 +1833,12 @@ func DefaultReadCreditCard(ctx context.Context, in *CreditCard, db *gorm1.DB) (*
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultReadCreditCard")
 	}
-	ormParams, err := in.ToORM(ctx)
+	var err error
+	db, err = gorm2.ApplyFieldSelection(ctx, db, nil, &CreditCardORM{})
 	if err != nil {
 		return nil, err
 	}
-	db, err = gorm2.ApplyFieldSelection(ctx, db, nil, &CreditCardORM{})
+	ormParams, err := in.ToORM(ctx)
 	if err != nil {
 		return nil, err
 	}

@@ -820,11 +820,12 @@ func DefaultReadTypeWithID(ctx context.Context, in *TypeWithID, db *gorm1.DB) (*
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultReadTypeWithID")
 	}
-	ormParams, err := in.ToORM(ctx)
+	var err error
+	db, err = gorm2.ApplyFieldSelection(ctx, db, nil, &TypeWithIDORM{})
 	if err != nil {
 		return nil, err
 	}
-	db, err = gorm2.ApplyFieldSelection(ctx, db, nil, &TypeWithIDORM{})
+	ormParams, err := in.ToORM(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -1095,11 +1096,12 @@ func DefaultReadMultiaccountTypeWithID(ctx context.Context, in *MultiaccountType
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultReadMultiaccountTypeWithID")
 	}
-	ormParams, err := in.ToORM(ctx)
+	var err error
+	db, err = gorm2.ApplyFieldSelection(ctx, db, nil, &MultiaccountTypeWithIDORM{})
 	if err != nil {
 		return nil, err
 	}
-	db, err = gorm2.ApplyFieldSelection(ctx, db, nil, &MultiaccountTypeWithIDORM{})
+	ormParams, err := in.ToORM(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -1353,11 +1355,12 @@ func DefaultReadPrimaryUUIDType(ctx context.Context, in *PrimaryUUIDType, db *go
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultReadPrimaryUUIDType")
 	}
-	ormParams, err := in.ToORM(ctx)
+	var err error
+	db, err = gorm2.ApplyFieldSelection(ctx, db, nil, &PrimaryUUIDTypeORM{})
 	if err != nil {
 		return nil, err
 	}
-	db, err = gorm2.ApplyFieldSelection(ctx, db, nil, &PrimaryUUIDTypeORM{})
+	ormParams, err := in.ToORM(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -1559,11 +1562,12 @@ func DefaultReadPrimaryStringType(ctx context.Context, in *PrimaryStringType, db
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultReadPrimaryStringType")
 	}
-	ormParams, err := in.ToORM(ctx)
+	var err error
+	db, err = gorm2.ApplyFieldSelection(ctx, db, nil, &PrimaryStringTypeORM{})
 	if err != nil {
 		return nil, err
 	}
-	db, err = gorm2.ApplyFieldSelection(ctx, db, nil, &PrimaryStringTypeORM{})
+	ormParams, err := in.ToORM(ctx)
 	if err != nil {
 		return nil, err
 	}
