@@ -779,9 +779,6 @@ func DefaultListTestTypes(ctx context.Context, db *gorm1.DB, req interface{}) ([
 	if err != nil {
 		return nil, err
 	}
-	if fs.GetFields() == nil {
-		db = db.Set("gorm:auto_preload", true)
-	}
 	in := TestTypes{}
 	ormParams, err := in.ToORM(ctx)
 	if err != nil {
@@ -823,7 +820,11 @@ func DefaultReadTypeWithID(ctx context.Context, in *TypeWithID, db *gorm1.DB) (*
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultReadTypeWithID")
 	}
-	db = db.Set("gorm:auto_preload", true)
+	var err error
+	db, err = gorm2.ApplyFieldSelection(ctx, db, nil, &TypeWithIDORM{})
+	if err != nil {
+		return nil, err
+	}
 	ormParams, err := in.ToORM(ctx)
 	if err != nil {
 		return nil, err
@@ -1053,9 +1054,6 @@ func DefaultListTypeWithID(ctx context.Context, db *gorm1.DB, req interface{}) (
 	if err != nil {
 		return nil, err
 	}
-	if fs.GetFields() == nil {
-		db = db.Set("gorm:auto_preload", true)
-	}
 	in := TypeWithID{}
 	ormParams, err := in.ToORM(ctx)
 	if err != nil {
@@ -1098,7 +1096,11 @@ func DefaultReadMultiaccountTypeWithID(ctx context.Context, in *MultiaccountType
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultReadMultiaccountTypeWithID")
 	}
-	db = db.Set("gorm:auto_preload", true)
+	var err error
+	db, err = gorm2.ApplyFieldSelection(ctx, db, nil, &MultiaccountTypeWithIDORM{})
+	if err != nil {
+		return nil, err
+	}
 	ormParams, err := in.ToORM(ctx)
 	if err != nil {
 		return nil, err
@@ -1244,9 +1246,6 @@ func DefaultListMultiaccountTypeWithID(ctx context.Context, db *gorm1.DB, req in
 	if err != nil {
 		return nil, err
 	}
-	if fs.GetFields() == nil {
-		db = db.Set("gorm:auto_preload", true)
-	}
 	in := MultiaccountTypeWithID{}
 	ormParams, err := in.ToORM(ctx)
 	if err != nil {
@@ -1315,9 +1314,6 @@ func DefaultListMultiaccountTypeWithoutID(ctx context.Context, db *gorm1.DB, req
 	if err != nil {
 		return nil, err
 	}
-	if fs.GetFields() == nil {
-		db = db.Set("gorm:auto_preload", true)
-	}
 	in := MultiaccountTypeWithoutID{}
 	ormParams, err := in.ToORM(ctx)
 	if err != nil {
@@ -1359,7 +1355,11 @@ func DefaultReadPrimaryUUIDType(ctx context.Context, in *PrimaryUUIDType, db *go
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultReadPrimaryUUIDType")
 	}
-	db = db.Set("gorm:auto_preload", true)
+	var err error
+	db, err = gorm2.ApplyFieldSelection(ctx, db, nil, &PrimaryUUIDTypeORM{})
+	if err != nil {
+		return nil, err
+	}
 	ormParams, err := in.ToORM(ctx)
 	if err != nil {
 		return nil, err
@@ -1520,9 +1520,6 @@ func DefaultListPrimaryUUIDType(ctx context.Context, db *gorm1.DB, req interface
 	if err != nil {
 		return nil, err
 	}
-	if fs.GetFields() == nil {
-		db = db.Set("gorm:auto_preload", true)
-	}
 	in := PrimaryUUIDType{}
 	ormParams, err := in.ToORM(ctx)
 	if err != nil {
@@ -1565,7 +1562,11 @@ func DefaultReadPrimaryStringType(ctx context.Context, in *PrimaryStringType, db
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultReadPrimaryStringType")
 	}
-	db = db.Set("gorm:auto_preload", true)
+	var err error
+	db, err = gorm2.ApplyFieldSelection(ctx, db, nil, &PrimaryStringTypeORM{})
+	if err != nil {
+		return nil, err
+	}
 	ormParams, err := in.ToORM(ctx)
 	if err != nil {
 		return nil, err
@@ -1726,9 +1727,6 @@ func DefaultListPrimaryStringType(ctx context.Context, db *gorm1.DB, req interfa
 	if err != nil {
 		return nil, err
 	}
-	if fs.GetFields() == nil {
-		db = db.Set("gorm:auto_preload", true)
-	}
 	in := PrimaryStringType{}
 	ormParams, err := in.ToORM(ctx)
 	if err != nil {
@@ -1814,9 +1812,6 @@ func DefaultListPrimaryIncluded(ctx context.Context, db *gorm1.DB, req interface
 	db, err = gorm2.ApplyCollectionOperators(ctx, db, &PrimaryIncludedORM{}, &PrimaryIncluded{}, f, s, p, fs)
 	if err != nil {
 		return nil, err
-	}
-	if fs.GetFields() == nil {
-		db = db.Set("gorm:auto_preload", true)
 	}
 	in := PrimaryIncluded{}
 	ormParams, err := in.ToORM(ctx)

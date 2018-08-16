@@ -79,7 +79,6 @@ func (p *OrmPlugin) generateCreateHandler(message *generator.Descriptor) {
 	p.P(`if err != nil {`)
 	p.P(`return nil, err`)
 	p.P(`}`)
-	p.setupOrderedHasMany(message)
 	p.P(`if err = db.Create(&ormObj).Error; err != nil {`)
 	p.P(`return nil, err`)
 	p.P(`}`)
@@ -101,24 +100,27 @@ func (p *OrmPlugin) generateReadHandler(message *generator.Descriptor) {
 		p.P(`func DefaultRead`, typeName, `(ctx context.Context, in *`,
 			typeName, `, db *`, p.Import(gormImport), `.DB) (*`, typeName, `, error) {`)
 	}
-
 	p.P(`if in == nil {`)
 	p.P(`return nil, errors.New("Nil argument to DefaultRead`, typeName, `")`)
 	p.P(`}`)
+
+	var fs string
 	if p.readHasSelection(ormable) {
-		p.P(`var err error`)
-		p.P(`if fs == nil {`)
-		p.generatePreloading()
-		p.P(`} else if db, err = `, p.Import(tkgormImport), `.ApplyFieldSelection(ctx, db, fs, &`, typeName, `{}); err != nil {`)
-		p.P(`return nil, err`)
-		p.P(`}`)
+		fs = "fs"
 	} else {
-		p.generatePreloading()
+		fs = "nil"
 	}
+	p.P(`var err error`)
+	p.P(`db, err = `, p.Import(tkgormImport), `.ApplyFieldSelection(ctx, db, `, fs, `, &`, ormable.Name, `{})`)
+	p.P(`if err != nil {`)
+	p.P(`return nil, err`)
+	p.P(`}`)
+
 	p.P(`ormParams, err := in.ToORM(ctx)`)
 	p.P(`if err != nil {`)
 	p.P(`return nil, err`)
 	p.P(`}`)
+
 	k, f := p.findPrimaryKey(ormable)
 	if strings.Contains(f.Type, "*") {
 		p.P(`if ormParams.`, k, ` == nil || *ormParams.`, k, ` == `, p.guessZeroValue(f.Type), ` {`)
@@ -128,7 +130,6 @@ func (p *OrmPlugin) generateReadHandler(message *generator.Descriptor) {
 	p.P(`return nil, errors.New("DefaultRead`, typeName, ` requires a non-zero primary key")`)
 	p.P(`}`)
 
-	p.sortOrderedHasMany(message)
 	p.P(`ormResponse := `, ormable.Name, `{}`)
 	p.P(`if err = db.Where(&ormParams).First(&ormResponse).Error; err != nil {`)
 	p.P(`return nil, err`)
@@ -330,7 +331,6 @@ func (p *OrmPlugin) generateUpdateHandler(message *generator.Descriptor) {
 		p.P(`ormObj.AccountID = accountID`)
 		p.P(`db = db.Where(&`, typeName, `ORM{AccountID: accountID})`)
 	}
-	p.setupOrderedHasMany(message)
 	p.P(`if err = db.Save(&ormObj).Error; err != nil {`)
 	p.P(`return nil, err`)
 	p.P(`}`)
@@ -384,16 +384,12 @@ func (p *OrmPlugin) generateListHandler(message *generator.Descriptor) {
 	p.P(`if err != nil {`)
 	p.P(`return nil, err`)
 	p.P(`}`)
-	p.P(`if fs.GetFields() == nil {`)
-	p.generatePreloading()
-	p.P(`}`)
 	p.P(`in := `, typeName, `{}`)
 	p.P(`ormParams, err := in.ToORM(ctx)`)
 	p.P(`if err != nil {`)
 	p.P(`return nil, err`)
 	p.P(`}`)
 	p.P(`db = db.Where(&ormParams)`)
-	p.sortOrderedHasMany(message)
 
 	// add default ordering by primary key
 	if p.hasPrimaryKey(ormable) {
@@ -453,7 +449,6 @@ func (p *OrmPlugin) generateStrictUpdateHandler(message *generator.Descriptor) {
 	if getMessageOptions(message).GetMultiAccount() {
 		p.P(`db = db.Where(&`, typeName, `ORM{AccountID: ormObj.AccountID})`)
 	}
-	p.setupOrderedHasMany(message)
 	p.P(`if err = db.Save(&ormObj).Error; err != nil {`)
 	p.P(`return nil, err`)
 	p.P(`}`)
@@ -469,47 +464,6 @@ func (p *OrmPlugin) generateStrictUpdateHandler(message *generator.Descriptor) {
 	p.P(`return &pbResponse, err`)
 	p.P(`}`)
 	p.P()
-}
-
-func (p *OrmPlugin) generatePreloading() {
-	p.P(`db = db.Set("gorm:auto_preload", true)`)
-}
-
-func (p *OrmPlugin) setupOrderedHasMany(message *generator.Descriptor) {
-	ormable := p.getOrmable(p.TypeName(message))
-	for _, fieldName := range p.getSortedFieldNames(ormable.Fields) {
-		p.setupOrderedHasManyByName(message, fieldName)
-	}
-}
-
-func (p *OrmPlugin) setupOrderedHasManyByName(message *generator.Descriptor, fieldName string) {
-	ormable := p.getOrmable(p.TypeName(message))
-	field := ormable.Fields[fieldName]
-
-	if field == nil {
-		return
-	}
-
-	if field.GetHasMany().GetPositionField() != "" {
-		positionField := field.GetHasMany().GetPositionField()
-		positionFieldType := p.getOrmable(field.Type).Fields[positionField].Type
-		p.P(`for i, e := range `, `ormObj.`, fieldName, `{`)
-		p.P(`e.`, positionField, ` = `, positionFieldType, `(i)`)
-		p.P(`}`)
-	}
-}
-
-func (p *OrmPlugin) sortOrderedHasMany(message *generator.Descriptor) {
-	ormable := p.getOrmable(p.TypeName(message))
-	for _, fieldName := range p.getSortedFieldNames(ormable.Fields) {
-		field := ormable.Fields[fieldName]
-		if field.GetHasMany().GetPositionField() != "" {
-			positionField := field.GetHasMany().GetPositionField()
-			p.P(`db = db.Preload("`, fieldName, `", func(db *`, p.Import(gormImport), `.DB) *`, p.Import(gormImport), `.DB {`)
-			p.P(`return db.Order("`, jgorm.ToDBName(positionField), `")`)
-			p.P(`})`)
-		}
-	}
 }
 
 func (p *OrmPlugin) isFieldOrmable(message *generator.Descriptor, fieldName string) bool {

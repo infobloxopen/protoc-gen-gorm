@@ -141,7 +141,11 @@ func DefaultReadExternalChild(ctx context.Context, in *ExternalChild, db *gorm1.
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultReadExternalChild")
 	}
-	db = db.Set("gorm:auto_preload", true)
+	var err error
+	db, err = gorm2.ApplyFieldSelection(ctx, db, nil, &ExternalChildORM{})
+	if err != nil {
+		return nil, err
+	}
 	ormParams, err := in.ToORM(ctx)
 	if err != nil {
 		return nil, err
@@ -295,9 +299,6 @@ func DefaultListExternalChild(ctx context.Context, db *gorm1.DB, req interface{}
 	db, err = gorm2.ApplyCollectionOperators(ctx, db, &ExternalChildORM{}, &ExternalChild{}, f, s, p, fs)
 	if err != nil {
 		return nil, err
-	}
-	if fs.GetFields() == nil {
-		db = db.Set("gorm:auto_preload", true)
 	}
 	in := ExternalChild{}
 	ormParams, err := in.ToORM(ctx)
