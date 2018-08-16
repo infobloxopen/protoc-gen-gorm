@@ -2,6 +2,7 @@ package plugin
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/gogo/protobuf/protoc-gen-gogo/generator"
@@ -205,6 +206,30 @@ func (p *OrmPlugin) parseHasMany(msg *generator.Descriptor, parent *OrmableType,
 		}
 		hasMany.PositionField = &posField
 	}
+
+	if hmAutoupdate := hasMany.GetAssociationAutoupdate(); hmAutoupdate != "" {
+		autoUpdate, err := strconv.ParseBool(hmAutoupdate)
+		if err != nil {
+			p.Fail("Cannot use", hmAutoupdate, "as association_autoupdate value.")
+		}
+		*hasMany.AssociationAutoupdate = strconv.FormatBool(autoUpdate)
+	}
+
+	if hmAutocreate := hasMany.GetAssociationAutocreate(); hmAutocreate != "" {
+		autoCreate, err := strconv.ParseBool(hmAutocreate)
+		if err != nil {
+			p.Fail("Cannot use", hmAutocreate, "as association_autocreate value.")
+		}
+		*hasMany.AssociationAutocreate = strconv.FormatBool(autoCreate)
+	}
+
+	if hmSaveReference := hasMany.GetAssociationSaveReference(); hmSaveReference != "" {
+		saveReference, err := strconv.ParseBool(hmSaveReference)
+		if err != nil {
+			p.Fail("Cannot use", hmSaveReference, "as association_save_reference value.")
+		}
+		*hasMany.AssociationSaveReference = strconv.FormatBool(saveReference)
+	}
 }
 
 func (p *OrmPlugin) parseHasOne(msg *generator.Descriptor, parent *OrmableType, fieldName string, fieldType string, child *OrmableType, opts *gorm.GormFieldOptions) {
@@ -261,6 +286,30 @@ func (p *OrmPlugin) parseHasOne(msg *generator.Descriptor, parent *OrmableType, 
 		}
 	}
 	child.Fields[foreignKeyName].ParentOriginName = parent.OriginName
+
+	if hoAutoupdate := hasOne.GetAssociationAutoupdate(); hoAutoupdate != "" {
+		autoUpdate, err := strconv.ParseBool(hoAutoupdate)
+		if err != nil {
+			p.Fail("Cannot use", hoAutoupdate, "as association_autoupdate value.")
+		}
+		*hasOne.AssociationAutoupdate = strconv.FormatBool(autoUpdate)
+	}
+
+	if hoAutocreate := hasOne.GetAssociationAutocreate(); hoAutocreate != "" {
+		autoCreate, err := strconv.ParseBool(hoAutocreate)
+		if err != nil {
+			p.Fail("Cannot use", hoAutocreate, "as association_autocreate value.")
+		}
+		*hasOne.AssociationAutocreate = strconv.FormatBool(autoCreate)
+	}
+
+	if hoSaveReference := hasOne.GetAssociationSaveReference(); hoSaveReference != "" {
+		saveReference, err := strconv.ParseBool(hoSaveReference)
+		if err != nil {
+			p.Fail("Cannot use", hoSaveReference, "as association_save_reference value.")
+		}
+		*hasOne.AssociationSaveReference = strconv.FormatBool(saveReference)
+	}
 }
 
 func (p *OrmPlugin) parseBelongsTo(msg *generator.Descriptor, child *OrmableType, fieldName string, fieldType string, parent *OrmableType, opts *gorm.GormFieldOptions) {
@@ -312,6 +361,30 @@ func (p *OrmPlugin) parseBelongsTo(msg *generator.Descriptor, child *OrmableType
 		}
 	}
 	child.Fields[foreignKeyName].ParentOriginName = parent.OriginName
+
+	if btAutoupdate := belongsTo.GetAssociationAutoupdate(); btAutoupdate != "" {
+		autoUpdate, err := strconv.ParseBool(btAutoupdate)
+		if err != nil {
+			p.Fail("Cannot use", btAutoupdate, "as association_autoupdate value.")
+		}
+		*belongsTo.AssociationAutoupdate = strconv.FormatBool(autoUpdate)
+	}
+
+	if btAutocreate := belongsTo.GetAssociationAutocreate(); btAutocreate != "" {
+		autoCreate, err := strconv.ParseBool(btAutocreate)
+		if err != nil {
+			p.Fail("Cannot use", btAutocreate, "as association_autocreate value.")
+		}
+		*belongsTo.AssociationAutocreate = strconv.FormatBool(autoCreate)
+	}
+
+	if btSaveReference := belongsTo.GetAssociationSaveReference(); btSaveReference != "" {
+		saveReference, err := strconv.ParseBool(btSaveReference)
+		if err != nil {
+			p.Fail("Cannot use", btSaveReference, "as association_save_reference value.")
+		}
+		*belongsTo.AssociationSaveReference = strconv.FormatBool(saveReference)
+	}
 }
 
 func (p *OrmPlugin) parseManyToMany(msg *generator.Descriptor, ormable *OrmableType, fieldName string, fieldType string, assoc *OrmableType, opts *gorm.GormFieldOptions) {
@@ -367,6 +440,30 @@ func (p *OrmPlugin) parseManyToMany(msg *generator.Descriptor, ormable *OrmableT
 		}
 	}
 	mtm.AssociationJointableForeignkey = &jtAssocForeignKey
+
+	if mtmAutoupdate := mtm.GetAssociationAutoupdate(); mtmAutoupdate != "" {
+		autoUpdate, err := strconv.ParseBool(mtmAutoupdate)
+		if err != nil {
+			p.Fail("Cannot use", mtmAutoupdate, "as association_autoupdate value.")
+		}
+		*mtm.AssociationAutoupdate = strconv.FormatBool(autoUpdate)
+	}
+
+	if mtmAutocreate := mtm.GetAssociationAutocreate(); mtmAutocreate != "" {
+		autoCreate, err := strconv.ParseBool(mtmAutocreate)
+		if err != nil {
+			p.Fail("Cannot use", mtmAutocreate, "as association_autocreate value.")
+		}
+		*mtm.AssociationAutocreate = strconv.FormatBool(autoCreate)
+	}
+
+	if mtmSaveReference := mtm.GetAssociationSaveReference(); mtmSaveReference != "" {
+		saveReference, err := strconv.ParseBool(mtmSaveReference)
+		if err != nil {
+			p.Fail("Cannot use", mtmSaveReference, "as association_save_reference value.")
+		}
+		*mtm.AssociationSaveReference = strconv.FormatBool(saveReference)
+	}
 }
 
 func (p *OrmPlugin) findPrimaryKey(ormable *OrmableType) (string, *Field) {

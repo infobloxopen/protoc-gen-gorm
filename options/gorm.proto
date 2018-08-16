@@ -78,12 +78,18 @@ message HasOneOptions {
     optional string foreignkey = 1;
     optional GormTag foreignkey_tag = 2;
     optional string association_foreignkey = 3;
+    optional string association_autoupdate = 4;
+    optional string association_autocreate = 5;
+    optional string association_save_reference = 6;
 }
 
 message BelongsToOptions {
     optional string foreignkey = 1;
     optional GormTag foreignkey_tag = 2;
     optional string association_foreignkey = 3;
+    optional string association_autoupdate = 4;
+    optional string association_autocreate = 5;
+    optional string association_save_reference = 6;
 }
 
 message HasManyOptions {
@@ -92,6 +98,9 @@ message HasManyOptions {
     optional string association_foreignkey = 3;
     optional string position_field = 4;
     optional GormTag position_field_tag = 5;
+    optional string association_autoupdate = 6;
+    optional string association_autocreate = 7;
+    optional string association_save_reference = 8;
 }
 
 message ManyToManyOptions {
@@ -100,6 +109,9 @@ message ManyToManyOptions {
     optional string jointable_foreignkey = 3;
     optional string association_foreignkey = 4;
     optional string association_jointable_foreignkey = 5;
+    optional string association_autoupdate = 6;
+    optional string association_autocreate = 7;
+    optional string association_save_reference = 8;
 }
 
 

@@ -467,22 +467,34 @@ func (p *OrmPlugin) renderGormTag(field *Field) string {
 		res += "-;"
 	}
 
-	var foreignKey, associationForeignKey, joinTable, joinTableForeignKey, associationJoinTableForeignKey *string
+	var foreignKey, associationForeignKey, joinTable, joinTableForeignKey, associationJoinTableForeignKey, associationAutoupdate, associationAutocreate, associationSaveReference *string
 	if hasOne := field.GetHasOne(); hasOne != nil {
 		foreignKey = hasOne.Foreignkey
 		associationForeignKey = hasOne.AssociationForeignkey
+		associationAutoupdate = hasOne.AssociationAutoupdate
+		associationAutocreate = hasOne.AssociationAutocreate
+		associationSaveReference = hasOne.AssociationSaveReference
 	} else if belongsTo := field.GetBelongsTo(); belongsTo != nil {
 		foreignKey = belongsTo.Foreignkey
 		associationForeignKey = belongsTo.AssociationForeignkey
+		associationAutoupdate = belongsTo.AssociationAutoupdate
+		associationAutocreate = belongsTo.AssociationAutocreate
+		associationSaveReference = belongsTo.AssociationSaveReference
 	} else if hasMany := field.GetHasMany(); hasMany != nil {
 		foreignKey = hasMany.Foreignkey
 		associationForeignKey = hasMany.AssociationForeignkey
+		associationAutoupdate = hasMany.AssociationAutoupdate
+		associationAutocreate = hasMany.AssociationAutocreate
+		associationSaveReference = hasMany.AssociationSaveReference
 	} else if mtm := field.GetManyToMany(); mtm != nil {
 		foreignKey = mtm.Foreignkey
 		associationForeignKey = mtm.AssociationForeignkey
 		joinTable = mtm.Jointable
 		joinTableForeignKey = mtm.JointableForeignkey
 		associationJoinTableForeignKey = mtm.AssociationJointableForeignkey
+		associationAutoupdate = mtm.AssociationAutoupdate
+		associationAutocreate = mtm.AssociationAutocreate
+		associationSaveReference = mtm.AssociationSaveReference
 	} else {
 		foreignKey = tag.Foreignkey
 		associationForeignKey = tag.AssociationForeignkey
@@ -505,6 +517,15 @@ func (p *OrmPlugin) renderGormTag(field *Field) string {
 	}
 	if associationJoinTableForeignKey != nil {
 		res += fmt.Sprintf("association_jointable_foreignkey:%s;", *associationJoinTableForeignKey)
+	}
+	if associationAutoupdate != nil {
+		res += fmt.Sprintf("association_autoupdate:%s;", *associationAutoupdate)
+	}
+	if associationAutocreate != nil {
+		res += fmt.Sprintf("association_autocreate:%s;", *associationAutocreate)
+	}
+	if associationSaveReference != nil {
+		res += fmt.Sprintf("association_save_reference:%s;", *associationSaveReference)
 	}
 
 	if res == "" {
