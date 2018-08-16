@@ -3,6 +3,7 @@ package plugin
 import (
 	"fmt"
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/gogo/protobuf/proto"
@@ -467,7 +468,8 @@ func (p *OrmPlugin) renderGormTag(field *Field) string {
 		res += "-;"
 	}
 
-	var foreignKey, associationForeignKey, joinTable, joinTableForeignKey, associationJoinTableForeignKey, associationAutoupdate, associationAutocreate, associationSaveReference *string
+	var foreignKey, associationForeignKey, joinTable, joinTableForeignKey, associationJoinTableForeignKey *string
+	var associationAutoupdate, associationAutocreate, associationSaveReference *bool
 	if hasOne := field.GetHasOne(); hasOne != nil {
 		foreignKey = hasOne.Foreignkey
 		associationForeignKey = hasOne.AssociationForeignkey
@@ -501,6 +503,9 @@ func (p *OrmPlugin) renderGormTag(field *Field) string {
 		joinTable = tag.ManyToMany
 		joinTableForeignKey = tag.JointableForeignkey
 		associationJoinTableForeignKey = tag.AssociationJointableForeignkey
+		associationAutoupdate = tag.AssociationAutoupdate
+		associationAutocreate = tag.AssociationAutocreate
+		associationSaveReference = tag.AssociationSaveReference
 	}
 
 	if foreignKey != nil {
@@ -519,13 +524,13 @@ func (p *OrmPlugin) renderGormTag(field *Field) string {
 		res += fmt.Sprintf("association_jointable_foreignkey:%s;", *associationJoinTableForeignKey)
 	}
 	if associationAutoupdate != nil {
-		res += fmt.Sprintf("association_autoupdate:%s;", *associationAutoupdate)
+		res += fmt.Sprintf("association_autoupdate:%s;", strconv.FormatBool(*associationAutoupdate))
 	}
 	if associationAutocreate != nil {
-		res += fmt.Sprintf("association_autocreate:%s;", *associationAutocreate)
+		res += fmt.Sprintf("association_autocreate:%s;", strconv.FormatBool(*associationAutocreate))
 	}
 	if associationSaveReference != nil {
-		res += fmt.Sprintf("association_save_reference:%s;", *associationSaveReference)
+		res += fmt.Sprintf("association_save_reference:%s;", strconv.FormatBool(*associationSaveReference))
 	}
 
 	if res == "" {
