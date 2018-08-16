@@ -22,21 +22,21 @@ var _ = math.Inf
 const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 
 type User struct {
-	Id                   *resource.Identifier `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
-	CreatedAt            *timestamp.Timestamp `protobuf:"bytes,2,opt,name=created_at,json=createdAt" json:"created_at,omitempty"`
-	UpdatedAt            *timestamp.Timestamp `protobuf:"bytes,3,opt,name=updated_at,json=updatedAt" json:"updated_at,omitempty"`
-	Birthday             *timestamp.Timestamp `protobuf:"bytes,4,opt,name=birthday" json:"birthday,omitempty"`
-	Age                  uint32               `protobuf:"varint,5,opt,name=age" json:"age,omitempty"`
-	Num                  uint32               `protobuf:"varint,6,opt,name=num" json:"num,omitempty"`
-	CreditCard           *CreditCard          `protobuf:"bytes,7,opt,name=credit_card,json=creditCard" json:"credit_card,omitempty"`
-	Emails               []*Email             `protobuf:"bytes,8,rep,name=emails" json:"emails,omitempty"`
-	Tasks                []*Task              `protobuf:"bytes,9,rep,name=tasks" json:"tasks,omitempty"`
-	BillingAddress       *Address             `protobuf:"bytes,10,opt,name=billing_address,json=billingAddress" json:"billing_address,omitempty"`
-	ShippingAddress      *Address             `protobuf:"bytes,11,opt,name=shipping_address,json=shippingAddress" json:"shipping_address,omitempty"`
-	Languages            []*Language          `protobuf:"bytes,12,rep,name=languages" json:"languages,omitempty"`
-	Friends              []*User              `protobuf:"bytes,13,rep,name=friends" json:"friends,omitempty"`
-	ShippingAddressId    *resource.Identifier `protobuf:"bytes,14,opt,name=shipping_address_id,json=shippingAddressId" json:"shipping_address_id,omitempty"`
-	ExternalUuid         *resource.Identifier `protobuf:"bytes,15,opt,name=external_uuid,json=externalUuid" json:"external_uuid,omitempty"`
+	Id                   *resource.Identifier `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	CreatedAt            *timestamp.Timestamp `protobuf:"bytes,2,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	UpdatedAt            *timestamp.Timestamp `protobuf:"bytes,3,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	Birthday             *timestamp.Timestamp `protobuf:"bytes,4,opt,name=birthday,proto3" json:"birthday,omitempty"`
+	Age                  uint32               `protobuf:"varint,5,opt,name=age,proto3" json:"age,omitempty"`
+	Num                  uint32               `protobuf:"varint,6,opt,name=num,proto3" json:"num,omitempty"`
+	CreditCard           *CreditCard          `protobuf:"bytes,7,opt,name=credit_card,json=creditCard,proto3" json:"credit_card,omitempty"`
+	Emails               []*Email             `protobuf:"bytes,8,rep,name=emails,proto3" json:"emails,omitempty"`
+	Tasks                []*Task              `protobuf:"bytes,9,rep,name=tasks,proto3" json:"tasks,omitempty"`
+	BillingAddress       *Address             `protobuf:"bytes,10,opt,name=billing_address,json=billingAddress,proto3" json:"billing_address,omitempty"`
+	ShippingAddress      *Address             `protobuf:"bytes,11,opt,name=shipping_address,json=shippingAddress,proto3" json:"shipping_address,omitempty"`
+	Languages            []*Language          `protobuf:"bytes,12,rep,name=languages,proto3" json:"languages,omitempty"`
+	Friends              []*User              `protobuf:"bytes,13,rep,name=friends,proto3" json:"friends,omitempty"`
+	ShippingAddressId    *resource.Identifier `protobuf:"bytes,14,opt,name=shipping_address_id,json=shippingAddressId,proto3" json:"shipping_address_id,omitempty"`
+	ExternalUuid         *resource.Identifier `protobuf:"bytes,15,opt,name=external_uuid,json=externalUuid,proto3" json:"external_uuid,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}             `json:"-"`
 	XXX_unrecognized     []byte               `json:"-"`
 	XXX_sizecache        int32                `json:"-"`
@@ -46,7 +46,7 @@ func (m *User) Reset()         { *m = User{} }
 func (m *User) String() string { return proto.CompactTextString(m) }
 func (*User) ProtoMessage()    {}
 func (*User) Descriptor() ([]byte, []int) {
-	return fileDescriptor_user_e4ddf9554874430c, []int{0}
+	return fileDescriptor_user_d630848ebf7ad1fc, []int{0}
 }
 func (m *User) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_User.Unmarshal(m, b)
@@ -172,11 +172,11 @@ func (m *User) GetExternalUuid() *resource.Identifier {
 }
 
 type Email struct {
-	Id                   *resource.Identifier `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
-	Email                string               `protobuf:"bytes,2,opt,name=email" json:"email,omitempty"`
-	Subscribed           bool                 `protobuf:"varint,3,opt,name=subscribed" json:"subscribed,omitempty"`
-	UserId               *resource.Identifier `protobuf:"bytes,4,opt,name=user_id,json=userId" json:"user_id,omitempty"`
-	ExternalNotNull      *resource.Identifier `protobuf:"bytes,5,opt,name=external_not_null,json=externalNotNull" json:"external_not_null,omitempty"`
+	Id                   *resource.Identifier `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Email                string               `protobuf:"bytes,2,opt,name=email,proto3" json:"email,omitempty"`
+	Subscribed           bool                 `protobuf:"varint,3,opt,name=subscribed,proto3" json:"subscribed,omitempty"`
+	UserId               *resource.Identifier `protobuf:"bytes,4,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	ExternalNotNull      *resource.Identifier `protobuf:"bytes,5,opt,name=external_not_null,json=externalNotNull,proto3" json:"external_not_null,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}             `json:"-"`
 	XXX_unrecognized     []byte               `json:"-"`
 	XXX_sizecache        int32                `json:"-"`
@@ -186,7 +186,7 @@ func (m *Email) Reset()         { *m = Email{} }
 func (m *Email) String() string { return proto.CompactTextString(m) }
 func (*Email) ProtoMessage()    {}
 func (*Email) Descriptor() ([]byte, []int) {
-	return fileDescriptor_user_e4ddf9554874430c, []int{1}
+	return fileDescriptor_user_d630848ebf7ad1fc, []int{1}
 }
 func (m *Email) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Email.Unmarshal(m, b)
@@ -242,12 +242,12 @@ func (m *Email) GetExternalNotNull() *resource.Identifier {
 }
 
 type Address struct {
-	Id                   *resource.Identifier `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
-	Address_1            string               `protobuf:"bytes,2,opt,name=address_1,json=address1" json:"address_1,omitempty"`
-	Address_2            string               `protobuf:"bytes,3,opt,name=address_2,json=address2" json:"address_2,omitempty"`
-	Post                 string               `protobuf:"bytes,4,opt,name=post" json:"post,omitempty"`
-	External             *resource.Identifier `protobuf:"bytes,5,opt,name=external" json:"external,omitempty"`
-	ImplicitFk           *resource.Identifier `protobuf:"bytes,6,opt,name=implicit_fk,json=implicitFk" json:"implicit_fk,omitempty"`
+	Id                   *resource.Identifier `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Address_1            string               `protobuf:"bytes,2,opt,name=address_1,json=address1,proto3" json:"address_1,omitempty"`
+	Address_2            string               `protobuf:"bytes,3,opt,name=address_2,json=address2,proto3" json:"address_2,omitempty"`
+	Post                 string               `protobuf:"bytes,4,opt,name=post,proto3" json:"post,omitempty"`
+	External             *resource.Identifier `protobuf:"bytes,5,opt,name=external,proto3" json:"external,omitempty"`
+	ImplicitFk           *resource.Identifier `protobuf:"bytes,6,opt,name=implicit_fk,json=implicitFk,proto3" json:"implicit_fk,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}             `json:"-"`
 	XXX_unrecognized     []byte               `json:"-"`
 	XXX_sizecache        int32                `json:"-"`
@@ -257,7 +257,7 @@ func (m *Address) Reset()         { *m = Address{} }
 func (m *Address) String() string { return proto.CompactTextString(m) }
 func (*Address) ProtoMessage()    {}
 func (*Address) Descriptor() ([]byte, []int) {
-	return fileDescriptor_user_e4ddf9554874430c, []int{2}
+	return fileDescriptor_user_d630848ebf7ad1fc, []int{2}
 }
 func (m *Address) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Address.Unmarshal(m, b)
@@ -320,10 +320,10 @@ func (m *Address) GetImplicitFk() *resource.Identifier {
 }
 
 type Language struct {
-	Id                   *resource.Identifier `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
-	Name                 string               `protobuf:"bytes,2,opt,name=name" json:"name,omitempty"`
-	Code                 string               `protobuf:"bytes,3,opt,name=code" json:"code,omitempty"`
-	ExternalInt          *resource.Identifier `protobuf:"bytes,4,opt,name=external_int,json=externalInt" json:"external_int,omitempty"`
+	Id                   *resource.Identifier `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Name                 string               `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	Code                 string               `protobuf:"bytes,3,opt,name=code,proto3" json:"code,omitempty"`
+	ExternalInt          *resource.Identifier `protobuf:"bytes,4,opt,name=external_int,json=externalInt,proto3" json:"external_int,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}             `json:"-"`
 	XXX_unrecognized     []byte               `json:"-"`
 	XXX_sizecache        int32                `json:"-"`
@@ -333,7 +333,7 @@ func (m *Language) Reset()         { *m = Language{} }
 func (m *Language) String() string { return proto.CompactTextString(m) }
 func (*Language) ProtoMessage()    {}
 func (*Language) Descriptor() ([]byte, []int) {
-	return fileDescriptor_user_e4ddf9554874430c, []int{3}
+	return fileDescriptor_user_d630848ebf7ad1fc, []int{3}
 }
 func (m *Language) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Language.Unmarshal(m, b)
@@ -382,11 +382,11 @@ func (m *Language) GetExternalInt() *resource.Identifier {
 }
 
 type CreditCard struct {
-	Id                   *resource.Identifier `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
-	CreatedAt            *timestamp.Timestamp `protobuf:"bytes,2,opt,name=created_at,json=createdAt" json:"created_at,omitempty"`
-	UpdatedAt            *timestamp.Timestamp `protobuf:"bytes,3,opt,name=updated_at,json=updatedAt" json:"updated_at,omitempty"`
-	Number               string               `protobuf:"bytes,4,opt,name=number" json:"number,omitempty"`
-	UserId               *resource.Identifier `protobuf:"bytes,5,opt,name=user_id,json=userId" json:"user_id,omitempty"`
+	Id                   *resource.Identifier `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	CreatedAt            *timestamp.Timestamp `protobuf:"bytes,2,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	UpdatedAt            *timestamp.Timestamp `protobuf:"bytes,3,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	Number               string               `protobuf:"bytes,4,opt,name=number,proto3" json:"number,omitempty"`
+	UserId               *resource.Identifier `protobuf:"bytes,5,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}             `json:"-"`
 	XXX_unrecognized     []byte               `json:"-"`
 	XXX_sizecache        int32                `json:"-"`
@@ -396,7 +396,7 @@ func (m *CreditCard) Reset()         { *m = CreditCard{} }
 func (m *CreditCard) String() string { return proto.CompactTextString(m) }
 func (*CreditCard) ProtoMessage()    {}
 func (*CreditCard) Descriptor() ([]byte, []int) {
-	return fileDescriptor_user_e4ddf9554874430c, []int{4}
+	return fileDescriptor_user_d630848ebf7ad1fc, []int{4}
 }
 func (m *CreditCard) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_CreditCard.Unmarshal(m, b)
@@ -452,9 +452,9 @@ func (m *CreditCard) GetUserId() *resource.Identifier {
 }
 
 type Task struct {
-	Name                 string   `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
-	Description          string   `protobuf:"bytes,2,opt,name=description" json:"description,omitempty"`
-	Priority             int64    `protobuf:"varint,3,opt,name=priority" json:"priority,omitempty"`
+	Name                 string   `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Description          string   `protobuf:"bytes,2,opt,name=description,proto3" json:"description,omitempty"`
+	Priority             int64    `protobuf:"varint,3,opt,name=priority,proto3" json:"priority,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -464,7 +464,7 @@ func (m *Task) Reset()         { *m = Task{} }
 func (m *Task) String() string { return proto.CompactTextString(m) }
 func (*Task) ProtoMessage()    {}
 func (*Task) Descriptor() ([]byte, []int) {
-	return fileDescriptor_user_e4ddf9554874430c, []int{5}
+	return fileDescriptor_user_d630848ebf7ad1fc, []int{5}
 }
 func (m *Task) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Task.Unmarshal(m, b)
@@ -514,9 +514,9 @@ func init() {
 	proto.RegisterType((*Task)(nil), "user.Task")
 }
 
-func init() { proto.RegisterFile("example/user/user.proto", fileDescriptor_user_e4ddf9554874430c) }
+func init() { proto.RegisterFile("example/user/user.proto", fileDescriptor_user_d630848ebf7ad1fc) }
 
-var fileDescriptor_user_e4ddf9554874430c = []byte{
+var fileDescriptor_user_d630848ebf7ad1fc = []byte{
 	// 889 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xc4, 0x56, 0x4d, 0x6f, 0xe3, 0x36,
 	0x13, 0x5e, 0xf9, 0x53, 0x1e, 0xc5, 0x1f, 0xe1, 0xee, 0xfb, 0x56, 0x4e, 0x81, 0xd6, 0x48, 0x2f,

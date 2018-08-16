@@ -55,7 +55,7 @@ type UserORM struct {
 	Num               uint32
 	ShippingAddress   *AddressORM `gorm:"foreignkey:ShippingAddressId;association_foreignkey:Id"`
 	ShippingAddressId *int64
-	Tasks             []*TaskORM `gorm:"foreignkey:UserId;association_foreignkey:Id"`
+	Tasks             []*TaskORM `gorm:"foreignkey:UserId;association_foreignkey:Id" atlas:"position:Priority"`
 	UpdatedAt         time.Time
 }
 
@@ -180,6 +180,9 @@ func (m *User) ToORM(ctx context.Context) (UserORM, error) {
 		return to, err
 	}
 	to.AccountID = accountID
+	for i, e := range to.Tasks {
+		e.Priority = int64(i)
+	}
 	if posthook, ok := interface{}(m).(UserWithAfterToORM); ok {
 		err = posthook.AfterToORM(ctx, &to)
 	}
@@ -854,9 +857,6 @@ func DefaultCreateUser(ctx context.Context, in *User, db *gorm1.DB) (*User, erro
 	if err != nil {
 		return nil, err
 	}
-	for i, e := range ormObj.Tasks {
-		e.Priority = int64(i)
-	}
 	if err = db.Create(&ormObj).Error; err != nil {
 		return nil, err
 	}
@@ -869,7 +869,11 @@ func DefaultReadUser(ctx context.Context, in *User, db *gorm1.DB) (*User, error)
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultReadUser")
 	}
-	db = db.Set("gorm:auto_preload", true)
+	var err error
+	db, err = gorm2.ApplyFieldSelection(ctx, db, nil, &UserORM{})
+	if err != nil {
+		return nil, err
+	}
 	ormParams, err := in.ToORM(ctx)
 	if err != nil {
 		return nil, err
@@ -877,9 +881,6 @@ func DefaultReadUser(ctx context.Context, in *User, db *gorm1.DB) (*User, error)
 	if ormParams.Id == "" {
 		return nil, errors.New("DefaultReadUser requires a non-zero primary key")
 	}
-	db = db.Preload("Tasks", func(db *gorm1.DB) *gorm1.DB {
-		return db.Order("priority")
-	})
 	ormResponse := UserORM{}
 	if err = db.Where(&ormParams).First(&ormResponse).Error; err != nil {
 		return nil, err
@@ -908,9 +909,6 @@ func DefaultUpdateUser(ctx context.Context, in *User, db *gorm1.DB) (*User, erro
 	}
 	ormObj.AccountID = accountID
 	db = db.Where(&UserORM{AccountID: accountID})
-	for i, e := range ormObj.Tasks {
-		e.Priority = int64(i)
-	}
 	if err = db.Save(&ormObj).Error; err != nil {
 		return nil, err
 	}
@@ -977,9 +975,6 @@ func DefaultStrictUpdateUser(ctx context.Context, in *User, db *gorm1.DB) (*User
 		return nil, err
 	}
 	db = db.Where(&UserORM{AccountID: ormObj.AccountID})
-	for i, e := range ormObj.Tasks {
-		e.Priority = int64(i)
-	}
 	if err = db.Save(&ormObj).Error; err != nil {
 		return nil, err
 	}
@@ -1184,18 +1179,12 @@ func DefaultListUser(ctx context.Context, db *gorm1.DB, req interface{}) ([]*Use
 	if err != nil {
 		return nil, err
 	}
-	if fs.GetFields() == nil {
-		db = db.Set("gorm:auto_preload", true)
-	}
 	in := User{}
 	ormParams, err := in.ToORM(ctx)
 	if err != nil {
 		return nil, err
 	}
 	db = db.Where(&ormParams)
-	db = db.Preload("Tasks", func(db *gorm1.DB) *gorm1.DB {
-		return db.Order("priority")
-	})
 	db = db.Order("id")
 	if err := db.Find(&ormResponse).Error; err != nil {
 		return nil, err
@@ -1232,7 +1221,11 @@ func DefaultReadEmail(ctx context.Context, in *Email, db *gorm1.DB) (*Email, err
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultReadEmail")
 	}
-	db = db.Set("gorm:auto_preload", true)
+	var err error
+	db, err = gorm2.ApplyFieldSelection(ctx, db, nil, &EmailORM{})
+	if err != nil {
+		return nil, err
+	}
 	ormParams, err := in.ToORM(ctx)
 	if err != nil {
 		return nil, err
@@ -1390,9 +1383,6 @@ func DefaultListEmail(ctx context.Context, db *gorm1.DB, req interface{}) ([]*Em
 	if err != nil {
 		return nil, err
 	}
-	if fs.GetFields() == nil {
-		db = db.Set("gorm:auto_preload", true)
-	}
 	in := Email{}
 	ormParams, err := in.ToORM(ctx)
 	if err != nil {
@@ -1435,7 +1425,11 @@ func DefaultReadAddress(ctx context.Context, in *Address, db *gorm1.DB) (*Addres
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultReadAddress")
 	}
-	db = db.Set("gorm:auto_preload", true)
+	var err error
+	db, err = gorm2.ApplyFieldSelection(ctx, db, nil, &AddressORM{})
+	if err != nil {
+		return nil, err
+	}
 	ormParams, err := in.ToORM(ctx)
 	if err != nil {
 		return nil, err
@@ -1597,9 +1591,6 @@ func DefaultListAddress(ctx context.Context, db *gorm1.DB, req interface{}) ([]*
 	if err != nil {
 		return nil, err
 	}
-	if fs.GetFields() == nil {
-		db = db.Set("gorm:auto_preload", true)
-	}
 	in := Address{}
 	ormParams, err := in.ToORM(ctx)
 	if err != nil {
@@ -1642,7 +1633,11 @@ func DefaultReadLanguage(ctx context.Context, in *Language, db *gorm1.DB) (*Lang
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultReadLanguage")
 	}
-	db = db.Set("gorm:auto_preload", true)
+	var err error
+	db, err = gorm2.ApplyFieldSelection(ctx, db, nil, &LanguageORM{})
+	if err != nil {
+		return nil, err
+	}
 	ormParams, err := in.ToORM(ctx)
 	if err != nil {
 		return nil, err
@@ -1796,9 +1791,6 @@ func DefaultListLanguage(ctx context.Context, db *gorm1.DB, req interface{}) ([]
 	if err != nil {
 		return nil, err
 	}
-	if fs.GetFields() == nil {
-		db = db.Set("gorm:auto_preload", true)
-	}
 	in := Language{}
 	ormParams, err := in.ToORM(ctx)
 	if err != nil {
@@ -1841,7 +1833,11 @@ func DefaultReadCreditCard(ctx context.Context, in *CreditCard, db *gorm1.DB) (*
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultReadCreditCard")
 	}
-	db = db.Set("gorm:auto_preload", true)
+	var err error
+	db, err = gorm2.ApplyFieldSelection(ctx, db, nil, &CreditCardORM{})
+	if err != nil {
+		return nil, err
+	}
 	ormParams, err := in.ToORM(ctx)
 	if err != nil {
 		return nil, err
@@ -1999,9 +1995,6 @@ func DefaultListCreditCard(ctx context.Context, db *gorm1.DB, req interface{}) (
 	if err != nil {
 		return nil, err
 	}
-	if fs.GetFields() == nil {
-		db = db.Set("gorm:auto_preload", true)
-	}
 	in := CreditCard{}
 	ormParams, err := in.ToORM(ctx)
 	if err != nil {
@@ -2077,9 +2070,6 @@ func DefaultListTask(ctx context.Context, db *gorm1.DB, req interface{}) ([]*Tas
 	db, err = gorm2.ApplyCollectionOperators(ctx, db, &TaskORM{}, &Task{}, f, s, p, fs)
 	if err != nil {
 		return nil, err
-	}
-	if fs.GetFields() == nil {
-		db = db.Set("gorm:auto_preload", true)
 	}
 	in := Task{}
 	ormParams, err := in.ToORM(ctx)
