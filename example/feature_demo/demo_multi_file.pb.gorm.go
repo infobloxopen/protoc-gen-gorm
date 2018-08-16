@@ -147,7 +147,7 @@ func DefaultReadExternalChild(ctx context.Context, in *ExternalChild, db *gorm1.
 		return nil, err
 	}
 	if ormParams.Id == "" {
-		return nil, errors.New("Read requires a non-zero primary key")
+		return nil, errors.New("DefaultReadExternalChild requires a non-zero primary key")
 	}
 	ormResponse := ExternalChildORM{}
 	if err = db.Where(&ormParams).First(&ormResponse).Error; err != nil {

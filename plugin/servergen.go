@@ -7,52 +7,128 @@ import (
 	"github.com/gogo/protobuf/protoc-gen-gogo/generator"
 )
 
-func (p *OrmPlugin) generateDefaultServer(file *generator.FileDescriptor) {
+const (
+	createService = "Create"
+	readService   = "Read"
+	updateService = "Update"
+	deleteService = "Delete"
+	listService   = "List"
+)
+
+type autogenService struct {
+	*descriptor.ServiceDescriptorProto
+	ccName            string
+	file              *generator.FileDescriptor
+	usesTxnMiddleware bool
+	methods           []autogenMethod
+}
+
+type autogenMethod struct {
+	*descriptor.MethodDescriptorProto
+	ccName            string
+	verb              string
+	followsConvention bool
+	baseType          string
+	inType            generator.Object
+	outType           generator.Object
+	fieldMaskName     string
+}
+
+func (p *OrmPlugin) parseServices(file *generator.FileDescriptor) {
 	for _, service := range file.GetService() {
-		svcName := generator.CamelCase(service.GetName())
 		if opts := getServiceOptions(service); opts != nil && opts.GetAutogen() {
-			// All the default server has is a db connection
-			p.P(`type `, svcName, `DefaultServer struct {`)
-			if !opts.GetTxnMiddleware() {
-				p.P(`DB *`, p.Import(gormImport), `.DB`)
+			genSvc := autogenService{
+				ServiceDescriptorProto: service,
+				ccName:                 generator.CamelCase(service.GetName()),
+				file:                   file,
 			}
-			p.P(`}`)
+			if opts := getServiceOptions(service); opts != nil && opts.GetTxnMiddleware() {
+				genSvc.usesTxnMiddleware = true
+			}
 			for _, method := range service.GetMethod() {
-				methodName := generator.CamelCase(method.GetName())
-				if strings.HasPrefix(methodName, "Create") {
-					p.generateCreateServerMethod(service, method)
-				} else if strings.HasPrefix(methodName, "Read") {
-					p.generateReadServerMethod(service, method)
-				} else if strings.HasPrefix(methodName, "Update") {
-					p.generateUpdateServerMethod(service, method)
-				} else if strings.HasPrefix(methodName, "Delete") {
-					p.generateDeleteServerMethod(service, method)
-				} else if strings.HasPrefix(methodName, "List") {
-					p.generateListServerMethod(service, method)
-				} else {
-					p.generateMethodStub(service, method)
+				inType, outType, methodName := p.getMethodProps(method)
+				var verb, fmName, baseType string
+				var follows bool
+				if strings.HasPrefix(methodName, createService) {
+					verb = createService
+					follows, baseType = p.followsCreateConventions(inType, outType, methodName)
+				} else if strings.HasPrefix(methodName, readService) {
+					verb = readService
+					follows, baseType = p.followsReadConventions(inType, outType, methodName)
+				} else if strings.HasPrefix(methodName, updateService) {
+					verb = updateService
+					follows, baseType, fmName = p.followsUpdateConventions(inType, outType, methodName)
+				} else if strings.HasPrefix(methodName, deleteService) {
+					verb = deleteService
+					follows, baseType = p.followsDeleteConventions(inType, outType, method)
+				} else if strings.HasPrefix(methodName, listService) {
+					verb = listService
+					follows, baseType = p.followsListConventions(inType, outType, methodName)
 				}
+				genMethod := autogenMethod{
+					MethodDescriptorProto: method,
+					ccName:                methodName,
+					inType:                inType,
+					outType:               outType,
+					baseType:              baseType,
+					fieldMaskName:         fmName,
+					followsConvention:     follows,
+					verb:                  verb,
+				}
+				genSvc.methods = append(genSvc.methods, genMethod)
+
+				if genMethod.verb != "" && p.isOrmable(genMethod.baseType) {
+					p.getOrmable(genMethod.baseType).Methods[genMethod.verb] = &genMethod
+				}
+			}
+			p.ormableServices = append(p.ormableServices, genSvc)
+		}
+	}
+}
+
+func (p *OrmPlugin) generateDefaultServer(file *generator.FileDescriptor) {
+	for _, service := range p.ormableServices {
+		if service.file != file {
+			continue
+		}
+		p.P(`type `, service.ccName, `DefaultServer struct {`)
+		if !service.usesTxnMiddleware {
+			p.P(`DB *`, p.Import(gormImport), `.DB`)
+		}
+		p.P(`}`)
+		for _, method := range service.methods {
+			switch method.verb {
+			case createService:
+				p.generateCreateServerMethod(service, method)
+			case readService:
+				p.generateReadServerMethod(service, method)
+			case updateService:
+				p.generateUpdateServerMethod(service, method)
+			case deleteService:
+				p.generateDeleteServerMethod(service, method)
+			case listService:
+				p.generateListServerMethod(service, method)
+			default:
+				p.generateMethodStub(service, method)
 			}
 		}
 	}
 }
 
-func (p *OrmPlugin) generateCreateServerMethod(service *descriptor.ServiceDescriptorProto, method *descriptor.MethodDescriptorProto) {
-	inType, outType, methodName, svcName := p.getMethodProps(service, method)
-	p.generateMethodSignature(inType, outType, methodName, svcName)
-	follows, typeName := p.followsCreateConventions(inType, outType, methodName)
-	if follows {
-		p.generateDBSetup(service, outType)
-		p.generatePreserviceCall(svcName, typeName, "Create")
-		p.P(`res, err := DefaultCreate`, typeName, `(ctx, in.GetPayload(), db)`)
+func (p *OrmPlugin) generateCreateServerMethod(service autogenService, method autogenMethod) {
+	p.generateMethodSignature(service, method)
+	if method.followsConvention {
+		p.generateDBSetup(service)
+		p.generatePreserviceCall(service.ccName, method.baseType, createService)
+		p.P(`res, err := DefaultCreate`, method.baseType, `(ctx, in.GetPayload(), db)`)
 		p.P(`if err != nil {`)
 		p.P(`return nil, err`)
 		p.P(`}`)
-		p.P(`return &`, p.TypeName(outType), `{Result: res}, nil`)
+		p.P(`return &`, p.TypeName(method.outType), `{Result: res}, nil`)
 		p.P(`}`)
-		p.generatePreserviceHook(svcName, typeName, p.TypeName(inType), "Create")
+		p.generatePreserviceHook(service.ccName, method.baseType, p.TypeName(method.inType), createService)
 	} else {
-		p.generateEmptyBody(outType)
+		p.generateEmptyBody(method.outType)
 	}
 }
 
@@ -88,22 +164,25 @@ func (p *OrmPlugin) followsCreateConventions(inType generator.Object, outType ge
 	return true, inTypeName
 }
 
-func (p *OrmPlugin) generateReadServerMethod(service *descriptor.ServiceDescriptorProto, method *descriptor.MethodDescriptorProto) {
-	inType, outType, methodName, svcName := p.getMethodProps(service, method)
-	p.generateMethodSignature(inType, outType, methodName, svcName)
-	follows, typeName := p.followsReadConventions(inType, outType, methodName)
-	if follows {
-		p.generateDBSetup(service, outType)
-		p.generatePreserviceCall(svcName, typeName, "Read")
-		p.P(`res, err := DefaultRead`, typeName, `(ctx, &`, typeName, `{Id: in.GetId()}, db)`)
+func (p *OrmPlugin) generateReadServerMethod(service autogenService, method autogenMethod) {
+	p.generateMethodSignature(service, method)
+	if method.followsConvention {
+		p.generateDBSetup(service)
+		p.generatePreserviceCall(service.ccName, method.baseType, readService)
+		typeName := method.baseType
+		if fields := p.hasFieldsSelector(method.inType); fields != "" {
+			p.P(`res, err := DefaultRead`, typeName, `(ctx, &`, typeName, `{Id: in.GetId()}, db, in.`, fields, `)`)
+		} else {
+			p.P(`res, err := DefaultRead`, typeName, `(ctx, &`, typeName, `{Id: in.GetId()}, db)`)
+		}
 		p.P(`if err != nil {`)
 		p.P(`return nil, err`)
 		p.P(`}`)
-		p.P(`return &`, p.TypeName(outType), `{Result: res}, nil`)
+		p.P(`return &`, p.TypeName(method.outType), `{Result: res}, nil`)
 		p.P(`}`)
-		p.generatePreserviceHook(svcName, typeName, p.TypeName(inType), "Read")
+		p.generatePreserviceHook(service.ccName, method.baseType, p.TypeName(method.inType), readService)
 	} else {
-		p.generateEmptyBody(outType)
+		p.generateEmptyBody(method.outType)
 	}
 }
 
@@ -142,20 +221,19 @@ func (p *OrmPlugin) followsReadConventions(inType generator.Object, outType gene
 	return true, outTypeName
 }
 
-func (p *OrmPlugin) generateUpdateServerMethod(service *descriptor.ServiceDescriptorProto, method *descriptor.MethodDescriptorProto) {
-	inType, outType, methodName, svcName := p.getMethodProps(service, method)
-	p.generateMethodSignature(inType, outType, methodName, svcName)
-	follows, typeName, updateMask := p.followsUpdateConventions(inType, outType, methodName)
-	if follows {
+func (p *OrmPlugin) generateUpdateServerMethod(service autogenService, method autogenMethod) {
+	p.generateMethodSignature(service, method)
+	if method.followsConvention {
 		p.P(`var err error`)
+		typeName := method.baseType
 		p.P(`var res *`, typeName)
-		p.generateDBSetup(service, outType)
-		p.generatePreserviceCall(svcName, typeName, "Update")
-		if updateMask != "" {
-			p.P(`if in.Get`, generator.CamelCase(updateMask), `() == nil {`)
+		p.generateDBSetup(service)
+		p.generatePreserviceCall(service.ccName, method.baseType, updateService)
+		if method.fieldMaskName != "" {
+			p.P(`if in.Get`, method.fieldMaskName, `() == nil {`)
 			p.P(`res, err = DefaultStrictUpdate`, typeName, `(ctx, in.GetPayload(), db)`)
 			p.P(`} else {`)
-			p.P(`res, err = DefaultPatch`, typeName, `(ctx, in.GetPayload(), in.Get`, generator.CamelCase(updateMask), `(), db)`)
+			p.P(`res, err = DefaultPatch`, typeName, `(ctx, in.GetPayload(), in.Get`, method.fieldMaskName, `(), db)`)
 			p.P(`}`)
 		} else {
 			p.P(`res, err = DefaultStrictUpdate`, typeName, `(ctx, in.GetPayload(), db)`)
@@ -163,11 +241,11 @@ func (p *OrmPlugin) generateUpdateServerMethod(service *descriptor.ServiceDescri
 		p.P(`if err != nil {`)
 		p.P(`return nil, err`)
 		p.P(`}`)
-		p.P(`return &`, p.TypeName(outType), `{Result: res}, nil`)
+		p.P(`return &`, p.TypeName(method.outType), `{Result: res}, nil`)
 		p.P(`}`)
-		p.generatePreserviceHook(svcName, typeName, p.TypeName(inType), "Update")
+		p.generatePreserviceHook(service.ccName, method.baseType, p.TypeName(method.inType), updateService)
 	} else {
-		p.generateEmptyBody(outType)
+		p.generateEmptyBody(method.outType)
 	}
 }
 
@@ -215,21 +293,20 @@ func (p *OrmPlugin) followsUpdateConventions(inType generator.Object, outType ge
 		p.warning(`stub will be generated for %s since %s ormable type doesn't have a primary key`, methodName, outTypeName)
 		return false, "", ""
 	}
-	return true, inTypeName, updateMask
+	return true, inTypeName, generator.CamelCase(updateMask)
 }
 
-func (p *OrmPlugin) generateDeleteServerMethod(service *descriptor.ServiceDescriptorProto, method *descriptor.MethodDescriptorProto) {
-	inType, outType, methodName, svcName := p.getMethodProps(service, method)
-	p.generateMethodSignature(inType, outType, methodName, svcName)
-	follows, typeName := p.followsDeleteConventions(inType, outType, method)
-	if follows {
-		p.generateDBSetup(service, outType)
-		p.generatePreserviceCall(svcName, typeName, "Delete")
-		p.P(`return &`, p.TypeName(outType), `{}, `, `DefaultDelete`, typeName, `(ctx, &`, typeName, `{Id: in.GetId()}, db)`)
+func (p *OrmPlugin) generateDeleteServerMethod(service autogenService, method autogenMethod) {
+	p.generateMethodSignature(service, method)
+	if method.followsConvention {
+		typeName := method.baseType
+		p.generateDBSetup(service)
+		p.generatePreserviceCall(service.ccName, method.baseType, deleteService)
+		p.P(`return &`, p.TypeName(method.outType), `{}, `, `DefaultDelete`, typeName, `(ctx, &`, typeName, `{Id: in.GetId()}, db)`)
 		p.P(`}`)
-		p.generatePreserviceHook(svcName, typeName, p.TypeName(inType), "Delete")
+		p.generatePreserviceHook(service.ccName, method.baseType, p.TypeName(method.inType), deleteService)
 	} else {
-		p.generateEmptyBody(outType)
+		p.generateEmptyBody(method.outType)
 	}
 }
 
@@ -262,22 +339,20 @@ func (p *OrmPlugin) followsDeleteConventions(inType generator.Object, outType ge
 	return true, typeName
 }
 
-func (p *OrmPlugin) generateListServerMethod(service *descriptor.ServiceDescriptorProto, method *descriptor.MethodDescriptorProto) {
-	inType, outType, methodName, svcName := p.getMethodProps(service, method)
-	p.generateMethodSignature(inType, outType, methodName, svcName)
-	follows, typeName := p.followsListConventions(inType, outType, methodName)
-	if follows {
-		p.generateDBSetup(service, outType)
-		p.generatePreserviceCall(svcName, typeName, "List")
-		p.P(`res, err := DefaultList`, typeName, `(ctx, db, in)`)
+func (p *OrmPlugin) generateListServerMethod(service autogenService, method autogenMethod) {
+	p.generateMethodSignature(service, method)
+	if method.followsConvention {
+		p.generateDBSetup(service)
+		p.generatePreserviceCall(service.ccName, method.baseType, listService)
+		p.P(`res, err := DefaultList`, method.baseType, `(ctx, db, in)`)
 		p.P(`if err != nil {`)
 		p.P(`return nil, err`)
 		p.P(`}`)
-		p.P(`return &`, p.TypeName(outType), `{Results: res}, nil`)
+		p.P(`return &`, p.TypeName(method.outType), `{Results: res}, nil`)
 		p.P(`}`)
-		p.generatePreserviceHook(svcName, typeName, p.TypeName(inType), "List")
+		p.generatePreserviceHook(service.ccName, method.baseType, p.TypeName(method.inType), listService)
 	} else {
-		p.generateEmptyBody(outType)
+		p.generateEmptyBody(method.outType)
 	}
 }
 
@@ -301,20 +376,21 @@ func (p *OrmPlugin) followsListConventions(inType generator.Object, outType gene
 	return true, outTypeName
 }
 
-func (p *OrmPlugin) generateMethodStub(service *descriptor.ServiceDescriptorProto, method *descriptor.MethodDescriptorProto) {
-	inType, outType, methodName, svcName := p.getMethodProps(service, method)
-	p.generateMethodSignature(inType, outType, methodName, svcName)
-	p.generateEmptyBody(outType)
+func (p *OrmPlugin) generateMethodStub(service autogenService, method autogenMethod) {
+	p.generateMethodSignature(service, method)
+	p.generateEmptyBody(method.outType)
 }
 
-func (p *OrmPlugin) generateMethodSignature(inType, outType generator.Object, methodName, svcName string) {
-	p.P(`// `, methodName, ` ...`)
-	p.P(`func (m *`, svcName, `DefaultServer) `, methodName, ` (ctx context.Context, in *`,
-		p.TypeName(inType), `) (*`, p.TypeName(outType), `, error) {`)
+func (p *OrmPlugin) generateMethodSignature(service autogenService, method autogenMethod) {
+	p.P(`// `, method.ccName, ` ...`)
+	p.P(`func (m *`, service.GetName(), `DefaultServer) `, method.ccName, ` (ctx context.Context, in *`,
+		p.TypeName(method.inType), `) (*`, p.TypeName(method.outType), `, error) {`)
+	p.RecordTypeUse(method.GetInputType())
+	p.RecordTypeUse(method.GetOutputType())
 }
 
-func (p *OrmPlugin) generateDBSetup(service *descriptor.ServiceDescriptorProto, outType generator.Object) error {
-	if opts := getServiceOptions(service); opts != nil && opts.GetTxnMiddleware() {
+func (p *OrmPlugin) generateDBSetup(service autogenService) error {
+	if service.usesTxnMiddleware {
 		p.P(`txn, ok := `, p.Import(tkgormImport), `.FromContext(ctx)`)
 		p.P(`if !ok {`)
 		p.P(`return nil, errors.New("Database Transaction For Request Missing")`)
@@ -334,15 +410,11 @@ func (p OrmPlugin) generateEmptyBody(outType generator.Object) {
 	p.P(`}`)
 }
 
-func (p *OrmPlugin) getMethodProps(service *descriptor.ServiceDescriptorProto,
-	method *descriptor.MethodDescriptorProto) (generator.Object, generator.Object, string, string) {
+func (p *OrmPlugin) getMethodProps(method *descriptor.MethodDescriptorProto) (generator.Object, generator.Object, string) {
 	inType := p.ObjectNamed(method.GetInputType())
-	p.RecordTypeUse(method.GetInputType())
 	outType := p.ObjectNamed(method.GetOutputType())
-	p.RecordTypeUse(method.GetOutputType())
 	methodName := generator.CamelCase(method.GetName())
-	svcName := generator.CamelCase(service.GetName())
-	return inType, outType, methodName, svcName
+	return inType, outType, methodName
 }
 
 func (p *OrmPlugin) generatePreserviceCall(svc, typeName, mthd string) {
@@ -360,4 +432,17 @@ func (p *OrmPlugin) generatePreserviceHook(svc, typeName, inTypeName, mthd strin
 	p.P(`type `, svc, typeName, `WithBefore`, mthd, ` interface {`)
 	p.P(`Before`, mthd, `(context.Context, *`, inTypeName, `, *`, p.Import(gormImport), `.DB) (context.Context, *`, p.Import(gormImport), `.DB, error)`)
 	p.P(`}`)
+}
+
+func (p *OrmPlugin) hasFieldsSelector(object generator.Object) string {
+	msg := object.(*generator.Descriptor)
+	for _, field := range msg.Field {
+		fieldName := generator.CamelCase(field.GetName())
+		fieldType, _ := p.GoType(msg, field)
+		parts := strings.Split(fieldType, ".")
+		if parts[len(parts)-1] == "FieldSelection" {
+			return fieldName
+		}
+	}
+	return ""
 }

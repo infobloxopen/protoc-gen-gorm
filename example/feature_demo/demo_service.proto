@@ -35,6 +35,7 @@ message CreateIntPointResponse {
 message ReadIntPointRequest {
     // For a read request, the id field is the only to be specified
     uint32 id = 1;
+    infoblox.api.FieldSelection fields = 2;
 }
 
 message ReadIntPointResponse {

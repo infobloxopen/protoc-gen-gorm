@@ -10,6 +10,7 @@ import field_mask1 "google.golang.org/genproto/protobuf/field_mask"
 import gateway1 "github.com/infobloxopen/atlas-app-toolkit/gateway"
 import gorm1 "github.com/jinzhu/gorm"
 import gorm2 "github.com/infobloxopen/atlas-app-toolkit/gorm"
+import query1 "github.com/infobloxopen/atlas-app-toolkit/query"
 
 import fmt "fmt"
 import math "math"
@@ -110,17 +111,22 @@ func DefaultCreateIntPoint(ctx context.Context, in *IntPoint, db *gorm1.DB) (*In
 }
 
 // DefaultReadIntPoint executes a basic gorm read call
-func DefaultReadIntPoint(ctx context.Context, in *IntPoint, db *gorm1.DB) (*IntPoint, error) {
+func DefaultReadIntPoint(ctx context.Context, in *IntPoint, db *gorm1.DB, fs *query1.FieldSelection) (*IntPoint, error) {
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultReadIntPoint")
 	}
-	db = db.Set("gorm:auto_preload", true)
+	var err error
+	if fs == nil {
+		db = db.Set("gorm:auto_preload", true)
+	} else if db, err = gorm2.ApplyFieldSelection(ctx, db, fs, &IntPoint{}); err != nil {
+		return nil, err
+	}
 	ormParams, err := in.ToORM(ctx)
 	if err != nil {
 		return nil, err
 	}
 	if ormParams.Id == 0 {
-		return nil, errors.New("Read requires a non-zero primary key")
+		return nil, errors.New("DefaultReadIntPoint requires a non-zero primary key")
 	}
 	ormResponse := IntPointORM{}
 	if err = db.Where(&ormParams).First(&ormResponse).Error; err != nil {
@@ -193,7 +199,7 @@ func DefaultPatchIntPoint(ctx context.Context, in *IntPoint, updateMask *field_m
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultPatchIntPoint")
 	}
-	pbReadRes, err := DefaultReadIntPoint(ctx, &IntPoint{Id: in.GetId()}, db)
+	pbReadRes, err := DefaultReadIntPoint(ctx, &IntPoint{Id: in.GetId()}, db, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -312,7 +318,7 @@ func (m *IntPointServiceDefaultServer) Read(ctx context.Context, in *ReadIntPoin
 			return nil, err
 		}
 	}
-	res, err := DefaultReadIntPoint(ctx, &IntPoint{Id: in.GetId()}, db)
+	res, err := DefaultReadIntPoint(ctx, &IntPoint{Id: in.GetId()}, db, in.Fields)
 	if err != nil {
 		return nil, err
 	}
@@ -451,7 +457,7 @@ func (m *IntPointTxnDefaultServer) Read(ctx context.Context, in *ReadIntPointReq
 			return nil, err
 		}
 	}
-	res, err := DefaultReadIntPoint(ctx, &IntPoint{Id: in.GetId()}, db)
+	res, err := DefaultReadIntPoint(ctx, &IntPoint{Id: in.GetId()}, db, in.Fields)
 	if err != nil {
 		return nil, err
 	}
