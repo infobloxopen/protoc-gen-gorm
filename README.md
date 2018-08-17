@@ -237,6 +237,9 @@ GORM association tags are also automatically inserted.
 #### Customization
 
 - For each association type you are able to override default foreign key and association key by setting `foreignkey` and `association_foreignkey` options.
+- For each association type you are able to override default behavior of creating/updating the record. It's references can be created/updated depending on
+`association_autoupdate`, `association_autocreate` and `association_save_reference` options. Check out
+[official association docs](http://gorm.io/docs/associations.html) for more information.
 - For Has-Many you are able to set `position_field` so additional field is created if it doesn't exist in proto message to maintain association ordering.
 Corresponding CRUDL handlers do all the necessary work to maintain the ordering.
 - For automatically created foreign key and position field you're able to assign GORM tags by setting `foreignkey_tag` and `position_field_tag` options.

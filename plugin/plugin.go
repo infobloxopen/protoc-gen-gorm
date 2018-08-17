@@ -3,6 +3,7 @@ package plugin
 import (
 	"fmt"
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/gogo/protobuf/proto"
@@ -468,15 +469,25 @@ func (p *OrmPlugin) renderGormTag(field *Field) string {
 	}
 
 	var foreignKey, associationForeignKey, joinTable, joinTableForeignKey, associationJoinTableForeignKey *string
+	var associationAutoupdate, associationAutocreate, associationSaveReference *bool
 	if hasOne := field.GetHasOne(); hasOne != nil {
 		foreignKey = hasOne.Foreignkey
 		associationForeignKey = hasOne.AssociationForeignkey
+		associationAutoupdate = hasOne.AssociationAutoupdate
+		associationAutocreate = hasOne.AssociationAutocreate
+		associationSaveReference = hasOne.AssociationSaveReference
 	} else if belongsTo := field.GetBelongsTo(); belongsTo != nil {
 		foreignKey = belongsTo.Foreignkey
 		associationForeignKey = belongsTo.AssociationForeignkey
+		associationAutoupdate = belongsTo.AssociationAutoupdate
+		associationAutocreate = belongsTo.AssociationAutocreate
+		associationSaveReference = belongsTo.AssociationSaveReference
 	} else if hasMany := field.GetHasMany(); hasMany != nil {
 		foreignKey = hasMany.Foreignkey
 		associationForeignKey = hasMany.AssociationForeignkey
+		associationAutoupdate = hasMany.AssociationAutoupdate
+		associationAutocreate = hasMany.AssociationAutocreate
+		associationSaveReference = hasMany.AssociationSaveReference
 		if hasMany.PositionField != nil {
 			atlasRes += fmt.Sprintf("position:%s;", hasMany.GetPositionField())
 		}
@@ -486,12 +497,18 @@ func (p *OrmPlugin) renderGormTag(field *Field) string {
 		joinTable = mtm.Jointable
 		joinTableForeignKey = mtm.JointableForeignkey
 		associationJoinTableForeignKey = mtm.AssociationJointableForeignkey
+		associationAutoupdate = mtm.AssociationAutoupdate
+		associationAutocreate = mtm.AssociationAutocreate
+		associationSaveReference = mtm.AssociationSaveReference
 	} else {
 		foreignKey = tag.Foreignkey
 		associationForeignKey = tag.AssociationForeignkey
 		joinTable = tag.ManyToMany
 		joinTableForeignKey = tag.JointableForeignkey
 		associationJoinTableForeignKey = tag.AssociationJointableForeignkey
+		associationAutoupdate = tag.AssociationAutoupdate
+		associationAutocreate = tag.AssociationAutocreate
+		associationSaveReference = tag.AssociationSaveReference
 	}
 
 	if foreignKey != nil {
@@ -508,6 +525,15 @@ func (p *OrmPlugin) renderGormTag(field *Field) string {
 	}
 	if associationJoinTableForeignKey != nil {
 		gormRes += fmt.Sprintf("association_jointable_foreignkey:%s;", *associationJoinTableForeignKey)
+	}
+	if associationAutoupdate != nil {
+		gormRes += fmt.Sprintf("association_autoupdate:%s;", strconv.FormatBool(*associationAutoupdate))
+	}
+	if associationAutocreate != nil {
+		gormRes += fmt.Sprintf("association_autocreate:%s;", strconv.FormatBool(*associationAutocreate))
+	}
+	if associationSaveReference != nil {
+		gormRes += fmt.Sprintf("association_save_reference:%s;", strconv.FormatBool(*associationSaveReference))
 	}
 
 	var gormTag, atlasTag string
