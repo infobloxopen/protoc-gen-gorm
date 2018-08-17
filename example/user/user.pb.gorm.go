@@ -889,33 +889,6 @@ func DefaultReadUser(ctx context.Context, in *User, db *gorm1.DB) (*User, error)
 	return &pbResponse, err
 }
 
-// DefaultUpdateUser executes a basic gorm update call
-func DefaultUpdateUser(ctx context.Context, in *User, db *gorm1.DB) (*User, error) {
-	if in == nil {
-		return nil, errors.New("Nil argument to DefaultUpdateUser")
-	}
-	accountID, err := auth1.GetAccountID(ctx, nil)
-	if err != nil {
-		return nil, err
-	}
-	if exists, err := DefaultReadUser(ctx, &User{Id: in.GetId()}, db); err != nil {
-		return nil, err
-	} else if exists == nil {
-		return nil, errors.New("User not found")
-	}
-	ormObj, err := in.ToORM(ctx)
-	if err != nil {
-		return nil, err
-	}
-	ormObj.AccountID = accountID
-	db = db.Where(&UserORM{AccountID: accountID})
-	if err = db.Save(&ormObj).Error; err != nil {
-		return nil, err
-	}
-	pbResponse, err := ormObj.ToPB(ctx)
-	return &pbResponse, err
-}
-
 func DefaultDeleteUser(ctx context.Context, in *User, db *gorm1.DB) error {
 	if in == nil {
 		return errors.New("Nil argument to DefaultDeleteUser")
@@ -1241,33 +1214,6 @@ func DefaultReadEmail(ctx context.Context, in *Email, db *gorm1.DB) (*Email, err
 	return &pbResponse, err
 }
 
-// DefaultUpdateEmail executes a basic gorm update call
-func DefaultUpdateEmail(ctx context.Context, in *Email, db *gorm1.DB) (*Email, error) {
-	if in == nil {
-		return nil, errors.New("Nil argument to DefaultUpdateEmail")
-	}
-	accountID, err := auth1.GetAccountID(ctx, nil)
-	if err != nil {
-		return nil, err
-	}
-	if exists, err := DefaultReadEmail(ctx, &Email{Id: in.GetId()}, db); err != nil {
-		return nil, err
-	} else if exists == nil {
-		return nil, errors.New("Email not found")
-	}
-	ormObj, err := in.ToORM(ctx)
-	if err != nil {
-		return nil, err
-	}
-	ormObj.AccountID = accountID
-	db = db.Where(&EmailORM{AccountID: accountID})
-	if err = db.Save(&ormObj).Error; err != nil {
-		return nil, err
-	}
-	pbResponse, err := ormObj.ToPB(ctx)
-	return &pbResponse, err
-}
-
 func DefaultDeleteEmail(ctx context.Context, in *Email, db *gorm1.DB) error {
 	if in == nil {
 		return errors.New("Nil argument to DefaultDeleteEmail")
@@ -1442,33 +1388,6 @@ func DefaultReadAddress(ctx context.Context, in *Address, db *gorm1.DB) (*Addres
 		return nil, err
 	}
 	pbResponse, err := ormResponse.ToPB(ctx)
-	return &pbResponse, err
-}
-
-// DefaultUpdateAddress executes a basic gorm update call
-func DefaultUpdateAddress(ctx context.Context, in *Address, db *gorm1.DB) (*Address, error) {
-	if in == nil {
-		return nil, errors.New("Nil argument to DefaultUpdateAddress")
-	}
-	accountID, err := auth1.GetAccountID(ctx, nil)
-	if err != nil {
-		return nil, err
-	}
-	if exists, err := DefaultReadAddress(ctx, &Address{Id: in.GetId()}, db); err != nil {
-		return nil, err
-	} else if exists == nil {
-		return nil, errors.New("Address not found")
-	}
-	ormObj, err := in.ToORM(ctx)
-	if err != nil {
-		return nil, err
-	}
-	ormObj.AccountID = accountID
-	db = db.Where(&AddressORM{AccountID: accountID})
-	if err = db.Save(&ormObj).Error; err != nil {
-		return nil, err
-	}
-	pbResponse, err := ormObj.ToPB(ctx)
 	return &pbResponse, err
 }
 
@@ -1653,33 +1572,6 @@ func DefaultReadLanguage(ctx context.Context, in *Language, db *gorm1.DB) (*Lang
 	return &pbResponse, err
 }
 
-// DefaultUpdateLanguage executes a basic gorm update call
-func DefaultUpdateLanguage(ctx context.Context, in *Language, db *gorm1.DB) (*Language, error) {
-	if in == nil {
-		return nil, errors.New("Nil argument to DefaultUpdateLanguage")
-	}
-	accountID, err := auth1.GetAccountID(ctx, nil)
-	if err != nil {
-		return nil, err
-	}
-	if exists, err := DefaultReadLanguage(ctx, &Language{Id: in.GetId()}, db); err != nil {
-		return nil, err
-	} else if exists == nil {
-		return nil, errors.New("Language not found")
-	}
-	ormObj, err := in.ToORM(ctx)
-	if err != nil {
-		return nil, err
-	}
-	ormObj.AccountID = accountID
-	db = db.Where(&LanguageORM{AccountID: accountID})
-	if err = db.Save(&ormObj).Error; err != nil {
-		return nil, err
-	}
-	pbResponse, err := ormObj.ToPB(ctx)
-	return &pbResponse, err
-}
-
 func DefaultDeleteLanguage(ctx context.Context, in *Language, db *gorm1.DB) error {
 	if in == nil {
 		return errors.New("Nil argument to DefaultDeleteLanguage")
@@ -1850,33 +1742,6 @@ func DefaultReadCreditCard(ctx context.Context, in *CreditCard, db *gorm1.DB) (*
 		return nil, err
 	}
 	pbResponse, err := ormResponse.ToPB(ctx)
-	return &pbResponse, err
-}
-
-// DefaultUpdateCreditCard executes a basic gorm update call
-func DefaultUpdateCreditCard(ctx context.Context, in *CreditCard, db *gorm1.DB) (*CreditCard, error) {
-	if in == nil {
-		return nil, errors.New("Nil argument to DefaultUpdateCreditCard")
-	}
-	accountID, err := auth1.GetAccountID(ctx, nil)
-	if err != nil {
-		return nil, err
-	}
-	if exists, err := DefaultReadCreditCard(ctx, &CreditCard{Id: in.GetId()}, db); err != nil {
-		return nil, err
-	} else if exists == nil {
-		return nil, errors.New("CreditCard not found")
-	}
-	ormObj, err := in.ToORM(ctx)
-	if err != nil {
-		return nil, err
-	}
-	ormObj.AccountID = accountID
-	db = db.Where(&CreditCardORM{AccountID: accountID})
-	if err = db.Save(&ormObj).Error; err != nil {
-		return nil, err
-	}
-	pbResponse, err := ormObj.ToPB(ctx)
 	return &pbResponse, err
 }
 

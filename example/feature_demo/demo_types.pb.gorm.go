@@ -840,22 +840,6 @@ func DefaultReadTypeWithID(ctx context.Context, in *TypeWithID, db *gorm1.DB) (*
 	return &pbResponse, err
 }
 
-// DefaultUpdateTypeWithID executes a basic gorm update call
-func DefaultUpdateTypeWithID(ctx context.Context, in *TypeWithID, db *gorm1.DB) (*TypeWithID, error) {
-	if in == nil {
-		return nil, errors.New("Nil argument to DefaultUpdateTypeWithID")
-	}
-	ormObj, err := in.ToORM(ctx)
-	if err != nil {
-		return nil, err
-	}
-	if err = db.Save(&ormObj).Error; err != nil {
-		return nil, err
-	}
-	pbResponse, err := ormObj.ToPB(ctx)
-	return &pbResponse, err
-}
-
 func DefaultDeleteTypeWithID(ctx context.Context, in *TypeWithID, db *gorm1.DB) error {
 	if in == nil {
 		return errors.New("Nil argument to DefaultDeleteTypeWithID")
@@ -1116,33 +1100,6 @@ func DefaultReadMultiaccountTypeWithID(ctx context.Context, in *MultiaccountType
 	return &pbResponse, err
 }
 
-// DefaultUpdateMultiaccountTypeWithID executes a basic gorm update call
-func DefaultUpdateMultiaccountTypeWithID(ctx context.Context, in *MultiaccountTypeWithID, db *gorm1.DB) (*MultiaccountTypeWithID, error) {
-	if in == nil {
-		return nil, errors.New("Nil argument to DefaultUpdateMultiaccountTypeWithID")
-	}
-	accountID, err := auth1.GetAccountID(ctx, nil)
-	if err != nil {
-		return nil, err
-	}
-	if exists, err := DefaultReadMultiaccountTypeWithID(ctx, &MultiaccountTypeWithID{Id: in.GetId()}, db); err != nil {
-		return nil, err
-	} else if exists == nil {
-		return nil, errors.New("MultiaccountTypeWithID not found")
-	}
-	ormObj, err := in.ToORM(ctx)
-	if err != nil {
-		return nil, err
-	}
-	ormObj.AccountID = accountID
-	db = db.Where(&MultiaccountTypeWithIDORM{AccountID: accountID})
-	if err = db.Save(&ormObj).Error; err != nil {
-		return nil, err
-	}
-	pbResponse, err := ormObj.ToPB(ctx)
-	return &pbResponse, err
-}
-
 func DefaultDeleteMultiaccountTypeWithID(ctx context.Context, in *MultiaccountTypeWithID, db *gorm1.DB) error {
 	if in == nil {
 		return errors.New("Nil argument to DefaultDeleteMultiaccountTypeWithID")
@@ -1375,22 +1332,6 @@ func DefaultReadPrimaryUUIDType(ctx context.Context, in *PrimaryUUIDType, db *go
 	return &pbResponse, err
 }
 
-// DefaultUpdatePrimaryUUIDType executes a basic gorm update call
-func DefaultUpdatePrimaryUUIDType(ctx context.Context, in *PrimaryUUIDType, db *gorm1.DB) (*PrimaryUUIDType, error) {
-	if in == nil {
-		return nil, errors.New("Nil argument to DefaultUpdatePrimaryUUIDType")
-	}
-	ormObj, err := in.ToORM(ctx)
-	if err != nil {
-		return nil, err
-	}
-	if err = db.Save(&ormObj).Error; err != nil {
-		return nil, err
-	}
-	pbResponse, err := ormObj.ToPB(ctx)
-	return &pbResponse, err
-}
-
 func DefaultDeletePrimaryUUIDType(ctx context.Context, in *PrimaryUUIDType, db *gorm1.DB) error {
 	if in == nil {
 		return errors.New("Nil argument to DefaultDeletePrimaryUUIDType")
@@ -1579,22 +1520,6 @@ func DefaultReadPrimaryStringType(ctx context.Context, in *PrimaryStringType, db
 		return nil, err
 	}
 	pbResponse, err := ormResponse.ToPB(ctx)
-	return &pbResponse, err
-}
-
-// DefaultUpdatePrimaryStringType executes a basic gorm update call
-func DefaultUpdatePrimaryStringType(ctx context.Context, in *PrimaryStringType, db *gorm1.DB) (*PrimaryStringType, error) {
-	if in == nil {
-		return nil, errors.New("Nil argument to DefaultUpdatePrimaryStringType")
-	}
-	ormObj, err := in.ToORM(ctx)
-	if err != nil {
-		return nil, err
-	}
-	if err = db.Save(&ormObj).Error; err != nil {
-		return nil, err
-	}
-	pbResponse, err := ormObj.ToPB(ctx)
 	return &pbResponse, err
 }
 

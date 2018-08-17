@@ -55,7 +55,6 @@ func (p *OrmPlugin) generateDefaultHandlers(file *generator.FileDescriptor) {
 			// have pk.
 			if p.hasPrimaryKey(p.getOrmable(p.TypeName(message))) && p.hasIDField(message) {
 				p.generateReadHandler(message)
-				p.generateUpdateHandler(message)
 				p.generateDeleteHandler(message)
 				p.generateStrictUpdateHandler(message)
 				p.generatePatchHandler(message)
@@ -284,60 +283,6 @@ func (p *OrmPlugin) generatePatchHandler(message *generator.Descriptor) {
 		typeName, `, *`, p.Import(fmImport), `.FieldMask, *`, p.Import(gormImport),
 		`.DB) (context.Context, *`, p.Import(gormImport), `.DB, error)`)
 	p.P(`}`)
-}
-
-func (p *OrmPlugin) generateUpdateHandler(message *generator.Descriptor) {
-	typeName := p.TypeName(message)
-
-	isMultiAccount := false
-	if opts := getMessageOptions(message); opts != nil && opts.GetMultiAccount() {
-		isMultiAccount = true
-	}
-
-	if isMultiAccount && !p.hasIDField(message) {
-		p.P(fmt.Sprintf("// Cannot autogen DefaultUpdate%s: this is a multi-account table without an \"id\" field in the message.\n", typeName))
-		return
-	}
-
-	p.P(`// DefaultUpdate`, typeName, ` executes a basic gorm update call`)
-	p.P(`func DefaultUpdate`, typeName, `(ctx context.Context, in *`,
-		typeName, `, db *`, p.Import(gormImport), `.DB) (*`, typeName, `, error) {`)
-	p.P(`if in == nil {`)
-	p.P(`return nil, errors.New("Nil argument to DefaultUpdate`, typeName, `")`)
-	p.P(`}`)
-	if isMultiAccount {
-		p.P("accountID, err := ", p.Import(authImport), ".GetAccountID(ctx, nil)")
-		p.P("if err != nil {")
-		p.P("return nil, err")
-		p.P("}")
-		if p.readHasSelection(p.getOrmable(typeName)) {
-			p.P(fmt.Sprintf("if exists, err := DefaultRead%s(ctx, &%s{Id: in.GetId()}, db, nil); err != nil {",
-				typeName, typeName))
-		} else {
-			p.P(fmt.Sprintf("if exists, err := DefaultRead%s(ctx, &%s{Id: in.GetId()}, db); err != nil {",
-				typeName, typeName))
-		}
-		p.P("return nil, err")
-		p.P("} else if exists == nil {")
-		p.P(fmt.Sprintf("return nil, errors.New(\"%s not found\")", typeName))
-		p.P("}")
-	}
-
-	p.P(`ormObj, err := in.ToORM(ctx)`)
-	p.P(`if err != nil {`)
-	p.P(`return nil, err`)
-	p.P(`}`)
-	if isMultiAccount {
-		p.P(`ormObj.AccountID = accountID`)
-		p.P(`db = db.Where(&`, typeName, `ORM{AccountID: accountID})`)
-	}
-	p.P(`if err = db.Save(&ormObj).Error; err != nil {`)
-	p.P(`return nil, err`)
-	p.P(`}`)
-	p.P(`pbResponse, err := ormObj.ToPB(ctx)`)
-	p.P(`return &pbResponse, err`)
-	p.P(`}`)
-	p.P()
 }
 
 func (p *OrmPlugin) generateDeleteHandler(message *generator.Descriptor) {

@@ -161,22 +161,6 @@ func DefaultReadExternalChild(ctx context.Context, in *ExternalChild, db *gorm1.
 	return &pbResponse, err
 }
 
-// DefaultUpdateExternalChild executes a basic gorm update call
-func DefaultUpdateExternalChild(ctx context.Context, in *ExternalChild, db *gorm1.DB) (*ExternalChild, error) {
-	if in == nil {
-		return nil, errors.New("Nil argument to DefaultUpdateExternalChild")
-	}
-	ormObj, err := in.ToORM(ctx)
-	if err != nil {
-		return nil, err
-	}
-	if err = db.Save(&ormObj).Error; err != nil {
-		return nil, err
-	}
-	pbResponse, err := ormObj.ToPB(ctx)
-	return &pbResponse, err
-}
-
 func DefaultDeleteExternalChild(ctx context.Context, in *ExternalChild, db *gorm1.DB) error {
 	if in == nil {
 		return errors.New("Nil argument to DefaultDeleteExternalChild")

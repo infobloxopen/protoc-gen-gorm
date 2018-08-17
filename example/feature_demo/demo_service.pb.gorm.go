@@ -135,22 +135,6 @@ func DefaultReadIntPoint(ctx context.Context, in *IntPoint, db *gorm1.DB, fs *qu
 	return &pbResponse, err
 }
 
-// DefaultUpdateIntPoint executes a basic gorm update call
-func DefaultUpdateIntPoint(ctx context.Context, in *IntPoint, db *gorm1.DB) (*IntPoint, error) {
-	if in == nil {
-		return nil, errors.New("Nil argument to DefaultUpdateIntPoint")
-	}
-	ormObj, err := in.ToORM(ctx)
-	if err != nil {
-		return nil, err
-	}
-	if err = db.Save(&ormObj).Error; err != nil {
-		return nil, err
-	}
-	pbResponse, err := ormObj.ToPB(ctx)
-	return &pbResponse, err
-}
-
 func DefaultDeleteIntPoint(ctx context.Context, in *IntPoint, db *gorm1.DB) error {
 	if in == nil {
 		return errors.New("Nil argument to DefaultDeleteIntPoint")
