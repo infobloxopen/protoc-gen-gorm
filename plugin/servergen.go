@@ -3,6 +3,7 @@ package plugin
 import (
 	"strings"
 
+	"fmt"
 	"github.com/gogo/protobuf/protoc-gen-gogo/descriptor"
 	"github.com/gogo/protobuf/protoc-gen-gogo/generator"
 )
@@ -170,7 +171,7 @@ func (p *OrmPlugin) generateReadServerMethod(service autogenService, method auto
 		p.generateDBSetup(service)
 		p.generatePreserviceCall(service.ccName, method.baseType, readService)
 		typeName := method.baseType
-		if fields := p.hasFieldsSelector(method.inType); fields != "" {
+		if fields := p.hasFieldSelection(method.inType); fields != "" {
 			p.P(`res, err := DefaultRead`, typeName, `(ctx, &`, typeName, `{Id: in.GetId()}, db, in.`, fields, `)`)
 		} else {
 			p.P(`res, err := DefaultRead`, typeName, `(ctx, &`, typeName, `{Id: in.GetId()}, db)`)
@@ -344,7 +345,21 @@ func (p *OrmPlugin) generateListServerMethod(service autogenService, method auto
 	if method.followsConvention {
 		p.generateDBSetup(service)
 		p.generatePreserviceCall(service.ccName, method.baseType, listService)
-		p.P(`res, err := DefaultList`, method.baseType, `(ctx, db, in)`)
+		handlerCall := fmt.Sprint(`res, err := DefaultList`, method.baseType, `(ctx, db`)
+		if f := p.hasFiltering(method.inType); f != "" {
+			handlerCall += fmt.Sprint(",in.", f)
+		}
+		if s := p.hasSorting(method.inType); s != "" {
+			handlerCall += fmt.Sprint(",in.", s)
+		}
+		if pg := p.hasPagination(method.inType); pg != "" {
+			handlerCall += fmt.Sprint(",in.", pg)
+		}
+		if fs := p.hasFieldSelection(method.inType); fs != "" {
+			handlerCall += fmt.Sprint(",in.", fs)
+		}
+		handlerCall += ")"
+		p.P(handlerCall)
 		p.P(`if err != nil {`)
 		p.P(`return nil, err`)
 		p.P(`}`)
@@ -434,14 +449,30 @@ func (p *OrmPlugin) generatePreserviceHook(svc, typeName, inTypeName, mthd strin
 	p.P(`}`)
 }
 
-func (p *OrmPlugin) hasFieldsSelector(object generator.Object) string {
+func (p *OrmPlugin) hasFieldSelection(object generator.Object) string {
+	return p.hasFieldOfType(object, "FieldSelection")
+}
+
+func (p *OrmPlugin) hasFiltering(object generator.Object) string {
+	return p.hasFieldOfType(object, "Filtering")
+}
+
+func (p *OrmPlugin) hasSorting(object generator.Object) string {
+	return p.hasFieldOfType(object, "Sorting")
+}
+
+func (p *OrmPlugin) hasPagination(object generator.Object) string {
+	return p.hasFieldOfType(object, "Pagination")
+}
+
+func (p *OrmPlugin) hasFieldOfType(object generator.Object, fieldType string) string {
 	msg := object.(*generator.Descriptor)
 	for _, field := range msg.Field {
-		fieldName := generator.CamelCase(field.GetName())
-		fieldType, _ := p.GoType(msg, field)
-		parts := strings.Split(fieldType, ".")
-		if parts[len(parts)-1] == "FieldSelection" {
-			return fieldName
+		goFieldName := generator.CamelCase(field.GetName())
+		goFieldType, _ := p.GoType(msg, field)
+		parts := strings.Split(goFieldType, ".")
+		if parts[len(parts)-1] == fieldType {
+			return goFieldName
 		}
 	}
 	return ""

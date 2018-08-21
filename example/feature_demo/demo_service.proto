@@ -112,7 +112,7 @@ service IntPointTxn {
   rpc Create ( CreateIntPointRequest ) returns ( CreateIntPointResponse ) {}
   rpc Read ( ReadIntPointRequest ) returns ( ReadIntPointResponse ) {}
   rpc Update ( UpdateIntPointRequest ) returns ( UpdateIntPointResponse ) {}
-  rpc List ( google.protobuf.Empty ) returns ( ListIntPointResponse ) {}
+  rpc List ( ListIntPointRequest ) returns ( ListIntPointResponse ) {}
   rpc Delete ( DeleteIntPointRequest ) returns  ( DeleteIntPointResponse ) {
       // This option is required because the type/table can't be inferred
       // by the return type

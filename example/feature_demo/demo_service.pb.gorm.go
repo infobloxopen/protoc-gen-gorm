@@ -103,11 +103,30 @@ func DefaultCreateIntPoint(ctx context.Context, in *IntPoint, db *gorm1.DB) (*In
 	if err != nil {
 		return nil, err
 	}
+	if hook, ok := interface{}(&ormObj).(IntPointORMWithBeforeCreate); ok {
+		db, err = hook.BeforeCreate(ctx, db)
+		if err != nil {
+			return nil, err
+		}
+	}
 	if err = db.Create(&ormObj).Error; err != nil {
 		return nil, err
 	}
+	if hook, ok := interface{}(&ormObj).(IntPointORMWithAfterCreate); ok {
+		err = hook.AfterCreate(ctx, db)
+		if err != nil {
+			return nil, err
+		}
+	}
 	pbResponse, err := ormObj.ToPB(ctx)
 	return &pbResponse, err
+}
+
+type IntPointORMWithBeforeCreate interface {
+	BeforeCreate(context.Context, *gorm1.DB) (*gorm1.DB, error)
+}
+type IntPointORMWithAfterCreate interface {
+	AfterCreate(context.Context, *gorm1.DB) error
 }
 
 // DefaultReadIntPoint executes a basic gorm read call
@@ -115,24 +134,51 @@ func DefaultReadIntPoint(ctx context.Context, in *IntPoint, db *gorm1.DB, fs *qu
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultReadIntPoint")
 	}
-	var err error
+	ormObj, err := in.ToORM(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if ormObj.Id == 0 {
+		return nil, errors.New("DefaultReadIntPoint requires a non-zero primary key")
+	}
+	if hook, ok := interface{}(&ormObj).(IntPointORMWithBeforeReadApplyQuery); ok {
+		db, err = hook.BeforeReadApplyQuery(ctx, db, fs)
+		if err != nil {
+			return nil, err
+		}
+	}
 	db, err = gorm2.ApplyFieldSelection(ctx, db, fs, &IntPointORM{})
 	if err != nil {
 		return nil, err
 	}
-	ormParams, err := in.ToORM(ctx)
-	if err != nil {
-		return nil, err
-	}
-	if ormParams.Id == 0 {
-		return nil, errors.New("DefaultReadIntPoint requires a non-zero primary key")
+	if hook, ok := interface{}(&ormObj).(IntPointORMWithBeforeRead); ok {
+		db, err = hook.BeforeRead(ctx, db, fs)
+		if err != nil {
+			return nil, err
+		}
 	}
 	ormResponse := IntPointORM{}
-	if err = db.Where(&ormParams).First(&ormResponse).Error; err != nil {
+	if err = db.Where(&ormObj).First(&ormResponse).Error; err != nil {
 		return nil, err
+	}
+	if hook, ok := interface{}(&ormResponse).(IntPointORMWithAfterRead); ok {
+		err = hook.AfterRead(ctx, db, fs)
+		if err != nil {
+			return nil, err
+		}
 	}
 	pbResponse, err := ormResponse.ToPB(ctx)
 	return &pbResponse, err
+}
+
+type IntPointORMWithBeforeReadApplyQuery interface {
+	BeforeReadApplyQuery(context.Context, *gorm1.DB, *query1.FieldSelection) (*gorm1.DB, error)
+}
+type IntPointORMWithBeforeRead interface {
+	BeforeRead(context.Context, *gorm1.DB, *query1.FieldSelection) (*gorm1.DB, error)
+}
+type IntPointORMWithAfterRead interface {
+	AfterRead(context.Context, *gorm1.DB, *query1.FieldSelection) error
 }
 
 func DefaultDeleteIntPoint(ctx context.Context, in *IntPoint, db *gorm1.DB) error {
@@ -146,8 +192,27 @@ func DefaultDeleteIntPoint(ctx context.Context, in *IntPoint, db *gorm1.DB) erro
 	if ormObj.Id == 0 {
 		return errors.New("A non-zero ID value is required for a delete call")
 	}
+	if hook, ok := interface{}(&ormObj).(IntPointORMWithBeforeDelete); ok {
+		db, err = hook.BeforeDelete(ctx, db)
+		if err != nil {
+			return err
+		}
+	}
 	err = db.Where(&ormObj).Delete(&IntPointORM{}).Error
+	if err != nil {
+		return err
+	}
+	if hook, ok := interface{}(&ormObj).(IntPointORMWithAfterDelete); ok {
+		err = hook.AfterDelete(ctx, db)
+	}
 	return err
+}
+
+type IntPointORMWithBeforeDelete interface {
+	BeforeDelete(context.Context, *gorm1.DB) (*gorm1.DB, error)
+}
+type IntPointORMWithAfterDelete interface {
+	AfterDelete(context.Context, *gorm1.DB) error
 }
 
 // DefaultStrictUpdateIntPoint clears first level 1:many children and then executes a gorm update call
@@ -164,8 +229,26 @@ func DefaultStrictUpdateIntPoint(ctx context.Context, in *IntPoint, db *gorm1.DB
 	if err != nil {
 		return nil, err
 	}
+	if hook, ok := interface{}(&ormObj).(IntPointORMWithBeforeStrictUpdateCleanup); ok {
+		db, err = hook.BeforeStrictUpdateCleanup(ctx, db)
+		if err != nil {
+			return nil, err
+		}
+	}
+	if hook, ok := interface{}(&ormObj).(IntPointORMWithBeforeStrictUpdateSave); ok {
+		db, err = hook.BeforeStrictUpdateSave(ctx, db)
+		if err != nil {
+			return nil, err
+		}
+	}
 	if err = db.Save(&ormObj).Error; err != nil {
 		return nil, err
+	}
+	if hook, ok := interface{}(&ormObj).(IntPointORMWithAfterStrictUpdateSave); ok {
+		err = hook.AfterStrictUpdateSave(ctx, db)
+		if err != nil {
+			return nil, err
+		}
 	}
 	pbResponse, err := ormObj.ToPB(ctx)
 	if err != nil {
@@ -177,29 +260,73 @@ func DefaultStrictUpdateIntPoint(ctx context.Context, in *IntPoint, db *gorm1.DB
 	return &pbResponse, err
 }
 
+type IntPointORMWithBeforeStrictUpdateCleanup interface {
+	BeforeStrictUpdateCleanup(context.Context, *gorm1.DB) (*gorm1.DB, error)
+}
+type IntPointORMWithBeforeStrictUpdateSave interface {
+	BeforeStrictUpdateSave(context.Context, *gorm1.DB) (*gorm1.DB, error)
+}
+type IntPointORMWithAfterStrictUpdateSave interface {
+	AfterStrictUpdateSave(context.Context, *gorm1.DB) error
+}
+
 // DefaultPatchIntPoint executes a basic gorm update call with patch behavior
 func DefaultPatchIntPoint(ctx context.Context, in *IntPoint, updateMask *field_mask1.FieldMask, db *gorm1.DB) (*IntPoint, error) {
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultPatchIntPoint")
 	}
+	var pbObj IntPoint
+	var err error
+	if hook, ok := interface{}(&pbObj).(IntPointWithBeforePatchRead); ok {
+		db, err = hook.BeforePatchRead(ctx, in, updateMask, db)
+		if err != nil {
+			return nil, err
+		}
+	}
 	pbReadRes, err := DefaultReadIntPoint(ctx, &IntPoint{Id: in.GetId()}, db, nil)
 	if err != nil {
 		return nil, err
 	}
-	pbObj := *pbReadRes
+	pbObj = *pbReadRes
+	if hook, ok := interface{}(&pbObj).(IntPointWithBeforePatchApplyFieldMask); ok {
+		db, err = hook.BeforePatchApplyFieldMask(ctx, in, updateMask, db)
+		if err != nil {
+			return nil, err
+		}
+	}
 	if _, err := DefaultApplyFieldMaskIntPoint(ctx, &pbObj, in, updateMask, "", db); err != nil {
 		return nil, err
 	}
 	if hook, ok := interface{}(&pbObj).(IntPointWithBeforePatchSave); ok {
-		if ctx, db, err = hook.BeforePatchSave(ctx, in, updateMask, db); err != nil {
+		db, err = hook.BeforePatchSave(ctx, in, updateMask, db)
+		if err != nil {
 			return nil, err
 		}
 	}
-	return DefaultStrictUpdateIntPoint(ctx, &pbObj, db)
+	pbResponse, err := DefaultStrictUpdateIntPoint(ctx, &pbObj, db)
+	if err != nil {
+		return nil, err
+	}
+	if hook, ok := interface{}(pbResponse).(IntPointWithAfterPatchSave); ok {
+		err = hook.AfterPatchSave(ctx, in, updateMask, db)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return pbResponse, nil
 }
 
+type IntPointWithBeforePatchRead interface {
+	BeforePatchRead(context.Context, *IntPoint, *field_mask1.FieldMask, *gorm1.DB) (*gorm1.DB, error)
+}
+type IntPointWithBeforePatchApplyFieldMask interface {
+	BeforePatchApplyFieldMask(context.Context, *IntPoint, *field_mask1.FieldMask, *gorm1.DB) (*gorm1.DB, error)
+}
 type IntPointWithBeforePatchSave interface {
-	BeforePatchSave(context.Context, *IntPoint, *field_mask1.FieldMask, *gorm1.DB) (context.Context, *gorm1.DB, error)
+	BeforePatchSave(context.Context, *IntPoint, *field_mask1.FieldMask, *gorm1.DB) (*gorm1.DB, error)
+}
+type IntPointWithAfterPatchSave interface {
+	AfterPatchSave(context.Context, *IntPoint, *field_mask1.FieldMask, *gorm1.DB) error
 }
 
 // DefaultApplyFieldMaskIntPoint patches an pbObject with patcher according to a field mask.
@@ -231,25 +358,39 @@ func DefaultApplyFieldMaskIntPoint(ctx context.Context, patchee *IntPoint, patch
 }
 
 // DefaultListIntPoint executes a gorm list call
-func DefaultListIntPoint(ctx context.Context, db *gorm1.DB, req interface{}) ([]*IntPoint, error) {
-	ormResponse := []IntPointORM{}
-	f, s, p, fs, err := getCollectionOperators(req)
+func DefaultListIntPoint(ctx context.Context, db *gorm1.DB, f *query1.Filtering, s *query1.Sorting, p *query1.Pagination, fs *query1.FieldSelection) ([]*IntPoint, error) {
+	in := IntPoint{}
+	ormObj, err := in.ToORM(ctx)
 	if err != nil {
 		return nil, err
+	}
+	if hook, ok := interface{}(&ormObj).(IntPointORMWithBeforeListApplyQuery); ok {
+		db, err = hook.BeforeListApplyQuery(ctx, db, f, s, p, fs)
+		if err != nil {
+			return nil, err
+		}
 	}
 	db, err = gorm2.ApplyCollectionOperators(ctx, db, &IntPointORM{}, &IntPoint{}, f, s, p, fs)
 	if err != nil {
 		return nil, err
 	}
-	in := IntPoint{}
-	ormParams, err := in.ToORM(ctx)
-	if err != nil {
-		return nil, err
+	if hook, ok := interface{}(&ormObj).(IntPointORMWithBeforeList); ok {
+		db, err = hook.BeforeList(ctx, db, f, s, p, fs)
+		if err != nil {
+			return nil, err
+		}
 	}
-	db = db.Where(&ormParams)
+	db = db.Where(&ormObj)
 	db = db.Order("id")
+	ormResponse := []IntPointORM{}
 	if err := db.Find(&ormResponse).Error; err != nil {
 		return nil, err
+	}
+	if hook, ok := interface{}(&ormObj).(IntPointORMWithAfterList); ok {
+		err = hook.AfterList(ctx, db, &ormResponse, f, s, p, fs)
+		if err != nil {
+			return nil, err
+		}
 	}
 	pbResponse := []*IntPoint{}
 	for _, responseEntry := range ormResponse {
@@ -262,6 +403,15 @@ func DefaultListIntPoint(ctx context.Context, db *gorm1.DB, req interface{}) ([]
 	return pbResponse, nil
 }
 
+type IntPointORMWithBeforeListApplyQuery interface {
+	BeforeListApplyQuery(context.Context, *gorm1.DB, *query1.Filtering, *query1.Sorting, *query1.Pagination, *query1.FieldSelection) (*gorm1.DB, error)
+}
+type IntPointORMWithBeforeList interface {
+	BeforeList(context.Context, *gorm1.DB, *query1.Filtering, *query1.Sorting, *query1.Pagination, *query1.FieldSelection) (*gorm1.DB, error)
+}
+type IntPointORMWithAfterList interface {
+	AfterList(context.Context, *gorm1.DB, *[]IntPointORM, *query1.Filtering, *query1.Sorting, *query1.Pagination, *query1.FieldSelection) error
+}
 type IntPointServiceDefaultServer struct {
 	DB *gorm1.DB
 }
@@ -348,7 +498,7 @@ func (m *IntPointServiceDefaultServer) List(ctx context.Context, in *ListIntPoin
 			return nil, err
 		}
 	}
-	res, err := DefaultListIntPoint(ctx, db, in)
+	res, err := DefaultListIntPoint(ctx, db, in.Filter, in.OrderBy, in.Paging, in.Fields)
 	if err != nil {
 		return nil, err
 	}
@@ -485,7 +635,7 @@ type IntPointTxnIntPointWithBeforeUpdate interface {
 }
 
 // List ...
-func (m *IntPointTxnDefaultServer) List(ctx context.Context, in *google_protobuf2.Empty) (*ListIntPointResponse, error) {
+func (m *IntPointTxnDefaultServer) List(ctx context.Context, in *ListIntPointRequest) (*ListIntPointResponse, error) {
 	txn, ok := gorm2.FromContext(ctx)
 	if !ok {
 		return nil, errors.New("Database Transaction For Request Missing")
@@ -501,7 +651,7 @@ func (m *IntPointTxnDefaultServer) List(ctx context.Context, in *google_protobuf
 			return nil, err
 		}
 	}
-	res, err := DefaultListIntPoint(ctx, db, in)
+	res, err := DefaultListIntPoint(ctx, db, in.Filter, in.OrderBy, in.Paging, in.Fields)
 	if err != nil {
 		return nil, err
 	}
@@ -510,7 +660,7 @@ func (m *IntPointTxnDefaultServer) List(ctx context.Context, in *google_protobuf
 
 // IntPointTxnIntPointWithBeforeList called before DefaultListIntPoint in the default List handler
 type IntPointTxnIntPointWithBeforeList interface {
-	BeforeList(context.Context, *google_protobuf2.Empty, *gorm1.DB) (context.Context, *gorm1.DB, error)
+	BeforeList(context.Context, *ListIntPointRequest, *gorm1.DB) (context.Context, *gorm1.DB, error)
 }
 
 // Delete ...
