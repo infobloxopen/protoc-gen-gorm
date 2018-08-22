@@ -151,8 +151,8 @@ func DefaultReadIntPoint(ctx context.Context, in *IntPoint, db *gorm1.DB, fs *qu
 	if err != nil {
 		return nil, err
 	}
-	if hook, ok := interface{}(&ormObj).(IntPointORMWithBeforeRead); ok {
-		db, err = hook.BeforeRead(ctx, db, fs)
+	if hook, ok := interface{}(&ormObj).(IntPointORMWithBeforeReadFind); ok {
+		db, err = hook.BeforeReadFind(ctx, db, fs)
 		if err != nil {
 			return nil, err
 		}
@@ -161,8 +161,8 @@ func DefaultReadIntPoint(ctx context.Context, in *IntPoint, db *gorm1.DB, fs *qu
 	if err = db.Where(&ormObj).First(&ormResponse).Error; err != nil {
 		return nil, err
 	}
-	if hook, ok := interface{}(&ormResponse).(IntPointORMWithAfterRead); ok {
-		err = hook.AfterRead(ctx, db, fs)
+	if hook, ok := interface{}(&ormResponse).(IntPointORMWithAfterReadFind); ok {
+		err = hook.AfterReadFind(ctx, db, fs)
 		if err != nil {
 			return nil, err
 		}
@@ -174,11 +174,11 @@ func DefaultReadIntPoint(ctx context.Context, in *IntPoint, db *gorm1.DB, fs *qu
 type IntPointORMWithBeforeReadApplyQuery interface {
 	BeforeReadApplyQuery(context.Context, *gorm1.DB, *query1.FieldSelection) (*gorm1.DB, error)
 }
-type IntPointORMWithBeforeRead interface {
-	BeforeRead(context.Context, *gorm1.DB, *query1.FieldSelection) (*gorm1.DB, error)
+type IntPointORMWithBeforeReadFind interface {
+	BeforeReadFind(context.Context, *gorm1.DB, *query1.FieldSelection) (*gorm1.DB, error)
 }
-type IntPointORMWithAfterRead interface {
-	AfterRead(context.Context, *gorm1.DB, *query1.FieldSelection) error
+type IntPointORMWithAfterReadFind interface {
+	AfterReadFind(context.Context, *gorm1.DB, *query1.FieldSelection) error
 }
 
 func DefaultDeleteIntPoint(ctx context.Context, in *IntPoint, db *gorm1.DB) error {
@@ -374,8 +374,8 @@ func DefaultListIntPoint(ctx context.Context, db *gorm1.DB, f *query1.Filtering,
 	if err != nil {
 		return nil, err
 	}
-	if hook, ok := interface{}(&ormObj).(IntPointORMWithBeforeList); ok {
-		db, err = hook.BeforeList(ctx, db, f, s, p, fs)
+	if hook, ok := interface{}(&ormObj).(IntPointORMWithBeforeListFind); ok {
+		db, err = hook.BeforeListFind(ctx, db, f, s, p, fs)
 		if err != nil {
 			return nil, err
 		}
@@ -386,8 +386,8 @@ func DefaultListIntPoint(ctx context.Context, db *gorm1.DB, f *query1.Filtering,
 	if err := db.Find(&ormResponse).Error; err != nil {
 		return nil, err
 	}
-	if hook, ok := interface{}(&ormObj).(IntPointORMWithAfterList); ok {
-		err = hook.AfterList(ctx, db, &ormResponse, f, s, p, fs)
+	if hook, ok := interface{}(&ormObj).(IntPointORMWithAfterListFind); ok {
+		err = hook.AfterListFind(ctx, db, &ormResponse, f, s, p, fs)
 		if err != nil {
 			return nil, err
 		}
@@ -406,11 +406,11 @@ func DefaultListIntPoint(ctx context.Context, db *gorm1.DB, f *query1.Filtering,
 type IntPointORMWithBeforeListApplyQuery interface {
 	BeforeListApplyQuery(context.Context, *gorm1.DB, *query1.Filtering, *query1.Sorting, *query1.Pagination, *query1.FieldSelection) (*gorm1.DB, error)
 }
-type IntPointORMWithBeforeList interface {
-	BeforeList(context.Context, *gorm1.DB, *query1.Filtering, *query1.Sorting, *query1.Pagination, *query1.FieldSelection) (*gorm1.DB, error)
+type IntPointORMWithBeforeListFind interface {
+	BeforeListFind(context.Context, *gorm1.DB, *query1.Filtering, *query1.Sorting, *query1.Pagination, *query1.FieldSelection) (*gorm1.DB, error)
 }
-type IntPointORMWithAfterList interface {
-	AfterList(context.Context, *gorm1.DB, *[]IntPointORM, *query1.Filtering, *query1.Sorting, *query1.Pagination, *query1.FieldSelection) error
+type IntPointORMWithAfterListFind interface {
+	AfterListFind(context.Context, *gorm1.DB, *[]IntPointORM, *query1.Filtering, *query1.Sorting, *query1.Pagination, *query1.FieldSelection) error
 }
 type IntPointServiceDefaultServer struct {
 	DB *gorm1.DB

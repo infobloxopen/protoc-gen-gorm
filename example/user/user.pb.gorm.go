@@ -904,8 +904,8 @@ func DefaultReadUser(ctx context.Context, in *User, db *gorm1.DB) (*User, error)
 	if err != nil {
 		return nil, err
 	}
-	if hook, ok := interface{}(&ormObj).(UserORMWithBeforeRead); ok {
-		db, err = hook.BeforeRead(ctx, db)
+	if hook, ok := interface{}(&ormObj).(UserORMWithBeforeReadFind); ok {
+		db, err = hook.BeforeReadFind(ctx, db)
 		if err != nil {
 			return nil, err
 		}
@@ -914,8 +914,8 @@ func DefaultReadUser(ctx context.Context, in *User, db *gorm1.DB) (*User, error)
 	if err = db.Where(&ormObj).First(&ormResponse).Error; err != nil {
 		return nil, err
 	}
-	if hook, ok := interface{}(&ormResponse).(UserORMWithAfterRead); ok {
-		err = hook.AfterRead(ctx, db)
+	if hook, ok := interface{}(&ormResponse).(UserORMWithAfterReadFind); ok {
+		err = hook.AfterReadFind(ctx, db)
 		if err != nil {
 			return nil, err
 		}
@@ -927,11 +927,11 @@ func DefaultReadUser(ctx context.Context, in *User, db *gorm1.DB) (*User, error)
 type UserORMWithBeforeReadApplyQuery interface {
 	BeforeReadApplyQuery(context.Context, *gorm1.DB) (*gorm1.DB, error)
 }
-type UserORMWithBeforeRead interface {
-	BeforeRead(context.Context, *gorm1.DB) (*gorm1.DB, error)
+type UserORMWithBeforeReadFind interface {
+	BeforeReadFind(context.Context, *gorm1.DB) (*gorm1.DB, error)
 }
-type UserORMWithAfterRead interface {
-	AfterRead(context.Context, *gorm1.DB) error
+type UserORMWithAfterReadFind interface {
+	AfterReadFind(context.Context, *gorm1.DB) error
 }
 
 func DefaultDeleteUser(ctx context.Context, in *User, db *gorm1.DB) error {
@@ -1259,8 +1259,8 @@ func DefaultListUser(ctx context.Context, db *gorm1.DB) ([]*User, error) {
 	if err != nil {
 		return nil, err
 	}
-	if hook, ok := interface{}(&ormObj).(UserORMWithBeforeList); ok {
-		db, err = hook.BeforeList(ctx, db)
+	if hook, ok := interface{}(&ormObj).(UserORMWithBeforeListFind); ok {
+		db, err = hook.BeforeListFind(ctx, db)
 		if err != nil {
 			return nil, err
 		}
@@ -1271,8 +1271,8 @@ func DefaultListUser(ctx context.Context, db *gorm1.DB) ([]*User, error) {
 	if err := db.Find(&ormResponse).Error; err != nil {
 		return nil, err
 	}
-	if hook, ok := interface{}(&ormObj).(UserORMWithAfterList); ok {
-		err = hook.AfterList(ctx, db, &ormResponse)
+	if hook, ok := interface{}(&ormObj).(UserORMWithAfterListFind); ok {
+		err = hook.AfterListFind(ctx, db, &ormResponse)
 		if err != nil {
 			return nil, err
 		}
@@ -1291,11 +1291,11 @@ func DefaultListUser(ctx context.Context, db *gorm1.DB) ([]*User, error) {
 type UserORMWithBeforeListApplyQuery interface {
 	BeforeListApplyQuery(context.Context, *gorm1.DB) (*gorm1.DB, error)
 }
-type UserORMWithBeforeList interface {
-	BeforeList(context.Context, *gorm1.DB) (*gorm1.DB, error)
+type UserORMWithBeforeListFind interface {
+	BeforeListFind(context.Context, *gorm1.DB) (*gorm1.DB, error)
 }
-type UserORMWithAfterList interface {
-	AfterList(context.Context, *gorm1.DB, *[]UserORM) error
+type UserORMWithAfterListFind interface {
+	AfterListFind(context.Context, *gorm1.DB, *[]UserORM) error
 }
 
 // DefaultCreateEmail executes a basic gorm create call
@@ -1355,8 +1355,8 @@ func DefaultReadEmail(ctx context.Context, in *Email, db *gorm1.DB) (*Email, err
 	if err != nil {
 		return nil, err
 	}
-	if hook, ok := interface{}(&ormObj).(EmailORMWithBeforeRead); ok {
-		db, err = hook.BeforeRead(ctx, db)
+	if hook, ok := interface{}(&ormObj).(EmailORMWithBeforeReadFind); ok {
+		db, err = hook.BeforeReadFind(ctx, db)
 		if err != nil {
 			return nil, err
 		}
@@ -1365,8 +1365,8 @@ func DefaultReadEmail(ctx context.Context, in *Email, db *gorm1.DB) (*Email, err
 	if err = db.Where(&ormObj).First(&ormResponse).Error; err != nil {
 		return nil, err
 	}
-	if hook, ok := interface{}(&ormResponse).(EmailORMWithAfterRead); ok {
-		err = hook.AfterRead(ctx, db)
+	if hook, ok := interface{}(&ormResponse).(EmailORMWithAfterReadFind); ok {
+		err = hook.AfterReadFind(ctx, db)
 		if err != nil {
 			return nil, err
 		}
@@ -1378,11 +1378,11 @@ func DefaultReadEmail(ctx context.Context, in *Email, db *gorm1.DB) (*Email, err
 type EmailORMWithBeforeReadApplyQuery interface {
 	BeforeReadApplyQuery(context.Context, *gorm1.DB) (*gorm1.DB, error)
 }
-type EmailORMWithBeforeRead interface {
-	BeforeRead(context.Context, *gorm1.DB) (*gorm1.DB, error)
+type EmailORMWithBeforeReadFind interface {
+	BeforeReadFind(context.Context, *gorm1.DB) (*gorm1.DB, error)
 }
-type EmailORMWithAfterRead interface {
-	AfterRead(context.Context, *gorm1.DB) error
+type EmailORMWithAfterReadFind interface {
+	AfterReadFind(context.Context, *gorm1.DB) error
 }
 
 func DefaultDeleteEmail(ctx context.Context, in *Email, db *gorm1.DB) error {
@@ -1587,8 +1587,8 @@ func DefaultListEmail(ctx context.Context, db *gorm1.DB) ([]*Email, error) {
 	if err != nil {
 		return nil, err
 	}
-	if hook, ok := interface{}(&ormObj).(EmailORMWithBeforeList); ok {
-		db, err = hook.BeforeList(ctx, db)
+	if hook, ok := interface{}(&ormObj).(EmailORMWithBeforeListFind); ok {
+		db, err = hook.BeforeListFind(ctx, db)
 		if err != nil {
 			return nil, err
 		}
@@ -1599,8 +1599,8 @@ func DefaultListEmail(ctx context.Context, db *gorm1.DB) ([]*Email, error) {
 	if err := db.Find(&ormResponse).Error; err != nil {
 		return nil, err
 	}
-	if hook, ok := interface{}(&ormObj).(EmailORMWithAfterList); ok {
-		err = hook.AfterList(ctx, db, &ormResponse)
+	if hook, ok := interface{}(&ormObj).(EmailORMWithAfterListFind); ok {
+		err = hook.AfterListFind(ctx, db, &ormResponse)
 		if err != nil {
 			return nil, err
 		}
@@ -1619,11 +1619,11 @@ func DefaultListEmail(ctx context.Context, db *gorm1.DB) ([]*Email, error) {
 type EmailORMWithBeforeListApplyQuery interface {
 	BeforeListApplyQuery(context.Context, *gorm1.DB) (*gorm1.DB, error)
 }
-type EmailORMWithBeforeList interface {
-	BeforeList(context.Context, *gorm1.DB) (*gorm1.DB, error)
+type EmailORMWithBeforeListFind interface {
+	BeforeListFind(context.Context, *gorm1.DB) (*gorm1.DB, error)
 }
-type EmailORMWithAfterList interface {
-	AfterList(context.Context, *gorm1.DB, *[]EmailORM) error
+type EmailORMWithAfterListFind interface {
+	AfterListFind(context.Context, *gorm1.DB, *[]EmailORM) error
 }
 
 // DefaultCreateAddress executes a basic gorm create call
@@ -1683,8 +1683,8 @@ func DefaultReadAddress(ctx context.Context, in *Address, db *gorm1.DB) (*Addres
 	if err != nil {
 		return nil, err
 	}
-	if hook, ok := interface{}(&ormObj).(AddressORMWithBeforeRead); ok {
-		db, err = hook.BeforeRead(ctx, db)
+	if hook, ok := interface{}(&ormObj).(AddressORMWithBeforeReadFind); ok {
+		db, err = hook.BeforeReadFind(ctx, db)
 		if err != nil {
 			return nil, err
 		}
@@ -1693,8 +1693,8 @@ func DefaultReadAddress(ctx context.Context, in *Address, db *gorm1.DB) (*Addres
 	if err = db.Where(&ormObj).First(&ormResponse).Error; err != nil {
 		return nil, err
 	}
-	if hook, ok := interface{}(&ormResponse).(AddressORMWithAfterRead); ok {
-		err = hook.AfterRead(ctx, db)
+	if hook, ok := interface{}(&ormResponse).(AddressORMWithAfterReadFind); ok {
+		err = hook.AfterReadFind(ctx, db)
 		if err != nil {
 			return nil, err
 		}
@@ -1706,11 +1706,11 @@ func DefaultReadAddress(ctx context.Context, in *Address, db *gorm1.DB) (*Addres
 type AddressORMWithBeforeReadApplyQuery interface {
 	BeforeReadApplyQuery(context.Context, *gorm1.DB) (*gorm1.DB, error)
 }
-type AddressORMWithBeforeRead interface {
-	BeforeRead(context.Context, *gorm1.DB) (*gorm1.DB, error)
+type AddressORMWithBeforeReadFind interface {
+	BeforeReadFind(context.Context, *gorm1.DB) (*gorm1.DB, error)
 }
-type AddressORMWithAfterRead interface {
-	AfterRead(context.Context, *gorm1.DB) error
+type AddressORMWithAfterReadFind interface {
+	AfterReadFind(context.Context, *gorm1.DB) error
 }
 
 func DefaultDeleteAddress(ctx context.Context, in *Address, db *gorm1.DB) error {
@@ -1919,8 +1919,8 @@ func DefaultListAddress(ctx context.Context, db *gorm1.DB) ([]*Address, error) {
 	if err != nil {
 		return nil, err
 	}
-	if hook, ok := interface{}(&ormObj).(AddressORMWithBeforeList); ok {
-		db, err = hook.BeforeList(ctx, db)
+	if hook, ok := interface{}(&ormObj).(AddressORMWithBeforeListFind); ok {
+		db, err = hook.BeforeListFind(ctx, db)
 		if err != nil {
 			return nil, err
 		}
@@ -1931,8 +1931,8 @@ func DefaultListAddress(ctx context.Context, db *gorm1.DB) ([]*Address, error) {
 	if err := db.Find(&ormResponse).Error; err != nil {
 		return nil, err
 	}
-	if hook, ok := interface{}(&ormObj).(AddressORMWithAfterList); ok {
-		err = hook.AfterList(ctx, db, &ormResponse)
+	if hook, ok := interface{}(&ormObj).(AddressORMWithAfterListFind); ok {
+		err = hook.AfterListFind(ctx, db, &ormResponse)
 		if err != nil {
 			return nil, err
 		}
@@ -1951,11 +1951,11 @@ func DefaultListAddress(ctx context.Context, db *gorm1.DB) ([]*Address, error) {
 type AddressORMWithBeforeListApplyQuery interface {
 	BeforeListApplyQuery(context.Context, *gorm1.DB) (*gorm1.DB, error)
 }
-type AddressORMWithBeforeList interface {
-	BeforeList(context.Context, *gorm1.DB) (*gorm1.DB, error)
+type AddressORMWithBeforeListFind interface {
+	BeforeListFind(context.Context, *gorm1.DB) (*gorm1.DB, error)
 }
-type AddressORMWithAfterList interface {
-	AfterList(context.Context, *gorm1.DB, *[]AddressORM) error
+type AddressORMWithAfterListFind interface {
+	AfterListFind(context.Context, *gorm1.DB, *[]AddressORM) error
 }
 
 // DefaultCreateLanguage executes a basic gorm create call
@@ -2015,8 +2015,8 @@ func DefaultReadLanguage(ctx context.Context, in *Language, db *gorm1.DB) (*Lang
 	if err != nil {
 		return nil, err
 	}
-	if hook, ok := interface{}(&ormObj).(LanguageORMWithBeforeRead); ok {
-		db, err = hook.BeforeRead(ctx, db)
+	if hook, ok := interface{}(&ormObj).(LanguageORMWithBeforeReadFind); ok {
+		db, err = hook.BeforeReadFind(ctx, db)
 		if err != nil {
 			return nil, err
 		}
@@ -2025,8 +2025,8 @@ func DefaultReadLanguage(ctx context.Context, in *Language, db *gorm1.DB) (*Lang
 	if err = db.Where(&ormObj).First(&ormResponse).Error; err != nil {
 		return nil, err
 	}
-	if hook, ok := interface{}(&ormResponse).(LanguageORMWithAfterRead); ok {
-		err = hook.AfterRead(ctx, db)
+	if hook, ok := interface{}(&ormResponse).(LanguageORMWithAfterReadFind); ok {
+		err = hook.AfterReadFind(ctx, db)
 		if err != nil {
 			return nil, err
 		}
@@ -2038,11 +2038,11 @@ func DefaultReadLanguage(ctx context.Context, in *Language, db *gorm1.DB) (*Lang
 type LanguageORMWithBeforeReadApplyQuery interface {
 	BeforeReadApplyQuery(context.Context, *gorm1.DB) (*gorm1.DB, error)
 }
-type LanguageORMWithBeforeRead interface {
-	BeforeRead(context.Context, *gorm1.DB) (*gorm1.DB, error)
+type LanguageORMWithBeforeReadFind interface {
+	BeforeReadFind(context.Context, *gorm1.DB) (*gorm1.DB, error)
 }
-type LanguageORMWithAfterRead interface {
-	AfterRead(context.Context, *gorm1.DB) error
+type LanguageORMWithAfterReadFind interface {
+	AfterReadFind(context.Context, *gorm1.DB) error
 }
 
 func DefaultDeleteLanguage(ctx context.Context, in *Language, db *gorm1.DB) error {
@@ -2243,8 +2243,8 @@ func DefaultListLanguage(ctx context.Context, db *gorm1.DB) ([]*Language, error)
 	if err != nil {
 		return nil, err
 	}
-	if hook, ok := interface{}(&ormObj).(LanguageORMWithBeforeList); ok {
-		db, err = hook.BeforeList(ctx, db)
+	if hook, ok := interface{}(&ormObj).(LanguageORMWithBeforeListFind); ok {
+		db, err = hook.BeforeListFind(ctx, db)
 		if err != nil {
 			return nil, err
 		}
@@ -2255,8 +2255,8 @@ func DefaultListLanguage(ctx context.Context, db *gorm1.DB) ([]*Language, error)
 	if err := db.Find(&ormResponse).Error; err != nil {
 		return nil, err
 	}
-	if hook, ok := interface{}(&ormObj).(LanguageORMWithAfterList); ok {
-		err = hook.AfterList(ctx, db, &ormResponse)
+	if hook, ok := interface{}(&ormObj).(LanguageORMWithAfterListFind); ok {
+		err = hook.AfterListFind(ctx, db, &ormResponse)
 		if err != nil {
 			return nil, err
 		}
@@ -2275,11 +2275,11 @@ func DefaultListLanguage(ctx context.Context, db *gorm1.DB) ([]*Language, error)
 type LanguageORMWithBeforeListApplyQuery interface {
 	BeforeListApplyQuery(context.Context, *gorm1.DB) (*gorm1.DB, error)
 }
-type LanguageORMWithBeforeList interface {
-	BeforeList(context.Context, *gorm1.DB) (*gorm1.DB, error)
+type LanguageORMWithBeforeListFind interface {
+	BeforeListFind(context.Context, *gorm1.DB) (*gorm1.DB, error)
 }
-type LanguageORMWithAfterList interface {
-	AfterList(context.Context, *gorm1.DB, *[]LanguageORM) error
+type LanguageORMWithAfterListFind interface {
+	AfterListFind(context.Context, *gorm1.DB, *[]LanguageORM) error
 }
 
 // DefaultCreateCreditCard executes a basic gorm create call
@@ -2339,8 +2339,8 @@ func DefaultReadCreditCard(ctx context.Context, in *CreditCard, db *gorm1.DB) (*
 	if err != nil {
 		return nil, err
 	}
-	if hook, ok := interface{}(&ormObj).(CreditCardORMWithBeforeRead); ok {
-		db, err = hook.BeforeRead(ctx, db)
+	if hook, ok := interface{}(&ormObj).(CreditCardORMWithBeforeReadFind); ok {
+		db, err = hook.BeforeReadFind(ctx, db)
 		if err != nil {
 			return nil, err
 		}
@@ -2349,8 +2349,8 @@ func DefaultReadCreditCard(ctx context.Context, in *CreditCard, db *gorm1.DB) (*
 	if err = db.Where(&ormObj).First(&ormResponse).Error; err != nil {
 		return nil, err
 	}
-	if hook, ok := interface{}(&ormResponse).(CreditCardORMWithAfterRead); ok {
-		err = hook.AfterRead(ctx, db)
+	if hook, ok := interface{}(&ormResponse).(CreditCardORMWithAfterReadFind); ok {
+		err = hook.AfterReadFind(ctx, db)
 		if err != nil {
 			return nil, err
 		}
@@ -2362,11 +2362,11 @@ func DefaultReadCreditCard(ctx context.Context, in *CreditCard, db *gorm1.DB) (*
 type CreditCardORMWithBeforeReadApplyQuery interface {
 	BeforeReadApplyQuery(context.Context, *gorm1.DB) (*gorm1.DB, error)
 }
-type CreditCardORMWithBeforeRead interface {
-	BeforeRead(context.Context, *gorm1.DB) (*gorm1.DB, error)
+type CreditCardORMWithBeforeReadFind interface {
+	BeforeReadFind(context.Context, *gorm1.DB) (*gorm1.DB, error)
 }
-type CreditCardORMWithAfterRead interface {
-	AfterRead(context.Context, *gorm1.DB) error
+type CreditCardORMWithAfterReadFind interface {
+	AfterReadFind(context.Context, *gorm1.DB) error
 }
 
 func DefaultDeleteCreditCard(ctx context.Context, in *CreditCard, db *gorm1.DB) error {
@@ -2571,8 +2571,8 @@ func DefaultListCreditCard(ctx context.Context, db *gorm1.DB) ([]*CreditCard, er
 	if err != nil {
 		return nil, err
 	}
-	if hook, ok := interface{}(&ormObj).(CreditCardORMWithBeforeList); ok {
-		db, err = hook.BeforeList(ctx, db)
+	if hook, ok := interface{}(&ormObj).(CreditCardORMWithBeforeListFind); ok {
+		db, err = hook.BeforeListFind(ctx, db)
 		if err != nil {
 			return nil, err
 		}
@@ -2583,8 +2583,8 @@ func DefaultListCreditCard(ctx context.Context, db *gorm1.DB) ([]*CreditCard, er
 	if err := db.Find(&ormResponse).Error; err != nil {
 		return nil, err
 	}
-	if hook, ok := interface{}(&ormObj).(CreditCardORMWithAfterList); ok {
-		err = hook.AfterList(ctx, db, &ormResponse)
+	if hook, ok := interface{}(&ormObj).(CreditCardORMWithAfterListFind); ok {
+		err = hook.AfterListFind(ctx, db, &ormResponse)
 		if err != nil {
 			return nil, err
 		}
@@ -2603,11 +2603,11 @@ func DefaultListCreditCard(ctx context.Context, db *gorm1.DB) ([]*CreditCard, er
 type CreditCardORMWithBeforeListApplyQuery interface {
 	BeforeListApplyQuery(context.Context, *gorm1.DB) (*gorm1.DB, error)
 }
-type CreditCardORMWithBeforeList interface {
-	BeforeList(context.Context, *gorm1.DB) (*gorm1.DB, error)
+type CreditCardORMWithBeforeListFind interface {
+	BeforeListFind(context.Context, *gorm1.DB) (*gorm1.DB, error)
 }
-type CreditCardORMWithAfterList interface {
-	AfterList(context.Context, *gorm1.DB, *[]CreditCardORM) error
+type CreditCardORMWithAfterListFind interface {
+	AfterListFind(context.Context, *gorm1.DB, *[]CreditCardORM) error
 }
 
 // DefaultCreateTask executes a basic gorm create call
@@ -2690,8 +2690,8 @@ func DefaultListTask(ctx context.Context, db *gorm1.DB) ([]*Task, error) {
 	if err != nil {
 		return nil, err
 	}
-	if hook, ok := interface{}(&ormObj).(TaskORMWithBeforeList); ok {
-		db, err = hook.BeforeList(ctx, db)
+	if hook, ok := interface{}(&ormObj).(TaskORMWithBeforeListFind); ok {
+		db, err = hook.BeforeListFind(ctx, db)
 		if err != nil {
 			return nil, err
 		}
@@ -2701,8 +2701,8 @@ func DefaultListTask(ctx context.Context, db *gorm1.DB) ([]*Task, error) {
 	if err := db.Find(&ormResponse).Error; err != nil {
 		return nil, err
 	}
-	if hook, ok := interface{}(&ormObj).(TaskORMWithAfterList); ok {
-		err = hook.AfterList(ctx, db, &ormResponse)
+	if hook, ok := interface{}(&ormObj).(TaskORMWithAfterListFind); ok {
+		err = hook.AfterListFind(ctx, db, &ormResponse)
 		if err != nil {
 			return nil, err
 		}
@@ -2721,9 +2721,9 @@ func DefaultListTask(ctx context.Context, db *gorm1.DB) ([]*Task, error) {
 type TaskORMWithBeforeListApplyQuery interface {
 	BeforeListApplyQuery(context.Context, *gorm1.DB) (*gorm1.DB, error)
 }
-type TaskORMWithBeforeList interface {
-	BeforeList(context.Context, *gorm1.DB) (*gorm1.DB, error)
+type TaskORMWithBeforeListFind interface {
+	BeforeListFind(context.Context, *gorm1.DB) (*gorm1.DB, error)
 }
-type TaskORMWithAfterList interface {
-	AfterList(context.Context, *gorm1.DB, *[]TaskORM) error
+type TaskORMWithAfterListFind interface {
+	AfterListFind(context.Context, *gorm1.DB, *[]TaskORM) error
 }

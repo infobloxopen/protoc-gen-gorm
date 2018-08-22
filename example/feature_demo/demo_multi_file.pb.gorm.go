@@ -176,8 +176,8 @@ func DefaultReadExternalChild(ctx context.Context, in *ExternalChild, db *gorm1.
 	if err != nil {
 		return nil, err
 	}
-	if hook, ok := interface{}(&ormObj).(ExternalChildORMWithBeforeRead); ok {
-		db, err = hook.BeforeRead(ctx, db)
+	if hook, ok := interface{}(&ormObj).(ExternalChildORMWithBeforeReadFind); ok {
+		db, err = hook.BeforeReadFind(ctx, db)
 		if err != nil {
 			return nil, err
 		}
@@ -186,8 +186,8 @@ func DefaultReadExternalChild(ctx context.Context, in *ExternalChild, db *gorm1.
 	if err = db.Where(&ormObj).First(&ormResponse).Error; err != nil {
 		return nil, err
 	}
-	if hook, ok := interface{}(&ormResponse).(ExternalChildORMWithAfterRead); ok {
-		err = hook.AfterRead(ctx, db)
+	if hook, ok := interface{}(&ormResponse).(ExternalChildORMWithAfterReadFind); ok {
+		err = hook.AfterReadFind(ctx, db)
 		if err != nil {
 			return nil, err
 		}
@@ -199,11 +199,11 @@ func DefaultReadExternalChild(ctx context.Context, in *ExternalChild, db *gorm1.
 type ExternalChildORMWithBeforeReadApplyQuery interface {
 	BeforeReadApplyQuery(context.Context, *gorm1.DB) (*gorm1.DB, error)
 }
-type ExternalChildORMWithBeforeRead interface {
-	BeforeRead(context.Context, *gorm1.DB) (*gorm1.DB, error)
+type ExternalChildORMWithBeforeReadFind interface {
+	BeforeReadFind(context.Context, *gorm1.DB) (*gorm1.DB, error)
 }
-type ExternalChildORMWithAfterRead interface {
-	AfterRead(context.Context, *gorm1.DB) error
+type ExternalChildORMWithAfterReadFind interface {
+	AfterReadFind(context.Context, *gorm1.DB) error
 }
 
 func DefaultDeleteExternalChild(ctx context.Context, in *ExternalChild, db *gorm1.DB) error {
@@ -391,8 +391,8 @@ func DefaultListExternalChild(ctx context.Context, db *gorm1.DB) ([]*ExternalChi
 	if err != nil {
 		return nil, err
 	}
-	if hook, ok := interface{}(&ormObj).(ExternalChildORMWithBeforeList); ok {
-		db, err = hook.BeforeList(ctx, db)
+	if hook, ok := interface{}(&ormObj).(ExternalChildORMWithBeforeListFind); ok {
+		db, err = hook.BeforeListFind(ctx, db)
 		if err != nil {
 			return nil, err
 		}
@@ -403,8 +403,8 @@ func DefaultListExternalChild(ctx context.Context, db *gorm1.DB) ([]*ExternalChi
 	if err := db.Find(&ormResponse).Error; err != nil {
 		return nil, err
 	}
-	if hook, ok := interface{}(&ormObj).(ExternalChildORMWithAfterList); ok {
-		err = hook.AfterList(ctx, db, &ormResponse)
+	if hook, ok := interface{}(&ormObj).(ExternalChildORMWithAfterListFind); ok {
+		err = hook.AfterListFind(ctx, db, &ormResponse)
 		if err != nil {
 			return nil, err
 		}
@@ -423,9 +423,9 @@ func DefaultListExternalChild(ctx context.Context, db *gorm1.DB) ([]*ExternalChi
 type ExternalChildORMWithBeforeListApplyQuery interface {
 	BeforeListApplyQuery(context.Context, *gorm1.DB) (*gorm1.DB, error)
 }
-type ExternalChildORMWithBeforeList interface {
-	BeforeList(context.Context, *gorm1.DB) (*gorm1.DB, error)
+type ExternalChildORMWithBeforeListFind interface {
+	BeforeListFind(context.Context, *gorm1.DB) (*gorm1.DB, error)
 }
-type ExternalChildORMWithAfterList interface {
-	AfterList(context.Context, *gorm1.DB, *[]ExternalChildORM) error
+type ExternalChildORMWithAfterListFind interface {
+	AfterListFind(context.Context, *gorm1.DB, *[]ExternalChildORM) error
 }
