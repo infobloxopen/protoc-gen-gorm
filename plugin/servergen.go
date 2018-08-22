@@ -125,9 +125,12 @@ func (p *OrmPlugin) generateCreateServerMethod(service autogenService, method au
 		p.P(`if err != nil {`)
 		p.P(`return nil, err`)
 		p.P(`}`)
-		p.P(`return &`, p.TypeName(method.outType), `{Result: res}, nil`)
+		p.P(`out := &`, p.TypeName(method.outType), `{Result: res}`)
+		p.generatePostserviceCall(service.ccName, method.baseType, createService)
+		p.P(`return out, nil`)
 		p.P(`}`)
-		p.generatePreserviceHook(service.ccName, method.baseType, p.TypeName(method.inType), createService)
+		p.generatePreserviceHook(service.ccName, method.baseType, createService)
+		p.generatePostserviceHook(service.ccName, method.baseType, p.TypeName(method.outType), createService)
 	} else {
 		p.generateEmptyBody(method.outType)
 	}
@@ -179,9 +182,12 @@ func (p *OrmPlugin) generateReadServerMethod(service autogenService, method auto
 		p.P(`if err != nil {`)
 		p.P(`return nil, err`)
 		p.P(`}`)
-		p.P(`return &`, p.TypeName(method.outType), `{Result: res}, nil`)
+		p.P(`out := &`, p.TypeName(method.outType), `{Result: res}`)
+		p.generatePostserviceCall(service.ccName, method.baseType, readService)
+		p.P(`return out, nil`)
 		p.P(`}`)
-		p.generatePreserviceHook(service.ccName, method.baseType, p.TypeName(method.inType), readService)
+		p.generatePreserviceHook(service.ccName, method.baseType, readService)
+		p.generatePostserviceHook(service.ccName, method.baseType, p.TypeName(method.outType), readService)
 	} else {
 		p.generateEmptyBody(method.outType)
 	}
@@ -242,9 +248,12 @@ func (p *OrmPlugin) generateUpdateServerMethod(service autogenService, method au
 		p.P(`if err != nil {`)
 		p.P(`return nil, err`)
 		p.P(`}`)
-		p.P(`return &`, p.TypeName(method.outType), `{Result: res}, nil`)
+		p.P(`out := &`, p.TypeName(method.outType), `{Result: res}`)
+		p.generatePostserviceCall(service.ccName, method.baseType, updateService)
+		p.P(`return out, nil`)
 		p.P(`}`)
-		p.generatePreserviceHook(service.ccName, method.baseType, p.TypeName(method.inType), updateService)
+		p.generatePreserviceHook(service.ccName, method.baseType, updateService)
+		p.generatePostserviceHook(service.ccName, method.baseType, p.TypeName(method.outType), updateService)
 	} else {
 		p.generateEmptyBody(method.outType)
 	}
@@ -303,9 +312,16 @@ func (p *OrmPlugin) generateDeleteServerMethod(service autogenService, method au
 		typeName := method.baseType
 		p.generateDBSetup(service)
 		p.generatePreserviceCall(service.ccName, method.baseType, deleteService)
-		p.P(`return &`, p.TypeName(method.outType), `{}, `, `DefaultDelete`, typeName, `(ctx, &`, typeName, `{Id: in.GetId()}, db)`)
+		p.P(`err := DefaultDelete`, typeName, `(ctx, &`, typeName, `{Id: in.GetId()}, db)`)
+		p.P(`if err != nil {`)
+		p.P(`return nil, err`)
 		p.P(`}`)
-		p.generatePreserviceHook(service.ccName, method.baseType, p.TypeName(method.inType), deleteService)
+		p.P(`out := &`, p.TypeName(method.outType), `{}`)
+		p.generatePostserviceCall(service.ccName, method.baseType, deleteService)
+		p.P(`return out, nil`)
+		p.P(`}`)
+		p.generatePreserviceHook(service.ccName, method.baseType, deleteService)
+		p.generatePostserviceHook(service.ccName, method.baseType, p.TypeName(method.outType), deleteService)
 	} else {
 		p.generateEmptyBody(method.outType)
 	}
@@ -363,9 +379,12 @@ func (p *OrmPlugin) generateListServerMethod(service autogenService, method auto
 		p.P(`if err != nil {`)
 		p.P(`return nil, err`)
 		p.P(`}`)
-		p.P(`return &`, p.TypeName(method.outType), `{Results: res}, nil`)
+		p.P(`out := &`, p.TypeName(method.outType), `{Results: res}`)
+		p.generatePostserviceCall(service.ccName, method.baseType, listService)
+		p.P(`return out, nil`)
 		p.P(`}`)
-		p.generatePreserviceHook(service.ccName, method.baseType, p.TypeName(method.inType), listService)
+		p.generatePreserviceHook(service.ccName, method.baseType, listService)
+		p.generatePostserviceHook(service.ccName, method.baseType, p.TypeName(method.outType), listService)
 	} else {
 		p.generateEmptyBody(method.outType)
 	}
@@ -435,17 +454,34 @@ func (p *OrmPlugin) getMethodProps(method *descriptor.MethodDescriptorProto) (ge
 func (p *OrmPlugin) generatePreserviceCall(svc, typeName, mthd string) {
 	p.P(`if custom, ok := interface{}(in).(`, svc, typeName, `WithBefore`, mthd, `); ok {`)
 	p.P(`var err error`)
-	p.P(`ctx, db, err = custom.Before`, mthd, `(ctx, in, db)`)
+	p.P(`db, err = custom.Before`, mthd, `(ctx, db)`)
 	p.P(`if err != nil {`)
 	p.P(`return nil, err`)
 	p.P(`}`)
 	p.P(`}`)
 }
 
-func (p *OrmPlugin) generatePreserviceHook(svc, typeName, inTypeName, mthd string) {
+func (p *OrmPlugin) generatePreserviceHook(svc, typeName, mthd string) {
 	p.P(`// `, svc, typeName, `WithBefore`, mthd, ` called before Default`, mthd, typeName, ` in the default `, mthd, ` handler`)
 	p.P(`type `, svc, typeName, `WithBefore`, mthd, ` interface {`)
-	p.P(`Before`, mthd, `(context.Context, *`, inTypeName, `, *`, p.Import(gormImport), `.DB) (context.Context, *`, p.Import(gormImport), `.DB, error)`)
+	p.P(`Before`, mthd, `(context.Context, *`, p.Import(gormImport), `.DB) (*`, p.Import(gormImport), `.DB, error)`)
+	p.P(`}`)
+}
+
+func (p *OrmPlugin) generatePostserviceCall(svc, typeName, mthd string) {
+	p.P(`if custom, ok := interface{}(in).(`, svc, typeName, `WithAfter`, mthd, `); ok {`)
+	p.P(`var err error`)
+	p.P(`err = custom.After`, mthd, `(ctx, out, db)`)
+	p.P(`if err != nil {`)
+	p.P(`return nil, err`)
+	p.P(`}`)
+	p.P(`}`)
+}
+
+func (p *OrmPlugin) generatePostserviceHook(svc, typeName, outTypeName, mthd string) {
+	p.P(`// `, svc, typeName, `WithAfter`, mthd, ` called before Default`, mthd, typeName, ` in the default `, mthd, ` handler`)
+	p.P(`type `, svc, typeName, `WithAfter`, mthd, ` interface {`)
+	p.P(`After`, mthd, `(context.Context, *`, outTypeName, `, *`, p.Import(gormImport), `.DB) error`)
 	p.P(`}`)
 }
 
