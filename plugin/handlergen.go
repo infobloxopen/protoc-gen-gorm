@@ -715,7 +715,7 @@ func (p *OrmPlugin) guessZeroValue(typeName string) string {
 
 func (p *OrmPlugin) readHasFieldSelection(ormable *OrmableType) bool {
 	if read, ok := ormable.Methods[readService]; ok {
-		if s := p.hasFieldSelection(read.inType); s != "" {
+		if s := p.getFieldSelection(read.inType); s != "" {
 			return true
 		}
 	}
@@ -724,7 +724,7 @@ func (p *OrmPlugin) readHasFieldSelection(ormable *OrmableType) bool {
 
 func (p *OrmPlugin) listHasFiltering(ormable *OrmableType) bool {
 	if read, ok := ormable.Methods[listService]; ok {
-		if s := p.hasFiltering(read.inType); s != "" {
+		if s := p.getFiltering(read.inType); s != "" {
 			return true
 		}
 	}
@@ -733,7 +733,7 @@ func (p *OrmPlugin) listHasFiltering(ormable *OrmableType) bool {
 
 func (p *OrmPlugin) listHasSorting(ormable *OrmableType) bool {
 	if read, ok := ormable.Methods[listService]; ok {
-		if s := p.hasSorting(read.inType); s != "" {
+		if s := p.getSorting(read.inType); s != "" {
 			return true
 		}
 	}
@@ -742,7 +742,7 @@ func (p *OrmPlugin) listHasSorting(ormable *OrmableType) bool {
 
 func (p *OrmPlugin) listHasPagination(ormable *OrmableType) bool {
 	if read, ok := ormable.Methods[listService]; ok {
-		if s := p.hasPagination(read.inType); s != "" {
+		if s := p.getPagination(read.inType); s != "" {
 			return true
 		}
 	}
@@ -751,7 +751,7 @@ func (p *OrmPlugin) listHasPagination(ormable *OrmableType) bool {
 
 func (p *OrmPlugin) listHasFieldSelection(ormable *OrmableType) bool {
 	if read, ok := ormable.Methods[listService]; ok {
-		if s := p.hasFieldSelection(read.inType); s != "" {
+		if s := p.getFieldSelection(read.inType); s != "" {
 			return true
 		}
 	}
