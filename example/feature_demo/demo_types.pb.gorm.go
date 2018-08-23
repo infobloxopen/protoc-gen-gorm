@@ -706,8 +706,7 @@ func DefaultCreateTestTypes(ctx context.Context, in *TestTypes, db *gorm1.DB) (*
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(TestTypesORMWithBeforeCreate); ok {
-		db, err = hook.BeforeCreate(ctx, db)
-		if err != nil {
+		if db, err = hook.BeforeCreate(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -715,8 +714,7 @@ func DefaultCreateTestTypes(ctx context.Context, in *TestTypes, db *gorm1.DB) (*
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(TestTypesORMWithAfterCreate); ok {
-		err = hook.AfterCreate(ctx, db)
-		if err != nil {
+		if err = hook.AfterCreate(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -795,8 +793,7 @@ func DefaultListTestTypes(ctx context.Context, db *gorm1.DB) ([]*TestTypes, erro
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(TestTypesORMWithBeforeListApplyQuery); ok {
-		db, err = hook.BeforeListApplyQuery(ctx, db)
-		if err != nil {
+		if db, err = hook.BeforeListApplyQuery(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -805,8 +802,7 @@ func DefaultListTestTypes(ctx context.Context, db *gorm1.DB) ([]*TestTypes, erro
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(TestTypesORMWithBeforeListFind); ok {
-		db, err = hook.BeforeListFind(ctx, db)
-		if err != nil {
+		if db, err = hook.BeforeListFind(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -816,8 +812,7 @@ func DefaultListTestTypes(ctx context.Context, db *gorm1.DB) ([]*TestTypes, erro
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(TestTypesORMWithAfterListFind); ok {
-		err = hook.AfterListFind(ctx, db, &ormResponse)
-		if err != nil {
+		if err = hook.AfterListFind(ctx, db, &ormResponse); err != nil {
 			return nil, err
 		}
 	}
@@ -852,8 +847,7 @@ func DefaultCreateTypeWithID(ctx context.Context, in *TypeWithID, db *gorm1.DB) 
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(TypeWithIDORMWithBeforeCreate); ok {
-		db, err = hook.BeforeCreate(ctx, db)
-		if err != nil {
+		if db, err = hook.BeforeCreate(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -861,8 +855,7 @@ func DefaultCreateTypeWithID(ctx context.Context, in *TypeWithID, db *gorm1.DB) 
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(TypeWithIDORMWithAfterCreate); ok {
-		err = hook.AfterCreate(ctx, db)
-		if err != nil {
+		if err = hook.AfterCreate(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -890,18 +883,15 @@ func DefaultReadTypeWithID(ctx context.Context, in *TypeWithID, db *gorm1.DB) (*
 		return nil, errors.New("DefaultReadTypeWithID requires a non-zero primary key")
 	}
 	if hook, ok := interface{}(&ormObj).(TypeWithIDORMWithBeforeReadApplyQuery); ok {
-		db, err = hook.BeforeReadApplyQuery(ctx, db)
-		if err != nil {
+		if db, err = hook.BeforeReadApplyQuery(ctx, db); err != nil {
 			return nil, err
 		}
 	}
-	db, err = gorm2.ApplyFieldSelection(ctx, db, nil, &TypeWithIDORM{})
-	if err != nil {
+	if db, err = gorm2.ApplyFieldSelection(ctx, db, nil, &TypeWithIDORM{}); err != nil {
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(TypeWithIDORMWithBeforeReadFind); ok {
-		db, err = hook.BeforeReadFind(ctx, db)
-		if err != nil {
+		if db, err = hook.BeforeReadFind(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -910,8 +900,7 @@ func DefaultReadTypeWithID(ctx context.Context, in *TypeWithID, db *gorm1.DB) (*
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormResponse).(TypeWithIDORMWithAfterReadFind); ok {
-		err = hook.AfterReadFind(ctx, db)
-		if err != nil {
+		if err = hook.AfterReadFind(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -941,8 +930,7 @@ func DefaultDeleteTypeWithID(ctx context.Context, in *TypeWithID, db *gorm1.DB) 
 		return errors.New("A non-zero ID value is required for a delete call")
 	}
 	if hook, ok := interface{}(&ormObj).(TypeWithIDORMWithBeforeDelete); ok {
-		db, err = hook.BeforeDelete(ctx, db)
-		if err != nil {
+		if db, err = hook.BeforeDelete(ctx, db); err != nil {
 			return err
 		}
 	}
@@ -978,8 +966,7 @@ func DefaultStrictUpdateTypeWithID(ctx context.Context, in *TypeWithID, db *gorm
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(TypeWithIDORMWithBeforeStrictUpdateCleanup); ok {
-		db, err = hook.BeforeStrictUpdateCleanup(ctx, db)
-		if err != nil {
+		if db, err = hook.BeforeStrictUpdateCleanup(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -1002,8 +989,7 @@ func DefaultStrictUpdateTypeWithID(ctx context.Context, in *TypeWithID, db *gorm
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(TypeWithIDORMWithBeforeStrictUpdateSave); ok {
-		db, err = hook.BeforeStrictUpdateSave(ctx, db)
-		if err != nil {
+		if db, err = hook.BeforeStrictUpdateSave(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -1011,8 +997,7 @@ func DefaultStrictUpdateTypeWithID(ctx context.Context, in *TypeWithID, db *gorm
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(TypeWithIDORMWithAfterStrictUpdateSave); ok {
-		err = hook.AfterStrictUpdateSave(ctx, db)
-		if err != nil {
+		if err = hook.AfterStrictUpdateSave(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -1044,8 +1029,7 @@ func DefaultPatchTypeWithID(ctx context.Context, in *TypeWithID, updateMask *fie
 	var pbObj TypeWithID
 	var err error
 	if hook, ok := interface{}(&pbObj).(TypeWithIDWithBeforePatchRead); ok {
-		db, err = hook.BeforePatchRead(ctx, in, updateMask, db)
-		if err != nil {
+		if db, err = hook.BeforePatchRead(ctx, in, updateMask, db); err != nil {
 			return nil, err
 		}
 	}
@@ -1055,8 +1039,7 @@ func DefaultPatchTypeWithID(ctx context.Context, in *TypeWithID, updateMask *fie
 	}
 	pbObj = *pbReadRes
 	if hook, ok := interface{}(&pbObj).(TypeWithIDWithBeforePatchApplyFieldMask); ok {
-		db, err = hook.BeforePatchApplyFieldMask(ctx, in, updateMask, db)
-		if err != nil {
+		if db, err = hook.BeforePatchApplyFieldMask(ctx, in, updateMask, db); err != nil {
 			return nil, err
 		}
 	}
@@ -1064,8 +1047,7 @@ func DefaultPatchTypeWithID(ctx context.Context, in *TypeWithID, updateMask *fie
 		return nil, err
 	}
 	if hook, ok := interface{}(&pbObj).(TypeWithIDWithBeforePatchSave); ok {
-		db, err = hook.BeforePatchSave(ctx, in, updateMask, db)
-		if err != nil {
+		if db, err = hook.BeforePatchSave(ctx, in, updateMask, db); err != nil {
 			return nil, err
 		}
 	}
@@ -1074,8 +1056,7 @@ func DefaultPatchTypeWithID(ctx context.Context, in *TypeWithID, updateMask *fie
 		return nil, err
 	}
 	if hook, ok := interface{}(pbResponse).(TypeWithIDWithAfterPatchSave); ok {
-		err = hook.AfterPatchSave(ctx, in, updateMask, db)
-		if err != nil {
+		if err = hook.AfterPatchSave(ctx, in, updateMask, db); err != nil {
 			return nil, err
 		}
 	}
@@ -1205,8 +1186,7 @@ func DefaultListTypeWithID(ctx context.Context, db *gorm1.DB) ([]*TypeWithID, er
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(TypeWithIDORMWithBeforeListApplyQuery); ok {
-		db, err = hook.BeforeListApplyQuery(ctx, db)
-		if err != nil {
+		if db, err = hook.BeforeListApplyQuery(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -1215,8 +1195,7 @@ func DefaultListTypeWithID(ctx context.Context, db *gorm1.DB) ([]*TypeWithID, er
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(TypeWithIDORMWithBeforeListFind); ok {
-		db, err = hook.BeforeListFind(ctx, db)
-		if err != nil {
+		if db, err = hook.BeforeListFind(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -1227,8 +1206,7 @@ func DefaultListTypeWithID(ctx context.Context, db *gorm1.DB) ([]*TypeWithID, er
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(TypeWithIDORMWithAfterListFind); ok {
-		err = hook.AfterListFind(ctx, db, &ormResponse)
-		if err != nil {
+		if err = hook.AfterListFind(ctx, db, &ormResponse); err != nil {
 			return nil, err
 		}
 	}
@@ -1263,8 +1241,7 @@ func DefaultCreateMultiaccountTypeWithID(ctx context.Context, in *MultiaccountTy
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(MultiaccountTypeWithIDORMWithBeforeCreate); ok {
-		db, err = hook.BeforeCreate(ctx, db)
-		if err != nil {
+		if db, err = hook.BeforeCreate(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -1272,8 +1249,7 @@ func DefaultCreateMultiaccountTypeWithID(ctx context.Context, in *MultiaccountTy
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(MultiaccountTypeWithIDORMWithAfterCreate); ok {
-		err = hook.AfterCreate(ctx, db)
-		if err != nil {
+		if err = hook.AfterCreate(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -1301,18 +1277,15 @@ func DefaultReadMultiaccountTypeWithID(ctx context.Context, in *MultiaccountType
 		return nil, errors.New("DefaultReadMultiaccountTypeWithID requires a non-zero primary key")
 	}
 	if hook, ok := interface{}(&ormObj).(MultiaccountTypeWithIDORMWithBeforeReadApplyQuery); ok {
-		db, err = hook.BeforeReadApplyQuery(ctx, db)
-		if err != nil {
+		if db, err = hook.BeforeReadApplyQuery(ctx, db); err != nil {
 			return nil, err
 		}
 	}
-	db, err = gorm2.ApplyFieldSelection(ctx, db, nil, &MultiaccountTypeWithIDORM{})
-	if err != nil {
+	if db, err = gorm2.ApplyFieldSelection(ctx, db, nil, &MultiaccountTypeWithIDORM{}); err != nil {
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(MultiaccountTypeWithIDORMWithBeforeReadFind); ok {
-		db, err = hook.BeforeReadFind(ctx, db)
-		if err != nil {
+		if db, err = hook.BeforeReadFind(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -1321,8 +1294,7 @@ func DefaultReadMultiaccountTypeWithID(ctx context.Context, in *MultiaccountType
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormResponse).(MultiaccountTypeWithIDORMWithAfterReadFind); ok {
-		err = hook.AfterReadFind(ctx, db)
-		if err != nil {
+		if err = hook.AfterReadFind(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -1352,8 +1324,7 @@ func DefaultDeleteMultiaccountTypeWithID(ctx context.Context, in *MultiaccountTy
 		return errors.New("A non-zero ID value is required for a delete call")
 	}
 	if hook, ok := interface{}(&ormObj).(MultiaccountTypeWithIDORMWithBeforeDelete); ok {
-		db, err = hook.BeforeDelete(ctx, db)
-		if err != nil {
+		if db, err = hook.BeforeDelete(ctx, db); err != nil {
 			return err
 		}
 	}
@@ -1389,14 +1360,12 @@ func DefaultStrictUpdateMultiaccountTypeWithID(ctx context.Context, in *Multiacc
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(MultiaccountTypeWithIDORMWithBeforeStrictUpdateCleanup); ok {
-		db, err = hook.BeforeStrictUpdateCleanup(ctx, db)
-		if err != nil {
+		if db, err = hook.BeforeStrictUpdateCleanup(ctx, db); err != nil {
 			return nil, err
 		}
 	}
 	if hook, ok := interface{}(&ormObj).(MultiaccountTypeWithIDORMWithBeforeStrictUpdateSave); ok {
-		db, err = hook.BeforeStrictUpdateSave(ctx, db)
-		if err != nil {
+		if db, err = hook.BeforeStrictUpdateSave(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -1405,8 +1374,7 @@ func DefaultStrictUpdateMultiaccountTypeWithID(ctx context.Context, in *Multiacc
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(MultiaccountTypeWithIDORMWithAfterStrictUpdateSave); ok {
-		err = hook.AfterStrictUpdateSave(ctx, db)
-		if err != nil {
+		if err = hook.AfterStrictUpdateSave(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -1438,8 +1406,7 @@ func DefaultPatchMultiaccountTypeWithID(ctx context.Context, in *MultiaccountTyp
 	var pbObj MultiaccountTypeWithID
 	var err error
 	if hook, ok := interface{}(&pbObj).(MultiaccountTypeWithIDWithBeforePatchRead); ok {
-		db, err = hook.BeforePatchRead(ctx, in, updateMask, db)
-		if err != nil {
+		if db, err = hook.BeforePatchRead(ctx, in, updateMask, db); err != nil {
 			return nil, err
 		}
 	}
@@ -1449,8 +1416,7 @@ func DefaultPatchMultiaccountTypeWithID(ctx context.Context, in *MultiaccountTyp
 	}
 	pbObj = *pbReadRes
 	if hook, ok := interface{}(&pbObj).(MultiaccountTypeWithIDWithBeforePatchApplyFieldMask); ok {
-		db, err = hook.BeforePatchApplyFieldMask(ctx, in, updateMask, db)
-		if err != nil {
+		if db, err = hook.BeforePatchApplyFieldMask(ctx, in, updateMask, db); err != nil {
 			return nil, err
 		}
 	}
@@ -1458,8 +1424,7 @@ func DefaultPatchMultiaccountTypeWithID(ctx context.Context, in *MultiaccountTyp
 		return nil, err
 	}
 	if hook, ok := interface{}(&pbObj).(MultiaccountTypeWithIDWithBeforePatchSave); ok {
-		db, err = hook.BeforePatchSave(ctx, in, updateMask, db)
-		if err != nil {
+		if db, err = hook.BeforePatchSave(ctx, in, updateMask, db); err != nil {
 			return nil, err
 		}
 	}
@@ -1468,8 +1433,7 @@ func DefaultPatchMultiaccountTypeWithID(ctx context.Context, in *MultiaccountTyp
 		return nil, err
 	}
 	if hook, ok := interface{}(pbResponse).(MultiaccountTypeWithIDWithAfterPatchSave); ok {
-		err = hook.AfterPatchSave(ctx, in, updateMask, db)
-		if err != nil {
+		if err = hook.AfterPatchSave(ctx, in, updateMask, db); err != nil {
 			return nil, err
 		}
 	}
@@ -1521,8 +1485,7 @@ func DefaultListMultiaccountTypeWithID(ctx context.Context, db *gorm1.DB) ([]*Mu
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(MultiaccountTypeWithIDORMWithBeforeListApplyQuery); ok {
-		db, err = hook.BeforeListApplyQuery(ctx, db)
-		if err != nil {
+		if db, err = hook.BeforeListApplyQuery(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -1531,8 +1494,7 @@ func DefaultListMultiaccountTypeWithID(ctx context.Context, db *gorm1.DB) ([]*Mu
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(MultiaccountTypeWithIDORMWithBeforeListFind); ok {
-		db, err = hook.BeforeListFind(ctx, db)
-		if err != nil {
+		if db, err = hook.BeforeListFind(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -1543,8 +1505,7 @@ func DefaultListMultiaccountTypeWithID(ctx context.Context, db *gorm1.DB) ([]*Mu
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(MultiaccountTypeWithIDORMWithAfterListFind); ok {
-		err = hook.AfterListFind(ctx, db, &ormResponse)
-		if err != nil {
+		if err = hook.AfterListFind(ctx, db, &ormResponse); err != nil {
 			return nil, err
 		}
 	}
@@ -1579,8 +1540,7 @@ func DefaultCreateMultiaccountTypeWithoutID(ctx context.Context, in *Multiaccoun
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(MultiaccountTypeWithoutIDORMWithBeforeCreate); ok {
-		db, err = hook.BeforeCreate(ctx, db)
-		if err != nil {
+		if db, err = hook.BeforeCreate(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -1588,8 +1548,7 @@ func DefaultCreateMultiaccountTypeWithoutID(ctx context.Context, in *Multiaccoun
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(MultiaccountTypeWithoutIDORMWithAfterCreate); ok {
-		err = hook.AfterCreate(ctx, db)
-		if err != nil {
+		if err = hook.AfterCreate(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -1632,8 +1591,7 @@ func DefaultListMultiaccountTypeWithoutID(ctx context.Context, db *gorm1.DB) ([]
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(MultiaccountTypeWithoutIDORMWithBeforeListApplyQuery); ok {
-		db, err = hook.BeforeListApplyQuery(ctx, db)
-		if err != nil {
+		if db, err = hook.BeforeListApplyQuery(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -1642,8 +1600,7 @@ func DefaultListMultiaccountTypeWithoutID(ctx context.Context, db *gorm1.DB) ([]
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(MultiaccountTypeWithoutIDORMWithBeforeListFind); ok {
-		db, err = hook.BeforeListFind(ctx, db)
-		if err != nil {
+		if db, err = hook.BeforeListFind(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -1653,8 +1610,7 @@ func DefaultListMultiaccountTypeWithoutID(ctx context.Context, db *gorm1.DB) ([]
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(MultiaccountTypeWithoutIDORMWithAfterListFind); ok {
-		err = hook.AfterListFind(ctx, db, &ormResponse)
-		if err != nil {
+		if err = hook.AfterListFind(ctx, db, &ormResponse); err != nil {
 			return nil, err
 		}
 	}
@@ -1689,8 +1645,7 @@ func DefaultCreatePrimaryUUIDType(ctx context.Context, in *PrimaryUUIDType, db *
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(PrimaryUUIDTypeORMWithBeforeCreate); ok {
-		db, err = hook.BeforeCreate(ctx, db)
-		if err != nil {
+		if db, err = hook.BeforeCreate(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -1698,8 +1653,7 @@ func DefaultCreatePrimaryUUIDType(ctx context.Context, in *PrimaryUUIDType, db *
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(PrimaryUUIDTypeORMWithAfterCreate); ok {
-		err = hook.AfterCreate(ctx, db)
-		if err != nil {
+		if err = hook.AfterCreate(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -1727,18 +1681,15 @@ func DefaultReadPrimaryUUIDType(ctx context.Context, in *PrimaryUUIDType, db *go
 		return nil, errors.New("DefaultReadPrimaryUUIDType requires a non-zero primary key")
 	}
 	if hook, ok := interface{}(&ormObj).(PrimaryUUIDTypeORMWithBeforeReadApplyQuery); ok {
-		db, err = hook.BeforeReadApplyQuery(ctx, db)
-		if err != nil {
+		if db, err = hook.BeforeReadApplyQuery(ctx, db); err != nil {
 			return nil, err
 		}
 	}
-	db, err = gorm2.ApplyFieldSelection(ctx, db, nil, &PrimaryUUIDTypeORM{})
-	if err != nil {
+	if db, err = gorm2.ApplyFieldSelection(ctx, db, nil, &PrimaryUUIDTypeORM{}); err != nil {
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(PrimaryUUIDTypeORMWithBeforeReadFind); ok {
-		db, err = hook.BeforeReadFind(ctx, db)
-		if err != nil {
+		if db, err = hook.BeforeReadFind(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -1747,8 +1698,7 @@ func DefaultReadPrimaryUUIDType(ctx context.Context, in *PrimaryUUIDType, db *go
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormResponse).(PrimaryUUIDTypeORMWithAfterReadFind); ok {
-		err = hook.AfterReadFind(ctx, db)
-		if err != nil {
+		if err = hook.AfterReadFind(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -1778,8 +1728,7 @@ func DefaultDeletePrimaryUUIDType(ctx context.Context, in *PrimaryUUIDType, db *
 		return errors.New("A non-zero ID value is required for a delete call")
 	}
 	if hook, ok := interface{}(&ormObj).(PrimaryUUIDTypeORMWithBeforeDelete); ok {
-		db, err = hook.BeforeDelete(ctx, db)
-		if err != nil {
+		if db, err = hook.BeforeDelete(ctx, db); err != nil {
 			return err
 		}
 	}
@@ -1815,8 +1764,7 @@ func DefaultStrictUpdatePrimaryUUIDType(ctx context.Context, in *PrimaryUUIDType
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(PrimaryUUIDTypeORMWithBeforeStrictUpdateCleanup); ok {
-		db, err = hook.BeforeStrictUpdateCleanup(ctx, db)
-		if err != nil {
+		if db, err = hook.BeforeStrictUpdateCleanup(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -1830,8 +1778,7 @@ func DefaultStrictUpdatePrimaryUUIDType(ctx context.Context, in *PrimaryUUIDType
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(PrimaryUUIDTypeORMWithBeforeStrictUpdateSave); ok {
-		db, err = hook.BeforeStrictUpdateSave(ctx, db)
-		if err != nil {
+		if db, err = hook.BeforeStrictUpdateSave(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -1839,8 +1786,7 @@ func DefaultStrictUpdatePrimaryUUIDType(ctx context.Context, in *PrimaryUUIDType
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(PrimaryUUIDTypeORMWithAfterStrictUpdateSave); ok {
-		err = hook.AfterStrictUpdateSave(ctx, db)
-		if err != nil {
+		if err = hook.AfterStrictUpdateSave(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -1872,8 +1818,7 @@ func DefaultPatchPrimaryUUIDType(ctx context.Context, in *PrimaryUUIDType, updat
 	var pbObj PrimaryUUIDType
 	var err error
 	if hook, ok := interface{}(&pbObj).(PrimaryUUIDTypeWithBeforePatchRead); ok {
-		db, err = hook.BeforePatchRead(ctx, in, updateMask, db)
-		if err != nil {
+		if db, err = hook.BeforePatchRead(ctx, in, updateMask, db); err != nil {
 			return nil, err
 		}
 	}
@@ -1883,8 +1828,7 @@ func DefaultPatchPrimaryUUIDType(ctx context.Context, in *PrimaryUUIDType, updat
 	}
 	pbObj = *pbReadRes
 	if hook, ok := interface{}(&pbObj).(PrimaryUUIDTypeWithBeforePatchApplyFieldMask); ok {
-		db, err = hook.BeforePatchApplyFieldMask(ctx, in, updateMask, db)
-		if err != nil {
+		if db, err = hook.BeforePatchApplyFieldMask(ctx, in, updateMask, db); err != nil {
 			return nil, err
 		}
 	}
@@ -1892,8 +1836,7 @@ func DefaultPatchPrimaryUUIDType(ctx context.Context, in *PrimaryUUIDType, updat
 		return nil, err
 	}
 	if hook, ok := interface{}(&pbObj).(PrimaryUUIDTypeWithBeforePatchSave); ok {
-		db, err = hook.BeforePatchSave(ctx, in, updateMask, db)
-		if err != nil {
+		if db, err = hook.BeforePatchSave(ctx, in, updateMask, db); err != nil {
 			return nil, err
 		}
 	}
@@ -1902,8 +1845,7 @@ func DefaultPatchPrimaryUUIDType(ctx context.Context, in *PrimaryUUIDType, updat
 		return nil, err
 	}
 	if hook, ok := interface{}(pbResponse).(PrimaryUUIDTypeWithAfterPatchSave); ok {
-		err = hook.AfterPatchSave(ctx, in, updateMask, db)
-		if err != nil {
+		if err = hook.AfterPatchSave(ctx, in, updateMask, db); err != nil {
 			return nil, err
 		}
 	}
@@ -1973,8 +1915,7 @@ func DefaultListPrimaryUUIDType(ctx context.Context, db *gorm1.DB) ([]*PrimaryUU
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(PrimaryUUIDTypeORMWithBeforeListApplyQuery); ok {
-		db, err = hook.BeforeListApplyQuery(ctx, db)
-		if err != nil {
+		if db, err = hook.BeforeListApplyQuery(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -1983,8 +1924,7 @@ func DefaultListPrimaryUUIDType(ctx context.Context, db *gorm1.DB) ([]*PrimaryUU
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(PrimaryUUIDTypeORMWithBeforeListFind); ok {
-		db, err = hook.BeforeListFind(ctx, db)
-		if err != nil {
+		if db, err = hook.BeforeListFind(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -1995,8 +1935,7 @@ func DefaultListPrimaryUUIDType(ctx context.Context, db *gorm1.DB) ([]*PrimaryUU
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(PrimaryUUIDTypeORMWithAfterListFind); ok {
-		err = hook.AfterListFind(ctx, db, &ormResponse)
-		if err != nil {
+		if err = hook.AfterListFind(ctx, db, &ormResponse); err != nil {
 			return nil, err
 		}
 	}
@@ -2031,8 +1970,7 @@ func DefaultCreatePrimaryStringType(ctx context.Context, in *PrimaryStringType, 
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(PrimaryStringTypeORMWithBeforeCreate); ok {
-		db, err = hook.BeforeCreate(ctx, db)
-		if err != nil {
+		if db, err = hook.BeforeCreate(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -2040,8 +1978,7 @@ func DefaultCreatePrimaryStringType(ctx context.Context, in *PrimaryStringType, 
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(PrimaryStringTypeORMWithAfterCreate); ok {
-		err = hook.AfterCreate(ctx, db)
-		if err != nil {
+		if err = hook.AfterCreate(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -2069,18 +2006,15 @@ func DefaultReadPrimaryStringType(ctx context.Context, in *PrimaryStringType, db
 		return nil, errors.New("DefaultReadPrimaryStringType requires a non-zero primary key")
 	}
 	if hook, ok := interface{}(&ormObj).(PrimaryStringTypeORMWithBeforeReadApplyQuery); ok {
-		db, err = hook.BeforeReadApplyQuery(ctx, db)
-		if err != nil {
+		if db, err = hook.BeforeReadApplyQuery(ctx, db); err != nil {
 			return nil, err
 		}
 	}
-	db, err = gorm2.ApplyFieldSelection(ctx, db, nil, &PrimaryStringTypeORM{})
-	if err != nil {
+	if db, err = gorm2.ApplyFieldSelection(ctx, db, nil, &PrimaryStringTypeORM{}); err != nil {
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(PrimaryStringTypeORMWithBeforeReadFind); ok {
-		db, err = hook.BeforeReadFind(ctx, db)
-		if err != nil {
+		if db, err = hook.BeforeReadFind(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -2089,8 +2023,7 @@ func DefaultReadPrimaryStringType(ctx context.Context, in *PrimaryStringType, db
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormResponse).(PrimaryStringTypeORMWithAfterReadFind); ok {
-		err = hook.AfterReadFind(ctx, db)
-		if err != nil {
+		if err = hook.AfterReadFind(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -2120,8 +2053,7 @@ func DefaultDeletePrimaryStringType(ctx context.Context, in *PrimaryStringType, 
 		return errors.New("A non-zero ID value is required for a delete call")
 	}
 	if hook, ok := interface{}(&ormObj).(PrimaryStringTypeORMWithBeforeDelete); ok {
-		db, err = hook.BeforeDelete(ctx, db)
-		if err != nil {
+		if db, err = hook.BeforeDelete(ctx, db); err != nil {
 			return err
 		}
 	}
@@ -2157,8 +2089,7 @@ func DefaultStrictUpdatePrimaryStringType(ctx context.Context, in *PrimaryString
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(PrimaryStringTypeORMWithBeforeStrictUpdateCleanup); ok {
-		db, err = hook.BeforeStrictUpdateCleanup(ctx, db)
-		if err != nil {
+		if db, err = hook.BeforeStrictUpdateCleanup(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -2172,8 +2103,7 @@ func DefaultStrictUpdatePrimaryStringType(ctx context.Context, in *PrimaryString
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(PrimaryStringTypeORMWithBeforeStrictUpdateSave); ok {
-		db, err = hook.BeforeStrictUpdateSave(ctx, db)
-		if err != nil {
+		if db, err = hook.BeforeStrictUpdateSave(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -2181,8 +2111,7 @@ func DefaultStrictUpdatePrimaryStringType(ctx context.Context, in *PrimaryString
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(PrimaryStringTypeORMWithAfterStrictUpdateSave); ok {
-		err = hook.AfterStrictUpdateSave(ctx, db)
-		if err != nil {
+		if err = hook.AfterStrictUpdateSave(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -2214,8 +2143,7 @@ func DefaultPatchPrimaryStringType(ctx context.Context, in *PrimaryStringType, u
 	var pbObj PrimaryStringType
 	var err error
 	if hook, ok := interface{}(&pbObj).(PrimaryStringTypeWithBeforePatchRead); ok {
-		db, err = hook.BeforePatchRead(ctx, in, updateMask, db)
-		if err != nil {
+		if db, err = hook.BeforePatchRead(ctx, in, updateMask, db); err != nil {
 			return nil, err
 		}
 	}
@@ -2225,8 +2153,7 @@ func DefaultPatchPrimaryStringType(ctx context.Context, in *PrimaryStringType, u
 	}
 	pbObj = *pbReadRes
 	if hook, ok := interface{}(&pbObj).(PrimaryStringTypeWithBeforePatchApplyFieldMask); ok {
-		db, err = hook.BeforePatchApplyFieldMask(ctx, in, updateMask, db)
-		if err != nil {
+		if db, err = hook.BeforePatchApplyFieldMask(ctx, in, updateMask, db); err != nil {
 			return nil, err
 		}
 	}
@@ -2234,8 +2161,7 @@ func DefaultPatchPrimaryStringType(ctx context.Context, in *PrimaryStringType, u
 		return nil, err
 	}
 	if hook, ok := interface{}(&pbObj).(PrimaryStringTypeWithBeforePatchSave); ok {
-		db, err = hook.BeforePatchSave(ctx, in, updateMask, db)
-		if err != nil {
+		if db, err = hook.BeforePatchSave(ctx, in, updateMask, db); err != nil {
 			return nil, err
 		}
 	}
@@ -2244,8 +2170,7 @@ func DefaultPatchPrimaryStringType(ctx context.Context, in *PrimaryStringType, u
 		return nil, err
 	}
 	if hook, ok := interface{}(pbResponse).(PrimaryStringTypeWithAfterPatchSave); ok {
-		err = hook.AfterPatchSave(ctx, in, updateMask, db)
-		if err != nil {
+		if err = hook.AfterPatchSave(ctx, in, updateMask, db); err != nil {
 			return nil, err
 		}
 	}
@@ -2315,8 +2240,7 @@ func DefaultListPrimaryStringType(ctx context.Context, db *gorm1.DB) ([]*Primary
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(PrimaryStringTypeORMWithBeforeListApplyQuery); ok {
-		db, err = hook.BeforeListApplyQuery(ctx, db)
-		if err != nil {
+		if db, err = hook.BeforeListApplyQuery(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -2325,8 +2249,7 @@ func DefaultListPrimaryStringType(ctx context.Context, db *gorm1.DB) ([]*Primary
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(PrimaryStringTypeORMWithBeforeListFind); ok {
-		db, err = hook.BeforeListFind(ctx, db)
-		if err != nil {
+		if db, err = hook.BeforeListFind(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -2337,8 +2260,7 @@ func DefaultListPrimaryStringType(ctx context.Context, db *gorm1.DB) ([]*Primary
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(PrimaryStringTypeORMWithAfterListFind); ok {
-		err = hook.AfterListFind(ctx, db, &ormResponse)
-		if err != nil {
+		if err = hook.AfterListFind(ctx, db, &ormResponse); err != nil {
 			return nil, err
 		}
 	}
@@ -2373,8 +2295,7 @@ func DefaultCreatePrimaryIncluded(ctx context.Context, in *PrimaryIncluded, db *
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(PrimaryIncludedORMWithBeforeCreate); ok {
-		db, err = hook.BeforeCreate(ctx, db)
-		if err != nil {
+		if db, err = hook.BeforeCreate(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -2382,8 +2303,7 @@ func DefaultCreatePrimaryIncluded(ctx context.Context, in *PrimaryIncluded, db *
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(PrimaryIncludedORMWithAfterCreate); ok {
-		err = hook.AfterCreate(ctx, db)
-		if err != nil {
+		if err = hook.AfterCreate(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -2444,8 +2364,7 @@ func DefaultListPrimaryIncluded(ctx context.Context, db *gorm1.DB) ([]*PrimaryIn
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(PrimaryIncludedORMWithBeforeListApplyQuery); ok {
-		db, err = hook.BeforeListApplyQuery(ctx, db)
-		if err != nil {
+		if db, err = hook.BeforeListApplyQuery(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -2454,8 +2373,7 @@ func DefaultListPrimaryIncluded(ctx context.Context, db *gorm1.DB) ([]*PrimaryIn
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(PrimaryIncludedORMWithBeforeListFind); ok {
-		db, err = hook.BeforeListFind(ctx, db)
-		if err != nil {
+		if db, err = hook.BeforeListFind(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -2466,8 +2384,7 @@ func DefaultListPrimaryIncluded(ctx context.Context, db *gorm1.DB) ([]*PrimaryIn
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(PrimaryIncludedORMWithAfterListFind); ok {
-		err = hook.AfterListFind(ctx, db, &ormResponse)
-		if err != nil {
+		if err = hook.AfterListFind(ctx, db, &ormResponse); err != nil {
 			return nil, err
 		}
 	}

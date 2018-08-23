@@ -857,8 +857,7 @@ func DefaultCreateUser(ctx context.Context, in *User, db *gorm1.DB) (*User, erro
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(UserORMWithBeforeCreate); ok {
-		db, err = hook.BeforeCreate(ctx, db)
-		if err != nil {
+		if db, err = hook.BeforeCreate(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -866,8 +865,7 @@ func DefaultCreateUser(ctx context.Context, in *User, db *gorm1.DB) (*User, erro
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(UserORMWithAfterCreate); ok {
-		err = hook.AfterCreate(ctx, db)
-		if err != nil {
+		if err = hook.AfterCreate(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -895,18 +893,15 @@ func DefaultReadUser(ctx context.Context, in *User, db *gorm1.DB) (*User, error)
 		return nil, errors.New("DefaultReadUser requires a non-zero primary key")
 	}
 	if hook, ok := interface{}(&ormObj).(UserORMWithBeforeReadApplyQuery); ok {
-		db, err = hook.BeforeReadApplyQuery(ctx, db)
-		if err != nil {
+		if db, err = hook.BeforeReadApplyQuery(ctx, db); err != nil {
 			return nil, err
 		}
 	}
-	db, err = gorm2.ApplyFieldSelection(ctx, db, nil, &UserORM{})
-	if err != nil {
+	if db, err = gorm2.ApplyFieldSelection(ctx, db, nil, &UserORM{}); err != nil {
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(UserORMWithBeforeReadFind); ok {
-		db, err = hook.BeforeReadFind(ctx, db)
-		if err != nil {
+		if db, err = hook.BeforeReadFind(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -915,8 +910,7 @@ func DefaultReadUser(ctx context.Context, in *User, db *gorm1.DB) (*User, error)
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormResponse).(UserORMWithAfterReadFind); ok {
-		err = hook.AfterReadFind(ctx, db)
-		if err != nil {
+		if err = hook.AfterReadFind(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -946,8 +940,7 @@ func DefaultDeleteUser(ctx context.Context, in *User, db *gorm1.DB) error {
 		return errors.New("A non-zero ID value is required for a delete call")
 	}
 	if hook, ok := interface{}(&ormObj).(UserORMWithBeforeDelete); ok {
-		db, err = hook.BeforeDelete(ctx, db)
-		if err != nil {
+		if db, err = hook.BeforeDelete(ctx, db); err != nil {
 			return err
 		}
 	}
@@ -983,8 +976,7 @@ func DefaultStrictUpdateUser(ctx context.Context, in *User, db *gorm1.DB) (*User
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(UserORMWithBeforeStrictUpdateCleanup); ok {
-		db, err = hook.BeforeStrictUpdateCleanup(ctx, db)
-		if err != nil {
+		if db, err = hook.BeforeStrictUpdateCleanup(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -1018,8 +1010,7 @@ func DefaultStrictUpdateUser(ctx context.Context, in *User, db *gorm1.DB) (*User
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(UserORMWithBeforeStrictUpdateSave); ok {
-		db, err = hook.BeforeStrictUpdateSave(ctx, db)
-		if err != nil {
+		if db, err = hook.BeforeStrictUpdateSave(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -1028,8 +1019,7 @@ func DefaultStrictUpdateUser(ctx context.Context, in *User, db *gorm1.DB) (*User
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(UserORMWithAfterStrictUpdateSave); ok {
-		err = hook.AfterStrictUpdateSave(ctx, db)
-		if err != nil {
+		if err = hook.AfterStrictUpdateSave(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -1061,8 +1051,7 @@ func DefaultPatchUser(ctx context.Context, in *User, updateMask *field_mask1.Fie
 	var pbObj User
 	var err error
 	if hook, ok := interface{}(&pbObj).(UserWithBeforePatchRead); ok {
-		db, err = hook.BeforePatchRead(ctx, in, updateMask, db)
-		if err != nil {
+		if db, err = hook.BeforePatchRead(ctx, in, updateMask, db); err != nil {
 			return nil, err
 		}
 	}
@@ -1072,8 +1061,7 @@ func DefaultPatchUser(ctx context.Context, in *User, updateMask *field_mask1.Fie
 	}
 	pbObj = *pbReadRes
 	if hook, ok := interface{}(&pbObj).(UserWithBeforePatchApplyFieldMask); ok {
-		db, err = hook.BeforePatchApplyFieldMask(ctx, in, updateMask, db)
-		if err != nil {
+		if db, err = hook.BeforePatchApplyFieldMask(ctx, in, updateMask, db); err != nil {
 			return nil, err
 		}
 	}
@@ -1081,8 +1069,7 @@ func DefaultPatchUser(ctx context.Context, in *User, updateMask *field_mask1.Fie
 		return nil, err
 	}
 	if hook, ok := interface{}(&pbObj).(UserWithBeforePatchSave); ok {
-		db, err = hook.BeforePatchSave(ctx, in, updateMask, db)
-		if err != nil {
+		if db, err = hook.BeforePatchSave(ctx, in, updateMask, db); err != nil {
 			return nil, err
 		}
 	}
@@ -1091,8 +1078,7 @@ func DefaultPatchUser(ctx context.Context, in *User, updateMask *field_mask1.Fie
 		return nil, err
 	}
 	if hook, ok := interface{}(pbResponse).(UserWithAfterPatchSave); ok {
-		err = hook.AfterPatchSave(ctx, in, updateMask, db)
-		if err != nil {
+		if err = hook.AfterPatchSave(ctx, in, updateMask, db); err != nil {
 			return nil, err
 		}
 	}
@@ -1250,8 +1236,7 @@ func DefaultListUser(ctx context.Context, db *gorm1.DB) ([]*User, error) {
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(UserORMWithBeforeListApplyQuery); ok {
-		db, err = hook.BeforeListApplyQuery(ctx, db)
-		if err != nil {
+		if db, err = hook.BeforeListApplyQuery(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -1260,8 +1245,7 @@ func DefaultListUser(ctx context.Context, db *gorm1.DB) ([]*User, error) {
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(UserORMWithBeforeListFind); ok {
-		db, err = hook.BeforeListFind(ctx, db)
-		if err != nil {
+		if db, err = hook.BeforeListFind(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -1272,8 +1256,7 @@ func DefaultListUser(ctx context.Context, db *gorm1.DB) ([]*User, error) {
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(UserORMWithAfterListFind); ok {
-		err = hook.AfterListFind(ctx, db, &ormResponse)
-		if err != nil {
+		if err = hook.AfterListFind(ctx, db, &ormResponse); err != nil {
 			return nil, err
 		}
 	}
@@ -1308,8 +1291,7 @@ func DefaultCreateEmail(ctx context.Context, in *Email, db *gorm1.DB) (*Email, e
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(EmailORMWithBeforeCreate); ok {
-		db, err = hook.BeforeCreate(ctx, db)
-		if err != nil {
+		if db, err = hook.BeforeCreate(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -1317,8 +1299,7 @@ func DefaultCreateEmail(ctx context.Context, in *Email, db *gorm1.DB) (*Email, e
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(EmailORMWithAfterCreate); ok {
-		err = hook.AfterCreate(ctx, db)
-		if err != nil {
+		if err = hook.AfterCreate(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -1346,18 +1327,15 @@ func DefaultReadEmail(ctx context.Context, in *Email, db *gorm1.DB) (*Email, err
 		return nil, errors.New("DefaultReadEmail requires a non-zero primary key")
 	}
 	if hook, ok := interface{}(&ormObj).(EmailORMWithBeforeReadApplyQuery); ok {
-		db, err = hook.BeforeReadApplyQuery(ctx, db)
-		if err != nil {
+		if db, err = hook.BeforeReadApplyQuery(ctx, db); err != nil {
 			return nil, err
 		}
 	}
-	db, err = gorm2.ApplyFieldSelection(ctx, db, nil, &EmailORM{})
-	if err != nil {
+	if db, err = gorm2.ApplyFieldSelection(ctx, db, nil, &EmailORM{}); err != nil {
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(EmailORMWithBeforeReadFind); ok {
-		db, err = hook.BeforeReadFind(ctx, db)
-		if err != nil {
+		if db, err = hook.BeforeReadFind(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -1366,8 +1344,7 @@ func DefaultReadEmail(ctx context.Context, in *Email, db *gorm1.DB) (*Email, err
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormResponse).(EmailORMWithAfterReadFind); ok {
-		err = hook.AfterReadFind(ctx, db)
-		if err != nil {
+		if err = hook.AfterReadFind(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -1397,8 +1374,7 @@ func DefaultDeleteEmail(ctx context.Context, in *Email, db *gorm1.DB) error {
 		return errors.New("A non-zero ID value is required for a delete call")
 	}
 	if hook, ok := interface{}(&ormObj).(EmailORMWithBeforeDelete); ok {
-		db, err = hook.BeforeDelete(ctx, db)
-		if err != nil {
+		if db, err = hook.BeforeDelete(ctx, db); err != nil {
 			return err
 		}
 	}
@@ -1434,14 +1410,12 @@ func DefaultStrictUpdateEmail(ctx context.Context, in *Email, db *gorm1.DB) (*Em
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(EmailORMWithBeforeStrictUpdateCleanup); ok {
-		db, err = hook.BeforeStrictUpdateCleanup(ctx, db)
-		if err != nil {
+		if db, err = hook.BeforeStrictUpdateCleanup(ctx, db); err != nil {
 			return nil, err
 		}
 	}
 	if hook, ok := interface{}(&ormObj).(EmailORMWithBeforeStrictUpdateSave); ok {
-		db, err = hook.BeforeStrictUpdateSave(ctx, db)
-		if err != nil {
+		if db, err = hook.BeforeStrictUpdateSave(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -1450,8 +1424,7 @@ func DefaultStrictUpdateEmail(ctx context.Context, in *Email, db *gorm1.DB) (*Em
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(EmailORMWithAfterStrictUpdateSave); ok {
-		err = hook.AfterStrictUpdateSave(ctx, db)
-		if err != nil {
+		if err = hook.AfterStrictUpdateSave(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -1483,8 +1456,7 @@ func DefaultPatchEmail(ctx context.Context, in *Email, updateMask *field_mask1.F
 	var pbObj Email
 	var err error
 	if hook, ok := interface{}(&pbObj).(EmailWithBeforePatchRead); ok {
-		db, err = hook.BeforePatchRead(ctx, in, updateMask, db)
-		if err != nil {
+		if db, err = hook.BeforePatchRead(ctx, in, updateMask, db); err != nil {
 			return nil, err
 		}
 	}
@@ -1494,8 +1466,7 @@ func DefaultPatchEmail(ctx context.Context, in *Email, updateMask *field_mask1.F
 	}
 	pbObj = *pbReadRes
 	if hook, ok := interface{}(&pbObj).(EmailWithBeforePatchApplyFieldMask); ok {
-		db, err = hook.BeforePatchApplyFieldMask(ctx, in, updateMask, db)
-		if err != nil {
+		if db, err = hook.BeforePatchApplyFieldMask(ctx, in, updateMask, db); err != nil {
 			return nil, err
 		}
 	}
@@ -1503,8 +1474,7 @@ func DefaultPatchEmail(ctx context.Context, in *Email, updateMask *field_mask1.F
 		return nil, err
 	}
 	if hook, ok := interface{}(&pbObj).(EmailWithBeforePatchSave); ok {
-		db, err = hook.BeforePatchSave(ctx, in, updateMask, db)
-		if err != nil {
+		if db, err = hook.BeforePatchSave(ctx, in, updateMask, db); err != nil {
 			return nil, err
 		}
 	}
@@ -1513,8 +1483,7 @@ func DefaultPatchEmail(ctx context.Context, in *Email, updateMask *field_mask1.F
 		return nil, err
 	}
 	if hook, ok := interface{}(pbResponse).(EmailWithAfterPatchSave); ok {
-		err = hook.AfterPatchSave(ctx, in, updateMask, db)
-		if err != nil {
+		if err = hook.AfterPatchSave(ctx, in, updateMask, db); err != nil {
 			return nil, err
 		}
 	}
@@ -1578,8 +1547,7 @@ func DefaultListEmail(ctx context.Context, db *gorm1.DB) ([]*Email, error) {
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(EmailORMWithBeforeListApplyQuery); ok {
-		db, err = hook.BeforeListApplyQuery(ctx, db)
-		if err != nil {
+		if db, err = hook.BeforeListApplyQuery(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -1588,8 +1556,7 @@ func DefaultListEmail(ctx context.Context, db *gorm1.DB) ([]*Email, error) {
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(EmailORMWithBeforeListFind); ok {
-		db, err = hook.BeforeListFind(ctx, db)
-		if err != nil {
+		if db, err = hook.BeforeListFind(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -1600,8 +1567,7 @@ func DefaultListEmail(ctx context.Context, db *gorm1.DB) ([]*Email, error) {
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(EmailORMWithAfterListFind); ok {
-		err = hook.AfterListFind(ctx, db, &ormResponse)
-		if err != nil {
+		if err = hook.AfterListFind(ctx, db, &ormResponse); err != nil {
 			return nil, err
 		}
 	}
@@ -1636,8 +1602,7 @@ func DefaultCreateAddress(ctx context.Context, in *Address, db *gorm1.DB) (*Addr
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(AddressORMWithBeforeCreate); ok {
-		db, err = hook.BeforeCreate(ctx, db)
-		if err != nil {
+		if db, err = hook.BeforeCreate(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -1645,8 +1610,7 @@ func DefaultCreateAddress(ctx context.Context, in *Address, db *gorm1.DB) (*Addr
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(AddressORMWithAfterCreate); ok {
-		err = hook.AfterCreate(ctx, db)
-		if err != nil {
+		if err = hook.AfterCreate(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -1674,18 +1638,15 @@ func DefaultReadAddress(ctx context.Context, in *Address, db *gorm1.DB) (*Addres
 		return nil, errors.New("DefaultReadAddress requires a non-zero primary key")
 	}
 	if hook, ok := interface{}(&ormObj).(AddressORMWithBeforeReadApplyQuery); ok {
-		db, err = hook.BeforeReadApplyQuery(ctx, db)
-		if err != nil {
+		if db, err = hook.BeforeReadApplyQuery(ctx, db); err != nil {
 			return nil, err
 		}
 	}
-	db, err = gorm2.ApplyFieldSelection(ctx, db, nil, &AddressORM{})
-	if err != nil {
+	if db, err = gorm2.ApplyFieldSelection(ctx, db, nil, &AddressORM{}); err != nil {
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(AddressORMWithBeforeReadFind); ok {
-		db, err = hook.BeforeReadFind(ctx, db)
-		if err != nil {
+		if db, err = hook.BeforeReadFind(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -1694,8 +1655,7 @@ func DefaultReadAddress(ctx context.Context, in *Address, db *gorm1.DB) (*Addres
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormResponse).(AddressORMWithAfterReadFind); ok {
-		err = hook.AfterReadFind(ctx, db)
-		if err != nil {
+		if err = hook.AfterReadFind(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -1725,8 +1685,7 @@ func DefaultDeleteAddress(ctx context.Context, in *Address, db *gorm1.DB) error 
 		return errors.New("A non-zero ID value is required for a delete call")
 	}
 	if hook, ok := interface{}(&ormObj).(AddressORMWithBeforeDelete); ok {
-		db, err = hook.BeforeDelete(ctx, db)
-		if err != nil {
+		if db, err = hook.BeforeDelete(ctx, db); err != nil {
 			return err
 		}
 	}
@@ -1762,14 +1721,12 @@ func DefaultStrictUpdateAddress(ctx context.Context, in *Address, db *gorm1.DB) 
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(AddressORMWithBeforeStrictUpdateCleanup); ok {
-		db, err = hook.BeforeStrictUpdateCleanup(ctx, db)
-		if err != nil {
+		if db, err = hook.BeforeStrictUpdateCleanup(ctx, db); err != nil {
 			return nil, err
 		}
 	}
 	if hook, ok := interface{}(&ormObj).(AddressORMWithBeforeStrictUpdateSave); ok {
-		db, err = hook.BeforeStrictUpdateSave(ctx, db)
-		if err != nil {
+		if db, err = hook.BeforeStrictUpdateSave(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -1778,8 +1735,7 @@ func DefaultStrictUpdateAddress(ctx context.Context, in *Address, db *gorm1.DB) 
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(AddressORMWithAfterStrictUpdateSave); ok {
-		err = hook.AfterStrictUpdateSave(ctx, db)
-		if err != nil {
+		if err = hook.AfterStrictUpdateSave(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -1811,8 +1767,7 @@ func DefaultPatchAddress(ctx context.Context, in *Address, updateMask *field_mas
 	var pbObj Address
 	var err error
 	if hook, ok := interface{}(&pbObj).(AddressWithBeforePatchRead); ok {
-		db, err = hook.BeforePatchRead(ctx, in, updateMask, db)
-		if err != nil {
+		if db, err = hook.BeforePatchRead(ctx, in, updateMask, db); err != nil {
 			return nil, err
 		}
 	}
@@ -1822,8 +1777,7 @@ func DefaultPatchAddress(ctx context.Context, in *Address, updateMask *field_mas
 	}
 	pbObj = *pbReadRes
 	if hook, ok := interface{}(&pbObj).(AddressWithBeforePatchApplyFieldMask); ok {
-		db, err = hook.BeforePatchApplyFieldMask(ctx, in, updateMask, db)
-		if err != nil {
+		if db, err = hook.BeforePatchApplyFieldMask(ctx, in, updateMask, db); err != nil {
 			return nil, err
 		}
 	}
@@ -1831,8 +1785,7 @@ func DefaultPatchAddress(ctx context.Context, in *Address, updateMask *field_mas
 		return nil, err
 	}
 	if hook, ok := interface{}(&pbObj).(AddressWithBeforePatchSave); ok {
-		db, err = hook.BeforePatchSave(ctx, in, updateMask, db)
-		if err != nil {
+		if db, err = hook.BeforePatchSave(ctx, in, updateMask, db); err != nil {
 			return nil, err
 		}
 	}
@@ -1841,8 +1794,7 @@ func DefaultPatchAddress(ctx context.Context, in *Address, updateMask *field_mas
 		return nil, err
 	}
 	if hook, ok := interface{}(pbResponse).(AddressWithAfterPatchSave); ok {
-		err = hook.AfterPatchSave(ctx, in, updateMask, db)
-		if err != nil {
+		if err = hook.AfterPatchSave(ctx, in, updateMask, db); err != nil {
 			return nil, err
 		}
 	}
@@ -1910,8 +1862,7 @@ func DefaultListAddress(ctx context.Context, db *gorm1.DB) ([]*Address, error) {
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(AddressORMWithBeforeListApplyQuery); ok {
-		db, err = hook.BeforeListApplyQuery(ctx, db)
-		if err != nil {
+		if db, err = hook.BeforeListApplyQuery(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -1920,8 +1871,7 @@ func DefaultListAddress(ctx context.Context, db *gorm1.DB) ([]*Address, error) {
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(AddressORMWithBeforeListFind); ok {
-		db, err = hook.BeforeListFind(ctx, db)
-		if err != nil {
+		if db, err = hook.BeforeListFind(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -1932,8 +1882,7 @@ func DefaultListAddress(ctx context.Context, db *gorm1.DB) ([]*Address, error) {
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(AddressORMWithAfterListFind); ok {
-		err = hook.AfterListFind(ctx, db, &ormResponse)
-		if err != nil {
+		if err = hook.AfterListFind(ctx, db, &ormResponse); err != nil {
 			return nil, err
 		}
 	}
@@ -1968,8 +1917,7 @@ func DefaultCreateLanguage(ctx context.Context, in *Language, db *gorm1.DB) (*La
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(LanguageORMWithBeforeCreate); ok {
-		db, err = hook.BeforeCreate(ctx, db)
-		if err != nil {
+		if db, err = hook.BeforeCreate(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -1977,8 +1925,7 @@ func DefaultCreateLanguage(ctx context.Context, in *Language, db *gorm1.DB) (*La
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(LanguageORMWithAfterCreate); ok {
-		err = hook.AfterCreate(ctx, db)
-		if err != nil {
+		if err = hook.AfterCreate(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -2006,18 +1953,15 @@ func DefaultReadLanguage(ctx context.Context, in *Language, db *gorm1.DB) (*Lang
 		return nil, errors.New("DefaultReadLanguage requires a non-zero primary key")
 	}
 	if hook, ok := interface{}(&ormObj).(LanguageORMWithBeforeReadApplyQuery); ok {
-		db, err = hook.BeforeReadApplyQuery(ctx, db)
-		if err != nil {
+		if db, err = hook.BeforeReadApplyQuery(ctx, db); err != nil {
 			return nil, err
 		}
 	}
-	db, err = gorm2.ApplyFieldSelection(ctx, db, nil, &LanguageORM{})
-	if err != nil {
+	if db, err = gorm2.ApplyFieldSelection(ctx, db, nil, &LanguageORM{}); err != nil {
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(LanguageORMWithBeforeReadFind); ok {
-		db, err = hook.BeforeReadFind(ctx, db)
-		if err != nil {
+		if db, err = hook.BeforeReadFind(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -2026,8 +1970,7 @@ func DefaultReadLanguage(ctx context.Context, in *Language, db *gorm1.DB) (*Lang
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormResponse).(LanguageORMWithAfterReadFind); ok {
-		err = hook.AfterReadFind(ctx, db)
-		if err != nil {
+		if err = hook.AfterReadFind(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -2057,8 +2000,7 @@ func DefaultDeleteLanguage(ctx context.Context, in *Language, db *gorm1.DB) erro
 		return errors.New("A non-zero ID value is required for a delete call")
 	}
 	if hook, ok := interface{}(&ormObj).(LanguageORMWithBeforeDelete); ok {
-		db, err = hook.BeforeDelete(ctx, db)
-		if err != nil {
+		if db, err = hook.BeforeDelete(ctx, db); err != nil {
 			return err
 		}
 	}
@@ -2094,14 +2036,12 @@ func DefaultStrictUpdateLanguage(ctx context.Context, in *Language, db *gorm1.DB
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(LanguageORMWithBeforeStrictUpdateCleanup); ok {
-		db, err = hook.BeforeStrictUpdateCleanup(ctx, db)
-		if err != nil {
+		if db, err = hook.BeforeStrictUpdateCleanup(ctx, db); err != nil {
 			return nil, err
 		}
 	}
 	if hook, ok := interface{}(&ormObj).(LanguageORMWithBeforeStrictUpdateSave); ok {
-		db, err = hook.BeforeStrictUpdateSave(ctx, db)
-		if err != nil {
+		if db, err = hook.BeforeStrictUpdateSave(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -2110,8 +2050,7 @@ func DefaultStrictUpdateLanguage(ctx context.Context, in *Language, db *gorm1.DB
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(LanguageORMWithAfterStrictUpdateSave); ok {
-		err = hook.AfterStrictUpdateSave(ctx, db)
-		if err != nil {
+		if err = hook.AfterStrictUpdateSave(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -2143,8 +2082,7 @@ func DefaultPatchLanguage(ctx context.Context, in *Language, updateMask *field_m
 	var pbObj Language
 	var err error
 	if hook, ok := interface{}(&pbObj).(LanguageWithBeforePatchRead); ok {
-		db, err = hook.BeforePatchRead(ctx, in, updateMask, db)
-		if err != nil {
+		if db, err = hook.BeforePatchRead(ctx, in, updateMask, db); err != nil {
 			return nil, err
 		}
 	}
@@ -2154,8 +2092,7 @@ func DefaultPatchLanguage(ctx context.Context, in *Language, updateMask *field_m
 	}
 	pbObj = *pbReadRes
 	if hook, ok := interface{}(&pbObj).(LanguageWithBeforePatchApplyFieldMask); ok {
-		db, err = hook.BeforePatchApplyFieldMask(ctx, in, updateMask, db)
-		if err != nil {
+		if db, err = hook.BeforePatchApplyFieldMask(ctx, in, updateMask, db); err != nil {
 			return nil, err
 		}
 	}
@@ -2163,8 +2100,7 @@ func DefaultPatchLanguage(ctx context.Context, in *Language, updateMask *field_m
 		return nil, err
 	}
 	if hook, ok := interface{}(&pbObj).(LanguageWithBeforePatchSave); ok {
-		db, err = hook.BeforePatchSave(ctx, in, updateMask, db)
-		if err != nil {
+		if db, err = hook.BeforePatchSave(ctx, in, updateMask, db); err != nil {
 			return nil, err
 		}
 	}
@@ -2173,8 +2109,7 @@ func DefaultPatchLanguage(ctx context.Context, in *Language, updateMask *field_m
 		return nil, err
 	}
 	if hook, ok := interface{}(pbResponse).(LanguageWithAfterPatchSave); ok {
-		err = hook.AfterPatchSave(ctx, in, updateMask, db)
-		if err != nil {
+		if err = hook.AfterPatchSave(ctx, in, updateMask, db); err != nil {
 			return nil, err
 		}
 	}
@@ -2234,8 +2169,7 @@ func DefaultListLanguage(ctx context.Context, db *gorm1.DB) ([]*Language, error)
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(LanguageORMWithBeforeListApplyQuery); ok {
-		db, err = hook.BeforeListApplyQuery(ctx, db)
-		if err != nil {
+		if db, err = hook.BeforeListApplyQuery(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -2244,8 +2178,7 @@ func DefaultListLanguage(ctx context.Context, db *gorm1.DB) ([]*Language, error)
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(LanguageORMWithBeforeListFind); ok {
-		db, err = hook.BeforeListFind(ctx, db)
-		if err != nil {
+		if db, err = hook.BeforeListFind(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -2256,8 +2189,7 @@ func DefaultListLanguage(ctx context.Context, db *gorm1.DB) ([]*Language, error)
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(LanguageORMWithAfterListFind); ok {
-		err = hook.AfterListFind(ctx, db, &ormResponse)
-		if err != nil {
+		if err = hook.AfterListFind(ctx, db, &ormResponse); err != nil {
 			return nil, err
 		}
 	}
@@ -2292,8 +2224,7 @@ func DefaultCreateCreditCard(ctx context.Context, in *CreditCard, db *gorm1.DB) 
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(CreditCardORMWithBeforeCreate); ok {
-		db, err = hook.BeforeCreate(ctx, db)
-		if err != nil {
+		if db, err = hook.BeforeCreate(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -2301,8 +2232,7 @@ func DefaultCreateCreditCard(ctx context.Context, in *CreditCard, db *gorm1.DB) 
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(CreditCardORMWithAfterCreate); ok {
-		err = hook.AfterCreate(ctx, db)
-		if err != nil {
+		if err = hook.AfterCreate(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -2330,18 +2260,15 @@ func DefaultReadCreditCard(ctx context.Context, in *CreditCard, db *gorm1.DB) (*
 		return nil, errors.New("DefaultReadCreditCard requires a non-zero primary key")
 	}
 	if hook, ok := interface{}(&ormObj).(CreditCardORMWithBeforeReadApplyQuery); ok {
-		db, err = hook.BeforeReadApplyQuery(ctx, db)
-		if err != nil {
+		if db, err = hook.BeforeReadApplyQuery(ctx, db); err != nil {
 			return nil, err
 		}
 	}
-	db, err = gorm2.ApplyFieldSelection(ctx, db, nil, &CreditCardORM{})
-	if err != nil {
+	if db, err = gorm2.ApplyFieldSelection(ctx, db, nil, &CreditCardORM{}); err != nil {
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(CreditCardORMWithBeforeReadFind); ok {
-		db, err = hook.BeforeReadFind(ctx, db)
-		if err != nil {
+		if db, err = hook.BeforeReadFind(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -2350,8 +2277,7 @@ func DefaultReadCreditCard(ctx context.Context, in *CreditCard, db *gorm1.DB) (*
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormResponse).(CreditCardORMWithAfterReadFind); ok {
-		err = hook.AfterReadFind(ctx, db)
-		if err != nil {
+		if err = hook.AfterReadFind(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -2381,8 +2307,7 @@ func DefaultDeleteCreditCard(ctx context.Context, in *CreditCard, db *gorm1.DB) 
 		return errors.New("A non-zero ID value is required for a delete call")
 	}
 	if hook, ok := interface{}(&ormObj).(CreditCardORMWithBeforeDelete); ok {
-		db, err = hook.BeforeDelete(ctx, db)
-		if err != nil {
+		if db, err = hook.BeforeDelete(ctx, db); err != nil {
 			return err
 		}
 	}
@@ -2418,14 +2343,12 @@ func DefaultStrictUpdateCreditCard(ctx context.Context, in *CreditCard, db *gorm
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(CreditCardORMWithBeforeStrictUpdateCleanup); ok {
-		db, err = hook.BeforeStrictUpdateCleanup(ctx, db)
-		if err != nil {
+		if db, err = hook.BeforeStrictUpdateCleanup(ctx, db); err != nil {
 			return nil, err
 		}
 	}
 	if hook, ok := interface{}(&ormObj).(CreditCardORMWithBeforeStrictUpdateSave); ok {
-		db, err = hook.BeforeStrictUpdateSave(ctx, db)
-		if err != nil {
+		if db, err = hook.BeforeStrictUpdateSave(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -2434,8 +2357,7 @@ func DefaultStrictUpdateCreditCard(ctx context.Context, in *CreditCard, db *gorm
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(CreditCardORMWithAfterStrictUpdateSave); ok {
-		err = hook.AfterStrictUpdateSave(ctx, db)
-		if err != nil {
+		if err = hook.AfterStrictUpdateSave(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -2467,8 +2389,7 @@ func DefaultPatchCreditCard(ctx context.Context, in *CreditCard, updateMask *fie
 	var pbObj CreditCard
 	var err error
 	if hook, ok := interface{}(&pbObj).(CreditCardWithBeforePatchRead); ok {
-		db, err = hook.BeforePatchRead(ctx, in, updateMask, db)
-		if err != nil {
+		if db, err = hook.BeforePatchRead(ctx, in, updateMask, db); err != nil {
 			return nil, err
 		}
 	}
@@ -2478,8 +2399,7 @@ func DefaultPatchCreditCard(ctx context.Context, in *CreditCard, updateMask *fie
 	}
 	pbObj = *pbReadRes
 	if hook, ok := interface{}(&pbObj).(CreditCardWithBeforePatchApplyFieldMask); ok {
-		db, err = hook.BeforePatchApplyFieldMask(ctx, in, updateMask, db)
-		if err != nil {
+		if db, err = hook.BeforePatchApplyFieldMask(ctx, in, updateMask, db); err != nil {
 			return nil, err
 		}
 	}
@@ -2487,8 +2407,7 @@ func DefaultPatchCreditCard(ctx context.Context, in *CreditCard, updateMask *fie
 		return nil, err
 	}
 	if hook, ok := interface{}(&pbObj).(CreditCardWithBeforePatchSave); ok {
-		db, err = hook.BeforePatchSave(ctx, in, updateMask, db)
-		if err != nil {
+		if db, err = hook.BeforePatchSave(ctx, in, updateMask, db); err != nil {
 			return nil, err
 		}
 	}
@@ -2497,8 +2416,7 @@ func DefaultPatchCreditCard(ctx context.Context, in *CreditCard, updateMask *fie
 		return nil, err
 	}
 	if hook, ok := interface{}(pbResponse).(CreditCardWithAfterPatchSave); ok {
-		err = hook.AfterPatchSave(ctx, in, updateMask, db)
-		if err != nil {
+		if err = hook.AfterPatchSave(ctx, in, updateMask, db); err != nil {
 			return nil, err
 		}
 	}
@@ -2562,8 +2480,7 @@ func DefaultListCreditCard(ctx context.Context, db *gorm1.DB) ([]*CreditCard, er
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(CreditCardORMWithBeforeListApplyQuery); ok {
-		db, err = hook.BeforeListApplyQuery(ctx, db)
-		if err != nil {
+		if db, err = hook.BeforeListApplyQuery(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -2572,8 +2489,7 @@ func DefaultListCreditCard(ctx context.Context, db *gorm1.DB) ([]*CreditCard, er
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(CreditCardORMWithBeforeListFind); ok {
-		db, err = hook.BeforeListFind(ctx, db)
-		if err != nil {
+		if db, err = hook.BeforeListFind(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -2584,8 +2500,7 @@ func DefaultListCreditCard(ctx context.Context, db *gorm1.DB) ([]*CreditCard, er
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(CreditCardORMWithAfterListFind); ok {
-		err = hook.AfterListFind(ctx, db, &ormResponse)
-		if err != nil {
+		if err = hook.AfterListFind(ctx, db, &ormResponse); err != nil {
 			return nil, err
 		}
 	}
@@ -2620,8 +2535,7 @@ func DefaultCreateTask(ctx context.Context, in *Task, db *gorm1.DB) (*Task, erro
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(TaskORMWithBeforeCreate); ok {
-		db, err = hook.BeforeCreate(ctx, db)
-		if err != nil {
+		if db, err = hook.BeforeCreate(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -2629,8 +2543,7 @@ func DefaultCreateTask(ctx context.Context, in *Task, db *gorm1.DB) (*Task, erro
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(TaskORMWithAfterCreate); ok {
-		err = hook.AfterCreate(ctx, db)
-		if err != nil {
+		if err = hook.AfterCreate(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -2681,8 +2594,7 @@ func DefaultListTask(ctx context.Context, db *gorm1.DB) ([]*Task, error) {
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(TaskORMWithBeforeListApplyQuery); ok {
-		db, err = hook.BeforeListApplyQuery(ctx, db)
-		if err != nil {
+		if db, err = hook.BeforeListApplyQuery(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -2691,8 +2603,7 @@ func DefaultListTask(ctx context.Context, db *gorm1.DB) ([]*Task, error) {
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(TaskORMWithBeforeListFind); ok {
-		db, err = hook.BeforeListFind(ctx, db)
-		if err != nil {
+		if db, err = hook.BeforeListFind(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -2702,8 +2613,7 @@ func DefaultListTask(ctx context.Context, db *gorm1.DB) ([]*Task, error) {
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(TaskORMWithAfterListFind); ok {
-		err = hook.AfterListFind(ctx, db, &ormResponse)
-		if err != nil {
+		if err = hook.AfterListFind(ctx, db, &ormResponse); err != nil {
 			return nil, err
 		}
 	}

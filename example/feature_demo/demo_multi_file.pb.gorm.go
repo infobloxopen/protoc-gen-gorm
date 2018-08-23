@@ -129,8 +129,7 @@ func DefaultCreateExternalChild(ctx context.Context, in *ExternalChild, db *gorm
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(ExternalChildORMWithBeforeCreate); ok {
-		db, err = hook.BeforeCreate(ctx, db)
-		if err != nil {
+		if db, err = hook.BeforeCreate(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -138,8 +137,7 @@ func DefaultCreateExternalChild(ctx context.Context, in *ExternalChild, db *gorm
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(ExternalChildORMWithAfterCreate); ok {
-		err = hook.AfterCreate(ctx, db)
-		if err != nil {
+		if err = hook.AfterCreate(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -167,18 +165,15 @@ func DefaultReadExternalChild(ctx context.Context, in *ExternalChild, db *gorm1.
 		return nil, errors.New("DefaultReadExternalChild requires a non-zero primary key")
 	}
 	if hook, ok := interface{}(&ormObj).(ExternalChildORMWithBeforeReadApplyQuery); ok {
-		db, err = hook.BeforeReadApplyQuery(ctx, db)
-		if err != nil {
+		if db, err = hook.BeforeReadApplyQuery(ctx, db); err != nil {
 			return nil, err
 		}
 	}
-	db, err = gorm2.ApplyFieldSelection(ctx, db, nil, &ExternalChildORM{})
-	if err != nil {
+	if db, err = gorm2.ApplyFieldSelection(ctx, db, nil, &ExternalChildORM{}); err != nil {
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(ExternalChildORMWithBeforeReadFind); ok {
-		db, err = hook.BeforeReadFind(ctx, db)
-		if err != nil {
+		if db, err = hook.BeforeReadFind(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -187,8 +182,7 @@ func DefaultReadExternalChild(ctx context.Context, in *ExternalChild, db *gorm1.
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormResponse).(ExternalChildORMWithAfterReadFind); ok {
-		err = hook.AfterReadFind(ctx, db)
-		if err != nil {
+		if err = hook.AfterReadFind(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -218,8 +212,7 @@ func DefaultDeleteExternalChild(ctx context.Context, in *ExternalChild, db *gorm
 		return errors.New("A non-zero ID value is required for a delete call")
 	}
 	if hook, ok := interface{}(&ormObj).(ExternalChildORMWithBeforeDelete); ok {
-		db, err = hook.BeforeDelete(ctx, db)
-		if err != nil {
+		if db, err = hook.BeforeDelete(ctx, db); err != nil {
 			return err
 		}
 	}
@@ -255,14 +248,12 @@ func DefaultStrictUpdateExternalChild(ctx context.Context, in *ExternalChild, db
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(ExternalChildORMWithBeforeStrictUpdateCleanup); ok {
-		db, err = hook.BeforeStrictUpdateCleanup(ctx, db)
-		if err != nil {
+		if db, err = hook.BeforeStrictUpdateCleanup(ctx, db); err != nil {
 			return nil, err
 		}
 	}
 	if hook, ok := interface{}(&ormObj).(ExternalChildORMWithBeforeStrictUpdateSave); ok {
-		db, err = hook.BeforeStrictUpdateSave(ctx, db)
-		if err != nil {
+		if db, err = hook.BeforeStrictUpdateSave(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -270,8 +261,7 @@ func DefaultStrictUpdateExternalChild(ctx context.Context, in *ExternalChild, db
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(ExternalChildORMWithAfterStrictUpdateSave); ok {
-		err = hook.AfterStrictUpdateSave(ctx, db)
-		if err != nil {
+		if err = hook.AfterStrictUpdateSave(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -303,8 +293,7 @@ func DefaultPatchExternalChild(ctx context.Context, in *ExternalChild, updateMas
 	var pbObj ExternalChild
 	var err error
 	if hook, ok := interface{}(&pbObj).(ExternalChildWithBeforePatchRead); ok {
-		db, err = hook.BeforePatchRead(ctx, in, updateMask, db)
-		if err != nil {
+		if db, err = hook.BeforePatchRead(ctx, in, updateMask, db); err != nil {
 			return nil, err
 		}
 	}
@@ -314,8 +303,7 @@ func DefaultPatchExternalChild(ctx context.Context, in *ExternalChild, updateMas
 	}
 	pbObj = *pbReadRes
 	if hook, ok := interface{}(&pbObj).(ExternalChildWithBeforePatchApplyFieldMask); ok {
-		db, err = hook.BeforePatchApplyFieldMask(ctx, in, updateMask, db)
-		if err != nil {
+		if db, err = hook.BeforePatchApplyFieldMask(ctx, in, updateMask, db); err != nil {
 			return nil, err
 		}
 	}
@@ -323,8 +311,7 @@ func DefaultPatchExternalChild(ctx context.Context, in *ExternalChild, updateMas
 		return nil, err
 	}
 	if hook, ok := interface{}(&pbObj).(ExternalChildWithBeforePatchSave); ok {
-		db, err = hook.BeforePatchSave(ctx, in, updateMask, db)
-		if err != nil {
+		if db, err = hook.BeforePatchSave(ctx, in, updateMask, db); err != nil {
 			return nil, err
 		}
 	}
@@ -333,8 +320,7 @@ func DefaultPatchExternalChild(ctx context.Context, in *ExternalChild, updateMas
 		return nil, err
 	}
 	if hook, ok := interface{}(pbResponse).(ExternalChildWithAfterPatchSave); ok {
-		err = hook.AfterPatchSave(ctx, in, updateMask, db)
-		if err != nil {
+		if err = hook.AfterPatchSave(ctx, in, updateMask, db); err != nil {
 			return nil, err
 		}
 	}
@@ -382,8 +368,7 @@ func DefaultListExternalChild(ctx context.Context, db *gorm1.DB) ([]*ExternalChi
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(ExternalChildORMWithBeforeListApplyQuery); ok {
-		db, err = hook.BeforeListApplyQuery(ctx, db)
-		if err != nil {
+		if db, err = hook.BeforeListApplyQuery(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -392,8 +377,7 @@ func DefaultListExternalChild(ctx context.Context, db *gorm1.DB) ([]*ExternalChi
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(ExternalChildORMWithBeforeListFind); ok {
-		db, err = hook.BeforeListFind(ctx, db)
-		if err != nil {
+		if db, err = hook.BeforeListFind(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -404,8 +388,7 @@ func DefaultListExternalChild(ctx context.Context, db *gorm1.DB) ([]*ExternalChi
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(ExternalChildORMWithAfterListFind); ok {
-		err = hook.AfterListFind(ctx, db, &ormResponse)
-		if err != nil {
+		if err = hook.AfterListFind(ctx, db, &ormResponse); err != nil {
 			return nil, err
 		}
 	}

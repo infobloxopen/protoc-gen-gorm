@@ -454,8 +454,7 @@ func (p *OrmPlugin) getMethodProps(method *descriptor.MethodDescriptorProto) (ge
 func (p *OrmPlugin) generatePreserviceCall(svc, typeName, mthd string) {
 	p.P(`if custom, ok := interface{}(in).(`, svc, typeName, `WithBefore`, mthd, `); ok {`)
 	p.P(`var err error`)
-	p.P(`db, err = custom.Before`, mthd, `(ctx, db)`)
-	p.P(`if err != nil {`)
+	p.P(`if db, err = custom.Before`, mthd, `(ctx, db); err != nil {`)
 	p.P(`return nil, err`)
 	p.P(`}`)
 	p.P(`}`)
@@ -471,8 +470,7 @@ func (p *OrmPlugin) generatePreserviceHook(svc, typeName, mthd string) {
 func (p *OrmPlugin) generatePostserviceCall(svc, typeName, mthd string) {
 	p.P(`if custom, ok := interface{}(in).(`, svc, typeName, `WithAfter`, mthd, `); ok {`)
 	p.P(`var err error`)
-	p.P(`err = custom.After`, mthd, `(ctx, out, db)`)
-	p.P(`if err != nil {`)
+	p.P(`if err = custom.After`, mthd, `(ctx, out, db); err != nil {`)
 	p.P(`return nil, err`)
 	p.P(`}`)
 	p.P(`}`)

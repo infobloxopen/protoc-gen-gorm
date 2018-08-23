@@ -104,8 +104,7 @@ func DefaultCreateIntPoint(ctx context.Context, in *IntPoint, db *gorm1.DB) (*In
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(IntPointORMWithBeforeCreate); ok {
-		db, err = hook.BeforeCreate(ctx, db)
-		if err != nil {
+		if db, err = hook.BeforeCreate(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -113,8 +112,7 @@ func DefaultCreateIntPoint(ctx context.Context, in *IntPoint, db *gorm1.DB) (*In
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(IntPointORMWithAfterCreate); ok {
-		err = hook.AfterCreate(ctx, db)
-		if err != nil {
+		if err = hook.AfterCreate(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -142,18 +140,15 @@ func DefaultReadIntPoint(ctx context.Context, in *IntPoint, db *gorm1.DB, fs *qu
 		return nil, errors.New("DefaultReadIntPoint requires a non-zero primary key")
 	}
 	if hook, ok := interface{}(&ormObj).(IntPointORMWithBeforeReadApplyQuery); ok {
-		db, err = hook.BeforeReadApplyQuery(ctx, db, fs)
-		if err != nil {
+		if db, err = hook.BeforeReadApplyQuery(ctx, db, fs); err != nil {
 			return nil, err
 		}
 	}
-	db, err = gorm2.ApplyFieldSelection(ctx, db, fs, &IntPointORM{})
-	if err != nil {
+	if db, err = gorm2.ApplyFieldSelection(ctx, db, fs, &IntPointORM{}); err != nil {
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(IntPointORMWithBeforeReadFind); ok {
-		db, err = hook.BeforeReadFind(ctx, db, fs)
-		if err != nil {
+		if db, err = hook.BeforeReadFind(ctx, db, fs); err != nil {
 			return nil, err
 		}
 	}
@@ -162,8 +157,7 @@ func DefaultReadIntPoint(ctx context.Context, in *IntPoint, db *gorm1.DB, fs *qu
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormResponse).(IntPointORMWithAfterReadFind); ok {
-		err = hook.AfterReadFind(ctx, db, fs)
-		if err != nil {
+		if err = hook.AfterReadFind(ctx, db, fs); err != nil {
 			return nil, err
 		}
 	}
@@ -193,8 +187,7 @@ func DefaultDeleteIntPoint(ctx context.Context, in *IntPoint, db *gorm1.DB) erro
 		return errors.New("A non-zero ID value is required for a delete call")
 	}
 	if hook, ok := interface{}(&ormObj).(IntPointORMWithBeforeDelete); ok {
-		db, err = hook.BeforeDelete(ctx, db)
-		if err != nil {
+		if db, err = hook.BeforeDelete(ctx, db); err != nil {
 			return err
 		}
 	}
@@ -230,14 +223,12 @@ func DefaultStrictUpdateIntPoint(ctx context.Context, in *IntPoint, db *gorm1.DB
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(IntPointORMWithBeforeStrictUpdateCleanup); ok {
-		db, err = hook.BeforeStrictUpdateCleanup(ctx, db)
-		if err != nil {
+		if db, err = hook.BeforeStrictUpdateCleanup(ctx, db); err != nil {
 			return nil, err
 		}
 	}
 	if hook, ok := interface{}(&ormObj).(IntPointORMWithBeforeStrictUpdateSave); ok {
-		db, err = hook.BeforeStrictUpdateSave(ctx, db)
-		if err != nil {
+		if db, err = hook.BeforeStrictUpdateSave(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -245,8 +236,7 @@ func DefaultStrictUpdateIntPoint(ctx context.Context, in *IntPoint, db *gorm1.DB
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(IntPointORMWithAfterStrictUpdateSave); ok {
-		err = hook.AfterStrictUpdateSave(ctx, db)
-		if err != nil {
+		if err = hook.AfterStrictUpdateSave(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -278,8 +268,7 @@ func DefaultPatchIntPoint(ctx context.Context, in *IntPoint, updateMask *field_m
 	var pbObj IntPoint
 	var err error
 	if hook, ok := interface{}(&pbObj).(IntPointWithBeforePatchRead); ok {
-		db, err = hook.BeforePatchRead(ctx, in, updateMask, db)
-		if err != nil {
+		if db, err = hook.BeforePatchRead(ctx, in, updateMask, db); err != nil {
 			return nil, err
 		}
 	}
@@ -289,8 +278,7 @@ func DefaultPatchIntPoint(ctx context.Context, in *IntPoint, updateMask *field_m
 	}
 	pbObj = *pbReadRes
 	if hook, ok := interface{}(&pbObj).(IntPointWithBeforePatchApplyFieldMask); ok {
-		db, err = hook.BeforePatchApplyFieldMask(ctx, in, updateMask, db)
-		if err != nil {
+		if db, err = hook.BeforePatchApplyFieldMask(ctx, in, updateMask, db); err != nil {
 			return nil, err
 		}
 	}
@@ -298,8 +286,7 @@ func DefaultPatchIntPoint(ctx context.Context, in *IntPoint, updateMask *field_m
 		return nil, err
 	}
 	if hook, ok := interface{}(&pbObj).(IntPointWithBeforePatchSave); ok {
-		db, err = hook.BeforePatchSave(ctx, in, updateMask, db)
-		if err != nil {
+		if db, err = hook.BeforePatchSave(ctx, in, updateMask, db); err != nil {
 			return nil, err
 		}
 	}
@@ -308,8 +295,7 @@ func DefaultPatchIntPoint(ctx context.Context, in *IntPoint, updateMask *field_m
 		return nil, err
 	}
 	if hook, ok := interface{}(pbResponse).(IntPointWithAfterPatchSave); ok {
-		err = hook.AfterPatchSave(ctx, in, updateMask, db)
-		if err != nil {
+		if err = hook.AfterPatchSave(ctx, in, updateMask, db); err != nil {
 			return nil, err
 		}
 	}
@@ -365,8 +351,7 @@ func DefaultListIntPoint(ctx context.Context, db *gorm1.DB, f *query1.Filtering,
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(IntPointORMWithBeforeListApplyQuery); ok {
-		db, err = hook.BeforeListApplyQuery(ctx, db, f, s, p, fs)
-		if err != nil {
+		if db, err = hook.BeforeListApplyQuery(ctx, db, f, s, p, fs); err != nil {
 			return nil, err
 		}
 	}
@@ -375,8 +360,7 @@ func DefaultListIntPoint(ctx context.Context, db *gorm1.DB, f *query1.Filtering,
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(IntPointORMWithBeforeListFind); ok {
-		db, err = hook.BeforeListFind(ctx, db, f, s, p, fs)
-		if err != nil {
+		if db, err = hook.BeforeListFind(ctx, db, f, s, p, fs); err != nil {
 			return nil, err
 		}
 	}
@@ -387,8 +371,7 @@ func DefaultListIntPoint(ctx context.Context, db *gorm1.DB, f *query1.Filtering,
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(IntPointORMWithAfterListFind); ok {
-		err = hook.AfterListFind(ctx, db, &ormResponse, f, s, p, fs)
-		if err != nil {
+		if err = hook.AfterListFind(ctx, db, &ormResponse, f, s, p, fs); err != nil {
 			return nil, err
 		}
 	}
@@ -421,8 +404,7 @@ func (m *IntPointServiceDefaultServer) Create(ctx context.Context, in *CreateInt
 	db := m.DB
 	if custom, ok := interface{}(in).(IntPointServiceIntPointWithBeforeCreate); ok {
 		var err error
-		db, err = custom.BeforeCreate(ctx, db)
-		if err != nil {
+		if db, err = custom.BeforeCreate(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -433,8 +415,7 @@ func (m *IntPointServiceDefaultServer) Create(ctx context.Context, in *CreateInt
 	out := &CreateIntPointResponse{Result: res}
 	if custom, ok := interface{}(in).(IntPointServiceIntPointWithAfterCreate); ok {
 		var err error
-		err = custom.AfterCreate(ctx, out, db)
-		if err != nil {
+		if err = custom.AfterCreate(ctx, out, db); err != nil {
 			return nil, err
 		}
 	}
@@ -456,8 +437,7 @@ func (m *IntPointServiceDefaultServer) Read(ctx context.Context, in *ReadIntPoin
 	db := m.DB
 	if custom, ok := interface{}(in).(IntPointServiceIntPointWithBeforeRead); ok {
 		var err error
-		db, err = custom.BeforeRead(ctx, db)
-		if err != nil {
+		if db, err = custom.BeforeRead(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -468,8 +448,7 @@ func (m *IntPointServiceDefaultServer) Read(ctx context.Context, in *ReadIntPoin
 	out := &ReadIntPointResponse{Result: res}
 	if custom, ok := interface{}(in).(IntPointServiceIntPointWithAfterRead); ok {
 		var err error
-		err = custom.AfterRead(ctx, out, db)
-		if err != nil {
+		if err = custom.AfterRead(ctx, out, db); err != nil {
 			return nil, err
 		}
 	}
@@ -493,8 +472,7 @@ func (m *IntPointServiceDefaultServer) Update(ctx context.Context, in *UpdateInt
 	db := m.DB
 	if custom, ok := interface{}(in).(IntPointServiceIntPointWithBeforeUpdate); ok {
 		var err error
-		db, err = custom.BeforeUpdate(ctx, db)
-		if err != nil {
+		if db, err = custom.BeforeUpdate(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -509,8 +487,7 @@ func (m *IntPointServiceDefaultServer) Update(ctx context.Context, in *UpdateInt
 	out := &UpdateIntPointResponse{Result: res}
 	if custom, ok := interface{}(in).(IntPointServiceIntPointWithAfterUpdate); ok {
 		var err error
-		err = custom.AfterUpdate(ctx, out, db)
-		if err != nil {
+		if err = custom.AfterUpdate(ctx, out, db); err != nil {
 			return nil, err
 		}
 	}
@@ -532,8 +509,7 @@ func (m *IntPointServiceDefaultServer) List(ctx context.Context, in *ListIntPoin
 	db := m.DB
 	if custom, ok := interface{}(in).(IntPointServiceIntPointWithBeforeList); ok {
 		var err error
-		db, err = custom.BeforeList(ctx, db)
-		if err != nil {
+		if db, err = custom.BeforeList(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -544,8 +520,7 @@ func (m *IntPointServiceDefaultServer) List(ctx context.Context, in *ListIntPoin
 	out := &ListIntPointResponse{Results: res}
 	if custom, ok := interface{}(in).(IntPointServiceIntPointWithAfterList); ok {
 		var err error
-		err = custom.AfterList(ctx, out, db)
-		if err != nil {
+		if err = custom.AfterList(ctx, out, db); err != nil {
 			return nil, err
 		}
 	}
@@ -567,8 +542,7 @@ func (m *IntPointServiceDefaultServer) Delete(ctx context.Context, in *DeleteInt
 	db := m.DB
 	if custom, ok := interface{}(in).(IntPointServiceIntPointWithBeforeDelete); ok {
 		var err error
-		db, err = custom.BeforeDelete(ctx, db)
-		if err != nil {
+		if db, err = custom.BeforeDelete(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -579,8 +553,7 @@ func (m *IntPointServiceDefaultServer) Delete(ctx context.Context, in *DeleteInt
 	out := &DeleteIntPointResponse{}
 	if custom, ok := interface{}(in).(IntPointServiceIntPointWithAfterDelete); ok {
 		var err error
-		err = custom.AfterDelete(ctx, out, db)
-		if err != nil {
+		if err = custom.AfterDelete(ctx, out, db); err != nil {
 			return nil, err
 		}
 	}
@@ -622,8 +595,7 @@ func (m *IntPointTxnDefaultServer) Create(ctx context.Context, in *CreateIntPoin
 	}
 	if custom, ok := interface{}(in).(IntPointTxnIntPointWithBeforeCreate); ok {
 		var err error
-		db, err = custom.BeforeCreate(ctx, db)
-		if err != nil {
+		if db, err = custom.BeforeCreate(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -634,8 +606,7 @@ func (m *IntPointTxnDefaultServer) Create(ctx context.Context, in *CreateIntPoin
 	out := &CreateIntPointResponse{Result: res}
 	if custom, ok := interface{}(in).(IntPointTxnIntPointWithAfterCreate); ok {
 		var err error
-		err = custom.AfterCreate(ctx, out, db)
-		if err != nil {
+		if err = custom.AfterCreate(ctx, out, db); err != nil {
 			return nil, err
 		}
 	}
@@ -664,8 +635,7 @@ func (m *IntPointTxnDefaultServer) Read(ctx context.Context, in *ReadIntPointReq
 	}
 	if custom, ok := interface{}(in).(IntPointTxnIntPointWithBeforeRead); ok {
 		var err error
-		db, err = custom.BeforeRead(ctx, db)
-		if err != nil {
+		if db, err = custom.BeforeRead(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -676,8 +646,7 @@ func (m *IntPointTxnDefaultServer) Read(ctx context.Context, in *ReadIntPointReq
 	out := &ReadIntPointResponse{Result: res}
 	if custom, ok := interface{}(in).(IntPointTxnIntPointWithAfterRead); ok {
 		var err error
-		err = custom.AfterRead(ctx, out, db)
-		if err != nil {
+		if err = custom.AfterRead(ctx, out, db); err != nil {
 			return nil, err
 		}
 	}
@@ -708,8 +677,7 @@ func (m *IntPointTxnDefaultServer) Update(ctx context.Context, in *UpdateIntPoin
 	}
 	if custom, ok := interface{}(in).(IntPointTxnIntPointWithBeforeUpdate); ok {
 		var err error
-		db, err = custom.BeforeUpdate(ctx, db)
-		if err != nil {
+		if db, err = custom.BeforeUpdate(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -724,8 +692,7 @@ func (m *IntPointTxnDefaultServer) Update(ctx context.Context, in *UpdateIntPoin
 	out := &UpdateIntPointResponse{Result: res}
 	if custom, ok := interface{}(in).(IntPointTxnIntPointWithAfterUpdate); ok {
 		var err error
-		err = custom.AfterUpdate(ctx, out, db)
-		if err != nil {
+		if err = custom.AfterUpdate(ctx, out, db); err != nil {
 			return nil, err
 		}
 	}
@@ -754,8 +721,7 @@ func (m *IntPointTxnDefaultServer) List(ctx context.Context, in *ListIntPointReq
 	}
 	if custom, ok := interface{}(in).(IntPointTxnIntPointWithBeforeList); ok {
 		var err error
-		db, err = custom.BeforeList(ctx, db)
-		if err != nil {
+		if db, err = custom.BeforeList(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -766,8 +732,7 @@ func (m *IntPointTxnDefaultServer) List(ctx context.Context, in *ListIntPointReq
 	out := &ListIntPointResponse{Results: res}
 	if custom, ok := interface{}(in).(IntPointTxnIntPointWithAfterList); ok {
 		var err error
-		err = custom.AfterList(ctx, out, db)
-		if err != nil {
+		if err = custom.AfterList(ctx, out, db); err != nil {
 			return nil, err
 		}
 	}
@@ -796,8 +761,7 @@ func (m *IntPointTxnDefaultServer) Delete(ctx context.Context, in *DeleteIntPoin
 	}
 	if custom, ok := interface{}(in).(IntPointTxnIntPointWithBeforeDelete); ok {
 		var err error
-		db, err = custom.BeforeDelete(ctx, db)
-		if err != nil {
+		if db, err = custom.BeforeDelete(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -808,8 +772,7 @@ func (m *IntPointTxnDefaultServer) Delete(ctx context.Context, in *DeleteIntPoin
 	out := &DeleteIntPointResponse{}
 	if custom, ok := interface{}(in).(IntPointTxnIntPointWithAfterDelete); ok {
 		var err error
-		err = custom.AfterDelete(ctx, out, db)
-		if err != nil {
+		if err = custom.AfterDelete(ctx, out, db); err != nil {
 			return nil, err
 		}
 	}

@@ -42,8 +42,7 @@ func (p *OrmPlugin) generateAfterHookDef(orm *OrmableType, method string) {
 
 func (p *OrmPlugin) generateBeforeHookCall(orm *OrmableType, method string) {
 	p.P(`if hook, ok := interface{}(&ormObj).(`, orm.Name, `WithBefore`, method, `); ok {`)
-	p.P(`db, err = hook.Before`, method, `(ctx, db)`)
-	p.P(`if err != nil {`)
+	p.P(`if db, err = hook.Before`, method, `(ctx, db); err != nil {`)
 	p.P(`return nil, err`)
 	p.P(`}`)
 	p.P(`}`)
@@ -51,8 +50,7 @@ func (p *OrmPlugin) generateBeforeHookCall(orm *OrmableType, method string) {
 
 func (p *OrmPlugin) generateAfterHookCall(orm *OrmableType, method string) {
 	p.P(`if hook, ok := interface{}(&ormObj).(`, orm.Name, `WithAfter`, method, `); ok {`)
-	p.P(`err = hook.After`, method, `(ctx, db)`)
-	p.P(`if err != nil {`)
+	p.P(`if err = hook.After`, method, `(ctx, db); err != nil {`)
 	p.P(`return nil, err`)
 	p.P(`}`)
 	p.P(`}`)
@@ -121,8 +119,7 @@ func (p *OrmPlugin) generateReadHandler(message *generator.Descriptor) {
 	}
 
 	p.generateBeforeReadHookCall(ormable, "ApplyQuery")
-	p.P(`db, err = `, p.Import(tkgormImport), `.ApplyFieldSelection(ctx, db, `, fs, `, &`, ormable.Name, `{})`)
-	p.P(`if err != nil {`)
+	p.P(`if db, err = `, p.Import(tkgormImport), `.ApplyFieldSelection(ctx, db, `, fs, `, &`, ormable.Name, `{}); err != nil {`)
 	p.P(`return nil, err`)
 	p.P(`}`)
 
@@ -164,13 +161,12 @@ func (p *OrmPlugin) generateAfterReadHookDef(orm *OrmableType) {
 
 func (p *OrmPlugin) generateBeforeReadHookCall(orm *OrmableType, suffix string) {
 	p.P(`if hook, ok := interface{}(&ormObj).(`, orm.Name, `WithBeforeRead`, suffix, `); ok {`)
-	hookCall := fmt.Sprint(`db, err = hook.BeforeRead`, suffix, `(ctx, db`)
+	hookCall := fmt.Sprint(`if db, err = hook.BeforeRead`, suffix, `(ctx, db`)
 	if p.readHasFieldSelection(orm) {
 		hookCall += `, fs`
 	}
-	hookCall += `)`
+	hookCall += `); err != nil{`
 	p.P(hookCall)
-	p.P(`if err != nil {`)
 	p.P(`return nil, err`)
 	p.P(`}`)
 	p.P(`}`)
@@ -178,13 +174,12 @@ func (p *OrmPlugin) generateBeforeReadHookCall(orm *OrmableType, suffix string) 
 
 func (p *OrmPlugin) generateAfterReadHookCall(orm *OrmableType) {
 	p.P(`if hook, ok := interface{}(&ormResponse).(`, orm.Name, `WithAfterReadFind`, `); ok {`)
-	hookCall := fmt.Sprint(`err = hook.AfterReadFind(ctx, db`)
+	hookCall := fmt.Sprint(`if err = hook.AfterReadFind(ctx, db`)
 	if p.readHasFieldSelection(orm) {
 		hookCall += `, fs`
 	}
-	hookCall += `)`
+	hookCall += `); err != nil {`
 	p.P(hookCall)
-	p.P(`if err != nil {`)
 	p.P(`return nil, err`)
 	p.P(`}`)
 	p.P(`}`)
@@ -346,8 +341,7 @@ func (p *OrmPlugin) generateBeforePatchHookDef(orm *OrmableType, suffix string) 
 
 func (p *OrmPlugin) generateBeforePatchHookCall(orm *OrmableType, suffix string) {
 	p.P(`if hook, ok := interface{}(&pbObj).(`, orm.OriginName, `WithBeforePatch`, suffix, `); ok {`)
-	p.P(`db, err = hook.BeforePatch`, suffix, `(ctx, in, updateMask, db)`)
-	p.P(`if err != nil {`)
+	p.P(`if db, err = hook.BeforePatch`, suffix, `(ctx, in, updateMask, db); err != nil {`)
 	p.P(`return nil, err`)
 	p.P(`}`)
 	p.P(`}`)
@@ -362,8 +356,7 @@ func (p *OrmPlugin) generateAfterPatchHookDef(orm *OrmableType, suffix string) {
 
 func (p *OrmPlugin) generateAfterPatchHookCall(orm *OrmableType, suffix string) {
 	p.P(`if hook, ok := interface{}(pbResponse).(`, orm.OriginName, `WithAfterPatch`, suffix, `); ok {`)
-	p.P(`err = hook.AfterPatch`, suffix, `(ctx, in, updateMask, db)`)
-	p.P(`if err != nil {`)
+	p.P(`if err = hook.AfterPatch`, suffix, `(ctx, in, updateMask, db); err != nil {`)
 	p.P(`return nil, err`)
 	p.P(`}`)
 	p.P(`}`)
@@ -403,8 +396,7 @@ func (p *OrmPlugin) generateDeleteHandler(message *generator.Descriptor) {
 
 func (p *OrmPlugin) generateBeforeDeleteHookCall(orm *OrmableType) {
 	p.P(`if hook, ok := interface{}(&ormObj).(`, orm.Name, `WithBeforeDelete); ok {`)
-	p.P(`db, err = hook.BeforeDelete(ctx, db)`)
-	p.P(`if err != nil {`)
+	p.P(`if db, err = hook.BeforeDelete(ctx, db); err != nil {`)
 	p.P(`return err`)
 	p.P(`}`)
 	p.P(`}`)
@@ -534,7 +526,7 @@ func (p *OrmPlugin) generateAfterListHookDef(orm *OrmableType) {
 
 func (p *OrmPlugin) generateBeforeListHookCall(orm *OrmableType, suffix string) {
 	p.P(`if hook, ok := interface{}(&ormObj).(`, orm.Name, `WithBeforeList`, suffix, `); ok {`)
-	hookCall := fmt.Sprint(`db, err = hook.BeforeList`, suffix, `(ctx, db`)
+	hookCall := fmt.Sprint(`if db, err = hook.BeforeList`, suffix, `(ctx, db`)
 	if p.listHasFiltering(orm) {
 		hookCall += `,f`
 	}
@@ -547,9 +539,8 @@ func (p *OrmPlugin) generateBeforeListHookCall(orm *OrmableType, suffix string) 
 	if p.listHasFieldSelection(orm) {
 		hookCall += `,fs`
 	}
-	hookCall += `)`
+	hookCall += `); err != nil {`
 	p.P(hookCall)
-	p.P(`if err != nil {`)
 	p.P(`return nil, err`)
 	p.P(`}`)
 	p.P(`}`)
@@ -557,7 +548,7 @@ func (p *OrmPlugin) generateBeforeListHookCall(orm *OrmableType, suffix string) 
 
 func (p *OrmPlugin) generateAfterListHookCall(orm *OrmableType) {
 	p.P(`if hook, ok := interface{}(&ormObj).(`, orm.Name, `WithAfterListFind); ok {`)
-	hookCall := fmt.Sprint(`err = hook.AfterListFind(ctx, db, &ormResponse`)
+	hookCall := fmt.Sprint(`if err = hook.AfterListFind(ctx, db, &ormResponse`)
 	if p.listHasFiltering(orm) {
 		hookCall += `,f`
 	}
@@ -570,9 +561,8 @@ func (p *OrmPlugin) generateAfterListHookCall(orm *OrmableType) {
 	if p.listHasFieldSelection(orm) {
 		hookCall += `,fs`
 	}
-	hookCall += `)`
+	hookCall += `); err != nil {`
 	p.P(hookCall)
-	p.P(`if err != nil {`)
 	p.P(`return nil, err`)
 	p.P(`}`)
 	p.P(`}`)
