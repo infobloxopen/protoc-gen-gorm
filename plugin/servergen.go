@@ -130,7 +130,7 @@ func (p *OrmPlugin) generateCreateServerMethod(service autogenService, method au
 		p.P(`return out, nil`)
 		p.P(`}`)
 		p.generatePreserviceHook(service.ccName, method.baseType, createService)
-		p.generatePostserviceHook(service.ccName, method.baseType, p.TypeName(method.outType), createService)
+		p.generatePostserviceHook(service.ccName, method.baseType, p.TypeName(method.outType), method.ccName)
 	} else {
 		p.generateEmptyBody(method.outType)
 	}
@@ -172,9 +172,9 @@ func (p *OrmPlugin) generateReadServerMethod(service autogenService, method auto
 	p.generateMethodSignature(service, method)
 	if method.followsConvention {
 		p.generateDBSetup(service)
-		p.generatePreserviceCall(service.ccName, method.baseType, readService)
+		p.generatePreserviceCall(service.ccName, method.baseType, method.ccName)
 		typeName := method.baseType
-		if fields := p.hasFieldSelection(method.inType); fields != "" {
+		if fields := p.getFieldSelection(method.inType); fields != "" {
 			p.P(`res, err := DefaultRead`, typeName, `(ctx, &`, typeName, `{Id: in.GetId()}, db, in.`, fields, `)`)
 		} else {
 			p.P(`res, err := DefaultRead`, typeName, `(ctx, &`, typeName, `{Id: in.GetId()}, db)`)
@@ -183,11 +183,11 @@ func (p *OrmPlugin) generateReadServerMethod(service autogenService, method auto
 		p.P(`return nil, err`)
 		p.P(`}`)
 		p.P(`out := &`, p.TypeName(method.outType), `{Result: res}`)
-		p.generatePostserviceCall(service.ccName, method.baseType, readService)
+		p.generatePostserviceCall(service.ccName, method.baseType, method.ccName)
 		p.P(`return out, nil`)
 		p.P(`}`)
-		p.generatePreserviceHook(service.ccName, method.baseType, readService)
-		p.generatePostserviceHook(service.ccName, method.baseType, p.TypeName(method.outType), readService)
+		p.generatePreserviceHook(service.ccName, method.baseType, method.ccName)
+		p.generatePostserviceHook(service.ccName, method.baseType, p.TypeName(method.outType), method.ccName)
 	} else {
 		p.generateEmptyBody(method.outType)
 	}
@@ -235,7 +235,7 @@ func (p *OrmPlugin) generateUpdateServerMethod(service autogenService, method au
 		typeName := method.baseType
 		p.P(`var res *`, typeName)
 		p.generateDBSetup(service)
-		p.generatePreserviceCall(service.ccName, method.baseType, updateService)
+		p.generatePreserviceCall(service.ccName, method.baseType, method.ccName)
 		if method.fieldMaskName != "" {
 			p.P(`if in.Get`, method.fieldMaskName, `() == nil {`)
 			p.P(`res, err = DefaultStrictUpdate`, typeName, `(ctx, in.GetPayload(), db)`)
@@ -249,11 +249,11 @@ func (p *OrmPlugin) generateUpdateServerMethod(service autogenService, method au
 		p.P(`return nil, err`)
 		p.P(`}`)
 		p.P(`out := &`, p.TypeName(method.outType), `{Result: res}`)
-		p.generatePostserviceCall(service.ccName, method.baseType, updateService)
+		p.generatePostserviceCall(service.ccName, method.baseType, method.ccName)
 		p.P(`return out, nil`)
 		p.P(`}`)
-		p.generatePreserviceHook(service.ccName, method.baseType, updateService)
-		p.generatePostserviceHook(service.ccName, method.baseType, p.TypeName(method.outType), updateService)
+		p.generatePreserviceHook(service.ccName, method.baseType, method.ccName)
+		p.generatePostserviceHook(service.ccName, method.baseType, p.TypeName(method.outType), method.ccName)
 	} else {
 		p.generateEmptyBody(method.outType)
 	}
@@ -311,17 +311,17 @@ func (p *OrmPlugin) generateDeleteServerMethod(service autogenService, method au
 	if method.followsConvention {
 		typeName := method.baseType
 		p.generateDBSetup(service)
-		p.generatePreserviceCall(service.ccName, method.baseType, deleteService)
+		p.generatePreserviceCall(service.ccName, method.baseType, method.ccName)
 		p.P(`err := DefaultDelete`, typeName, `(ctx, &`, typeName, `{Id: in.GetId()}, db)`)
 		p.P(`if err != nil {`)
 		p.P(`return nil, err`)
 		p.P(`}`)
 		p.P(`out := &`, p.TypeName(method.outType), `{}`)
-		p.generatePostserviceCall(service.ccName, method.baseType, deleteService)
+		p.generatePostserviceCall(service.ccName, method.baseType, method.ccName)
 		p.P(`return out, nil`)
 		p.P(`}`)
-		p.generatePreserviceHook(service.ccName, method.baseType, deleteService)
-		p.generatePostserviceHook(service.ccName, method.baseType, p.TypeName(method.outType), deleteService)
+		p.generatePreserviceHook(service.ccName, method.baseType, method.ccName)
+		p.generatePostserviceHook(service.ccName, method.baseType, p.TypeName(method.outType), method.ccName)
 	} else {
 		p.generateEmptyBody(method.outType)
 	}
@@ -360,18 +360,18 @@ func (p *OrmPlugin) generateListServerMethod(service autogenService, method auto
 	p.generateMethodSignature(service, method)
 	if method.followsConvention {
 		p.generateDBSetup(service)
-		p.generatePreserviceCall(service.ccName, method.baseType, listService)
+		p.generatePreserviceCall(service.ccName, method.baseType, method.ccName)
 		handlerCall := fmt.Sprint(`res, err := DefaultList`, method.baseType, `(ctx, db`)
-		if f := p.hasFiltering(method.inType); f != "" {
+		if f := p.getFiltering(method.inType); f != "" {
 			handlerCall += fmt.Sprint(",in.", f)
 		}
-		if s := p.hasSorting(method.inType); s != "" {
+		if s := p.getSorting(method.inType); s != "" {
 			handlerCall += fmt.Sprint(",in.", s)
 		}
-		if pg := p.hasPagination(method.inType); pg != "" {
+		if pg := p.getPagination(method.inType); pg != "" {
 			handlerCall += fmt.Sprint(",in.", pg)
 		}
-		if fs := p.hasFieldSelection(method.inType); fs != "" {
+		if fs := p.getFieldSelection(method.inType); fs != "" {
 			handlerCall += fmt.Sprint(",in.", fs)
 		}
 		handlerCall += ")"
@@ -380,11 +380,11 @@ func (p *OrmPlugin) generateListServerMethod(service autogenService, method auto
 		p.P(`return nil, err`)
 		p.P(`}`)
 		p.P(`out := &`, p.TypeName(method.outType), `{Results: res}`)
-		p.generatePostserviceCall(service.ccName, method.baseType, listService)
+		p.generatePostserviceCall(service.ccName, method.baseType, method.ccName)
 		p.P(`return out, nil`)
 		p.P(`}`)
-		p.generatePreserviceHook(service.ccName, method.baseType, listService)
-		p.generatePostserviceHook(service.ccName, method.baseType, p.TypeName(method.outType), listService)
+		p.generatePreserviceHook(service.ccName, method.baseType, method.ccName)
+		p.generatePostserviceHook(service.ccName, method.baseType, p.TypeName(method.outType), method.ccName)
 	} else {
 		p.generateEmptyBody(method.outType)
 	}
@@ -485,23 +485,23 @@ func (p *OrmPlugin) generatePostserviceHook(svc, typeName, outTypeName, mthd str
 	p.P(`}`)
 }
 
-func (p *OrmPlugin) hasFieldSelection(object generator.Object) string {
-	return p.hasFieldOfType(object, "FieldSelection")
+func (p *OrmPlugin) getFieldSelection(object generator.Object) string {
+	return p.getFieldOfType(object, "FieldSelection")
 }
 
-func (p *OrmPlugin) hasFiltering(object generator.Object) string {
-	return p.hasFieldOfType(object, "Filtering")
+func (p *OrmPlugin) getFiltering(object generator.Object) string {
+	return p.getFieldOfType(object, "Filtering")
 }
 
-func (p *OrmPlugin) hasSorting(object generator.Object) string {
-	return p.hasFieldOfType(object, "Sorting")
+func (p *OrmPlugin) getSorting(object generator.Object) string {
+	return p.getFieldOfType(object, "Sorting")
 }
 
-func (p *OrmPlugin) hasPagination(object generator.Object) string {
-	return p.hasFieldOfType(object, "Pagination")
+func (p *OrmPlugin) getPagination(object generator.Object) string {
+	return p.getFieldOfType(object, "Pagination")
 }
 
-func (p *OrmPlugin) hasFieldOfType(object generator.Object, fieldType string) string {
+func (p *OrmPlugin) getFieldOfType(object generator.Object, fieldType string) string {
 	msg := object.(*generator.Descriptor)
 	for _, field := range msg.Field {
 		goFieldName := generator.CamelCase(field.GetName())
