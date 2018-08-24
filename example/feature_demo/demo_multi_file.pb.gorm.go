@@ -29,6 +29,7 @@ It has these top-level messages:
 	DeleteIntPointRequest
 	DeleteIntPointResponse
 	ListIntPointResponse
+	ListSomethingResponse
 	Something
 	ListIntPointRequest
 */
