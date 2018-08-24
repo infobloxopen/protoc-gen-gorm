@@ -3,6 +3,7 @@ package plugin
 import (
 	"strings"
 
+	"fmt"
 	"github.com/gogo/protobuf/protoc-gen-gogo/descriptor"
 	"github.com/gogo/protobuf/protoc-gen-gogo/generator"
 )
@@ -124,9 +125,12 @@ func (p *OrmPlugin) generateCreateServerMethod(service autogenService, method au
 		p.P(`if err != nil {`)
 		p.P(`return nil, err`)
 		p.P(`}`)
-		p.P(`return &`, p.TypeName(method.outType), `{Result: res}, nil`)
+		p.P(`out := &`, p.TypeName(method.outType), `{Result: res}`)
+		p.generatePostserviceCall(service.ccName, method.baseType, createService)
+		p.P(`return out, nil`)
 		p.P(`}`)
-		p.generatePreserviceHook(service.ccName, method.baseType, p.TypeName(method.inType), createService)
+		p.generatePreserviceHook(service.ccName, method.baseType, createService)
+		p.generatePostserviceHook(service.ccName, method.baseType, p.TypeName(method.outType), method.ccName)
 	} else {
 		p.generateEmptyBody(method.outType)
 	}
@@ -168,9 +172,9 @@ func (p *OrmPlugin) generateReadServerMethod(service autogenService, method auto
 	p.generateMethodSignature(service, method)
 	if method.followsConvention {
 		p.generateDBSetup(service)
-		p.generatePreserviceCall(service.ccName, method.baseType, readService)
+		p.generatePreserviceCall(service.ccName, method.baseType, method.ccName)
 		typeName := method.baseType
-		if fields := p.hasFieldsSelector(method.inType); fields != "" {
+		if fields := p.getFieldSelection(method.inType); fields != "" {
 			p.P(`res, err := DefaultRead`, typeName, `(ctx, &`, typeName, `{Id: in.GetId()}, db, in.`, fields, `)`)
 		} else {
 			p.P(`res, err := DefaultRead`, typeName, `(ctx, &`, typeName, `{Id: in.GetId()}, db)`)
@@ -178,9 +182,12 @@ func (p *OrmPlugin) generateReadServerMethod(service autogenService, method auto
 		p.P(`if err != nil {`)
 		p.P(`return nil, err`)
 		p.P(`}`)
-		p.P(`return &`, p.TypeName(method.outType), `{Result: res}, nil`)
+		p.P(`out := &`, p.TypeName(method.outType), `{Result: res}`)
+		p.generatePostserviceCall(service.ccName, method.baseType, method.ccName)
+		p.P(`return out, nil`)
 		p.P(`}`)
-		p.generatePreserviceHook(service.ccName, method.baseType, p.TypeName(method.inType), readService)
+		p.generatePreserviceHook(service.ccName, method.baseType, method.ccName)
+		p.generatePostserviceHook(service.ccName, method.baseType, p.TypeName(method.outType), method.ccName)
 	} else {
 		p.generateEmptyBody(method.outType)
 	}
@@ -228,7 +235,7 @@ func (p *OrmPlugin) generateUpdateServerMethod(service autogenService, method au
 		typeName := method.baseType
 		p.P(`var res *`, typeName)
 		p.generateDBSetup(service)
-		p.generatePreserviceCall(service.ccName, method.baseType, updateService)
+		p.generatePreserviceCall(service.ccName, method.baseType, method.ccName)
 		if method.fieldMaskName != "" {
 			p.P(`if in.Get`, method.fieldMaskName, `() == nil {`)
 			p.P(`res, err = DefaultStrictUpdate`, typeName, `(ctx, in.GetPayload(), db)`)
@@ -241,9 +248,12 @@ func (p *OrmPlugin) generateUpdateServerMethod(service autogenService, method au
 		p.P(`if err != nil {`)
 		p.P(`return nil, err`)
 		p.P(`}`)
-		p.P(`return &`, p.TypeName(method.outType), `{Result: res}, nil`)
+		p.P(`out := &`, p.TypeName(method.outType), `{Result: res}`)
+		p.generatePostserviceCall(service.ccName, method.baseType, method.ccName)
+		p.P(`return out, nil`)
 		p.P(`}`)
-		p.generatePreserviceHook(service.ccName, method.baseType, p.TypeName(method.inType), updateService)
+		p.generatePreserviceHook(service.ccName, method.baseType, method.ccName)
+		p.generatePostserviceHook(service.ccName, method.baseType, p.TypeName(method.outType), method.ccName)
 	} else {
 		p.generateEmptyBody(method.outType)
 	}
@@ -301,10 +311,17 @@ func (p *OrmPlugin) generateDeleteServerMethod(service autogenService, method au
 	if method.followsConvention {
 		typeName := method.baseType
 		p.generateDBSetup(service)
-		p.generatePreserviceCall(service.ccName, method.baseType, deleteService)
-		p.P(`return &`, p.TypeName(method.outType), `{}, `, `DefaultDelete`, typeName, `(ctx, &`, typeName, `{Id: in.GetId()}, db)`)
+		p.generatePreserviceCall(service.ccName, method.baseType, method.ccName)
+		p.P(`err := DefaultDelete`, typeName, `(ctx, &`, typeName, `{Id: in.GetId()}, db)`)
+		p.P(`if err != nil {`)
+		p.P(`return nil, err`)
 		p.P(`}`)
-		p.generatePreserviceHook(service.ccName, method.baseType, p.TypeName(method.inType), deleteService)
+		p.P(`out := &`, p.TypeName(method.outType), `{}`)
+		p.generatePostserviceCall(service.ccName, method.baseType, method.ccName)
+		p.P(`return out, nil`)
+		p.P(`}`)
+		p.generatePreserviceHook(service.ccName, method.baseType, method.ccName)
+		p.generatePostserviceHook(service.ccName, method.baseType, p.TypeName(method.outType), method.ccName)
 	} else {
 		p.generateEmptyBody(method.outType)
 	}
@@ -343,14 +360,31 @@ func (p *OrmPlugin) generateListServerMethod(service autogenService, method auto
 	p.generateMethodSignature(service, method)
 	if method.followsConvention {
 		p.generateDBSetup(service)
-		p.generatePreserviceCall(service.ccName, method.baseType, listService)
-		p.P(`res, err := DefaultList`, method.baseType, `(ctx, db, in)`)
+		p.generatePreserviceCall(service.ccName, method.baseType, method.ccName)
+		handlerCall := fmt.Sprint(`res, err := DefaultList`, method.baseType, `(ctx, db`)
+		if f := p.getFiltering(method.inType); f != "" {
+			handlerCall += fmt.Sprint(",in.", f)
+		}
+		if s := p.getSorting(method.inType); s != "" {
+			handlerCall += fmt.Sprint(",in.", s)
+		}
+		if pg := p.getPagination(method.inType); pg != "" {
+			handlerCall += fmt.Sprint(",in.", pg)
+		}
+		if fs := p.getFieldSelection(method.inType); fs != "" {
+			handlerCall += fmt.Sprint(",in.", fs)
+		}
+		handlerCall += ")"
+		p.P(handlerCall)
 		p.P(`if err != nil {`)
 		p.P(`return nil, err`)
 		p.P(`}`)
-		p.P(`return &`, p.TypeName(method.outType), `{Results: res}, nil`)
+		p.P(`out := &`, p.TypeName(method.outType), `{Results: res}`)
+		p.generatePostserviceCall(service.ccName, method.baseType, method.ccName)
+		p.P(`return out, nil`)
 		p.P(`}`)
-		p.generatePreserviceHook(service.ccName, method.baseType, p.TypeName(method.inType), listService)
+		p.generatePreserviceHook(service.ccName, method.baseType, method.ccName)
+		p.generatePostserviceHook(service.ccName, method.baseType, p.TypeName(method.outType), method.ccName)
 	} else {
 		p.generateEmptyBody(method.outType)
 	}
@@ -420,28 +454,59 @@ func (p *OrmPlugin) getMethodProps(method *descriptor.MethodDescriptorProto) (ge
 func (p *OrmPlugin) generatePreserviceCall(svc, typeName, mthd string) {
 	p.P(`if custom, ok := interface{}(in).(`, svc, typeName, `WithBefore`, mthd, `); ok {`)
 	p.P(`var err error`)
-	p.P(`ctx, db, err = custom.Before`, mthd, `(ctx, in, db)`)
-	p.P(`if err != nil {`)
+	p.P(`if db, err = custom.Before`, mthd, `(ctx, db); err != nil {`)
 	p.P(`return nil, err`)
 	p.P(`}`)
 	p.P(`}`)
 }
 
-func (p *OrmPlugin) generatePreserviceHook(svc, typeName, inTypeName, mthd string) {
+func (p *OrmPlugin) generatePreserviceHook(svc, typeName, mthd string) {
 	p.P(`// `, svc, typeName, `WithBefore`, mthd, ` called before Default`, mthd, typeName, ` in the default `, mthd, ` handler`)
 	p.P(`type `, svc, typeName, `WithBefore`, mthd, ` interface {`)
-	p.P(`Before`, mthd, `(context.Context, *`, inTypeName, `, *`, p.Import(gormImport), `.DB) (context.Context, *`, p.Import(gormImport), `.DB, error)`)
+	p.P(`Before`, mthd, `(context.Context, *`, p.Import(gormImport), `.DB) (*`, p.Import(gormImport), `.DB, error)`)
 	p.P(`}`)
 }
 
-func (p *OrmPlugin) hasFieldsSelector(object generator.Object) string {
+func (p *OrmPlugin) generatePostserviceCall(svc, typeName, mthd string) {
+	p.P(`if custom, ok := interface{}(in).(`, svc, typeName, `WithAfter`, mthd, `); ok {`)
+	p.P(`var err error`)
+	p.P(`if err = custom.After`, mthd, `(ctx, out, db); err != nil {`)
+	p.P(`return nil, err`)
+	p.P(`}`)
+	p.P(`}`)
+}
+
+func (p *OrmPlugin) generatePostserviceHook(svc, typeName, outTypeName, mthd string) {
+	p.P(`// `, svc, typeName, `WithAfter`, mthd, ` called before Default`, mthd, typeName, ` in the default `, mthd, ` handler`)
+	p.P(`type `, svc, typeName, `WithAfter`, mthd, ` interface {`)
+	p.P(`After`, mthd, `(context.Context, *`, outTypeName, `, *`, p.Import(gormImport), `.DB) error`)
+	p.P(`}`)
+}
+
+func (p *OrmPlugin) getFieldSelection(object generator.Object) string {
+	return p.getFieldOfType(object, "FieldSelection")
+}
+
+func (p *OrmPlugin) getFiltering(object generator.Object) string {
+	return p.getFieldOfType(object, "Filtering")
+}
+
+func (p *OrmPlugin) getSorting(object generator.Object) string {
+	return p.getFieldOfType(object, "Sorting")
+}
+
+func (p *OrmPlugin) getPagination(object generator.Object) string {
+	return p.getFieldOfType(object, "Pagination")
+}
+
+func (p *OrmPlugin) getFieldOfType(object generator.Object, fieldType string) string {
 	msg := object.(*generator.Descriptor)
 	for _, field := range msg.Field {
-		fieldName := generator.CamelCase(field.GetName())
-		fieldType, _ := p.GoType(msg, field)
-		parts := strings.Split(fieldType, ".")
-		if parts[len(parts)-1] == "FieldSelection" {
-			return fieldName
+		goFieldName := generator.CamelCase(field.GetName())
+		goFieldType, _ := p.GoType(msg, field)
+		parts := strings.Split(goFieldType, ".")
+		if parts[len(parts)-1] == fieldType {
+			return goFieldName
 		}
 	}
 	return ""

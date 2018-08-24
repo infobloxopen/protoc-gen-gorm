@@ -29,6 +29,7 @@ It has these top-level messages:
 	DeleteIntPointRequest
 	DeleteIntPointResponse
 	ListIntPointResponse
+	ListSomethingResponse
 	Something
 	ListIntPointRequest
 */
@@ -42,7 +43,6 @@ import gateway1 "github.com/infobloxopen/atlas-app-toolkit/gateway"
 import go_uuid1 "github.com/satori/go.uuid"
 import gorm1 "github.com/jinzhu/gorm"
 import gorm2 "github.com/infobloxopen/atlas-app-toolkit/gorm"
-import query1 "github.com/infobloxopen/atlas-app-toolkit/query"
 
 import fmt "fmt"
 import math "math"
@@ -129,11 +129,28 @@ func DefaultCreateExternalChild(ctx context.Context, in *ExternalChild, db *gorm
 	if err != nil {
 		return nil, err
 	}
+	if hook, ok := interface{}(&ormObj).(ExternalChildORMWithBeforeCreate); ok {
+		if db, err = hook.BeforeCreate(ctx, db); err != nil {
+			return nil, err
+		}
+	}
 	if err = db.Create(&ormObj).Error; err != nil {
 		return nil, err
 	}
+	if hook, ok := interface{}(&ormObj).(ExternalChildORMWithAfterCreate); ok {
+		if err = hook.AfterCreate(ctx, db); err != nil {
+			return nil, err
+		}
+	}
 	pbResponse, err := ormObj.ToPB(ctx)
 	return &pbResponse, err
+}
+
+type ExternalChildORMWithBeforeCreate interface {
+	BeforeCreate(context.Context, *gorm1.DB) (*gorm1.DB, error)
+}
+type ExternalChildORMWithAfterCreate interface {
+	AfterCreate(context.Context, *gorm1.DB) error
 }
 
 // DefaultReadExternalChild executes a basic gorm read call
@@ -141,40 +158,47 @@ func DefaultReadExternalChild(ctx context.Context, in *ExternalChild, db *gorm1.
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultReadExternalChild")
 	}
-	var err error
-	db, err = gorm2.ApplyFieldSelection(ctx, db, nil, &ExternalChildORM{})
+	ormObj, err := in.ToORM(ctx)
 	if err != nil {
 		return nil, err
 	}
-	ormParams, err := in.ToORM(ctx)
-	if err != nil {
-		return nil, err
-	}
-	if ormParams.Id == "" {
+	if ormObj.Id == "" {
 		return nil, errors.New("DefaultReadExternalChild requires a non-zero primary key")
 	}
-	ormResponse := ExternalChildORM{}
-	if err = db.Where(&ormParams).First(&ormResponse).Error; err != nil {
+	if hook, ok := interface{}(&ormObj).(ExternalChildORMWithBeforeReadApplyQuery); ok {
+		if db, err = hook.BeforeReadApplyQuery(ctx, db); err != nil {
+			return nil, err
+		}
+	}
+	if db, err = gorm2.ApplyFieldSelection(ctx, db, nil, &ExternalChildORM{}); err != nil {
 		return nil, err
+	}
+	if hook, ok := interface{}(&ormObj).(ExternalChildORMWithBeforeReadFind); ok {
+		if db, err = hook.BeforeReadFind(ctx, db); err != nil {
+			return nil, err
+		}
+	}
+	ormResponse := ExternalChildORM{}
+	if err = db.Where(&ormObj).First(&ormResponse).Error; err != nil {
+		return nil, err
+	}
+	if hook, ok := interface{}(&ormResponse).(ExternalChildORMWithAfterReadFind); ok {
+		if err = hook.AfterReadFind(ctx, db); err != nil {
+			return nil, err
+		}
 	}
 	pbResponse, err := ormResponse.ToPB(ctx)
 	return &pbResponse, err
 }
 
-// DefaultUpdateExternalChild executes a basic gorm update call
-func DefaultUpdateExternalChild(ctx context.Context, in *ExternalChild, db *gorm1.DB) (*ExternalChild, error) {
-	if in == nil {
-		return nil, errors.New("Nil argument to DefaultUpdateExternalChild")
-	}
-	ormObj, err := in.ToORM(ctx)
-	if err != nil {
-		return nil, err
-	}
-	if err = db.Save(&ormObj).Error; err != nil {
-		return nil, err
-	}
-	pbResponse, err := ormObj.ToPB(ctx)
-	return &pbResponse, err
+type ExternalChildORMWithBeforeReadApplyQuery interface {
+	BeforeReadApplyQuery(context.Context, *gorm1.DB) (*gorm1.DB, error)
+}
+type ExternalChildORMWithBeforeReadFind interface {
+	BeforeReadFind(context.Context, *gorm1.DB) (*gorm1.DB, error)
+}
+type ExternalChildORMWithAfterReadFind interface {
+	AfterReadFind(context.Context, *gorm1.DB) error
 }
 
 func DefaultDeleteExternalChild(ctx context.Context, in *ExternalChild, db *gorm1.DB) error {
@@ -188,8 +212,26 @@ func DefaultDeleteExternalChild(ctx context.Context, in *ExternalChild, db *gorm
 	if ormObj.Id == "" {
 		return errors.New("A non-zero ID value is required for a delete call")
 	}
+	if hook, ok := interface{}(&ormObj).(ExternalChildORMWithBeforeDelete); ok {
+		if db, err = hook.BeforeDelete(ctx, db); err != nil {
+			return err
+		}
+	}
 	err = db.Where(&ormObj).Delete(&ExternalChildORM{}).Error
+	if err != nil {
+		return err
+	}
+	if hook, ok := interface{}(&ormObj).(ExternalChildORMWithAfterDelete); ok {
+		err = hook.AfterDelete(ctx, db)
+	}
 	return err
+}
+
+type ExternalChildORMWithBeforeDelete interface {
+	BeforeDelete(context.Context, *gorm1.DB) (*gorm1.DB, error)
+}
+type ExternalChildORMWithAfterDelete interface {
+	AfterDelete(context.Context, *gorm1.DB) error
 }
 
 // DefaultStrictUpdateExternalChild clears first level 1:many children and then executes a gorm update call
@@ -206,8 +248,23 @@ func DefaultStrictUpdateExternalChild(ctx context.Context, in *ExternalChild, db
 	if err != nil {
 		return nil, err
 	}
+	if hook, ok := interface{}(&ormObj).(ExternalChildORMWithBeforeStrictUpdateCleanup); ok {
+		if db, err = hook.BeforeStrictUpdateCleanup(ctx, db); err != nil {
+			return nil, err
+		}
+	}
+	if hook, ok := interface{}(&ormObj).(ExternalChildORMWithBeforeStrictUpdateSave); ok {
+		if db, err = hook.BeforeStrictUpdateSave(ctx, db); err != nil {
+			return nil, err
+		}
+	}
 	if err = db.Save(&ormObj).Error; err != nil {
 		return nil, err
+	}
+	if hook, ok := interface{}(&ormObj).(ExternalChildORMWithAfterStrictUpdateSave); ok {
+		if err = hook.AfterStrictUpdateSave(ctx, db); err != nil {
+			return nil, err
+		}
 	}
 	pbResponse, err := ormObj.ToPB(ctx)
 	if err != nil {
@@ -219,29 +276,69 @@ func DefaultStrictUpdateExternalChild(ctx context.Context, in *ExternalChild, db
 	return &pbResponse, err
 }
 
+type ExternalChildORMWithBeforeStrictUpdateCleanup interface {
+	BeforeStrictUpdateCleanup(context.Context, *gorm1.DB) (*gorm1.DB, error)
+}
+type ExternalChildORMWithBeforeStrictUpdateSave interface {
+	BeforeStrictUpdateSave(context.Context, *gorm1.DB) (*gorm1.DB, error)
+}
+type ExternalChildORMWithAfterStrictUpdateSave interface {
+	AfterStrictUpdateSave(context.Context, *gorm1.DB) error
+}
+
 // DefaultPatchExternalChild executes a basic gorm update call with patch behavior
 func DefaultPatchExternalChild(ctx context.Context, in *ExternalChild, updateMask *field_mask1.FieldMask, db *gorm1.DB) (*ExternalChild, error) {
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultPatchExternalChild")
 	}
+	var pbObj ExternalChild
+	var err error
+	if hook, ok := interface{}(&pbObj).(ExternalChildWithBeforePatchRead); ok {
+		if db, err = hook.BeforePatchRead(ctx, in, updateMask, db); err != nil {
+			return nil, err
+		}
+	}
 	pbReadRes, err := DefaultReadExternalChild(ctx, &ExternalChild{Id: in.GetId()}, db)
 	if err != nil {
 		return nil, err
 	}
-	pbObj := *pbReadRes
+	pbObj = *pbReadRes
+	if hook, ok := interface{}(&pbObj).(ExternalChildWithBeforePatchApplyFieldMask); ok {
+		if db, err = hook.BeforePatchApplyFieldMask(ctx, in, updateMask, db); err != nil {
+			return nil, err
+		}
+	}
 	if _, err := DefaultApplyFieldMaskExternalChild(ctx, &pbObj, in, updateMask, "", db); err != nil {
 		return nil, err
 	}
 	if hook, ok := interface{}(&pbObj).(ExternalChildWithBeforePatchSave); ok {
-		if ctx, db, err = hook.BeforePatchSave(ctx, in, updateMask, db); err != nil {
+		if db, err = hook.BeforePatchSave(ctx, in, updateMask, db); err != nil {
 			return nil, err
 		}
 	}
-	return DefaultStrictUpdateExternalChild(ctx, &pbObj, db)
+	pbResponse, err := DefaultStrictUpdateExternalChild(ctx, &pbObj, db)
+	if err != nil {
+		return nil, err
+	}
+	if hook, ok := interface{}(pbResponse).(ExternalChildWithAfterPatchSave); ok {
+		if err = hook.AfterPatchSave(ctx, in, updateMask, db); err != nil {
+			return nil, err
+		}
+	}
+	return pbResponse, nil
 }
 
+type ExternalChildWithBeforePatchRead interface {
+	BeforePatchRead(context.Context, *ExternalChild, *field_mask1.FieldMask, *gorm1.DB) (*gorm1.DB, error)
+}
+type ExternalChildWithBeforePatchApplyFieldMask interface {
+	BeforePatchApplyFieldMask(context.Context, *ExternalChild, *field_mask1.FieldMask, *gorm1.DB) (*gorm1.DB, error)
+}
 type ExternalChildWithBeforePatchSave interface {
-	BeforePatchSave(context.Context, *ExternalChild, *field_mask1.FieldMask, *gorm1.DB) (context.Context, *gorm1.DB, error)
+	BeforePatchSave(context.Context, *ExternalChild, *field_mask1.FieldMask, *gorm1.DB) (*gorm1.DB, error)
+}
+type ExternalChildWithAfterPatchSave interface {
+	AfterPatchSave(context.Context, *ExternalChild, *field_mask1.FieldMask, *gorm1.DB) error
 }
 
 // DefaultApplyFieldMaskExternalChild patches an pbObject with patcher according to a field mask.
@@ -264,51 +361,37 @@ func DefaultApplyFieldMaskExternalChild(ctx context.Context, patchee *ExternalCh
 	return patchee, nil
 }
 
-// getCollectionOperators takes collection operator values from corresponding message fields
-func getCollectionOperators(in interface{}) (*query1.Filtering, *query1.Sorting, *query1.Pagination, *query1.FieldSelection, error) {
-	f := &query1.Filtering{}
-	err := gateway1.GetCollectionOp(in, f)
-	if err != nil {
-		return nil, nil, nil, nil, err
-	}
-	s := &query1.Sorting{}
-	err = gateway1.GetCollectionOp(in, s)
-	if err != nil {
-		return nil, nil, nil, nil, err
-	}
-	p := &query1.Pagination{}
-	err = gateway1.GetCollectionOp(in, p)
-	if err != nil {
-		return nil, nil, nil, nil, err
-	}
-	fs := &query1.FieldSelection{}
-	err = gateway1.GetCollectionOp(in, fs)
-	if err != nil {
-		return nil, nil, nil, nil, err
-	}
-	return f, s, p, fs, nil
-}
-
 // DefaultListExternalChild executes a gorm list call
-func DefaultListExternalChild(ctx context.Context, db *gorm1.DB, req interface{}) ([]*ExternalChild, error) {
-	ormResponse := []ExternalChildORM{}
-	f, s, p, fs, err := getCollectionOperators(req)
-	if err != nil {
-		return nil, err
-	}
-	db, err = gorm2.ApplyCollectionOperators(ctx, db, &ExternalChildORM{}, &ExternalChild{}, f, s, p, fs)
-	if err != nil {
-		return nil, err
-	}
+func DefaultListExternalChild(ctx context.Context, db *gorm1.DB) ([]*ExternalChild, error) {
 	in := ExternalChild{}
-	ormParams, err := in.ToORM(ctx)
+	ormObj, err := in.ToORM(ctx)
 	if err != nil {
 		return nil, err
 	}
-	db = db.Where(&ormParams)
+	if hook, ok := interface{}(&ormObj).(ExternalChildORMWithBeforeListApplyQuery); ok {
+		if db, err = hook.BeforeListApplyQuery(ctx, db); err != nil {
+			return nil, err
+		}
+	}
+	db, err = gorm2.ApplyCollectionOperators(ctx, db, &ExternalChildORM{}, &ExternalChild{}, nil, nil, nil, nil)
+	if err != nil {
+		return nil, err
+	}
+	if hook, ok := interface{}(&ormObj).(ExternalChildORMWithBeforeListFind); ok {
+		if db, err = hook.BeforeListFind(ctx, db); err != nil {
+			return nil, err
+		}
+	}
+	db = db.Where(&ormObj)
 	db = db.Order("id")
+	ormResponse := []ExternalChildORM{}
 	if err := db.Find(&ormResponse).Error; err != nil {
 		return nil, err
+	}
+	if hook, ok := interface{}(&ormObj).(ExternalChildORMWithAfterListFind); ok {
+		if err = hook.AfterListFind(ctx, db, &ormResponse); err != nil {
+			return nil, err
+		}
 	}
 	pbResponse := []*ExternalChild{}
 	for _, responseEntry := range ormResponse {
@@ -319,4 +402,14 @@ func DefaultListExternalChild(ctx context.Context, db *gorm1.DB, req interface{}
 		pbResponse = append(pbResponse, &temp)
 	}
 	return pbResponse, nil
+}
+
+type ExternalChildORMWithBeforeListApplyQuery interface {
+	BeforeListApplyQuery(context.Context, *gorm1.DB) (*gorm1.DB, error)
+}
+type ExternalChildORMWithBeforeListFind interface {
+	BeforeListFind(context.Context, *gorm1.DB) (*gorm1.DB, error)
+}
+type ExternalChildORMWithAfterListFind interface {
+	AfterListFind(context.Context, *gorm1.DB, *[]ExternalChildORM) error
 }

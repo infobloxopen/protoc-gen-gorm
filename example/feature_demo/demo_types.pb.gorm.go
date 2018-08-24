@@ -705,11 +705,28 @@ func DefaultCreateTestTypes(ctx context.Context, in *TestTypes, db *gorm1.DB) (*
 	if err != nil {
 		return nil, err
 	}
+	if hook, ok := interface{}(&ormObj).(TestTypesORMWithBeforeCreate); ok {
+		if db, err = hook.BeforeCreate(ctx, db); err != nil {
+			return nil, err
+		}
+	}
 	if err = db.Create(&ormObj).Error; err != nil {
 		return nil, err
 	}
+	if hook, ok := interface{}(&ormObj).(TestTypesORMWithAfterCreate); ok {
+		if err = hook.AfterCreate(ctx, db); err != nil {
+			return nil, err
+		}
+	}
 	pbResponse, err := ormObj.ToPB(ctx)
 	return &pbResponse, err
+}
+
+type TestTypesORMWithBeforeCreate interface {
+	BeforeCreate(context.Context, *gorm1.DB) (*gorm1.DB, error)
+}
+type TestTypesORMWithAfterCreate interface {
+	AfterCreate(context.Context, *gorm1.DB) error
 }
 
 // DefaultApplyFieldMaskTestTypes patches an pbObject with patcher according to a field mask.
@@ -769,24 +786,35 @@ func DefaultApplyFieldMaskTestTypes(ctx context.Context, patchee *TestTypes, pat
 }
 
 // DefaultListTestTypes executes a gorm list call
-func DefaultListTestTypes(ctx context.Context, db *gorm1.DB, req interface{}) ([]*TestTypes, error) {
-	ormResponse := []TestTypesORM{}
-	f, s, p, fs, err := getCollectionOperators(req)
-	if err != nil {
-		return nil, err
-	}
-	db, err = gorm2.ApplyCollectionOperators(ctx, db, &TestTypesORM{}, &TestTypes{}, f, s, p, fs)
-	if err != nil {
-		return nil, err
-	}
+func DefaultListTestTypes(ctx context.Context, db *gorm1.DB) ([]*TestTypes, error) {
 	in := TestTypes{}
-	ormParams, err := in.ToORM(ctx)
+	ormObj, err := in.ToORM(ctx)
 	if err != nil {
 		return nil, err
 	}
-	db = db.Where(&ormParams)
+	if hook, ok := interface{}(&ormObj).(TestTypesORMWithBeforeListApplyQuery); ok {
+		if db, err = hook.BeforeListApplyQuery(ctx, db); err != nil {
+			return nil, err
+		}
+	}
+	db, err = gorm2.ApplyCollectionOperators(ctx, db, &TestTypesORM{}, &TestTypes{}, nil, nil, nil, nil)
+	if err != nil {
+		return nil, err
+	}
+	if hook, ok := interface{}(&ormObj).(TestTypesORMWithBeforeListFind); ok {
+		if db, err = hook.BeforeListFind(ctx, db); err != nil {
+			return nil, err
+		}
+	}
+	db = db.Where(&ormObj)
+	ormResponse := []TestTypesORM{}
 	if err := db.Find(&ormResponse).Error; err != nil {
 		return nil, err
+	}
+	if hook, ok := interface{}(&ormObj).(TestTypesORMWithAfterListFind); ok {
+		if err = hook.AfterListFind(ctx, db, &ormResponse); err != nil {
+			return nil, err
+		}
 	}
 	pbResponse := []*TestTypes{}
 	for _, responseEntry := range ormResponse {
@@ -799,6 +827,16 @@ func DefaultListTestTypes(ctx context.Context, db *gorm1.DB, req interface{}) ([
 	return pbResponse, nil
 }
 
+type TestTypesORMWithBeforeListApplyQuery interface {
+	BeforeListApplyQuery(context.Context, *gorm1.DB) (*gorm1.DB, error)
+}
+type TestTypesORMWithBeforeListFind interface {
+	BeforeListFind(context.Context, *gorm1.DB) (*gorm1.DB, error)
+}
+type TestTypesORMWithAfterListFind interface {
+	AfterListFind(context.Context, *gorm1.DB, *[]TestTypesORM) error
+}
+
 // DefaultCreateTypeWithID executes a basic gorm create call
 func DefaultCreateTypeWithID(ctx context.Context, in *TypeWithID, db *gorm1.DB) (*TypeWithID, error) {
 	if in == nil {
@@ -808,11 +846,28 @@ func DefaultCreateTypeWithID(ctx context.Context, in *TypeWithID, db *gorm1.DB) 
 	if err != nil {
 		return nil, err
 	}
+	if hook, ok := interface{}(&ormObj).(TypeWithIDORMWithBeforeCreate); ok {
+		if db, err = hook.BeforeCreate(ctx, db); err != nil {
+			return nil, err
+		}
+	}
 	if err = db.Create(&ormObj).Error; err != nil {
 		return nil, err
 	}
+	if hook, ok := interface{}(&ormObj).(TypeWithIDORMWithAfterCreate); ok {
+		if err = hook.AfterCreate(ctx, db); err != nil {
+			return nil, err
+		}
+	}
 	pbResponse, err := ormObj.ToPB(ctx)
 	return &pbResponse, err
+}
+
+type TypeWithIDORMWithBeforeCreate interface {
+	BeforeCreate(context.Context, *gorm1.DB) (*gorm1.DB, error)
+}
+type TypeWithIDORMWithAfterCreate interface {
+	AfterCreate(context.Context, *gorm1.DB) error
 }
 
 // DefaultReadTypeWithID executes a basic gorm read call
@@ -820,40 +875,47 @@ func DefaultReadTypeWithID(ctx context.Context, in *TypeWithID, db *gorm1.DB) (*
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultReadTypeWithID")
 	}
-	var err error
-	db, err = gorm2.ApplyFieldSelection(ctx, db, nil, &TypeWithIDORM{})
+	ormObj, err := in.ToORM(ctx)
 	if err != nil {
 		return nil, err
 	}
-	ormParams, err := in.ToORM(ctx)
-	if err != nil {
-		return nil, err
-	}
-	if ormParams.Id == 0 {
+	if ormObj.Id == 0 {
 		return nil, errors.New("DefaultReadTypeWithID requires a non-zero primary key")
 	}
-	ormResponse := TypeWithIDORM{}
-	if err = db.Where(&ormParams).First(&ormResponse).Error; err != nil {
+	if hook, ok := interface{}(&ormObj).(TypeWithIDORMWithBeforeReadApplyQuery); ok {
+		if db, err = hook.BeforeReadApplyQuery(ctx, db); err != nil {
+			return nil, err
+		}
+	}
+	if db, err = gorm2.ApplyFieldSelection(ctx, db, nil, &TypeWithIDORM{}); err != nil {
 		return nil, err
+	}
+	if hook, ok := interface{}(&ormObj).(TypeWithIDORMWithBeforeReadFind); ok {
+		if db, err = hook.BeforeReadFind(ctx, db); err != nil {
+			return nil, err
+		}
+	}
+	ormResponse := TypeWithIDORM{}
+	if err = db.Where(&ormObj).First(&ormResponse).Error; err != nil {
+		return nil, err
+	}
+	if hook, ok := interface{}(&ormResponse).(TypeWithIDORMWithAfterReadFind); ok {
+		if err = hook.AfterReadFind(ctx, db); err != nil {
+			return nil, err
+		}
 	}
 	pbResponse, err := ormResponse.ToPB(ctx)
 	return &pbResponse, err
 }
 
-// DefaultUpdateTypeWithID executes a basic gorm update call
-func DefaultUpdateTypeWithID(ctx context.Context, in *TypeWithID, db *gorm1.DB) (*TypeWithID, error) {
-	if in == nil {
-		return nil, errors.New("Nil argument to DefaultUpdateTypeWithID")
-	}
-	ormObj, err := in.ToORM(ctx)
-	if err != nil {
-		return nil, err
-	}
-	if err = db.Save(&ormObj).Error; err != nil {
-		return nil, err
-	}
-	pbResponse, err := ormObj.ToPB(ctx)
-	return &pbResponse, err
+type TypeWithIDORMWithBeforeReadApplyQuery interface {
+	BeforeReadApplyQuery(context.Context, *gorm1.DB) (*gorm1.DB, error)
+}
+type TypeWithIDORMWithBeforeReadFind interface {
+	BeforeReadFind(context.Context, *gorm1.DB) (*gorm1.DB, error)
+}
+type TypeWithIDORMWithAfterReadFind interface {
+	AfterReadFind(context.Context, *gorm1.DB) error
 }
 
 func DefaultDeleteTypeWithID(ctx context.Context, in *TypeWithID, db *gorm1.DB) error {
@@ -867,8 +929,26 @@ func DefaultDeleteTypeWithID(ctx context.Context, in *TypeWithID, db *gorm1.DB) 
 	if ormObj.Id == 0 {
 		return errors.New("A non-zero ID value is required for a delete call")
 	}
+	if hook, ok := interface{}(&ormObj).(TypeWithIDORMWithBeforeDelete); ok {
+		if db, err = hook.BeforeDelete(ctx, db); err != nil {
+			return err
+		}
+	}
 	err = db.Where(&ormObj).Delete(&TypeWithIDORM{}).Error
+	if err != nil {
+		return err
+	}
+	if hook, ok := interface{}(&ormObj).(TypeWithIDORMWithAfterDelete); ok {
+		err = hook.AfterDelete(ctx, db)
+	}
 	return err
+}
+
+type TypeWithIDORMWithBeforeDelete interface {
+	BeforeDelete(context.Context, *gorm1.DB) (*gorm1.DB, error)
+}
+type TypeWithIDORMWithAfterDelete interface {
+	AfterDelete(context.Context, *gorm1.DB) error
 }
 
 // DefaultStrictUpdateTypeWithID clears first level 1:many children and then executes a gorm update call
@@ -884,6 +964,11 @@ func DefaultStrictUpdateTypeWithID(ctx context.Context, in *TypeWithID, db *gorm
 	err = db.Model(&ormObj).Where("id=?", ormObj.Id).Count(&count).Error
 	if err != nil {
 		return nil, err
+	}
+	if hook, ok := interface{}(&ormObj).(TypeWithIDORMWithBeforeStrictUpdateCleanup); ok {
+		if db, err = hook.BeforeStrictUpdateCleanup(ctx, db); err != nil {
+			return nil, err
+		}
 	}
 	filterANestedObject := TestTypesORM{}
 	if ormObj.Id == 0 {
@@ -903,8 +988,18 @@ func DefaultStrictUpdateTypeWithID(ctx context.Context, in *TypeWithID, db *gorm
 	if err = db.Where(filterThings).Delete(TestTypesORM{}).Error; err != nil {
 		return nil, err
 	}
+	if hook, ok := interface{}(&ormObj).(TypeWithIDORMWithBeforeStrictUpdateSave); ok {
+		if db, err = hook.BeforeStrictUpdateSave(ctx, db); err != nil {
+			return nil, err
+		}
+	}
 	if err = db.Save(&ormObj).Error; err != nil {
 		return nil, err
+	}
+	if hook, ok := interface{}(&ormObj).(TypeWithIDORMWithAfterStrictUpdateSave); ok {
+		if err = hook.AfterStrictUpdateSave(ctx, db); err != nil {
+			return nil, err
+		}
 	}
 	pbResponse, err := ormObj.ToPB(ctx)
 	if err != nil {
@@ -916,29 +1011,69 @@ func DefaultStrictUpdateTypeWithID(ctx context.Context, in *TypeWithID, db *gorm
 	return &pbResponse, err
 }
 
+type TypeWithIDORMWithBeforeStrictUpdateCleanup interface {
+	BeforeStrictUpdateCleanup(context.Context, *gorm1.DB) (*gorm1.DB, error)
+}
+type TypeWithIDORMWithBeforeStrictUpdateSave interface {
+	BeforeStrictUpdateSave(context.Context, *gorm1.DB) (*gorm1.DB, error)
+}
+type TypeWithIDORMWithAfterStrictUpdateSave interface {
+	AfterStrictUpdateSave(context.Context, *gorm1.DB) error
+}
+
 // DefaultPatchTypeWithID executes a basic gorm update call with patch behavior
 func DefaultPatchTypeWithID(ctx context.Context, in *TypeWithID, updateMask *field_mask1.FieldMask, db *gorm1.DB) (*TypeWithID, error) {
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultPatchTypeWithID")
 	}
+	var pbObj TypeWithID
+	var err error
+	if hook, ok := interface{}(&pbObj).(TypeWithIDWithBeforePatchRead); ok {
+		if db, err = hook.BeforePatchRead(ctx, in, updateMask, db); err != nil {
+			return nil, err
+		}
+	}
 	pbReadRes, err := DefaultReadTypeWithID(ctx, &TypeWithID{Id: in.GetId()}, db)
 	if err != nil {
 		return nil, err
 	}
-	pbObj := *pbReadRes
+	pbObj = *pbReadRes
+	if hook, ok := interface{}(&pbObj).(TypeWithIDWithBeforePatchApplyFieldMask); ok {
+		if db, err = hook.BeforePatchApplyFieldMask(ctx, in, updateMask, db); err != nil {
+			return nil, err
+		}
+	}
 	if _, err := DefaultApplyFieldMaskTypeWithID(ctx, &pbObj, in, updateMask, "", db); err != nil {
 		return nil, err
 	}
 	if hook, ok := interface{}(&pbObj).(TypeWithIDWithBeforePatchSave); ok {
-		if ctx, db, err = hook.BeforePatchSave(ctx, in, updateMask, db); err != nil {
+		if db, err = hook.BeforePatchSave(ctx, in, updateMask, db); err != nil {
 			return nil, err
 		}
 	}
-	return DefaultStrictUpdateTypeWithID(ctx, &pbObj, db)
+	pbResponse, err := DefaultStrictUpdateTypeWithID(ctx, &pbObj, db)
+	if err != nil {
+		return nil, err
+	}
+	if hook, ok := interface{}(pbResponse).(TypeWithIDWithAfterPatchSave); ok {
+		if err = hook.AfterPatchSave(ctx, in, updateMask, db); err != nil {
+			return nil, err
+		}
+	}
+	return pbResponse, nil
 }
 
+type TypeWithIDWithBeforePatchRead interface {
+	BeforePatchRead(context.Context, *TypeWithID, *field_mask1.FieldMask, *gorm1.DB) (*gorm1.DB, error)
+}
+type TypeWithIDWithBeforePatchApplyFieldMask interface {
+	BeforePatchApplyFieldMask(context.Context, *TypeWithID, *field_mask1.FieldMask, *gorm1.DB) (*gorm1.DB, error)
+}
 type TypeWithIDWithBeforePatchSave interface {
-	BeforePatchSave(context.Context, *TypeWithID, *field_mask1.FieldMask, *gorm1.DB) (context.Context, *gorm1.DB, error)
+	BeforePatchSave(context.Context, *TypeWithID, *field_mask1.FieldMask, *gorm1.DB) (*gorm1.DB, error)
+}
+type TypeWithIDWithAfterPatchSave interface {
+	AfterPatchSave(context.Context, *TypeWithID, *field_mask1.FieldMask, *gorm1.DB) error
 }
 
 // DefaultApplyFieldMaskTypeWithID patches an pbObject with patcher according to a field mask.
@@ -1044,25 +1179,36 @@ func DefaultApplyFieldMaskTypeWithID(ctx context.Context, patchee *TypeWithID, p
 }
 
 // DefaultListTypeWithID executes a gorm list call
-func DefaultListTypeWithID(ctx context.Context, db *gorm1.DB, req interface{}) ([]*TypeWithID, error) {
-	ormResponse := []TypeWithIDORM{}
-	f, s, p, fs, err := getCollectionOperators(req)
-	if err != nil {
-		return nil, err
-	}
-	db, err = gorm2.ApplyCollectionOperators(ctx, db, &TypeWithIDORM{}, &TypeWithID{}, f, s, p, fs)
-	if err != nil {
-		return nil, err
-	}
+func DefaultListTypeWithID(ctx context.Context, db *gorm1.DB) ([]*TypeWithID, error) {
 	in := TypeWithID{}
-	ormParams, err := in.ToORM(ctx)
+	ormObj, err := in.ToORM(ctx)
 	if err != nil {
 		return nil, err
 	}
-	db = db.Where(&ormParams)
+	if hook, ok := interface{}(&ormObj).(TypeWithIDORMWithBeforeListApplyQuery); ok {
+		if db, err = hook.BeforeListApplyQuery(ctx, db); err != nil {
+			return nil, err
+		}
+	}
+	db, err = gorm2.ApplyCollectionOperators(ctx, db, &TypeWithIDORM{}, &TypeWithID{}, nil, nil, nil, nil)
+	if err != nil {
+		return nil, err
+	}
+	if hook, ok := interface{}(&ormObj).(TypeWithIDORMWithBeforeListFind); ok {
+		if db, err = hook.BeforeListFind(ctx, db); err != nil {
+			return nil, err
+		}
+	}
+	db = db.Where(&ormObj)
 	db = db.Order("id")
+	ormResponse := []TypeWithIDORM{}
 	if err := db.Find(&ormResponse).Error; err != nil {
 		return nil, err
+	}
+	if hook, ok := interface{}(&ormObj).(TypeWithIDORMWithAfterListFind); ok {
+		if err = hook.AfterListFind(ctx, db, &ormResponse); err != nil {
+			return nil, err
+		}
 	}
 	pbResponse := []*TypeWithID{}
 	for _, responseEntry := range ormResponse {
@@ -1075,6 +1221,16 @@ func DefaultListTypeWithID(ctx context.Context, db *gorm1.DB, req interface{}) (
 	return pbResponse, nil
 }
 
+type TypeWithIDORMWithBeforeListApplyQuery interface {
+	BeforeListApplyQuery(context.Context, *gorm1.DB) (*gorm1.DB, error)
+}
+type TypeWithIDORMWithBeforeListFind interface {
+	BeforeListFind(context.Context, *gorm1.DB) (*gorm1.DB, error)
+}
+type TypeWithIDORMWithAfterListFind interface {
+	AfterListFind(context.Context, *gorm1.DB, *[]TypeWithIDORM) error
+}
+
 // DefaultCreateMultiaccountTypeWithID executes a basic gorm create call
 func DefaultCreateMultiaccountTypeWithID(ctx context.Context, in *MultiaccountTypeWithID, db *gorm1.DB) (*MultiaccountTypeWithID, error) {
 	if in == nil {
@@ -1084,11 +1240,28 @@ func DefaultCreateMultiaccountTypeWithID(ctx context.Context, in *MultiaccountTy
 	if err != nil {
 		return nil, err
 	}
+	if hook, ok := interface{}(&ormObj).(MultiaccountTypeWithIDORMWithBeforeCreate); ok {
+		if db, err = hook.BeforeCreate(ctx, db); err != nil {
+			return nil, err
+		}
+	}
 	if err = db.Create(&ormObj).Error; err != nil {
 		return nil, err
 	}
+	if hook, ok := interface{}(&ormObj).(MultiaccountTypeWithIDORMWithAfterCreate); ok {
+		if err = hook.AfterCreate(ctx, db); err != nil {
+			return nil, err
+		}
+	}
 	pbResponse, err := ormObj.ToPB(ctx)
 	return &pbResponse, err
+}
+
+type MultiaccountTypeWithIDORMWithBeforeCreate interface {
+	BeforeCreate(context.Context, *gorm1.DB) (*gorm1.DB, error)
+}
+type MultiaccountTypeWithIDORMWithAfterCreate interface {
+	AfterCreate(context.Context, *gorm1.DB) error
 }
 
 // DefaultReadMultiaccountTypeWithID executes a basic gorm read call
@@ -1096,51 +1269,47 @@ func DefaultReadMultiaccountTypeWithID(ctx context.Context, in *MultiaccountType
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultReadMultiaccountTypeWithID")
 	}
-	var err error
-	db, err = gorm2.ApplyFieldSelection(ctx, db, nil, &MultiaccountTypeWithIDORM{})
+	ormObj, err := in.ToORM(ctx)
 	if err != nil {
 		return nil, err
 	}
-	ormParams, err := in.ToORM(ctx)
-	if err != nil {
-		return nil, err
-	}
-	if ormParams.Id == 0 {
+	if ormObj.Id == 0 {
 		return nil, errors.New("DefaultReadMultiaccountTypeWithID requires a non-zero primary key")
 	}
-	ormResponse := MultiaccountTypeWithIDORM{}
-	if err = db.Where(&ormParams).First(&ormResponse).Error; err != nil {
+	if hook, ok := interface{}(&ormObj).(MultiaccountTypeWithIDORMWithBeforeReadApplyQuery); ok {
+		if db, err = hook.BeforeReadApplyQuery(ctx, db); err != nil {
+			return nil, err
+		}
+	}
+	if db, err = gorm2.ApplyFieldSelection(ctx, db, nil, &MultiaccountTypeWithIDORM{}); err != nil {
 		return nil, err
+	}
+	if hook, ok := interface{}(&ormObj).(MultiaccountTypeWithIDORMWithBeforeReadFind); ok {
+		if db, err = hook.BeforeReadFind(ctx, db); err != nil {
+			return nil, err
+		}
+	}
+	ormResponse := MultiaccountTypeWithIDORM{}
+	if err = db.Where(&ormObj).First(&ormResponse).Error; err != nil {
+		return nil, err
+	}
+	if hook, ok := interface{}(&ormResponse).(MultiaccountTypeWithIDORMWithAfterReadFind); ok {
+		if err = hook.AfterReadFind(ctx, db); err != nil {
+			return nil, err
+		}
 	}
 	pbResponse, err := ormResponse.ToPB(ctx)
 	return &pbResponse, err
 }
 
-// DefaultUpdateMultiaccountTypeWithID executes a basic gorm update call
-func DefaultUpdateMultiaccountTypeWithID(ctx context.Context, in *MultiaccountTypeWithID, db *gorm1.DB) (*MultiaccountTypeWithID, error) {
-	if in == nil {
-		return nil, errors.New("Nil argument to DefaultUpdateMultiaccountTypeWithID")
-	}
-	accountID, err := auth1.GetAccountID(ctx, nil)
-	if err != nil {
-		return nil, err
-	}
-	if exists, err := DefaultReadMultiaccountTypeWithID(ctx, &MultiaccountTypeWithID{Id: in.GetId()}, db); err != nil {
-		return nil, err
-	} else if exists == nil {
-		return nil, errors.New("MultiaccountTypeWithID not found")
-	}
-	ormObj, err := in.ToORM(ctx)
-	if err != nil {
-		return nil, err
-	}
-	ormObj.AccountID = accountID
-	db = db.Where(&MultiaccountTypeWithIDORM{AccountID: accountID})
-	if err = db.Save(&ormObj).Error; err != nil {
-		return nil, err
-	}
-	pbResponse, err := ormObj.ToPB(ctx)
-	return &pbResponse, err
+type MultiaccountTypeWithIDORMWithBeforeReadApplyQuery interface {
+	BeforeReadApplyQuery(context.Context, *gorm1.DB) (*gorm1.DB, error)
+}
+type MultiaccountTypeWithIDORMWithBeforeReadFind interface {
+	BeforeReadFind(context.Context, *gorm1.DB) (*gorm1.DB, error)
+}
+type MultiaccountTypeWithIDORMWithAfterReadFind interface {
+	AfterReadFind(context.Context, *gorm1.DB) error
 }
 
 func DefaultDeleteMultiaccountTypeWithID(ctx context.Context, in *MultiaccountTypeWithID, db *gorm1.DB) error {
@@ -1154,8 +1323,26 @@ func DefaultDeleteMultiaccountTypeWithID(ctx context.Context, in *MultiaccountTy
 	if ormObj.Id == 0 {
 		return errors.New("A non-zero ID value is required for a delete call")
 	}
+	if hook, ok := interface{}(&ormObj).(MultiaccountTypeWithIDORMWithBeforeDelete); ok {
+		if db, err = hook.BeforeDelete(ctx, db); err != nil {
+			return err
+		}
+	}
 	err = db.Where(&ormObj).Delete(&MultiaccountTypeWithIDORM{}).Error
+	if err != nil {
+		return err
+	}
+	if hook, ok := interface{}(&ormObj).(MultiaccountTypeWithIDORMWithAfterDelete); ok {
+		err = hook.AfterDelete(ctx, db)
+	}
 	return err
+}
+
+type MultiaccountTypeWithIDORMWithBeforeDelete interface {
+	BeforeDelete(context.Context, *gorm1.DB) (*gorm1.DB, error)
+}
+type MultiaccountTypeWithIDORMWithAfterDelete interface {
+	AfterDelete(context.Context, *gorm1.DB) error
 }
 
 // DefaultStrictUpdateMultiaccountTypeWithID clears first level 1:many children and then executes a gorm update call
@@ -1172,9 +1359,24 @@ func DefaultStrictUpdateMultiaccountTypeWithID(ctx context.Context, in *Multiacc
 	if err != nil {
 		return nil, err
 	}
+	if hook, ok := interface{}(&ormObj).(MultiaccountTypeWithIDORMWithBeforeStrictUpdateCleanup); ok {
+		if db, err = hook.BeforeStrictUpdateCleanup(ctx, db); err != nil {
+			return nil, err
+		}
+	}
+	if hook, ok := interface{}(&ormObj).(MultiaccountTypeWithIDORMWithBeforeStrictUpdateSave); ok {
+		if db, err = hook.BeforeStrictUpdateSave(ctx, db); err != nil {
+			return nil, err
+		}
+	}
 	db = db.Where(&MultiaccountTypeWithIDORM{AccountID: ormObj.AccountID})
 	if err = db.Save(&ormObj).Error; err != nil {
 		return nil, err
+	}
+	if hook, ok := interface{}(&ormObj).(MultiaccountTypeWithIDORMWithAfterStrictUpdateSave); ok {
+		if err = hook.AfterStrictUpdateSave(ctx, db); err != nil {
+			return nil, err
+		}
 	}
 	pbResponse, err := ormObj.ToPB(ctx)
 	if err != nil {
@@ -1186,29 +1388,69 @@ func DefaultStrictUpdateMultiaccountTypeWithID(ctx context.Context, in *Multiacc
 	return &pbResponse, err
 }
 
+type MultiaccountTypeWithIDORMWithBeforeStrictUpdateCleanup interface {
+	BeforeStrictUpdateCleanup(context.Context, *gorm1.DB) (*gorm1.DB, error)
+}
+type MultiaccountTypeWithIDORMWithBeforeStrictUpdateSave interface {
+	BeforeStrictUpdateSave(context.Context, *gorm1.DB) (*gorm1.DB, error)
+}
+type MultiaccountTypeWithIDORMWithAfterStrictUpdateSave interface {
+	AfterStrictUpdateSave(context.Context, *gorm1.DB) error
+}
+
 // DefaultPatchMultiaccountTypeWithID executes a basic gorm update call with patch behavior
 func DefaultPatchMultiaccountTypeWithID(ctx context.Context, in *MultiaccountTypeWithID, updateMask *field_mask1.FieldMask, db *gorm1.DB) (*MultiaccountTypeWithID, error) {
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultPatchMultiaccountTypeWithID")
 	}
+	var pbObj MultiaccountTypeWithID
+	var err error
+	if hook, ok := interface{}(&pbObj).(MultiaccountTypeWithIDWithBeforePatchRead); ok {
+		if db, err = hook.BeforePatchRead(ctx, in, updateMask, db); err != nil {
+			return nil, err
+		}
+	}
 	pbReadRes, err := DefaultReadMultiaccountTypeWithID(ctx, &MultiaccountTypeWithID{Id: in.GetId()}, db)
 	if err != nil {
 		return nil, err
 	}
-	pbObj := *pbReadRes
+	pbObj = *pbReadRes
+	if hook, ok := interface{}(&pbObj).(MultiaccountTypeWithIDWithBeforePatchApplyFieldMask); ok {
+		if db, err = hook.BeforePatchApplyFieldMask(ctx, in, updateMask, db); err != nil {
+			return nil, err
+		}
+	}
 	if _, err := DefaultApplyFieldMaskMultiaccountTypeWithID(ctx, &pbObj, in, updateMask, "", db); err != nil {
 		return nil, err
 	}
 	if hook, ok := interface{}(&pbObj).(MultiaccountTypeWithIDWithBeforePatchSave); ok {
-		if ctx, db, err = hook.BeforePatchSave(ctx, in, updateMask, db); err != nil {
+		if db, err = hook.BeforePatchSave(ctx, in, updateMask, db); err != nil {
 			return nil, err
 		}
 	}
-	return DefaultStrictUpdateMultiaccountTypeWithID(ctx, &pbObj, db)
+	pbResponse, err := DefaultStrictUpdateMultiaccountTypeWithID(ctx, &pbObj, db)
+	if err != nil {
+		return nil, err
+	}
+	if hook, ok := interface{}(pbResponse).(MultiaccountTypeWithIDWithAfterPatchSave); ok {
+		if err = hook.AfterPatchSave(ctx, in, updateMask, db); err != nil {
+			return nil, err
+		}
+	}
+	return pbResponse, nil
 }
 
+type MultiaccountTypeWithIDWithBeforePatchRead interface {
+	BeforePatchRead(context.Context, *MultiaccountTypeWithID, *field_mask1.FieldMask, *gorm1.DB) (*gorm1.DB, error)
+}
+type MultiaccountTypeWithIDWithBeforePatchApplyFieldMask interface {
+	BeforePatchApplyFieldMask(context.Context, *MultiaccountTypeWithID, *field_mask1.FieldMask, *gorm1.DB) (*gorm1.DB, error)
+}
 type MultiaccountTypeWithIDWithBeforePatchSave interface {
-	BeforePatchSave(context.Context, *MultiaccountTypeWithID, *field_mask1.FieldMask, *gorm1.DB) (context.Context, *gorm1.DB, error)
+	BeforePatchSave(context.Context, *MultiaccountTypeWithID, *field_mask1.FieldMask, *gorm1.DB) (*gorm1.DB, error)
+}
+type MultiaccountTypeWithIDWithAfterPatchSave interface {
+	AfterPatchSave(context.Context, *MultiaccountTypeWithID, *field_mask1.FieldMask, *gorm1.DB) error
 }
 
 // DefaultApplyFieldMaskMultiaccountTypeWithID patches an pbObject with patcher according to a field mask.
@@ -1236,25 +1478,36 @@ func DefaultApplyFieldMaskMultiaccountTypeWithID(ctx context.Context, patchee *M
 }
 
 // DefaultListMultiaccountTypeWithID executes a gorm list call
-func DefaultListMultiaccountTypeWithID(ctx context.Context, db *gorm1.DB, req interface{}) ([]*MultiaccountTypeWithID, error) {
-	ormResponse := []MultiaccountTypeWithIDORM{}
-	f, s, p, fs, err := getCollectionOperators(req)
-	if err != nil {
-		return nil, err
-	}
-	db, err = gorm2.ApplyCollectionOperators(ctx, db, &MultiaccountTypeWithIDORM{}, &MultiaccountTypeWithID{}, f, s, p, fs)
-	if err != nil {
-		return nil, err
-	}
+func DefaultListMultiaccountTypeWithID(ctx context.Context, db *gorm1.DB) ([]*MultiaccountTypeWithID, error) {
 	in := MultiaccountTypeWithID{}
-	ormParams, err := in.ToORM(ctx)
+	ormObj, err := in.ToORM(ctx)
 	if err != nil {
 		return nil, err
 	}
-	db = db.Where(&ormParams)
+	if hook, ok := interface{}(&ormObj).(MultiaccountTypeWithIDORMWithBeforeListApplyQuery); ok {
+		if db, err = hook.BeforeListApplyQuery(ctx, db); err != nil {
+			return nil, err
+		}
+	}
+	db, err = gorm2.ApplyCollectionOperators(ctx, db, &MultiaccountTypeWithIDORM{}, &MultiaccountTypeWithID{}, nil, nil, nil, nil)
+	if err != nil {
+		return nil, err
+	}
+	if hook, ok := interface{}(&ormObj).(MultiaccountTypeWithIDORMWithBeforeListFind); ok {
+		if db, err = hook.BeforeListFind(ctx, db); err != nil {
+			return nil, err
+		}
+	}
+	db = db.Where(&ormObj)
 	db = db.Order("id")
+	ormResponse := []MultiaccountTypeWithIDORM{}
 	if err := db.Find(&ormResponse).Error; err != nil {
 		return nil, err
+	}
+	if hook, ok := interface{}(&ormObj).(MultiaccountTypeWithIDORMWithAfterListFind); ok {
+		if err = hook.AfterListFind(ctx, db, &ormResponse); err != nil {
+			return nil, err
+		}
 	}
 	pbResponse := []*MultiaccountTypeWithID{}
 	for _, responseEntry := range ormResponse {
@@ -1267,6 +1520,16 @@ func DefaultListMultiaccountTypeWithID(ctx context.Context, db *gorm1.DB, req in
 	return pbResponse, nil
 }
 
+type MultiaccountTypeWithIDORMWithBeforeListApplyQuery interface {
+	BeforeListApplyQuery(context.Context, *gorm1.DB) (*gorm1.DB, error)
+}
+type MultiaccountTypeWithIDORMWithBeforeListFind interface {
+	BeforeListFind(context.Context, *gorm1.DB) (*gorm1.DB, error)
+}
+type MultiaccountTypeWithIDORMWithAfterListFind interface {
+	AfterListFind(context.Context, *gorm1.DB, *[]MultiaccountTypeWithIDORM) error
+}
+
 // DefaultCreateMultiaccountTypeWithoutID executes a basic gorm create call
 func DefaultCreateMultiaccountTypeWithoutID(ctx context.Context, in *MultiaccountTypeWithoutID, db *gorm1.DB) (*MultiaccountTypeWithoutID, error) {
 	if in == nil {
@@ -1276,11 +1539,28 @@ func DefaultCreateMultiaccountTypeWithoutID(ctx context.Context, in *Multiaccoun
 	if err != nil {
 		return nil, err
 	}
+	if hook, ok := interface{}(&ormObj).(MultiaccountTypeWithoutIDORMWithBeforeCreate); ok {
+		if db, err = hook.BeforeCreate(ctx, db); err != nil {
+			return nil, err
+		}
+	}
 	if err = db.Create(&ormObj).Error; err != nil {
 		return nil, err
 	}
+	if hook, ok := interface{}(&ormObj).(MultiaccountTypeWithoutIDORMWithAfterCreate); ok {
+		if err = hook.AfterCreate(ctx, db); err != nil {
+			return nil, err
+		}
+	}
 	pbResponse, err := ormObj.ToPB(ctx)
 	return &pbResponse, err
+}
+
+type MultiaccountTypeWithoutIDORMWithBeforeCreate interface {
+	BeforeCreate(context.Context, *gorm1.DB) (*gorm1.DB, error)
+}
+type MultiaccountTypeWithoutIDORMWithAfterCreate interface {
+	AfterCreate(context.Context, *gorm1.DB) error
 }
 
 // DefaultApplyFieldMaskMultiaccountTypeWithoutID patches an pbObject with patcher according to a field mask.
@@ -1304,24 +1584,35 @@ func DefaultApplyFieldMaskMultiaccountTypeWithoutID(ctx context.Context, patchee
 }
 
 // DefaultListMultiaccountTypeWithoutID executes a gorm list call
-func DefaultListMultiaccountTypeWithoutID(ctx context.Context, db *gorm1.DB, req interface{}) ([]*MultiaccountTypeWithoutID, error) {
-	ormResponse := []MultiaccountTypeWithoutIDORM{}
-	f, s, p, fs, err := getCollectionOperators(req)
-	if err != nil {
-		return nil, err
-	}
-	db, err = gorm2.ApplyCollectionOperators(ctx, db, &MultiaccountTypeWithoutIDORM{}, &MultiaccountTypeWithoutID{}, f, s, p, fs)
-	if err != nil {
-		return nil, err
-	}
+func DefaultListMultiaccountTypeWithoutID(ctx context.Context, db *gorm1.DB) ([]*MultiaccountTypeWithoutID, error) {
 	in := MultiaccountTypeWithoutID{}
-	ormParams, err := in.ToORM(ctx)
+	ormObj, err := in.ToORM(ctx)
 	if err != nil {
 		return nil, err
 	}
-	db = db.Where(&ormParams)
+	if hook, ok := interface{}(&ormObj).(MultiaccountTypeWithoutIDORMWithBeforeListApplyQuery); ok {
+		if db, err = hook.BeforeListApplyQuery(ctx, db); err != nil {
+			return nil, err
+		}
+	}
+	db, err = gorm2.ApplyCollectionOperators(ctx, db, &MultiaccountTypeWithoutIDORM{}, &MultiaccountTypeWithoutID{}, nil, nil, nil, nil)
+	if err != nil {
+		return nil, err
+	}
+	if hook, ok := interface{}(&ormObj).(MultiaccountTypeWithoutIDORMWithBeforeListFind); ok {
+		if db, err = hook.BeforeListFind(ctx, db); err != nil {
+			return nil, err
+		}
+	}
+	db = db.Where(&ormObj)
+	ormResponse := []MultiaccountTypeWithoutIDORM{}
 	if err := db.Find(&ormResponse).Error; err != nil {
 		return nil, err
+	}
+	if hook, ok := interface{}(&ormObj).(MultiaccountTypeWithoutIDORMWithAfterListFind); ok {
+		if err = hook.AfterListFind(ctx, db, &ormResponse); err != nil {
+			return nil, err
+		}
 	}
 	pbResponse := []*MultiaccountTypeWithoutID{}
 	for _, responseEntry := range ormResponse {
@@ -1334,6 +1625,16 @@ func DefaultListMultiaccountTypeWithoutID(ctx context.Context, db *gorm1.DB, req
 	return pbResponse, nil
 }
 
+type MultiaccountTypeWithoutIDORMWithBeforeListApplyQuery interface {
+	BeforeListApplyQuery(context.Context, *gorm1.DB) (*gorm1.DB, error)
+}
+type MultiaccountTypeWithoutIDORMWithBeforeListFind interface {
+	BeforeListFind(context.Context, *gorm1.DB) (*gorm1.DB, error)
+}
+type MultiaccountTypeWithoutIDORMWithAfterListFind interface {
+	AfterListFind(context.Context, *gorm1.DB, *[]MultiaccountTypeWithoutIDORM) error
+}
+
 // DefaultCreatePrimaryUUIDType executes a basic gorm create call
 func DefaultCreatePrimaryUUIDType(ctx context.Context, in *PrimaryUUIDType, db *gorm1.DB) (*PrimaryUUIDType, error) {
 	if in == nil {
@@ -1343,11 +1644,28 @@ func DefaultCreatePrimaryUUIDType(ctx context.Context, in *PrimaryUUIDType, db *
 	if err != nil {
 		return nil, err
 	}
+	if hook, ok := interface{}(&ormObj).(PrimaryUUIDTypeORMWithBeforeCreate); ok {
+		if db, err = hook.BeforeCreate(ctx, db); err != nil {
+			return nil, err
+		}
+	}
 	if err = db.Create(&ormObj).Error; err != nil {
 		return nil, err
 	}
+	if hook, ok := interface{}(&ormObj).(PrimaryUUIDTypeORMWithAfterCreate); ok {
+		if err = hook.AfterCreate(ctx, db); err != nil {
+			return nil, err
+		}
+	}
 	pbResponse, err := ormObj.ToPB(ctx)
 	return &pbResponse, err
+}
+
+type PrimaryUUIDTypeORMWithBeforeCreate interface {
+	BeforeCreate(context.Context, *gorm1.DB) (*gorm1.DB, error)
+}
+type PrimaryUUIDTypeORMWithAfterCreate interface {
+	AfterCreate(context.Context, *gorm1.DB) error
 }
 
 // DefaultReadPrimaryUUIDType executes a basic gorm read call
@@ -1355,40 +1673,47 @@ func DefaultReadPrimaryUUIDType(ctx context.Context, in *PrimaryUUIDType, db *go
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultReadPrimaryUUIDType")
 	}
-	var err error
-	db, err = gorm2.ApplyFieldSelection(ctx, db, nil, &PrimaryUUIDTypeORM{})
+	ormObj, err := in.ToORM(ctx)
 	if err != nil {
 		return nil, err
 	}
-	ormParams, err := in.ToORM(ctx)
-	if err != nil {
-		return nil, err
-	}
-	if ormParams.Id == nil || *ormParams.Id == go_uuid1.Nil {
+	if ormObj.Id == nil || *ormObj.Id == go_uuid1.Nil {
 		return nil, errors.New("DefaultReadPrimaryUUIDType requires a non-zero primary key")
 	}
-	ormResponse := PrimaryUUIDTypeORM{}
-	if err = db.Where(&ormParams).First(&ormResponse).Error; err != nil {
+	if hook, ok := interface{}(&ormObj).(PrimaryUUIDTypeORMWithBeforeReadApplyQuery); ok {
+		if db, err = hook.BeforeReadApplyQuery(ctx, db); err != nil {
+			return nil, err
+		}
+	}
+	if db, err = gorm2.ApplyFieldSelection(ctx, db, nil, &PrimaryUUIDTypeORM{}); err != nil {
 		return nil, err
+	}
+	if hook, ok := interface{}(&ormObj).(PrimaryUUIDTypeORMWithBeforeReadFind); ok {
+		if db, err = hook.BeforeReadFind(ctx, db); err != nil {
+			return nil, err
+		}
+	}
+	ormResponse := PrimaryUUIDTypeORM{}
+	if err = db.Where(&ormObj).First(&ormResponse).Error; err != nil {
+		return nil, err
+	}
+	if hook, ok := interface{}(&ormResponse).(PrimaryUUIDTypeORMWithAfterReadFind); ok {
+		if err = hook.AfterReadFind(ctx, db); err != nil {
+			return nil, err
+		}
 	}
 	pbResponse, err := ormResponse.ToPB(ctx)
 	return &pbResponse, err
 }
 
-// DefaultUpdatePrimaryUUIDType executes a basic gorm update call
-func DefaultUpdatePrimaryUUIDType(ctx context.Context, in *PrimaryUUIDType, db *gorm1.DB) (*PrimaryUUIDType, error) {
-	if in == nil {
-		return nil, errors.New("Nil argument to DefaultUpdatePrimaryUUIDType")
-	}
-	ormObj, err := in.ToORM(ctx)
-	if err != nil {
-		return nil, err
-	}
-	if err = db.Save(&ormObj).Error; err != nil {
-		return nil, err
-	}
-	pbResponse, err := ormObj.ToPB(ctx)
-	return &pbResponse, err
+type PrimaryUUIDTypeORMWithBeforeReadApplyQuery interface {
+	BeforeReadApplyQuery(context.Context, *gorm1.DB) (*gorm1.DB, error)
+}
+type PrimaryUUIDTypeORMWithBeforeReadFind interface {
+	BeforeReadFind(context.Context, *gorm1.DB) (*gorm1.DB, error)
+}
+type PrimaryUUIDTypeORMWithAfterReadFind interface {
+	AfterReadFind(context.Context, *gorm1.DB) error
 }
 
 func DefaultDeletePrimaryUUIDType(ctx context.Context, in *PrimaryUUIDType, db *gorm1.DB) error {
@@ -1402,8 +1727,26 @@ func DefaultDeletePrimaryUUIDType(ctx context.Context, in *PrimaryUUIDType, db *
 	if ormObj.Id == nil || *ormObj.Id == go_uuid1.Nil {
 		return errors.New("A non-zero ID value is required for a delete call")
 	}
+	if hook, ok := interface{}(&ormObj).(PrimaryUUIDTypeORMWithBeforeDelete); ok {
+		if db, err = hook.BeforeDelete(ctx, db); err != nil {
+			return err
+		}
+	}
 	err = db.Where(&ormObj).Delete(&PrimaryUUIDTypeORM{}).Error
+	if err != nil {
+		return err
+	}
+	if hook, ok := interface{}(&ormObj).(PrimaryUUIDTypeORMWithAfterDelete); ok {
+		err = hook.AfterDelete(ctx, db)
+	}
 	return err
+}
+
+type PrimaryUUIDTypeORMWithBeforeDelete interface {
+	BeforeDelete(context.Context, *gorm1.DB) (*gorm1.DB, error)
+}
+type PrimaryUUIDTypeORMWithAfterDelete interface {
+	AfterDelete(context.Context, *gorm1.DB) error
 }
 
 // DefaultStrictUpdatePrimaryUUIDType clears first level 1:many children and then executes a gorm update call
@@ -1420,6 +1763,11 @@ func DefaultStrictUpdatePrimaryUUIDType(ctx context.Context, in *PrimaryUUIDType
 	if err != nil {
 		return nil, err
 	}
+	if hook, ok := interface{}(&ormObj).(PrimaryUUIDTypeORMWithBeforeStrictUpdateCleanup); ok {
+		if db, err = hook.BeforeStrictUpdateCleanup(ctx, db); err != nil {
+			return nil, err
+		}
+	}
 	filterChild := ExternalChildORM{}
 	if ormObj.Id == nil || *ormObj.Id == go_uuid1.Nil {
 		return nil, errors.New("Can't do overwriting update with no Id value for PrimaryUUIDTypeORM")
@@ -1429,8 +1777,18 @@ func DefaultStrictUpdatePrimaryUUIDType(ctx context.Context, in *PrimaryUUIDType
 	if err = db.Where(filterChild).Delete(ExternalChildORM{}).Error; err != nil {
 		return nil, err
 	}
+	if hook, ok := interface{}(&ormObj).(PrimaryUUIDTypeORMWithBeforeStrictUpdateSave); ok {
+		if db, err = hook.BeforeStrictUpdateSave(ctx, db); err != nil {
+			return nil, err
+		}
+	}
 	if err = db.Save(&ormObj).Error; err != nil {
 		return nil, err
+	}
+	if hook, ok := interface{}(&ormObj).(PrimaryUUIDTypeORMWithAfterStrictUpdateSave); ok {
+		if err = hook.AfterStrictUpdateSave(ctx, db); err != nil {
+			return nil, err
+		}
 	}
 	pbResponse, err := ormObj.ToPB(ctx)
 	if err != nil {
@@ -1442,29 +1800,69 @@ func DefaultStrictUpdatePrimaryUUIDType(ctx context.Context, in *PrimaryUUIDType
 	return &pbResponse, err
 }
 
+type PrimaryUUIDTypeORMWithBeforeStrictUpdateCleanup interface {
+	BeforeStrictUpdateCleanup(context.Context, *gorm1.DB) (*gorm1.DB, error)
+}
+type PrimaryUUIDTypeORMWithBeforeStrictUpdateSave interface {
+	BeforeStrictUpdateSave(context.Context, *gorm1.DB) (*gorm1.DB, error)
+}
+type PrimaryUUIDTypeORMWithAfterStrictUpdateSave interface {
+	AfterStrictUpdateSave(context.Context, *gorm1.DB) error
+}
+
 // DefaultPatchPrimaryUUIDType executes a basic gorm update call with patch behavior
 func DefaultPatchPrimaryUUIDType(ctx context.Context, in *PrimaryUUIDType, updateMask *field_mask1.FieldMask, db *gorm1.DB) (*PrimaryUUIDType, error) {
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultPatchPrimaryUUIDType")
 	}
+	var pbObj PrimaryUUIDType
+	var err error
+	if hook, ok := interface{}(&pbObj).(PrimaryUUIDTypeWithBeforePatchRead); ok {
+		if db, err = hook.BeforePatchRead(ctx, in, updateMask, db); err != nil {
+			return nil, err
+		}
+	}
 	pbReadRes, err := DefaultReadPrimaryUUIDType(ctx, &PrimaryUUIDType{Id: in.GetId()}, db)
 	if err != nil {
 		return nil, err
 	}
-	pbObj := *pbReadRes
+	pbObj = *pbReadRes
+	if hook, ok := interface{}(&pbObj).(PrimaryUUIDTypeWithBeforePatchApplyFieldMask); ok {
+		if db, err = hook.BeforePatchApplyFieldMask(ctx, in, updateMask, db); err != nil {
+			return nil, err
+		}
+	}
 	if _, err := DefaultApplyFieldMaskPrimaryUUIDType(ctx, &pbObj, in, updateMask, "", db); err != nil {
 		return nil, err
 	}
 	if hook, ok := interface{}(&pbObj).(PrimaryUUIDTypeWithBeforePatchSave); ok {
-		if ctx, db, err = hook.BeforePatchSave(ctx, in, updateMask, db); err != nil {
+		if db, err = hook.BeforePatchSave(ctx, in, updateMask, db); err != nil {
 			return nil, err
 		}
 	}
-	return DefaultStrictUpdatePrimaryUUIDType(ctx, &pbObj, db)
+	pbResponse, err := DefaultStrictUpdatePrimaryUUIDType(ctx, &pbObj, db)
+	if err != nil {
+		return nil, err
+	}
+	if hook, ok := interface{}(pbResponse).(PrimaryUUIDTypeWithAfterPatchSave); ok {
+		if err = hook.AfterPatchSave(ctx, in, updateMask, db); err != nil {
+			return nil, err
+		}
+	}
+	return pbResponse, nil
 }
 
+type PrimaryUUIDTypeWithBeforePatchRead interface {
+	BeforePatchRead(context.Context, *PrimaryUUIDType, *field_mask1.FieldMask, *gorm1.DB) (*gorm1.DB, error)
+}
+type PrimaryUUIDTypeWithBeforePatchApplyFieldMask interface {
+	BeforePatchApplyFieldMask(context.Context, *PrimaryUUIDType, *field_mask1.FieldMask, *gorm1.DB) (*gorm1.DB, error)
+}
 type PrimaryUUIDTypeWithBeforePatchSave interface {
-	BeforePatchSave(context.Context, *PrimaryUUIDType, *field_mask1.FieldMask, *gorm1.DB) (context.Context, *gorm1.DB, error)
+	BeforePatchSave(context.Context, *PrimaryUUIDType, *field_mask1.FieldMask, *gorm1.DB) (*gorm1.DB, error)
+}
+type PrimaryUUIDTypeWithAfterPatchSave interface {
+	AfterPatchSave(context.Context, *PrimaryUUIDType, *field_mask1.FieldMask, *gorm1.DB) error
 }
 
 // DefaultApplyFieldMaskPrimaryUUIDType patches an pbObject with patcher according to a field mask.
@@ -1510,25 +1908,36 @@ func DefaultApplyFieldMaskPrimaryUUIDType(ctx context.Context, patchee *PrimaryU
 }
 
 // DefaultListPrimaryUUIDType executes a gorm list call
-func DefaultListPrimaryUUIDType(ctx context.Context, db *gorm1.DB, req interface{}) ([]*PrimaryUUIDType, error) {
-	ormResponse := []PrimaryUUIDTypeORM{}
-	f, s, p, fs, err := getCollectionOperators(req)
-	if err != nil {
-		return nil, err
-	}
-	db, err = gorm2.ApplyCollectionOperators(ctx, db, &PrimaryUUIDTypeORM{}, &PrimaryUUIDType{}, f, s, p, fs)
-	if err != nil {
-		return nil, err
-	}
+func DefaultListPrimaryUUIDType(ctx context.Context, db *gorm1.DB) ([]*PrimaryUUIDType, error) {
 	in := PrimaryUUIDType{}
-	ormParams, err := in.ToORM(ctx)
+	ormObj, err := in.ToORM(ctx)
 	if err != nil {
 		return nil, err
 	}
-	db = db.Where(&ormParams)
+	if hook, ok := interface{}(&ormObj).(PrimaryUUIDTypeORMWithBeforeListApplyQuery); ok {
+		if db, err = hook.BeforeListApplyQuery(ctx, db); err != nil {
+			return nil, err
+		}
+	}
+	db, err = gorm2.ApplyCollectionOperators(ctx, db, &PrimaryUUIDTypeORM{}, &PrimaryUUIDType{}, nil, nil, nil, nil)
+	if err != nil {
+		return nil, err
+	}
+	if hook, ok := interface{}(&ormObj).(PrimaryUUIDTypeORMWithBeforeListFind); ok {
+		if db, err = hook.BeforeListFind(ctx, db); err != nil {
+			return nil, err
+		}
+	}
+	db = db.Where(&ormObj)
 	db = db.Order("id")
+	ormResponse := []PrimaryUUIDTypeORM{}
 	if err := db.Find(&ormResponse).Error; err != nil {
 		return nil, err
+	}
+	if hook, ok := interface{}(&ormObj).(PrimaryUUIDTypeORMWithAfterListFind); ok {
+		if err = hook.AfterListFind(ctx, db, &ormResponse); err != nil {
+			return nil, err
+		}
 	}
 	pbResponse := []*PrimaryUUIDType{}
 	for _, responseEntry := range ormResponse {
@@ -1541,6 +1950,16 @@ func DefaultListPrimaryUUIDType(ctx context.Context, db *gorm1.DB, req interface
 	return pbResponse, nil
 }
 
+type PrimaryUUIDTypeORMWithBeforeListApplyQuery interface {
+	BeforeListApplyQuery(context.Context, *gorm1.DB) (*gorm1.DB, error)
+}
+type PrimaryUUIDTypeORMWithBeforeListFind interface {
+	BeforeListFind(context.Context, *gorm1.DB) (*gorm1.DB, error)
+}
+type PrimaryUUIDTypeORMWithAfterListFind interface {
+	AfterListFind(context.Context, *gorm1.DB, *[]PrimaryUUIDTypeORM) error
+}
+
 // DefaultCreatePrimaryStringType executes a basic gorm create call
 func DefaultCreatePrimaryStringType(ctx context.Context, in *PrimaryStringType, db *gorm1.DB) (*PrimaryStringType, error) {
 	if in == nil {
@@ -1550,11 +1969,28 @@ func DefaultCreatePrimaryStringType(ctx context.Context, in *PrimaryStringType, 
 	if err != nil {
 		return nil, err
 	}
+	if hook, ok := interface{}(&ormObj).(PrimaryStringTypeORMWithBeforeCreate); ok {
+		if db, err = hook.BeforeCreate(ctx, db); err != nil {
+			return nil, err
+		}
+	}
 	if err = db.Create(&ormObj).Error; err != nil {
 		return nil, err
 	}
+	if hook, ok := interface{}(&ormObj).(PrimaryStringTypeORMWithAfterCreate); ok {
+		if err = hook.AfterCreate(ctx, db); err != nil {
+			return nil, err
+		}
+	}
 	pbResponse, err := ormObj.ToPB(ctx)
 	return &pbResponse, err
+}
+
+type PrimaryStringTypeORMWithBeforeCreate interface {
+	BeforeCreate(context.Context, *gorm1.DB) (*gorm1.DB, error)
+}
+type PrimaryStringTypeORMWithAfterCreate interface {
+	AfterCreate(context.Context, *gorm1.DB) error
 }
 
 // DefaultReadPrimaryStringType executes a basic gorm read call
@@ -1562,40 +1998,47 @@ func DefaultReadPrimaryStringType(ctx context.Context, in *PrimaryStringType, db
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultReadPrimaryStringType")
 	}
-	var err error
-	db, err = gorm2.ApplyFieldSelection(ctx, db, nil, &PrimaryStringTypeORM{})
+	ormObj, err := in.ToORM(ctx)
 	if err != nil {
 		return nil, err
 	}
-	ormParams, err := in.ToORM(ctx)
-	if err != nil {
-		return nil, err
-	}
-	if ormParams.Id == "" {
+	if ormObj.Id == "" {
 		return nil, errors.New("DefaultReadPrimaryStringType requires a non-zero primary key")
 	}
-	ormResponse := PrimaryStringTypeORM{}
-	if err = db.Where(&ormParams).First(&ormResponse).Error; err != nil {
+	if hook, ok := interface{}(&ormObj).(PrimaryStringTypeORMWithBeforeReadApplyQuery); ok {
+		if db, err = hook.BeforeReadApplyQuery(ctx, db); err != nil {
+			return nil, err
+		}
+	}
+	if db, err = gorm2.ApplyFieldSelection(ctx, db, nil, &PrimaryStringTypeORM{}); err != nil {
 		return nil, err
+	}
+	if hook, ok := interface{}(&ormObj).(PrimaryStringTypeORMWithBeforeReadFind); ok {
+		if db, err = hook.BeforeReadFind(ctx, db); err != nil {
+			return nil, err
+		}
+	}
+	ormResponse := PrimaryStringTypeORM{}
+	if err = db.Where(&ormObj).First(&ormResponse).Error; err != nil {
+		return nil, err
+	}
+	if hook, ok := interface{}(&ormResponse).(PrimaryStringTypeORMWithAfterReadFind); ok {
+		if err = hook.AfterReadFind(ctx, db); err != nil {
+			return nil, err
+		}
 	}
 	pbResponse, err := ormResponse.ToPB(ctx)
 	return &pbResponse, err
 }
 
-// DefaultUpdatePrimaryStringType executes a basic gorm update call
-func DefaultUpdatePrimaryStringType(ctx context.Context, in *PrimaryStringType, db *gorm1.DB) (*PrimaryStringType, error) {
-	if in == nil {
-		return nil, errors.New("Nil argument to DefaultUpdatePrimaryStringType")
-	}
-	ormObj, err := in.ToORM(ctx)
-	if err != nil {
-		return nil, err
-	}
-	if err = db.Save(&ormObj).Error; err != nil {
-		return nil, err
-	}
-	pbResponse, err := ormObj.ToPB(ctx)
-	return &pbResponse, err
+type PrimaryStringTypeORMWithBeforeReadApplyQuery interface {
+	BeforeReadApplyQuery(context.Context, *gorm1.DB) (*gorm1.DB, error)
+}
+type PrimaryStringTypeORMWithBeforeReadFind interface {
+	BeforeReadFind(context.Context, *gorm1.DB) (*gorm1.DB, error)
+}
+type PrimaryStringTypeORMWithAfterReadFind interface {
+	AfterReadFind(context.Context, *gorm1.DB) error
 }
 
 func DefaultDeletePrimaryStringType(ctx context.Context, in *PrimaryStringType, db *gorm1.DB) error {
@@ -1609,8 +2052,26 @@ func DefaultDeletePrimaryStringType(ctx context.Context, in *PrimaryStringType, 
 	if ormObj.Id == "" {
 		return errors.New("A non-zero ID value is required for a delete call")
 	}
+	if hook, ok := interface{}(&ormObj).(PrimaryStringTypeORMWithBeforeDelete); ok {
+		if db, err = hook.BeforeDelete(ctx, db); err != nil {
+			return err
+		}
+	}
 	err = db.Where(&ormObj).Delete(&PrimaryStringTypeORM{}).Error
+	if err != nil {
+		return err
+	}
+	if hook, ok := interface{}(&ormObj).(PrimaryStringTypeORMWithAfterDelete); ok {
+		err = hook.AfterDelete(ctx, db)
+	}
 	return err
+}
+
+type PrimaryStringTypeORMWithBeforeDelete interface {
+	BeforeDelete(context.Context, *gorm1.DB) (*gorm1.DB, error)
+}
+type PrimaryStringTypeORMWithAfterDelete interface {
+	AfterDelete(context.Context, *gorm1.DB) error
 }
 
 // DefaultStrictUpdatePrimaryStringType clears first level 1:many children and then executes a gorm update call
@@ -1627,6 +2088,11 @@ func DefaultStrictUpdatePrimaryStringType(ctx context.Context, in *PrimaryString
 	if err != nil {
 		return nil, err
 	}
+	if hook, ok := interface{}(&ormObj).(PrimaryStringTypeORMWithBeforeStrictUpdateCleanup); ok {
+		if db, err = hook.BeforeStrictUpdateCleanup(ctx, db); err != nil {
+			return nil, err
+		}
+	}
 	filterChild := ExternalChildORM{}
 	if ormObj.Id == "" {
 		return nil, errors.New("Can't do overwriting update with no Id value for PrimaryStringTypeORM")
@@ -1636,8 +2102,18 @@ func DefaultStrictUpdatePrimaryStringType(ctx context.Context, in *PrimaryString
 	if err = db.Where(filterChild).Delete(ExternalChildORM{}).Error; err != nil {
 		return nil, err
 	}
+	if hook, ok := interface{}(&ormObj).(PrimaryStringTypeORMWithBeforeStrictUpdateSave); ok {
+		if db, err = hook.BeforeStrictUpdateSave(ctx, db); err != nil {
+			return nil, err
+		}
+	}
 	if err = db.Save(&ormObj).Error; err != nil {
 		return nil, err
+	}
+	if hook, ok := interface{}(&ormObj).(PrimaryStringTypeORMWithAfterStrictUpdateSave); ok {
+		if err = hook.AfterStrictUpdateSave(ctx, db); err != nil {
+			return nil, err
+		}
 	}
 	pbResponse, err := ormObj.ToPB(ctx)
 	if err != nil {
@@ -1649,29 +2125,69 @@ func DefaultStrictUpdatePrimaryStringType(ctx context.Context, in *PrimaryString
 	return &pbResponse, err
 }
 
+type PrimaryStringTypeORMWithBeforeStrictUpdateCleanup interface {
+	BeforeStrictUpdateCleanup(context.Context, *gorm1.DB) (*gorm1.DB, error)
+}
+type PrimaryStringTypeORMWithBeforeStrictUpdateSave interface {
+	BeforeStrictUpdateSave(context.Context, *gorm1.DB) (*gorm1.DB, error)
+}
+type PrimaryStringTypeORMWithAfterStrictUpdateSave interface {
+	AfterStrictUpdateSave(context.Context, *gorm1.DB) error
+}
+
 // DefaultPatchPrimaryStringType executes a basic gorm update call with patch behavior
 func DefaultPatchPrimaryStringType(ctx context.Context, in *PrimaryStringType, updateMask *field_mask1.FieldMask, db *gorm1.DB) (*PrimaryStringType, error) {
 	if in == nil {
 		return nil, errors.New("Nil argument to DefaultPatchPrimaryStringType")
 	}
+	var pbObj PrimaryStringType
+	var err error
+	if hook, ok := interface{}(&pbObj).(PrimaryStringTypeWithBeforePatchRead); ok {
+		if db, err = hook.BeforePatchRead(ctx, in, updateMask, db); err != nil {
+			return nil, err
+		}
+	}
 	pbReadRes, err := DefaultReadPrimaryStringType(ctx, &PrimaryStringType{Id: in.GetId()}, db)
 	if err != nil {
 		return nil, err
 	}
-	pbObj := *pbReadRes
+	pbObj = *pbReadRes
+	if hook, ok := interface{}(&pbObj).(PrimaryStringTypeWithBeforePatchApplyFieldMask); ok {
+		if db, err = hook.BeforePatchApplyFieldMask(ctx, in, updateMask, db); err != nil {
+			return nil, err
+		}
+	}
 	if _, err := DefaultApplyFieldMaskPrimaryStringType(ctx, &pbObj, in, updateMask, "", db); err != nil {
 		return nil, err
 	}
 	if hook, ok := interface{}(&pbObj).(PrimaryStringTypeWithBeforePatchSave); ok {
-		if ctx, db, err = hook.BeforePatchSave(ctx, in, updateMask, db); err != nil {
+		if db, err = hook.BeforePatchSave(ctx, in, updateMask, db); err != nil {
 			return nil, err
 		}
 	}
-	return DefaultStrictUpdatePrimaryStringType(ctx, &pbObj, db)
+	pbResponse, err := DefaultStrictUpdatePrimaryStringType(ctx, &pbObj, db)
+	if err != nil {
+		return nil, err
+	}
+	if hook, ok := interface{}(pbResponse).(PrimaryStringTypeWithAfterPatchSave); ok {
+		if err = hook.AfterPatchSave(ctx, in, updateMask, db); err != nil {
+			return nil, err
+		}
+	}
+	return pbResponse, nil
 }
 
+type PrimaryStringTypeWithBeforePatchRead interface {
+	BeforePatchRead(context.Context, *PrimaryStringType, *field_mask1.FieldMask, *gorm1.DB) (*gorm1.DB, error)
+}
+type PrimaryStringTypeWithBeforePatchApplyFieldMask interface {
+	BeforePatchApplyFieldMask(context.Context, *PrimaryStringType, *field_mask1.FieldMask, *gorm1.DB) (*gorm1.DB, error)
+}
 type PrimaryStringTypeWithBeforePatchSave interface {
-	BeforePatchSave(context.Context, *PrimaryStringType, *field_mask1.FieldMask, *gorm1.DB) (context.Context, *gorm1.DB, error)
+	BeforePatchSave(context.Context, *PrimaryStringType, *field_mask1.FieldMask, *gorm1.DB) (*gorm1.DB, error)
+}
+type PrimaryStringTypeWithAfterPatchSave interface {
+	AfterPatchSave(context.Context, *PrimaryStringType, *field_mask1.FieldMask, *gorm1.DB) error
 }
 
 // DefaultApplyFieldMaskPrimaryStringType patches an pbObject with patcher according to a field mask.
@@ -1717,25 +2233,36 @@ func DefaultApplyFieldMaskPrimaryStringType(ctx context.Context, patchee *Primar
 }
 
 // DefaultListPrimaryStringType executes a gorm list call
-func DefaultListPrimaryStringType(ctx context.Context, db *gorm1.DB, req interface{}) ([]*PrimaryStringType, error) {
-	ormResponse := []PrimaryStringTypeORM{}
-	f, s, p, fs, err := getCollectionOperators(req)
-	if err != nil {
-		return nil, err
-	}
-	db, err = gorm2.ApplyCollectionOperators(ctx, db, &PrimaryStringTypeORM{}, &PrimaryStringType{}, f, s, p, fs)
-	if err != nil {
-		return nil, err
-	}
+func DefaultListPrimaryStringType(ctx context.Context, db *gorm1.DB) ([]*PrimaryStringType, error) {
 	in := PrimaryStringType{}
-	ormParams, err := in.ToORM(ctx)
+	ormObj, err := in.ToORM(ctx)
 	if err != nil {
 		return nil, err
 	}
-	db = db.Where(&ormParams)
+	if hook, ok := interface{}(&ormObj).(PrimaryStringTypeORMWithBeforeListApplyQuery); ok {
+		if db, err = hook.BeforeListApplyQuery(ctx, db); err != nil {
+			return nil, err
+		}
+	}
+	db, err = gorm2.ApplyCollectionOperators(ctx, db, &PrimaryStringTypeORM{}, &PrimaryStringType{}, nil, nil, nil, nil)
+	if err != nil {
+		return nil, err
+	}
+	if hook, ok := interface{}(&ormObj).(PrimaryStringTypeORMWithBeforeListFind); ok {
+		if db, err = hook.BeforeListFind(ctx, db); err != nil {
+			return nil, err
+		}
+	}
+	db = db.Where(&ormObj)
 	db = db.Order("id")
+	ormResponse := []PrimaryStringTypeORM{}
 	if err := db.Find(&ormResponse).Error; err != nil {
 		return nil, err
+	}
+	if hook, ok := interface{}(&ormObj).(PrimaryStringTypeORMWithAfterListFind); ok {
+		if err = hook.AfterListFind(ctx, db, &ormResponse); err != nil {
+			return nil, err
+		}
 	}
 	pbResponse := []*PrimaryStringType{}
 	for _, responseEntry := range ormResponse {
@@ -1748,6 +2275,16 @@ func DefaultListPrimaryStringType(ctx context.Context, db *gorm1.DB, req interfa
 	return pbResponse, nil
 }
 
+type PrimaryStringTypeORMWithBeforeListApplyQuery interface {
+	BeforeListApplyQuery(context.Context, *gorm1.DB) (*gorm1.DB, error)
+}
+type PrimaryStringTypeORMWithBeforeListFind interface {
+	BeforeListFind(context.Context, *gorm1.DB) (*gorm1.DB, error)
+}
+type PrimaryStringTypeORMWithAfterListFind interface {
+	AfterListFind(context.Context, *gorm1.DB, *[]PrimaryStringTypeORM) error
+}
+
 // DefaultCreatePrimaryIncluded executes a basic gorm create call
 func DefaultCreatePrimaryIncluded(ctx context.Context, in *PrimaryIncluded, db *gorm1.DB) (*PrimaryIncluded, error) {
 	if in == nil {
@@ -1757,11 +2294,28 @@ func DefaultCreatePrimaryIncluded(ctx context.Context, in *PrimaryIncluded, db *
 	if err != nil {
 		return nil, err
 	}
+	if hook, ok := interface{}(&ormObj).(PrimaryIncludedORMWithBeforeCreate); ok {
+		if db, err = hook.BeforeCreate(ctx, db); err != nil {
+			return nil, err
+		}
+	}
 	if err = db.Create(&ormObj).Error; err != nil {
 		return nil, err
 	}
+	if hook, ok := interface{}(&ormObj).(PrimaryIncludedORMWithAfterCreate); ok {
+		if err = hook.AfterCreate(ctx, db); err != nil {
+			return nil, err
+		}
+	}
 	pbResponse, err := ormObj.ToPB(ctx)
 	return &pbResponse, err
+}
+
+type PrimaryIncludedORMWithBeforeCreate interface {
+	BeforeCreate(context.Context, *gorm1.DB) (*gorm1.DB, error)
+}
+type PrimaryIncludedORMWithAfterCreate interface {
+	AfterCreate(context.Context, *gorm1.DB) error
 }
 
 // DefaultApplyFieldMaskPrimaryIncluded patches an pbObject with patcher according to a field mask.
@@ -1803,25 +2357,36 @@ func DefaultApplyFieldMaskPrimaryIncluded(ctx context.Context, patchee *PrimaryI
 }
 
 // DefaultListPrimaryIncluded executes a gorm list call
-func DefaultListPrimaryIncluded(ctx context.Context, db *gorm1.DB, req interface{}) ([]*PrimaryIncluded, error) {
-	ormResponse := []PrimaryIncludedORM{}
-	f, s, p, fs, err := getCollectionOperators(req)
-	if err != nil {
-		return nil, err
-	}
-	db, err = gorm2.ApplyCollectionOperators(ctx, db, &PrimaryIncludedORM{}, &PrimaryIncluded{}, f, s, p, fs)
-	if err != nil {
-		return nil, err
-	}
+func DefaultListPrimaryIncluded(ctx context.Context, db *gorm1.DB) ([]*PrimaryIncluded, error) {
 	in := PrimaryIncluded{}
-	ormParams, err := in.ToORM(ctx)
+	ormObj, err := in.ToORM(ctx)
 	if err != nil {
 		return nil, err
 	}
-	db = db.Where(&ormParams)
+	if hook, ok := interface{}(&ormObj).(PrimaryIncludedORMWithBeforeListApplyQuery); ok {
+		if db, err = hook.BeforeListApplyQuery(ctx, db); err != nil {
+			return nil, err
+		}
+	}
+	db, err = gorm2.ApplyCollectionOperators(ctx, db, &PrimaryIncludedORM{}, &PrimaryIncluded{}, nil, nil, nil, nil)
+	if err != nil {
+		return nil, err
+	}
+	if hook, ok := interface{}(&ormObj).(PrimaryIncludedORMWithBeforeListFind); ok {
+		if db, err = hook.BeforeListFind(ctx, db); err != nil {
+			return nil, err
+		}
+	}
+	db = db.Where(&ormObj)
 	db = db.Order("id")
+	ormResponse := []PrimaryIncludedORM{}
 	if err := db.Find(&ormResponse).Error; err != nil {
 		return nil, err
+	}
+	if hook, ok := interface{}(&ormObj).(PrimaryIncludedORMWithAfterListFind); ok {
+		if err = hook.AfterListFind(ctx, db, &ormResponse); err != nil {
+			return nil, err
+		}
 	}
 	pbResponse := []*PrimaryIncluded{}
 	for _, responseEntry := range ormResponse {
@@ -1832,4 +2397,14 @@ func DefaultListPrimaryIncluded(ctx context.Context, db *gorm1.DB, req interface
 		pbResponse = append(pbResponse, &temp)
 	}
 	return pbResponse, nil
+}
+
+type PrimaryIncludedORMWithBeforeListApplyQuery interface {
+	BeforeListApplyQuery(context.Context, *gorm1.DB) (*gorm1.DB, error)
+}
+type PrimaryIncludedORMWithBeforeListFind interface {
+	BeforeListFind(context.Context, *gorm1.DB) (*gorm1.DB, error)
+}
+type PrimaryIncludedORMWithAfterListFind interface {
+	AfterListFind(context.Context, *gorm1.DB, *[]PrimaryIncludedORM) error
 }
