@@ -202,13 +202,14 @@ func (p *OrmPlugin) generateApplyFieldMask(message *generator.Descriptor) {
 	hasNested := false
 	for _, field := range message.GetField() {
 		fieldType, _ := p.GoType(message, field)
-		if field.IsMessage() && p.isOrmable(generator.CamelCase(fieldType)) && !field.IsRepeated() {
+		if field.IsMessage() && !isSpecialType(fieldType) && !field.IsRepeated() {
 			p.P(`var updated`, generator.CamelCase(field.GetName()), ` bool`)
 			hasNested = true
 		}
 	}
 	// Patch pbObj with input according to a field mask.
 	if hasNested {
+		p.UsingGoImports("strings")
 		p.P(`for i, f := range updateMask.Paths {`)
 	} else {
 		p.P(`for _, f := range updateMask.Paths {`)
@@ -218,7 +219,6 @@ func (p *OrmPlugin) generateApplyFieldMask(message *generator.Descriptor) {
 		fieldType, _ := p.GoType(message, field)
 		//  for ormable message, do recursive patching
 		if field.IsMessage() && p.isOrmable(fieldType) && !field.IsRepeated() {
-			p.UsingGoImports("strings")
 			p.P(`if strings.HasPrefix(f, prefix+"`, ccName, `.") && !updated`, ccName, ` {`)
 			p.P(`updated`, ccName, ` = true`)
 			p.P(`if patcher.`, ccName, ` == nil {`)
@@ -247,6 +247,25 @@ func (p *OrmPlugin) generateApplyFieldMask(message *generator.Descriptor) {
 			p.P(`updated`, ccName, ` = true`)
 			p.P(`patchee.`, ccName, ` = patcher.`, ccName)
 			p.P(`continue`)
+			p.P(`}`)
+		} else if field.IsMessage() && !isSpecialType(fieldType) && !field.IsRepeated() {
+			p.P(`if strings.HasPrefix(f, prefix+"`, ccName, `.") && !updated`, ccName, ` {`)
+			p.P(`if patcher.`, ccName, ` == nil {`)
+			p.P(`patchee.`, ccName, ` = nil`)
+			p.P(`continue`)
+			p.P(`}`)
+			p.P(`if patchee.`, ccName, ` == nil {`)
+			p.P(`patchee.`, ccName, ` = &`, strings.TrimPrefix(fieldType, "*"), `{}`)
+			p.P(`}`)
+			p.P(`childMask := &`, p.Import(fmImport), `.FieldMask{}`)
+			p.P(`for j := i; j < len(updateMask.Paths); j++ {`)
+			p.P(`if trimPath := strings.TrimPrefix(updateMask.Paths[j], prefix+"`, ccName, `."); trimPath != updateMask.Paths[j] {`)
+			p.P(`childMask.Paths = append(childMask.Paths, trimPath)`)
+			p.P(`}`)
+			p.P(`}`)
+			p.P(`if err := `, p.Import(tkgormImport), `.MergeWithMask(patcher.`, ccName, `, patchee.`, ccName, `, childMask); err != nil {`)
+			p.P(`return nil, nil`)
+			p.P(`}`)
 			p.P(`}`)
 		} else {
 			p.P(`if f == prefix+"`, ccName, `" {`)

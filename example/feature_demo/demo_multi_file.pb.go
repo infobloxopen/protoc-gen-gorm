@@ -20,7 +20,7 @@ var _ = math.Inf
 const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 
 type ExternalChild struct {
-	Id                   string   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Id                   string   `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -30,7 +30,7 @@ func (m *ExternalChild) Reset()         { *m = ExternalChild{} }
 func (m *ExternalChild) String() string { return proto.CompactTextString(m) }
 func (*ExternalChild) ProtoMessage()    {}
 func (*ExternalChild) Descriptor() ([]byte, []int) {
-	return fileDescriptor_demo_multi_file_e92b4d2537a22cce, []int{0}
+	return fileDescriptor_demo_multi_file_a4420524e687f25d, []int{0}
 }
 func (m *ExternalChild) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ExternalChild.Unmarshal(m, b)
@@ -62,10 +62,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("example/feature_demo/demo_multi_file.proto", fileDescriptor_demo_multi_file_e92b4d2537a22cce)
+	proto.RegisterFile("example/feature_demo/demo_multi_file.proto", fileDescriptor_demo_multi_file_a4420524e687f25d)
 }
 
-var fileDescriptor_demo_multi_file_e92b4d2537a22cce = []byte{
+var fileDescriptor_demo_multi_file_a4420524e687f25d = []byte{
 	// 179 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0xd2, 0x4a, 0xad, 0x48, 0xcc,
 	0x2d, 0xc8, 0x49, 0xd5, 0x4f, 0x4b, 0x4d, 0x2c, 0x29, 0x2d, 0x4a, 0x8d, 0x4f, 0x49, 0xcd, 0xcd,
