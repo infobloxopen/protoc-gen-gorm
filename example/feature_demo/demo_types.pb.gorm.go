@@ -1190,6 +1190,11 @@ func DefaultApplyFieldMaskTypeWithID(ctx context.Context, patchee *TypeWithID, p
 				return nil, nil
 			}
 		}
+		if f == prefix+"SyntheticField" {
+			updatedSyntheticField = true
+			patchee.SyntheticField = patcher.SyntheticField
+			continue
+		}
 	}
 	if err != nil {
 		return nil, err
