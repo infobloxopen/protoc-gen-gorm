@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"fmt"
+
 	"github.com/gogo/protobuf/protoc-gen-gogo/descriptor"
 	"github.com/gogo/protobuf/protoc-gen-gogo/generator"
 )
@@ -22,6 +23,7 @@ type autogenService struct {
 	file              *generator.FileDescriptor
 	usesTxnMiddleware bool
 	methods           []autogenMethod
+	autogen           bool
 }
 
 type autogenMethod struct {
@@ -36,60 +38,64 @@ type autogenMethod struct {
 }
 
 func (p *OrmPlugin) parseServices(file *generator.FileDescriptor) {
+	defaultSuppressWarn := p.suppressWarn
 	for _, service := range file.GetService() {
-		if opts := getServiceOptions(service); opts != nil && opts.GetAutogen() {
-			genSvc := autogenService{
-				ServiceDescriptorProto: service,
-				ccName:                 generator.CamelCase(service.GetName()),
-				file:                   file,
-			}
-			if opts := getServiceOptions(service); opts != nil && opts.GetTxnMiddleware() {
-				genSvc.usesTxnMiddleware = true
-			}
-			for _, method := range service.GetMethod() {
-				inType, outType, methodName := p.getMethodProps(method)
-				var verb, fmName, baseType string
-				var follows bool
-				if strings.HasPrefix(methodName, createService) {
-					verb = createService
-					follows, baseType = p.followsCreateConventions(inType, outType, methodName)
-				} else if strings.HasPrefix(methodName, readService) {
-					verb = readService
-					follows, baseType = p.followsReadConventions(inType, outType, methodName)
-				} else if strings.HasPrefix(methodName, updateService) {
-					verb = updateService
-					follows, baseType, fmName = p.followsUpdateConventions(inType, outType, methodName)
-				} else if strings.HasPrefix(methodName, deleteService) {
-					verb = deleteService
-					follows, baseType = p.followsDeleteConventions(inType, outType, method)
-				} else if strings.HasPrefix(methodName, listService) {
-					verb = listService
-					follows, baseType = p.followsListConventions(inType, outType, methodName)
-				}
-				genMethod := autogenMethod{
-					MethodDescriptorProto: method,
-					ccName:                methodName,
-					inType:                inType,
-					outType:               outType,
-					baseType:              baseType,
-					fieldMaskName:         fmName,
-					followsConvention:     follows,
-					verb:                  verb,
-				}
-				genSvc.methods = append(genSvc.methods, genMethod)
-
-				if genMethod.verb != "" && p.isOrmable(genMethod.baseType) {
-					p.getOrmable(genMethod.baseType).Methods[genMethod.verb] = &genMethod
-				}
-			}
-			p.ormableServices = append(p.ormableServices, genSvc)
+		genSvc := autogenService{
+			ServiceDescriptorProto: service,
+			ccName:                 generator.CamelCase(service.GetName()),
+			file:                   file,
 		}
+		if opts := getServiceOptions(service); opts != nil {
+			genSvc.autogen = opts.GetAutogen()
+			genSvc.usesTxnMiddleware = opts.GetTxnMiddleware()
+		}
+		if !genSvc.autogen {
+			p.suppressWarn = true
+		}
+		for _, method := range service.GetMethod() {
+			inType, outType, methodName := p.getMethodProps(method)
+			var verb, fmName, baseType string
+			var follows bool
+			if strings.HasPrefix(methodName, createService) {
+				verb = createService
+				follows, baseType = p.followsCreateConventions(inType, outType, methodName)
+			} else if strings.HasPrefix(methodName, readService) {
+				verb = readService
+				follows, baseType = p.followsReadConventions(inType, outType, methodName)
+			} else if strings.HasPrefix(methodName, updateService) {
+				verb = updateService
+				follows, baseType, fmName = p.followsUpdateConventions(inType, outType, methodName)
+			} else if strings.HasPrefix(methodName, deleteService) {
+				verb = deleteService
+				follows, baseType = p.followsDeleteConventions(inType, outType, method)
+			} else if strings.HasPrefix(methodName, listService) {
+				verb = listService
+				follows, baseType = p.followsListConventions(inType, outType, methodName)
+			}
+			genMethod := autogenMethod{
+				MethodDescriptorProto: method,
+				ccName:                methodName,
+				inType:                inType,
+				outType:               outType,
+				baseType:              baseType,
+				fieldMaskName:         fmName,
+				followsConvention:     follows,
+				verb:                  verb,
+			}
+			genSvc.methods = append(genSvc.methods, genMethod)
+
+			if genMethod.verb != "" && p.isOrmable(genMethod.baseType) {
+				p.getOrmable(genMethod.baseType).Methods[genMethod.verb] = &genMethod
+			}
+		}
+		p.ormableServices = append(p.ormableServices, genSvc)
+		p.suppressWarn = defaultSuppressWarn
 	}
 }
 
 func (p *OrmPlugin) generateDefaultServer(file *generator.FileDescriptor) {
 	for _, service := range p.ormableServices {
-		if service.file != file {
+		if service.file != file || !service.autogen {
 			continue
 		}
 		p.P(`type `, service.ccName, `DefaultServer struct {`)
