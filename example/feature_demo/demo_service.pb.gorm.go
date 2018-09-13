@@ -710,35 +710,7 @@ type IntPointServiceIntPointWithAfterList interface {
 
 // ListSomething ...
 func (m *IntPointServiceDefaultServer) ListSomething(ctx context.Context, in *google_protobuf2.Empty) (*ListSomethingResponse, error) {
-	db := m.DB
-	if custom, ok := interface{}(in).(IntPointServiceSomethingWithBeforeListSomething); ok {
-		var err error
-		if db, err = custom.BeforeListSomething(ctx, db); err != nil {
-			return nil, err
-		}
-	}
-	res, err := DefaultListSomething(ctx, db)
-	if err != nil {
-		return nil, err
-	}
-	out := &ListSomethingResponse{Results: res}
-	if custom, ok := interface{}(in).(IntPointServiceSomethingWithAfterListSomething); ok {
-		var err error
-		if err = custom.AfterListSomething(ctx, out, db); err != nil {
-			return nil, err
-		}
-	}
-	return out, nil
-}
-
-// IntPointServiceSomethingWithBeforeListSomething called before DefaultListSomethingSomething in the default ListSomething handler
-type IntPointServiceSomethingWithBeforeListSomething interface {
-	BeforeListSomething(context.Context, *gorm1.DB) (*gorm1.DB, error)
-}
-
-// IntPointServiceSomethingWithAfterListSomething called before DefaultListSomethingSomething in the default ListSomething handler
-type IntPointServiceSomethingWithAfterListSomething interface {
-	AfterListSomething(context.Context, *ListSomethingResponse, *gorm1.DB) error
+	return &ListSomethingResponse{}, nil
 }
 
 // Delete ...

@@ -56,19 +56,19 @@ func (p *OrmPlugin) parseServices(file *generator.FileDescriptor) {
 			inType, outType, methodName := p.getMethodProps(method)
 			var verb, fmName, baseType string
 			var follows bool
-			if strings.HasPrefix(methodName, createService) {
+			if methodName == createService {
 				verb = createService
 				follows, baseType = p.followsCreateConventions(inType, outType, methodName)
-			} else if strings.HasPrefix(methodName, readService) {
+			} else if methodName == readService {
 				verb = readService
 				follows, baseType = p.followsReadConventions(inType, outType, methodName)
-			} else if strings.HasPrefix(methodName, updateService) {
+			} else if methodName == updateService {
 				verb = updateService
 				follows, baseType, fmName = p.followsUpdateConventions(inType, outType, methodName)
-			} else if strings.HasPrefix(methodName, deleteService) {
+			} else if methodName == deleteService {
 				verb = deleteService
 				follows, baseType = p.followsDeleteConventions(inType, outType, method)
-			} else if strings.HasPrefix(methodName, listService) {
+			} else if methodName == listService {
 				verb = listService
 				follows, baseType = p.followsListConventions(inType, outType, methodName)
 			}
