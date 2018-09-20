@@ -18,6 +18,8 @@ It has these top-level messages:
 	APIOnlyType
 	PrimaryUUIDType
 	PrimaryStringType
+	TestTag
+	TestTagAssociation
 	PrimaryIncluded
 	IntPoint
 	CreateIntPointRequest

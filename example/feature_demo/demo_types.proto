@@ -143,6 +143,21 @@ message PrimaryStringType {
   ExternalChild child = 2;
 }
 
+message TestTag {
+  option (gorm.opts) = {
+    ormable: true,
+  };
+  string id = 1;
+  TestTagAssociation testTagAssoc = 2 [(gorm.field).has_one.preload = false];
+}
+
+message TestTagAssociation {
+  option (gorm.opts) = {
+    ormable: true,
+  };
+  string some_field = 1;
+}
+
 message PrimaryIncluded {
     option(gorm.opts) = {
       ormable: true,
