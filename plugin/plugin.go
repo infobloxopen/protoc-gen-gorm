@@ -473,25 +473,28 @@ func (p *OrmPlugin) renderGormTag(field *Field) string {
 	}
 
 	var foreignKey, associationForeignKey, joinTable, joinTableForeignKey, associationJoinTableForeignKey *string
-	var associationAutoupdate, associationAutocreate, associationSaveReference *bool
+	var associationAutoupdate, associationAutocreate, associationSaveReference, preload *bool
 	if hasOne := field.GetHasOne(); hasOne != nil {
 		foreignKey = hasOne.Foreignkey
 		associationForeignKey = hasOne.AssociationForeignkey
 		associationAutoupdate = hasOne.AssociationAutoupdate
 		associationAutocreate = hasOne.AssociationAutocreate
 		associationSaveReference = hasOne.AssociationSaveReference
+		preload = hasOne.Preload
 	} else if belongsTo := field.GetBelongsTo(); belongsTo != nil {
 		foreignKey = belongsTo.Foreignkey
 		associationForeignKey = belongsTo.AssociationForeignkey
 		associationAutoupdate = belongsTo.AssociationAutoupdate
 		associationAutocreate = belongsTo.AssociationAutocreate
 		associationSaveReference = belongsTo.AssociationSaveReference
+		preload = belongsTo.Preload
 	} else if hasMany := field.GetHasMany(); hasMany != nil {
 		foreignKey = hasMany.Foreignkey
 		associationForeignKey = hasMany.AssociationForeignkey
 		associationAutoupdate = hasMany.AssociationAutoupdate
 		associationAutocreate = hasMany.AssociationAutocreate
 		associationSaveReference = hasMany.AssociationSaveReference
+		preload = hasMany.Preload
 		if hasMany.PositionField != nil {
 			atlasRes += fmt.Sprintf("position:%s;", hasMany.GetPositionField())
 		}
@@ -504,6 +507,7 @@ func (p *OrmPlugin) renderGormTag(field *Field) string {
 		associationAutoupdate = mtm.AssociationAutoupdate
 		associationAutocreate = mtm.AssociationAutocreate
 		associationSaveReference = mtm.AssociationSaveReference
+		preload = mtm.Preload
 	} else {
 		foreignKey = tag.Foreignkey
 		associationForeignKey = tag.AssociationForeignkey
@@ -513,6 +517,7 @@ func (p *OrmPlugin) renderGormTag(field *Field) string {
 		associationAutoupdate = tag.AssociationAutoupdate
 		associationAutocreate = tag.AssociationAutocreate
 		associationSaveReference = tag.AssociationSaveReference
+		preload = tag.Preload
 	}
 
 	if foreignKey != nil {
@@ -538,6 +543,9 @@ func (p *OrmPlugin) renderGormTag(field *Field) string {
 	}
 	if associationSaveReference != nil {
 		gormRes += fmt.Sprintf("association_save_reference:%s;", strconv.FormatBool(*associationSaveReference))
+	}
+	if preload != nil {
+		gormRes += fmt.Sprintf("preload:%s;", strconv.FormatBool(*preload))
 	}
 
 	var gormTag, atlasTag string

@@ -75,6 +75,7 @@ message GormTag {
     optional bool association_autoupdate = 20;
     optional bool association_autocreate = 21;
     optional bool association_save_reference = 22;
+    optional bool preload = 23;
 }
 
 message HasOneOptions {
@@ -84,6 +85,7 @@ message HasOneOptions {
     optional bool association_autoupdate = 4;
     optional bool association_autocreate = 5;
     optional bool association_save_reference = 6;
+    optional bool preload = 7;
 }
 
 message BelongsToOptions {
@@ -93,6 +95,7 @@ message BelongsToOptions {
     optional bool association_autoupdate = 4;
     optional bool association_autocreate = 5;
     optional bool association_save_reference = 6;
+    optional bool preload = 7;
 }
 
 message HasManyOptions {
@@ -104,6 +107,7 @@ message HasManyOptions {
     optional bool association_autoupdate = 6;
     optional bool association_autocreate = 7;
     optional bool association_save_reference = 8;
+    optional bool preload = 9;
 }
 
 message ManyToManyOptions {
@@ -115,6 +119,7 @@ message ManyToManyOptions {
     optional bool association_autoupdate = 6;
     optional bool association_autocreate = 7;
     optional bool association_save_reference = 8;
+    optional bool preload = 9;
 }
 
 
