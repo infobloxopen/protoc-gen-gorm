@@ -1235,6 +1235,7 @@ func DefaultApplyFieldMaskTypeWithID(ctx context.Context, patchee *TypeWithID, p
 	var updatedANestedObject bool
 	var updatedPoint bool
 	var updatedUser bool
+	var updatedSyntheticField bool
 	for i, f := range updateMask.Paths {
 		if f == prefix+"Id" {
 			patchee.Id = patcher.Id
@@ -1317,6 +1318,29 @@ func DefaultApplyFieldMaskTypeWithID(ctx context.Context, patchee *TypeWithID, p
 		}
 		if f == prefix+"MultiaccountTypeIds" {
 			patchee.MultiaccountTypeIds = patcher.MultiaccountTypeIds
+			continue
+		}
+		if strings.HasPrefix(f, prefix+"SyntheticField.") && !updatedSyntheticField {
+			if patcher.SyntheticField == nil {
+				patchee.SyntheticField = nil
+				continue
+			}
+			if patchee.SyntheticField == nil {
+				patchee.SyntheticField = &APIOnlyType{}
+			}
+			childMask := &field_mask1.FieldMask{}
+			for j := i; j < len(updateMask.Paths); j++ {
+				if trimPath := strings.TrimPrefix(updateMask.Paths[j], prefix+"SyntheticField."); trimPath != updateMask.Paths[j] {
+					childMask.Paths = append(childMask.Paths, trimPath)
+				}
+			}
+			if err := gorm2.MergeWithMask(patcher.SyntheticField, patchee.SyntheticField, childMask); err != nil {
+				return nil, nil
+			}
+		}
+		if f == prefix+"SyntheticField" {
+			updatedSyntheticField = true
+			patchee.SyntheticField = patcher.SyntheticField
 			continue
 		}
 	}

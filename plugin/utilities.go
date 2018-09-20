@@ -1,6 +1,7 @@
 package plugin
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/gogo/protobuf/proto"
@@ -74,4 +75,27 @@ func getMethodOptions(method *descriptor.MethodDescriptorProto) *gorm.MethodOpti
 		return nil
 	}
 	return opts
+}
+
+func isSpecialType(typeName string) bool {
+	parts := strings.Split(typeName, ".")
+	if len(parts) > 2 { // what kinda format is this????
+		panic(fmt.Sprintf(""))
+	}
+	if len(parts) == 1 { // native to this package = not special
+		return false
+	}
+	// anything that looks like a google_protobufX should be considered special
+	if strings.HasPrefix(strings.TrimLeft(typeName, "[]*"), "google_protobuf") {
+		return true
+	}
+	switch parts[len(parts)-1] {
+	case protoTypeJSON,
+		protoTypeUUID,
+		protoTypeUUIDValue,
+		protoTypeResource,
+		protoTypeInet:
+		return true
+	}
+	return false
 }

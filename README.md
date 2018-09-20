@@ -17,19 +17,31 @@ fields (not generally recommended, as it reduces clarity of .proto file)
 
 ### Prerequisites
 
-##### Dependencies
+#### 1. Protobuf Compiler
 
-The protobuf compiler (protoc) is required. The official instructions are
-[here](https://github.com/google/protobuf#protocol-compiler-installation),
-and an abbreviated version can be found
-[here](https://github.com/grpc-ecosystem/grpc-gateway#installation).
+The protobuf compiler (protoc) is required.
 
-Then you will also need the golang code generator
+[Official instructions](https://github.com/google/protobuf#protocol-compiler-installation)
+
+[Abbreviated version](https://github.com/grpc-ecosystem/grpc-gateway#installation)
+
+#### 2. Golang Protobuf Code Generator
+
+Get the golang protobuf code generator:
+
 ```
 go get -u github.com/golang/protobuf/protoc-gen-go
 ```
 
-##### Installation
+#### 3. Vendored Dependencies
+
+Retrieve and install the vendored dependencies for this project with [dep](https://github.com/golang/dep):
+
+```
+dep ensure
+```
+
+### Installation
 
 To use this tool, install it from code with `make install`, `go install` directly,
 or `go get github.com/infobloxopen/protoc-gen-gorm`.

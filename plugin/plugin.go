@@ -100,6 +100,7 @@ type OrmPlugin struct {
 	fileImports     map[*generator.FileDescriptor]*fileImports
 	messages        map[string]struct{}
 	ormableServices []autogenService
+	suppressWarn    bool
 }
 
 func (p *OrmPlugin) setFile(file *generator.FileDescriptor) {
@@ -126,6 +127,9 @@ func (p *OrmPlugin) Init(g *generator.Generator) {
 	}
 	if strings.EqualFold(g.Param["enums"], "string") {
 		p.stringEnums = true
+	}
+	if _, ok := g.Param["quiet"]; ok {
+		p.suppressWarn = true
 	}
 }
 
@@ -892,5 +896,7 @@ func (p *OrmPlugin) setupOrderedHasManyByName(message *generator.Descriptor, fie
 }
 
 func (p *OrmPlugin) warning(format string, v ...interface{}) {
-	log.Printf("WARNING: "+format, v...)
+	if !p.suppressWarn {
+		log.Printf("WARNING: "+format, v...)
+	}
 }

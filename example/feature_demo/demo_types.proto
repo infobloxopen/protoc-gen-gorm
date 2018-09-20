@@ -93,6 +93,7 @@ message TypeWithID {
   user.User user = 6 [(gorm.field).belongs_to = {}];
   gorm.types.InetValue address = 7;
   repeated uint32 multiaccount_type_ids = 8 [(gorm.field).drop = true];
+  APIOnlyType synthetic_field = 9;
 }
 
 // MultiaccountTypeWithID demonstrates the generated multi-account support
