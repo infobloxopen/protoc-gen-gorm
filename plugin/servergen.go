@@ -367,6 +367,7 @@ func (p *OrmPlugin) generateListServerMethod(service autogenService, method auto
 	if method.followsConvention {
 		p.generateDBSetup(service)
 		p.generatePreserviceCall(service.ccName, method.baseType, method.ccName)
+		p.generateIfPagedRequest()
 		handlerCall := fmt.Sprint(`res, err := DefaultList`, method.baseType, `(ctx, db`)
 		if f := p.getFiltering(method.inType); f != "" {
 			handlerCall += fmt.Sprint(",in.", f)
@@ -385,6 +386,7 @@ func (p *OrmPlugin) generateListServerMethod(service autogenService, method auto
 		p.P(`if err != nil {`)
 		p.P(`return nil, err`)
 		p.P(`}`)
+		p.generateOffsetResponse()
 		p.P(`out := &`, p.TypeName(method.outType), `{Results: res}`)
 		p.generatePostserviceCall(service.ccName, method.baseType, method.ccName)
 		p.P(`return out, nil`)
@@ -461,6 +463,32 @@ func (p *OrmPlugin) generatePreserviceCall(svc, typeName, mthd string) {
 	p.P(`if custom, ok := interface{}(in).(`, svc, typeName, `WithBefore`, mthd, `); ok {`)
 	p.P(`var err error`)
 	p.P(`if db, err = custom.Before`, mthd, `(ctx, db); err != nil {`)
+	p.P(`return nil, err`)
+	p.P(`}`)
+	p.P(`}`)
+}
+
+func (p *OrmPlugin) generateIfPagedRequest() {
+	p.P(`pagedRequest := false`)
+	p.P(`if in.Paging.Limit>=1 {`)
+	p.P(`in.Paging.Limit ++`)
+	p.P(`pagedRequest=true`)
+	p.P(`}`)
+}
+
+func (p *OrmPlugin) generateOffsetResponse() {
+	p.P(`if pagedRequest {`)
+	p.P(`var offset int32`)
+	p.P(`var size int32 = int32(len(res))`)
+	p.P(`if size == in.Paging.Limit{`)
+	p.P(`size--`)
+	p.P(`res=res[:size]`)
+	p.P(`offset=in.Paging.Offset+size`)
+	p.P(`} else{`)
+	p.P(`offset=0`)
+	p.P(`}`)
+	p.P(`resPaging := &query1.PageInfo{Offset: offset}`)
+	p.P(`if err = gateway1.SetPageInfo(ctx, resPaging); err != nil {`)
 	p.P(`return nil, err`)
 	p.P(`}`)
 	p.P(`}`)

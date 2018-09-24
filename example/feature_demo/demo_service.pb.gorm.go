@@ -684,9 +684,29 @@ func (m *IntPointServiceDefaultServer) List(ctx context.Context, in *ListIntPoin
 			return nil, err
 		}
 	}
+	pagedRequest := false
+	if in.Paging.Limit >= 1 {
+		in.Paging.Limit++
+		pagedRequest = true
+	}
 	res, err := DefaultListIntPoint(ctx, db, in.Filter, in.OrderBy, in.Paging, in.Fields)
 	if err != nil {
 		return nil, err
+	}
+	if pagedRequest {
+		var offset int32
+		var size int32 = int32(len(res))
+		if size == in.Paging.Limit {
+			size--
+			res = res[:size]
+			offset = in.Paging.Offset + size
+		} else {
+			offset = 0
+		}
+		resPaging := &query1.PageInfo{Offset: offset}
+		if err = gateway1.SetPageInfo(ctx, resPaging); err != nil {
+			return nil, err
+		}
 	}
 	out := &ListIntPointResponse{Results: res}
 	if custom, ok := interface{}(in).(IntPointServiceIntPointWithAfterList); ok {
@@ -901,9 +921,29 @@ func (m *IntPointTxnDefaultServer) List(ctx context.Context, in *ListIntPointReq
 			return nil, err
 		}
 	}
+	pagedRequest := false
+	if in.Paging.Limit >= 1 {
+		in.Paging.Limit++
+		pagedRequest = true
+	}
 	res, err := DefaultListIntPoint(ctx, db, in.Filter, in.OrderBy, in.Paging, in.Fields)
 	if err != nil {
 		return nil, err
+	}
+	if pagedRequest {
+		var offset int32
+		var size int32 = int32(len(res))
+		if size == in.Paging.Limit {
+			size--
+			res = res[:size]
+			offset = in.Paging.Offset + size
+		} else {
+			offset = 0
+		}
+		resPaging := &query1.PageInfo{Offset: offset}
+		if err = gateway1.SetPageInfo(ctx, resPaging); err != nil {
+			return nil, err
+		}
 	}
 	out := &ListIntPointResponse{Results: res}
 	if custom, ok := interface{}(in).(IntPointTxnIntPointWithAfterList); ok {
