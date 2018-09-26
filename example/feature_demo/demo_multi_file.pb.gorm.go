@@ -34,6 +34,9 @@ It has these top-level messages:
 	ListSomethingResponse
 	Something
 	ListIntPointRequest
+	Circle
+	ListCircleRequest
+	ListCircleResponse
 */
 package example
 
