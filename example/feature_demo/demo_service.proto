@@ -133,3 +133,20 @@ service IntPointTxn {
   // CreateSomething also doesn't match conventions and will become a stub
   rpc CreateSomething ( Something ) returns  ( Something ) {}
 }
+
+message Circle {
+    option (gorm.opts).ormable = true;
+    uint32 r = 1;
+}
+
+message ListCircleRequest {
+}
+
+message ListCircleResponse {
+    repeated Circle results = 1;
+}
+
+service CircleService {
+    option (gorm.server).autogen = true;
+    rpc List ( ListCircleRequest ) returns ( ListCircleResponse ) {}
+}

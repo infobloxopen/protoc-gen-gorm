@@ -367,6 +367,10 @@ func (p *OrmPlugin) generateListServerMethod(service autogenService, method auto
 	if method.followsConvention {
 		p.generateDBSetup(service)
 		p.generatePreserviceCall(service.ccName, method.baseType, method.ccName)
+		pg := p.getPagination(method.inType)
+		if pg != "" {
+			p.generatePagedRequestSetup(pg)
+		}
 		handlerCall := fmt.Sprint(`res, err := DefaultList`, method.baseType, `(ctx, db`)
 		if f := p.getFiltering(method.inType); f != "" {
 			handlerCall += fmt.Sprint(",in.", f)
@@ -374,7 +378,7 @@ func (p *OrmPlugin) generateListServerMethod(service autogenService, method auto
 		if s := p.getSorting(method.inType); s != "" {
 			handlerCall += fmt.Sprint(",in.", s)
 		}
-		if pg := p.getPagination(method.inType); pg != "" {
+		if pg != "" {
 			handlerCall += fmt.Sprint(",in.", pg)
 		}
 		if fs := p.getFieldSelection(method.inType); fs != "" {
@@ -385,6 +389,9 @@ func (p *OrmPlugin) generateListServerMethod(service autogenService, method auto
 		p.P(`if err != nil {`)
 		p.P(`return nil, err`)
 		p.P(`}`)
+		if pg != "" {
+			p.generatePagedRequestHandling(pg)
+		}
 		p.P(`out := &`, p.TypeName(method.outType), `{Results: res}`)
 		p.generatePostserviceCall(service.ccName, method.baseType, method.ccName)
 		p.P(`return out, nil`)
@@ -461,6 +468,30 @@ func (p *OrmPlugin) generatePreserviceCall(svc, typeName, mthd string) {
 	p.P(`if custom, ok := interface{}(in).(`, svc, typeName, `WithBefore`, mthd, `); ok {`)
 	p.P(`var err error`)
 	p.P(`if db, err = custom.Before`, mthd, `(ctx, db); err != nil {`)
+	p.P(`return nil, err`)
+	p.P(`}`)
+	p.P(`}`)
+}
+
+func (p *OrmPlugin) generatePagedRequestSetup(pg string) {
+	p.P(`pagedRequest := false`)
+	p.P(fmt.Sprintf(`if in.Get%s().GetLimit()>=1 {`, pg))
+	p.P(fmt.Sprintf(`in.%s.Limit ++`, pg))
+	p.P(`pagedRequest=true`)
+	p.P(`}`)
+}
+
+func (p *OrmPlugin) generatePagedRequestHandling(pg string) {
+	p.P(`if pagedRequest {`)
+	p.P(`var offset int32`)
+	p.P(`var size int32 = int32(len(res))`)
+	p.P(fmt.Sprintf(`if size == in.Get%s().GetLimit(){`, pg))
+	p.P(`size--`)
+	p.P(`res=res[:size]`)
+	p.P(fmt.Sprintf(`offset=in.Get%s().GetOffset()+size`, pg))
+	p.P(`}`)
+	p.P(fmt.Sprintf(`resPaging := &%s.PageInfo{Offset: offset}`, p.Import(queryImport)))
+	p.P(fmt.Sprintf(`if err = %s.SetPageInfo(ctx, resPaging); err != nil {`, p.Import(gatewayImport)))
 	p.P(`return nil, err`)
 	p.P(`}`)
 	p.P(`}`)
