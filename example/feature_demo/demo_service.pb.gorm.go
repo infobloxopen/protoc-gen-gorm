@@ -870,9 +870,7 @@ func (m *IntPointServiceDefaultServer) List(ctx context.Context, in *ListIntPoin
 		if size == in.GetPaging().GetLimit() {
 			size--
 			res = res[:size]
-			offset = in.Paging.Offset + size
-		} else {
-			offset = 0
+			offset = in.GetPaging().GetOffset() + size
 		}
 		resPaging := &query1.PageInfo{Offset: offset}
 		if err = gateway1.SetPageInfo(ctx, resPaging); err != nil {
@@ -1107,9 +1105,7 @@ func (m *IntPointTxnDefaultServer) List(ctx context.Context, in *ListIntPointReq
 		if size == in.GetPaging().GetLimit() {
 			size--
 			res = res[:size]
-			offset = in.Paging.Offset + size
-		} else {
-			offset = 0
+			offset = in.GetPaging().GetOffset() + size
 		}
 		resPaging := &query1.PageInfo{Offset: offset}
 		if err = gateway1.SetPageInfo(ctx, resPaging); err != nil {
