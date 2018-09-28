@@ -864,6 +864,7 @@ func (m *IntPointServiceDefaultServer) List(ctx context.Context, in *ListIntPoin
 	if err != nil {
 		return nil, err
 	}
+	var resPaging *query1.PageInfo
 	if pagedRequest {
 		var offset int32
 		var size int32 = int32(len(res))
@@ -872,12 +873,9 @@ func (m *IntPointServiceDefaultServer) List(ctx context.Context, in *ListIntPoin
 			res = res[:size]
 			offset = in.GetPaging().GetOffset() + size
 		}
-		resPaging := &query1.PageInfo{Offset: offset}
-		if err = gateway1.SetPageInfo(ctx, resPaging); err != nil {
-			return nil, err
-		}
+		resPaging = &query1.PageInfo{Offset: offset}
 	}
-	out := &ListIntPointResponse{Results: res}
+	out := &ListIntPointResponse{Results: res, PageInfo: resPaging}
 	if custom, ok := interface{}(in).(IntPointServiceIntPointWithAfterList); ok {
 		var err error
 		if err = custom.AfterList(ctx, out, db); err != nil {
@@ -1099,6 +1097,7 @@ func (m *IntPointTxnDefaultServer) List(ctx context.Context, in *ListIntPointReq
 	if err != nil {
 		return nil, err
 	}
+	var resPaging *query1.PageInfo
 	if pagedRequest {
 		var offset int32
 		var size int32 = int32(len(res))
@@ -1107,12 +1106,9 @@ func (m *IntPointTxnDefaultServer) List(ctx context.Context, in *ListIntPointReq
 			res = res[:size]
 			offset = in.GetPaging().GetOffset() + size
 		}
-		resPaging := &query1.PageInfo{Offset: offset}
-		if err = gateway1.SetPageInfo(ctx, resPaging); err != nil {
-			return nil, err
-		}
+		resPaging = &query1.PageInfo{Offset: offset}
 	}
-	out := &ListIntPointResponse{Results: res}
+	out := &ListIntPointResponse{Results: res, PageInfo: resPaging}
 	if custom, ok := interface{}(in).(IntPointTxnIntPointWithAfterList); ok {
 		var err error
 		if err = custom.AfterList(ctx, out, db); err != nil {

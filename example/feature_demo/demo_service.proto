@@ -65,11 +65,13 @@ message DeleteIntPointResponse {
 message ListIntPointResponse {
     // Note repeated field and plural name 'results'
     repeated IntPoint results = 1;
+    infoblox.api.PageInfo page_info = 2;
 }
 
 message ListSomethingResponse {
     // Note repeated field and plural name 'results'
     repeated Something results = 1;
+    infoblox.api.PageInfo page_info = 2;
 }
 
 

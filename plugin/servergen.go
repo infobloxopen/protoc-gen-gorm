@@ -389,10 +389,13 @@ func (p *OrmPlugin) generateListServerMethod(service autogenService, method auto
 		p.P(`if err != nil {`)
 		p.P(`return nil, err`)
 		p.P(`}`)
+		var pageInfoIfExist string
 		if pg != "" {
 			p.generatePagedRequestHandling(pg)
+			pi := p.getPageInfo(method.outType)
+			pageInfoIfExist = ", " + pi + ": resPaging"
 		}
-		p.P(`out := &`, p.TypeName(method.outType), `{Results: res}`)
+		p.P(`out := &`, p.TypeName(method.outType), `{Results: res`, pageInfoIfExist, ` }`)
 		p.generatePostserviceCall(service.ccName, method.baseType, method.ccName)
 		p.P(`return out, nil`)
 		p.P(`}`)
@@ -482,6 +485,7 @@ func (p *OrmPlugin) generatePagedRequestSetup(pg string) {
 }
 
 func (p *OrmPlugin) generatePagedRequestHandling(pg string) {
+	p.P(fmt.Sprintf(`var resPaging *%s.PageInfo`, p.Import(queryImport)))
 	p.P(`if pagedRequest {`)
 	p.P(`var offset int32`)
 	p.P(`var size int32 = int32(len(res))`)
@@ -490,10 +494,7 @@ func (p *OrmPlugin) generatePagedRequestHandling(pg string) {
 	p.P(`res=res[:size]`)
 	p.P(fmt.Sprintf(`offset=in.Get%s().GetOffset()+size`, pg))
 	p.P(`}`)
-	p.P(fmt.Sprintf(`resPaging := &%s.PageInfo{Offset: offset}`, p.Import(queryImport)))
-	p.P(fmt.Sprintf(`if err = %s.SetPageInfo(ctx, resPaging); err != nil {`, p.Import(gatewayImport)))
-	p.P(`return nil, err`)
-	p.P(`}`)
+	p.P(fmt.Sprintf(`resPaging = &%s.PageInfo{Offset: offset}`, p.Import(queryImport)))
 	p.P(`}`)
 }
 
@@ -534,6 +535,10 @@ func (p *OrmPlugin) getSorting(object generator.Object) string {
 
 func (p *OrmPlugin) getPagination(object generator.Object) string {
 	return p.getFieldOfType(object, "Pagination")
+}
+
+func (p *OrmPlugin) getPageInfo(object generator.Object) string {
+	return p.getFieldOfType(object, "PageInfo")
 }
 
 func (p *OrmPlugin) getFieldOfType(object generator.Object, fieldType string) string {
