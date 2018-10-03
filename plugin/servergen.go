@@ -368,7 +368,8 @@ func (p *OrmPlugin) generateListServerMethod(service autogenService, method auto
 		p.generateDBSetup(service)
 		p.generatePreserviceCall(service.ccName, method.baseType, method.ccName)
 		pg := p.getPagination(method.inType)
-		if pg != "" {
+		pi := p.getPageInfo(method.outType)
+		if pg != "" && pi != "" {
 			p.generatePagedRequestSetup(pg)
 		}
 		handlerCall := fmt.Sprint(`res, err := DefaultList`, method.baseType, `(ctx, db`)
@@ -390,9 +391,8 @@ func (p *OrmPlugin) generateListServerMethod(service autogenService, method auto
 		p.P(`return nil, err`)
 		p.P(`}`)
 		var pageInfoIfExist string
-		if pg != "" {
+		if pg != "" && pi != "" {
 			p.generatePagedRequestHandling(pg)
-			pi := p.getPageInfo(method.outType)
 			pageInfoIfExist = ", " + pi + ": resPaging"
 		}
 		p.P(`out := &`, p.TypeName(method.outType), `{Results: res`, pageInfoIfExist, ` }`)
