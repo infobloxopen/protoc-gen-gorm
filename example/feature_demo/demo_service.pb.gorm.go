@@ -354,18 +354,18 @@ func DefaultStrictUpdateIntPoint(ctx context.Context, in *IntPoint, db *gorm1.DB
 	if err != nil {
 		return nil, err
 	}
-	if hook, ok := interface{}(&ormObj).(IntPointORMWithBeforeStrictUpdateCleanup); ok {
-		if db, err = hook.BeforeStrictUpdateCleanup(ctx, db); err != nil {
-			return nil, err
-		}
-	}
 	if hook, ok := interface{}(&ormObj).(IntPointORMWithBeforeStrictUpdateSave); ok {
 		if db, err = hook.BeforeStrictUpdateSave(ctx, db); err != nil {
 			return nil, err
 		}
 	}
-	if err = db.Save(&ormObj).Error; err != nil {
+	if err = db.Set("gorm:association_autoupdate", false).Set("gorm:association_autocreate", false).Set("gorm:association_save_reference", false).Save(&ormObj).Error; err != nil {
 		return nil, err
+	}
+	if hook, ok := interface{}(&ormObj).(IntPointORMWithBeforeStrictUpdateCleanup); ok {
+		if db, err = hook.BeforeStrictUpdateCleanup(ctx, db); err != nil {
+			return nil, err
+		}
 	}
 	if hook, ok := interface{}(&ormObj).(IntPointORMWithAfterStrictUpdateSave); ok {
 		if err = hook.AfterStrictUpdateSave(ctx, db); err != nil {
@@ -496,7 +496,6 @@ func DefaultListIntPoint(ctx context.Context, db *gorm1.DB, f *query1.Filtering,
 			return nil, err
 		}
 	}
-	db = db.Where(&ormObj)
 	db = db.Order("id")
 	ormResponse := []IntPointORM{}
 	if err := db.Find(&ormResponse).Error; err != nil {
@@ -602,7 +601,6 @@ func DefaultListSomething(ctx context.Context, db *gorm1.DB) ([]*Something, erro
 			return nil, err
 		}
 	}
-	db = db.Where(&ormObj)
 	ormResponse := []SomethingORM{}
 	if err := db.Find(&ormResponse).Error; err != nil {
 		return nil, err
@@ -707,7 +705,6 @@ func DefaultListCircle(ctx context.Context, db *gorm1.DB) ([]*Circle, error) {
 			return nil, err
 		}
 	}
-	db = db.Where(&ormObj)
 	ormResponse := []CircleORM{}
 	if err := db.Find(&ormResponse).Error; err != nil {
 		return nil, err

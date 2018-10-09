@@ -970,43 +970,14 @@ func DefaultStrictUpdateUser(ctx context.Context, in *User, db *gorm1.DB) (*User
 	if err != nil {
 		return nil, err
 	}
-	count := 1
-	err = db.Model(&ormObj).Where("id=?", ormObj.Id).Count(&count).Error
+	accountID, err := auth1.GetAccountID(ctx, nil)
 	if err != nil {
 		return nil, err
 	}
-	if hook, ok := interface{}(&ormObj).(UserORMWithBeforeStrictUpdateCleanup); ok {
-		if db, err = hook.BeforeStrictUpdateCleanup(ctx, db); err != nil {
-			return nil, err
-		}
-	}
-	filterCreditCard := CreditCardORM{}
-	if ormObj.Id == "" {
-		return nil, errors.New("Can't do overwriting update with no Id value for UserORM")
-	}
-	filterCreditCard.UserId = new(string)
-	*filterCreditCard.UserId = ormObj.Id
-	filterCreditCard.AccountID = ormObj.AccountID
-	if err = db.Where(filterCreditCard).Delete(CreditCardORM{}).Error; err != nil {
-		return nil, err
-	}
-	filterEmails := EmailORM{}
-	if ormObj.Id == "" {
-		return nil, errors.New("Can't do overwriting update with no Id value for UserORM")
-	}
-	filterEmails.UserId = new(string)
-	*filterEmails.UserId = ormObj.Id
-	filterEmails.AccountID = ormObj.AccountID
-	if err = db.Where(filterEmails).Delete(EmailORM{}).Error; err != nil {
-		return nil, err
-	}
-	filterTasks := TaskORM{}
-	if ormObj.Id == "" {
-		return nil, errors.New("Can't do overwriting update with no Id value for UserORM")
-	}
-	filterTasks.UserId = ormObj.Id
-	filterTasks.AccountID = ormObj.AccountID
-	if err = db.Where(filterTasks).Delete(TaskORM{}).Error; err != nil {
+	db = db.Where(map[string]interface{}{"account_id": accountID})
+	count := 1
+	err = db.Model(&ormObj).Where("id=?", ormObj.Id).Count(&count).Error
+	if err != nil {
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(UserORMWithBeforeStrictUpdateSave); ok {
@@ -1014,10 +985,47 @@ func DefaultStrictUpdateUser(ctx context.Context, in *User, db *gorm1.DB) (*User
 			return nil, err
 		}
 	}
-	db = db.Where(&UserORM{AccountID: ormObj.AccountID})
-	if err = db.Save(&ormObj).Error; err != nil {
+	if err = db.Set("gorm:association_autoupdate", false).Set("gorm:association_autocreate", false).Set("gorm:association_save_reference", false).Save(&ormObj).Error; err != nil {
 		return nil, err
 	}
+	if hook, ok := interface{}(&ormObj).(UserORMWithBeforeStrictUpdateCleanup); ok {
+		if db, err = hook.BeforeStrictUpdateCleanup(ctx, db); err != nil {
+			return nil, err
+		}
+	}
+	db.Model(&ormObj).Association("BillingAddress").Replace(ormObj.BillingAddress)
+	filterCreditCard := CreditCardORM{}
+	if ormObj.Id == "" {
+		return nil, errors.New("Can't do overwriting update with no Id value for UserORM")
+	}
+	filterCreditCard.UserId = new(string)
+	*filterCreditCard.UserId = ormObj.Id
+	if err = db.Where(filterCreditCard).Delete(CreditCardORM{}).Error; err != nil {
+		return nil, err
+	}
+	db.Model(&ormObj).Association("CreditCard").Replace(ormObj.CreditCard)
+	filterEmails := EmailORM{}
+	if ormObj.Id == "" {
+		return nil, errors.New("Can't do overwriting update with no Id value for UserORM")
+	}
+	filterEmails.UserId = new(string)
+	*filterEmails.UserId = ormObj.Id
+	if err = db.Where(filterEmails).Delete(EmailORM{}).Error; err != nil {
+		return nil, err
+	}
+	db.Model(&ormObj).Association("Emails").Replace(ormObj.Emails)
+	db.Model(&ormObj).Association("Friends").Replace(ormObj.Friends)
+	db.Model(&ormObj).Association("Languages").Replace(ormObj.Languages)
+	db.Model(&ormObj).Association("ShippingAddress").Replace(ormObj.ShippingAddress)
+	filterTasks := TaskORM{}
+	if ormObj.Id == "" {
+		return nil, errors.New("Can't do overwriting update with no Id value for UserORM")
+	}
+	filterTasks.UserId = ormObj.Id
+	if err = db.Where(filterTasks).Delete(TaskORM{}).Error; err != nil {
+		return nil, err
+	}
+	db.Model(&ormObj).Association("Tasks").Replace(ormObj.Tasks)
 	if hook, ok := interface{}(&ormObj).(UserORMWithAfterStrictUpdateSave); ok {
 		if err = hook.AfterStrictUpdateSave(ctx, db); err != nil {
 			return nil, err
@@ -1235,6 +1243,11 @@ func DefaultListUser(ctx context.Context, db *gorm1.DB) ([]*User, error) {
 	if err != nil {
 		return nil, err
 	}
+	accountID, err := auth1.GetAccountID(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+	db = db.Where(map[string]interface{}{"account_id": accountID})
 	if hook, ok := interface{}(&ormObj).(UserORMWithBeforeListApplyQuery); ok {
 		if db, err = hook.BeforeListApplyQuery(ctx, db); err != nil {
 			return nil, err
@@ -1249,7 +1262,6 @@ func DefaultListUser(ctx context.Context, db *gorm1.DB) ([]*User, error) {
 			return nil, err
 		}
 	}
-	db = db.Where(&ormObj)
 	db = db.Order("id")
 	ormResponse := []UserORM{}
 	if err := db.Find(&ormResponse).Error; err != nil {
@@ -1404,24 +1416,28 @@ func DefaultStrictUpdateEmail(ctx context.Context, in *Email, db *gorm1.DB) (*Em
 	if err != nil {
 		return nil, err
 	}
+	accountID, err := auth1.GetAccountID(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+	db = db.Where(map[string]interface{}{"account_id": accountID})
 	count := 1
 	err = db.Model(&ormObj).Where("id=?", ormObj.Id).Count(&count).Error
 	if err != nil {
 		return nil, err
-	}
-	if hook, ok := interface{}(&ormObj).(EmailORMWithBeforeStrictUpdateCleanup); ok {
-		if db, err = hook.BeforeStrictUpdateCleanup(ctx, db); err != nil {
-			return nil, err
-		}
 	}
 	if hook, ok := interface{}(&ormObj).(EmailORMWithBeforeStrictUpdateSave); ok {
 		if db, err = hook.BeforeStrictUpdateSave(ctx, db); err != nil {
 			return nil, err
 		}
 	}
-	db = db.Where(&EmailORM{AccountID: ormObj.AccountID})
-	if err = db.Save(&ormObj).Error; err != nil {
+	if err = db.Set("gorm:association_autoupdate", false).Set("gorm:association_autocreate", false).Set("gorm:association_save_reference", false).Save(&ormObj).Error; err != nil {
 		return nil, err
+	}
+	if hook, ok := interface{}(&ormObj).(EmailORMWithBeforeStrictUpdateCleanup); ok {
+		if db, err = hook.BeforeStrictUpdateCleanup(ctx, db); err != nil {
+			return nil, err
+		}
 	}
 	if hook, ok := interface{}(&ormObj).(EmailORMWithAfterStrictUpdateSave); ok {
 		if err = hook.AfterStrictUpdateSave(ctx, db); err != nil {
@@ -1546,6 +1562,11 @@ func DefaultListEmail(ctx context.Context, db *gorm1.DB) ([]*Email, error) {
 	if err != nil {
 		return nil, err
 	}
+	accountID, err := auth1.GetAccountID(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+	db = db.Where(map[string]interface{}{"account_id": accountID})
 	if hook, ok := interface{}(&ormObj).(EmailORMWithBeforeListApplyQuery); ok {
 		if db, err = hook.BeforeListApplyQuery(ctx, db); err != nil {
 			return nil, err
@@ -1560,7 +1581,6 @@ func DefaultListEmail(ctx context.Context, db *gorm1.DB) ([]*Email, error) {
 			return nil, err
 		}
 	}
-	db = db.Where(&ormObj)
 	db = db.Order("id")
 	ormResponse := []EmailORM{}
 	if err := db.Find(&ormResponse).Error; err != nil {
@@ -1715,24 +1735,28 @@ func DefaultStrictUpdateAddress(ctx context.Context, in *Address, db *gorm1.DB) 
 	if err != nil {
 		return nil, err
 	}
+	accountID, err := auth1.GetAccountID(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+	db = db.Where(map[string]interface{}{"account_id": accountID})
 	count := 1
 	err = db.Model(&ormObj).Where("id=?", ormObj.Id).Count(&count).Error
 	if err != nil {
 		return nil, err
-	}
-	if hook, ok := interface{}(&ormObj).(AddressORMWithBeforeStrictUpdateCleanup); ok {
-		if db, err = hook.BeforeStrictUpdateCleanup(ctx, db); err != nil {
-			return nil, err
-		}
 	}
 	if hook, ok := interface{}(&ormObj).(AddressORMWithBeforeStrictUpdateSave); ok {
 		if db, err = hook.BeforeStrictUpdateSave(ctx, db); err != nil {
 			return nil, err
 		}
 	}
-	db = db.Where(&AddressORM{AccountID: ormObj.AccountID})
-	if err = db.Save(&ormObj).Error; err != nil {
+	if err = db.Set("gorm:association_autoupdate", false).Set("gorm:association_autocreate", false).Set("gorm:association_save_reference", false).Save(&ormObj).Error; err != nil {
 		return nil, err
+	}
+	if hook, ok := interface{}(&ormObj).(AddressORMWithBeforeStrictUpdateCleanup); ok {
+		if db, err = hook.BeforeStrictUpdateCleanup(ctx, db); err != nil {
+			return nil, err
+		}
 	}
 	if hook, ok := interface{}(&ormObj).(AddressORMWithAfterStrictUpdateSave); ok {
 		if err = hook.AfterStrictUpdateSave(ctx, db); err != nil {
@@ -1861,6 +1885,11 @@ func DefaultListAddress(ctx context.Context, db *gorm1.DB) ([]*Address, error) {
 	if err != nil {
 		return nil, err
 	}
+	accountID, err := auth1.GetAccountID(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+	db = db.Where(map[string]interface{}{"account_id": accountID})
 	if hook, ok := interface{}(&ormObj).(AddressORMWithBeforeListApplyQuery); ok {
 		if db, err = hook.BeforeListApplyQuery(ctx, db); err != nil {
 			return nil, err
@@ -1875,7 +1904,6 @@ func DefaultListAddress(ctx context.Context, db *gorm1.DB) ([]*Address, error) {
 			return nil, err
 		}
 	}
-	db = db.Where(&ormObj)
 	db = db.Order("id")
 	ormResponse := []AddressORM{}
 	if err := db.Find(&ormResponse).Error; err != nil {
@@ -2030,24 +2058,28 @@ func DefaultStrictUpdateLanguage(ctx context.Context, in *Language, db *gorm1.DB
 	if err != nil {
 		return nil, err
 	}
+	accountID, err := auth1.GetAccountID(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+	db = db.Where(map[string]interface{}{"account_id": accountID})
 	count := 1
 	err = db.Model(&ormObj).Where("id=?", ormObj.Id).Count(&count).Error
 	if err != nil {
 		return nil, err
-	}
-	if hook, ok := interface{}(&ormObj).(LanguageORMWithBeforeStrictUpdateCleanup); ok {
-		if db, err = hook.BeforeStrictUpdateCleanup(ctx, db); err != nil {
-			return nil, err
-		}
 	}
 	if hook, ok := interface{}(&ormObj).(LanguageORMWithBeforeStrictUpdateSave); ok {
 		if db, err = hook.BeforeStrictUpdateSave(ctx, db); err != nil {
 			return nil, err
 		}
 	}
-	db = db.Where(&LanguageORM{AccountID: ormObj.AccountID})
-	if err = db.Save(&ormObj).Error; err != nil {
+	if err = db.Set("gorm:association_autoupdate", false).Set("gorm:association_autocreate", false).Set("gorm:association_save_reference", false).Save(&ormObj).Error; err != nil {
 		return nil, err
+	}
+	if hook, ok := interface{}(&ormObj).(LanguageORMWithBeforeStrictUpdateCleanup); ok {
+		if db, err = hook.BeforeStrictUpdateCleanup(ctx, db); err != nil {
+			return nil, err
+		}
 	}
 	if hook, ok := interface{}(&ormObj).(LanguageORMWithAfterStrictUpdateSave); ok {
 		if err = hook.AfterStrictUpdateSave(ctx, db); err != nil {
@@ -2168,6 +2200,11 @@ func DefaultListLanguage(ctx context.Context, db *gorm1.DB) ([]*Language, error)
 	if err != nil {
 		return nil, err
 	}
+	accountID, err := auth1.GetAccountID(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+	db = db.Where(map[string]interface{}{"account_id": accountID})
 	if hook, ok := interface{}(&ormObj).(LanguageORMWithBeforeListApplyQuery); ok {
 		if db, err = hook.BeforeListApplyQuery(ctx, db); err != nil {
 			return nil, err
@@ -2182,7 +2219,6 @@ func DefaultListLanguage(ctx context.Context, db *gorm1.DB) ([]*Language, error)
 			return nil, err
 		}
 	}
-	db = db.Where(&ormObj)
 	db = db.Order("id")
 	ormResponse := []LanguageORM{}
 	if err := db.Find(&ormResponse).Error; err != nil {
@@ -2337,24 +2373,28 @@ func DefaultStrictUpdateCreditCard(ctx context.Context, in *CreditCard, db *gorm
 	if err != nil {
 		return nil, err
 	}
+	accountID, err := auth1.GetAccountID(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+	db = db.Where(map[string]interface{}{"account_id": accountID})
 	count := 1
 	err = db.Model(&ormObj).Where("id=?", ormObj.Id).Count(&count).Error
 	if err != nil {
 		return nil, err
-	}
-	if hook, ok := interface{}(&ormObj).(CreditCardORMWithBeforeStrictUpdateCleanup); ok {
-		if db, err = hook.BeforeStrictUpdateCleanup(ctx, db); err != nil {
-			return nil, err
-		}
 	}
 	if hook, ok := interface{}(&ormObj).(CreditCardORMWithBeforeStrictUpdateSave); ok {
 		if db, err = hook.BeforeStrictUpdateSave(ctx, db); err != nil {
 			return nil, err
 		}
 	}
-	db = db.Where(&CreditCardORM{AccountID: ormObj.AccountID})
-	if err = db.Save(&ormObj).Error; err != nil {
+	if err = db.Set("gorm:association_autoupdate", false).Set("gorm:association_autocreate", false).Set("gorm:association_save_reference", false).Save(&ormObj).Error; err != nil {
 		return nil, err
+	}
+	if hook, ok := interface{}(&ormObj).(CreditCardORMWithBeforeStrictUpdateCleanup); ok {
+		if db, err = hook.BeforeStrictUpdateCleanup(ctx, db); err != nil {
+			return nil, err
+		}
 	}
 	if hook, ok := interface{}(&ormObj).(CreditCardORMWithAfterStrictUpdateSave); ok {
 		if err = hook.AfterStrictUpdateSave(ctx, db); err != nil {
@@ -2479,6 +2519,11 @@ func DefaultListCreditCard(ctx context.Context, db *gorm1.DB) ([]*CreditCard, er
 	if err != nil {
 		return nil, err
 	}
+	accountID, err := auth1.GetAccountID(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+	db = db.Where(map[string]interface{}{"account_id": accountID})
 	if hook, ok := interface{}(&ormObj).(CreditCardORMWithBeforeListApplyQuery); ok {
 		if db, err = hook.BeforeListApplyQuery(ctx, db); err != nil {
 			return nil, err
@@ -2493,7 +2538,6 @@ func DefaultListCreditCard(ctx context.Context, db *gorm1.DB) ([]*CreditCard, er
 			return nil, err
 		}
 	}
-	db = db.Where(&ormObj)
 	db = db.Order("id")
 	ormResponse := []CreditCardORM{}
 	if err := db.Find(&ormResponse).Error; err != nil {
@@ -2593,6 +2637,11 @@ func DefaultListTask(ctx context.Context, db *gorm1.DB) ([]*Task, error) {
 	if err != nil {
 		return nil, err
 	}
+	accountID, err := auth1.GetAccountID(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+	db = db.Where(map[string]interface{}{"account_id": accountID})
 	if hook, ok := interface{}(&ormObj).(TaskORMWithBeforeListApplyQuery); ok {
 		if db, err = hook.BeforeListApplyQuery(ctx, db); err != nil {
 			return nil, err
@@ -2607,7 +2656,6 @@ func DefaultListTask(ctx context.Context, db *gorm1.DB) ([]*Task, error) {
 			return nil, err
 		}
 	}
-	db = db.Where(&ormObj)
 	ormResponse := []TaskORM{}
 	if err := db.Find(&ormResponse).Error; err != nil {
 		return nil, err

@@ -954,7 +954,6 @@ func DefaultListTestTypes(ctx context.Context, db *gorm1.DB) ([]*TestTypes, erro
 			return nil, err
 		}
 	}
-	db = db.Where(&ormObj)
 	ormResponse := []TestTypesORM{}
 	if err := db.Find(&ormResponse).Error; err != nil {
 		return nil, err
@@ -1113,6 +1112,14 @@ func DefaultStrictUpdateTypeWithID(ctx context.Context, in *TypeWithID, db *gorm
 	if err != nil {
 		return nil, err
 	}
+	if hook, ok := interface{}(&ormObj).(TypeWithIDORMWithBeforeStrictUpdateSave); ok {
+		if db, err = hook.BeforeStrictUpdateSave(ctx, db); err != nil {
+			return nil, err
+		}
+	}
+	if err = db.Set("gorm:association_autoupdate", false).Set("gorm:association_autocreate", false).Set("gorm:association_save_reference", false).Save(&ormObj).Error; err != nil {
+		return nil, err
+	}
 	if hook, ok := interface{}(&ormObj).(TypeWithIDORMWithBeforeStrictUpdateCleanup); ok {
 		if db, err = hook.BeforeStrictUpdateCleanup(ctx, db); err != nil {
 			return nil, err
@@ -1127,6 +1134,8 @@ func DefaultStrictUpdateTypeWithID(ctx context.Context, in *TypeWithID, db *gorm
 	if err = db.Where(filterANestedObject).Delete(TestTypesORM{}).Error; err != nil {
 		return nil, err
 	}
+	db.Model(&ormObj).Association("ANestedObject").Replace(ormObj.ANestedObject)
+	db.Model(&ormObj).Association("Point").Replace(ormObj.Point)
 	filterThings := TestTypesORM{}
 	if ormObj.Id == 0 {
 		return nil, errors.New("Can't do overwriting update with no Id value for TypeWithIDORM")
@@ -1136,14 +1145,8 @@ func DefaultStrictUpdateTypeWithID(ctx context.Context, in *TypeWithID, db *gorm
 	if err = db.Where(filterThings).Delete(TestTypesORM{}).Error; err != nil {
 		return nil, err
 	}
-	if hook, ok := interface{}(&ormObj).(TypeWithIDORMWithBeforeStrictUpdateSave); ok {
-		if db, err = hook.BeforeStrictUpdateSave(ctx, db); err != nil {
-			return nil, err
-		}
-	}
-	if err = db.Save(&ormObj).Error; err != nil {
-		return nil, err
-	}
+	db.Model(&ormObj).Association("Things").Replace(ormObj.Things)
+	db.Model(&ormObj).Association("User").Replace(ormObj.User)
 	if hook, ok := interface{}(&ormObj).(TypeWithIDORMWithAfterStrictUpdateSave); ok {
 		if err = hook.AfterStrictUpdateSave(ctx, db); err != nil {
 			return nil, err
@@ -1371,7 +1374,6 @@ func DefaultListTypeWithID(ctx context.Context, db *gorm1.DB) ([]*TypeWithID, er
 			return nil, err
 		}
 	}
-	db = db.Where(&ormObj)
 	db = db.Order("id")
 	ormResponse := []TypeWithIDORM{}
 	if err := db.Find(&ormResponse).Error; err != nil {
@@ -1526,24 +1528,28 @@ func DefaultStrictUpdateMultiaccountTypeWithID(ctx context.Context, in *Multiacc
 	if err != nil {
 		return nil, err
 	}
+	accountID, err := auth1.GetAccountID(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+	db = db.Where(map[string]interface{}{"account_id": accountID})
 	count := 1
 	err = db.Model(&ormObj).Where("id=?", ormObj.Id).Count(&count).Error
 	if err != nil {
 		return nil, err
-	}
-	if hook, ok := interface{}(&ormObj).(MultiaccountTypeWithIDORMWithBeforeStrictUpdateCleanup); ok {
-		if db, err = hook.BeforeStrictUpdateCleanup(ctx, db); err != nil {
-			return nil, err
-		}
 	}
 	if hook, ok := interface{}(&ormObj).(MultiaccountTypeWithIDORMWithBeforeStrictUpdateSave); ok {
 		if db, err = hook.BeforeStrictUpdateSave(ctx, db); err != nil {
 			return nil, err
 		}
 	}
-	db = db.Where(&MultiaccountTypeWithIDORM{AccountID: ormObj.AccountID})
-	if err = db.Save(&ormObj).Error; err != nil {
+	if err = db.Set("gorm:association_autoupdate", false).Set("gorm:association_autocreate", false).Set("gorm:association_save_reference", false).Save(&ormObj).Error; err != nil {
 		return nil, err
+	}
+	if hook, ok := interface{}(&ormObj).(MultiaccountTypeWithIDORMWithBeforeStrictUpdateCleanup); ok {
+		if db, err = hook.BeforeStrictUpdateCleanup(ctx, db); err != nil {
+			return nil, err
+		}
 	}
 	if hook, ok := interface{}(&ormObj).(MultiaccountTypeWithIDORMWithAfterStrictUpdateSave); ok {
 		if err = hook.AfterStrictUpdateSave(ctx, db); err != nil {
@@ -1656,6 +1662,11 @@ func DefaultListMultiaccountTypeWithID(ctx context.Context, db *gorm1.DB) ([]*Mu
 	if err != nil {
 		return nil, err
 	}
+	accountID, err := auth1.GetAccountID(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+	db = db.Where(map[string]interface{}{"account_id": accountID})
 	if hook, ok := interface{}(&ormObj).(MultiaccountTypeWithIDORMWithBeforeListApplyQuery); ok {
 		if db, err = hook.BeforeListApplyQuery(ctx, db); err != nil {
 			return nil, err
@@ -1670,7 +1681,6 @@ func DefaultListMultiaccountTypeWithID(ctx context.Context, db *gorm1.DB) ([]*Mu
 			return nil, err
 		}
 	}
-	db = db.Where(&ormObj)
 	db = db.Order("id")
 	ormResponse := []MultiaccountTypeWithIDORM{}
 	if err := db.Find(&ormResponse).Error; err != nil {
@@ -1762,6 +1772,11 @@ func DefaultListMultiaccountTypeWithoutID(ctx context.Context, db *gorm1.DB) ([]
 	if err != nil {
 		return nil, err
 	}
+	accountID, err := auth1.GetAccountID(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+	db = db.Where(map[string]interface{}{"account_id": accountID})
 	if hook, ok := interface{}(&ormObj).(MultiaccountTypeWithoutIDORMWithBeforeListApplyQuery); ok {
 		if db, err = hook.BeforeListApplyQuery(ctx, db); err != nil {
 			return nil, err
@@ -1776,7 +1791,6 @@ func DefaultListMultiaccountTypeWithoutID(ctx context.Context, db *gorm1.DB) ([]
 			return nil, err
 		}
 	}
-	db = db.Where(&ormObj)
 	ormResponse := []MultiaccountTypeWithoutIDORM{}
 	if err := db.Find(&ormResponse).Error; err != nil {
 		return nil, err
@@ -1935,6 +1949,14 @@ func DefaultStrictUpdatePrimaryUUIDType(ctx context.Context, in *PrimaryUUIDType
 	if err != nil {
 		return nil, err
 	}
+	if hook, ok := interface{}(&ormObj).(PrimaryUUIDTypeORMWithBeforeStrictUpdateSave); ok {
+		if db, err = hook.BeforeStrictUpdateSave(ctx, db); err != nil {
+			return nil, err
+		}
+	}
+	if err = db.Set("gorm:association_autoupdate", false).Set("gorm:association_autocreate", false).Set("gorm:association_save_reference", false).Save(&ormObj).Error; err != nil {
+		return nil, err
+	}
 	if hook, ok := interface{}(&ormObj).(PrimaryUUIDTypeORMWithBeforeStrictUpdateCleanup); ok {
 		if db, err = hook.BeforeStrictUpdateCleanup(ctx, db); err != nil {
 			return nil, err
@@ -1949,14 +1971,7 @@ func DefaultStrictUpdatePrimaryUUIDType(ctx context.Context, in *PrimaryUUIDType
 	if err = db.Where(filterChild).Delete(ExternalChildORM{}).Error; err != nil {
 		return nil, err
 	}
-	if hook, ok := interface{}(&ormObj).(PrimaryUUIDTypeORMWithBeforeStrictUpdateSave); ok {
-		if db, err = hook.BeforeStrictUpdateSave(ctx, db); err != nil {
-			return nil, err
-		}
-	}
-	if err = db.Save(&ormObj).Error; err != nil {
-		return nil, err
-	}
+	db.Model(&ormObj).Association("Child").Replace(ormObj.Child)
 	if hook, ok := interface{}(&ormObj).(PrimaryUUIDTypeORMWithAfterStrictUpdateSave); ok {
 		if err = hook.AfterStrictUpdateSave(ctx, db); err != nil {
 			return nil, err
@@ -2100,7 +2115,6 @@ func DefaultListPrimaryUUIDType(ctx context.Context, db *gorm1.DB) ([]*PrimaryUU
 			return nil, err
 		}
 	}
-	db = db.Where(&ormObj)
 	db = db.Order("id")
 	ormResponse := []PrimaryUUIDTypeORM{}
 	if err := db.Find(&ormResponse).Error; err != nil {
@@ -2260,6 +2274,14 @@ func DefaultStrictUpdatePrimaryStringType(ctx context.Context, in *PrimaryString
 	if err != nil {
 		return nil, err
 	}
+	if hook, ok := interface{}(&ormObj).(PrimaryStringTypeORMWithBeforeStrictUpdateSave); ok {
+		if db, err = hook.BeforeStrictUpdateSave(ctx, db); err != nil {
+			return nil, err
+		}
+	}
+	if err = db.Set("gorm:association_autoupdate", false).Set("gorm:association_autocreate", false).Set("gorm:association_save_reference", false).Save(&ormObj).Error; err != nil {
+		return nil, err
+	}
 	if hook, ok := interface{}(&ormObj).(PrimaryStringTypeORMWithBeforeStrictUpdateCleanup); ok {
 		if db, err = hook.BeforeStrictUpdateCleanup(ctx, db); err != nil {
 			return nil, err
@@ -2274,14 +2296,7 @@ func DefaultStrictUpdatePrimaryStringType(ctx context.Context, in *PrimaryString
 	if err = db.Where(filterChild).Delete(ExternalChildORM{}).Error; err != nil {
 		return nil, err
 	}
-	if hook, ok := interface{}(&ormObj).(PrimaryStringTypeORMWithBeforeStrictUpdateSave); ok {
-		if db, err = hook.BeforeStrictUpdateSave(ctx, db); err != nil {
-			return nil, err
-		}
-	}
-	if err = db.Save(&ormObj).Error; err != nil {
-		return nil, err
-	}
+	db.Model(&ormObj).Association("Child").Replace(ormObj.Child)
 	if hook, ok := interface{}(&ormObj).(PrimaryStringTypeORMWithAfterStrictUpdateSave); ok {
 		if err = hook.AfterStrictUpdateSave(ctx, db); err != nil {
 			return nil, err
@@ -2425,7 +2440,6 @@ func DefaultListPrimaryStringType(ctx context.Context, db *gorm1.DB) ([]*Primary
 			return nil, err
 		}
 	}
-	db = db.Where(&ormObj)
 	db = db.Order("id")
 	ormResponse := []PrimaryStringTypeORM{}
 	if err := db.Find(&ormResponse).Error; err != nil {
@@ -2585,6 +2599,14 @@ func DefaultStrictUpdateTestTag(ctx context.Context, in *TestTag, db *gorm1.DB) 
 	if err != nil {
 		return nil, err
 	}
+	if hook, ok := interface{}(&ormObj).(TestTagORMWithBeforeStrictUpdateSave); ok {
+		if db, err = hook.BeforeStrictUpdateSave(ctx, db); err != nil {
+			return nil, err
+		}
+	}
+	if err = db.Set("gorm:association_autoupdate", false).Set("gorm:association_autocreate", false).Set("gorm:association_save_reference", false).Save(&ormObj).Error; err != nil {
+		return nil, err
+	}
 	if hook, ok := interface{}(&ormObj).(TestTagORMWithBeforeStrictUpdateCleanup); ok {
 		if db, err = hook.BeforeStrictUpdateCleanup(ctx, db); err != nil {
 			return nil, err
@@ -2599,14 +2621,7 @@ func DefaultStrictUpdateTestTag(ctx context.Context, in *TestTag, db *gorm1.DB) 
 	if err = db.Where(filterTestTagAssoc).Delete(TestTagAssociationORM{}).Error; err != nil {
 		return nil, err
 	}
-	if hook, ok := interface{}(&ormObj).(TestTagORMWithBeforeStrictUpdateSave); ok {
-		if db, err = hook.BeforeStrictUpdateSave(ctx, db); err != nil {
-			return nil, err
-		}
-	}
-	if err = db.Save(&ormObj).Error; err != nil {
-		return nil, err
-	}
+	db.Model(&ormObj).Association("TestTagAssoc").Replace(ormObj.TestTagAssoc)
 	if hook, ok := interface{}(&ormObj).(TestTagORMWithAfterStrictUpdateSave); ok {
 		if err = hook.AfterStrictUpdateSave(ctx, db); err != nil {
 			return nil, err
@@ -2750,7 +2765,6 @@ func DefaultListTestTag(ctx context.Context, db *gorm1.DB) ([]*TestTag, error) {
 			return nil, err
 		}
 	}
-	db = db.Where(&ormObj)
 	db = db.Order("id")
 	ormResponse := []TestTagORM{}
 	if err := db.Find(&ormResponse).Error; err != nil {
@@ -2856,7 +2870,6 @@ func DefaultListTestTagAssociation(ctx context.Context, db *gorm1.DB) ([]*TestTa
 			return nil, err
 		}
 	}
-	db = db.Where(&ormObj)
 	ormResponse := []TestTagAssociationORM{}
 	if err := db.Find(&ormResponse).Error; err != nil {
 		return nil, err
@@ -2979,7 +2992,6 @@ func DefaultListPrimaryIncluded(ctx context.Context, db *gorm1.DB) ([]*PrimaryIn
 			return nil, err
 		}
 	}
-	db = db.Where(&ormObj)
 	db = db.Order("id")
 	ormResponse := []PrimaryIncludedORM{}
 	if err := db.Find(&ormResponse).Error; err != nil {
