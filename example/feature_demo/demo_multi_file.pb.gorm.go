@@ -266,6 +266,9 @@ func DefaultStrictUpdateExternalChild(ctx context.Context, in *ExternalChild, db
 			return nil, err
 		}
 	}
+	if err = db.Save(&ormObj).Error; err != nil {
+		return nil, err
+	}
 	if hook, ok := interface{}(&ormObj).(ExternalChildORMWithAfterStrictUpdateSave); ok {
 		if err = hook.AfterStrictUpdateSave(ctx, db); err != nil {
 			return nil, err

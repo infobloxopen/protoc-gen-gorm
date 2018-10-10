@@ -367,6 +367,9 @@ func DefaultStrictUpdateIntPoint(ctx context.Context, in *IntPoint, db *gorm1.DB
 			return nil, err
 		}
 	}
+	if err = db.Save(&ormObj).Error; err != nil {
+		return nil, err
+	}
 	if hook, ok := interface{}(&ormObj).(IntPointORMWithAfterStrictUpdateSave); ok {
 		if err = hook.AfterStrictUpdateSave(ctx, db); err != nil {
 			return nil, err

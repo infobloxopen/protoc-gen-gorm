@@ -637,6 +637,9 @@ func (p *OrmPlugin) generateStrictUpdateHandler(message *generator.Descriptor) {
 
 	p.generateBeforeHookCall(ormable, "StrictUpdateCleanup")
 	p.removeChildAssociations(message)
+	p.P(`if err = db.Save(&ormObj).Error; err != nil {`)
+	p.P(`return nil, err`)
+	p.P(`}`)
 	p.generateAfterHookCall(ormable, "StrictUpdateSave")
 	p.P(`pbResponse, err := ormObj.ToPB(ctx)`)
 	p.P(`if err != nil {`)
@@ -709,9 +712,6 @@ func (p *OrmPlugin) removeChildAssociationsByName(message *generator.Descriptor,
 		p.P(`if err = db.Where(filter`, fieldName, `).Delete(`, strings.Trim(field.Type, "[]*"), `{}).Error; err != nil {`)
 		p.P(`return nil, err`)
 		p.P(`}`)
-	}
-	if field.GetHasMany() != nil || field.GetHasOne() != nil || field.GetBelongsTo() != nil || field.GetManyToMany() != nil {
-		p.P(`db.Model(&ormObj).Association("`, fieldName, `").Replace(ormObj.`, fieldName, `)`)
 	}
 }
 

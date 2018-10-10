@@ -1134,8 +1134,6 @@ func DefaultStrictUpdateTypeWithID(ctx context.Context, in *TypeWithID, db *gorm
 	if err = db.Where(filterANestedObject).Delete(TestTypesORM{}).Error; err != nil {
 		return nil, err
 	}
-	db.Model(&ormObj).Association("ANestedObject").Replace(ormObj.ANestedObject)
-	db.Model(&ormObj).Association("Point").Replace(ormObj.Point)
 	filterThings := TestTypesORM{}
 	if ormObj.Id == 0 {
 		return nil, errors.New("Can't do overwriting update with no Id value for TypeWithIDORM")
@@ -1145,8 +1143,9 @@ func DefaultStrictUpdateTypeWithID(ctx context.Context, in *TypeWithID, db *gorm
 	if err = db.Where(filterThings).Delete(TestTypesORM{}).Error; err != nil {
 		return nil, err
 	}
-	db.Model(&ormObj).Association("Things").Replace(ormObj.Things)
-	db.Model(&ormObj).Association("User").Replace(ormObj.User)
+	if err = db.Save(&ormObj).Error; err != nil {
+		return nil, err
+	}
 	if hook, ok := interface{}(&ormObj).(TypeWithIDORMWithAfterStrictUpdateSave); ok {
 		if err = hook.AfterStrictUpdateSave(ctx, db); err != nil {
 			return nil, err
@@ -1550,6 +1549,9 @@ func DefaultStrictUpdateMultiaccountTypeWithID(ctx context.Context, in *Multiacc
 		if db, err = hook.BeforeStrictUpdateCleanup(ctx, db); err != nil {
 			return nil, err
 		}
+	}
+	if err = db.Save(&ormObj).Error; err != nil {
+		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(MultiaccountTypeWithIDORMWithAfterStrictUpdateSave); ok {
 		if err = hook.AfterStrictUpdateSave(ctx, db); err != nil {
@@ -1971,7 +1973,9 @@ func DefaultStrictUpdatePrimaryUUIDType(ctx context.Context, in *PrimaryUUIDType
 	if err = db.Where(filterChild).Delete(ExternalChildORM{}).Error; err != nil {
 		return nil, err
 	}
-	db.Model(&ormObj).Association("Child").Replace(ormObj.Child)
+	if err = db.Save(&ormObj).Error; err != nil {
+		return nil, err
+	}
 	if hook, ok := interface{}(&ormObj).(PrimaryUUIDTypeORMWithAfterStrictUpdateSave); ok {
 		if err = hook.AfterStrictUpdateSave(ctx, db); err != nil {
 			return nil, err
@@ -2296,7 +2300,9 @@ func DefaultStrictUpdatePrimaryStringType(ctx context.Context, in *PrimaryString
 	if err = db.Where(filterChild).Delete(ExternalChildORM{}).Error; err != nil {
 		return nil, err
 	}
-	db.Model(&ormObj).Association("Child").Replace(ormObj.Child)
+	if err = db.Save(&ormObj).Error; err != nil {
+		return nil, err
+	}
 	if hook, ok := interface{}(&ormObj).(PrimaryStringTypeORMWithAfterStrictUpdateSave); ok {
 		if err = hook.AfterStrictUpdateSave(ctx, db); err != nil {
 			return nil, err
@@ -2621,7 +2627,9 @@ func DefaultStrictUpdateTestTag(ctx context.Context, in *TestTag, db *gorm1.DB) 
 	if err = db.Where(filterTestTagAssoc).Delete(TestTagAssociationORM{}).Error; err != nil {
 		return nil, err
 	}
-	db.Model(&ormObj).Association("TestTagAssoc").Replace(ormObj.TestTagAssoc)
+	if err = db.Save(&ormObj).Error; err != nil {
+		return nil, err
+	}
 	if hook, ok := interface{}(&ormObj).(TestTagORMWithAfterStrictUpdateSave); ok {
 		if err = hook.AfterStrictUpdateSave(ctx, db); err != nil {
 			return nil, err
