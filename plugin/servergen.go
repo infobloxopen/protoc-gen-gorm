@@ -104,6 +104,7 @@ func (p *OrmPlugin) generateDefaultServer(file *generator.FileDescriptor) {
 		}
 		p.P(`}`)
 		for _, method := range service.methods {
+			p.UsingGoImports("context")
 			switch method.verb {
 			case createService:
 				p.generateCreateServerMethod(service, method)
