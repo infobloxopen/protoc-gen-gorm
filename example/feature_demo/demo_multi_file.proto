@@ -11,3 +11,12 @@ message ExternalChild {
   };
   string id = 1;
 }
+
+message BlogPost {
+  option (gorm.opts) = {
+    ormable: true,
+  };
+  uint64 id = 1;
+  string title = 2;
+  string author = 3;
+}
