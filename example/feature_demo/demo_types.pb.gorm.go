@@ -1108,19 +1108,9 @@ func DefaultStrictUpdateTypeWithID(ctx context.Context, in *TypeWithID, db *gorm
 	if err != nil {
 		return nil, err
 	}
-	count := 1
-	err = db.Model(&ormObj).Where("id=?", ormObj.Id).Count(&count).Error
-	if err != nil {
-		return nil, err
-	}
-	if hook, ok := interface{}(&ormObj).(TypeWithIDORMWithBeforeStrictUpdateSave); ok {
-		if db, err = hook.BeforeStrictUpdateSave(ctx, db); err != nil {
-			return nil, err
-		}
-	}
-	if err = db.Set("gorm:association_autoupdate", false).Set("gorm:association_autocreate", false).Set("gorm:association_save_reference", false).Save(&ormObj).Error; err != nil {
-		return nil, err
-	}
+	var count int64
+	lockedRow := &TypeWithIDORM{}
+	count = db.Model(&ormObj).Set("gorm:query_option", "FOR UPDATE").Where("id=?", ormObj.Id).First(lockedRow).RowsAffected
 	if hook, ok := interface{}(&ormObj).(TypeWithIDORMWithBeforeStrictUpdateCleanup); ok {
 		if db, err = hook.BeforeStrictUpdateCleanup(ctx, db); err != nil {
 			return nil, err
@@ -1143,6 +1133,11 @@ func DefaultStrictUpdateTypeWithID(ctx context.Context, in *TypeWithID, db *gorm
 	*filterThings.ThingsTypeWithIDId = ormObj.Id
 	if err = db.Where(filterThings).Delete(TestTypesORM{}).Error; err != nil {
 		return nil, err
+	}
+	if hook, ok := interface{}(&ormObj).(TypeWithIDORMWithBeforeStrictUpdateSave); ok {
+		if db, err = hook.BeforeStrictUpdateSave(ctx, db); err != nil {
+			return nil, err
+		}
 	}
 	if err = db.Save(&ormObj).Error; err != nil {
 		return nil, err
@@ -1534,21 +1529,16 @@ func DefaultStrictUpdateMultiaccountTypeWithID(ctx context.Context, in *Multiacc
 		return nil, err
 	}
 	db = db.Where(map[string]interface{}{"account_id": accountID})
-	count := 1
-	err = db.Model(&ormObj).Where("id=?", ormObj.Id).Count(&count).Error
-	if err != nil {
-		return nil, err
-	}
-	if hook, ok := interface{}(&ormObj).(MultiaccountTypeWithIDORMWithBeforeStrictUpdateSave); ok {
-		if db, err = hook.BeforeStrictUpdateSave(ctx, db); err != nil {
+	var count int64
+	lockedRow := &MultiaccountTypeWithIDORM{}
+	count = db.Model(&ormObj).Set("gorm:query_option", "FOR UPDATE").Where("id=?", ormObj.Id).First(lockedRow).RowsAffected
+	if hook, ok := interface{}(&ormObj).(MultiaccountTypeWithIDORMWithBeforeStrictUpdateCleanup); ok {
+		if db, err = hook.BeforeStrictUpdateCleanup(ctx, db); err != nil {
 			return nil, err
 		}
 	}
-	if err = db.Set("gorm:association_autoupdate", false).Set("gorm:association_autocreate", false).Set("gorm:association_save_reference", false).Save(&ormObj).Error; err != nil {
-		return nil, err
-	}
-	if hook, ok := interface{}(&ormObj).(MultiaccountTypeWithIDORMWithBeforeStrictUpdateCleanup); ok {
-		if db, err = hook.BeforeStrictUpdateCleanup(ctx, db); err != nil {
+	if hook, ok := interface{}(&ormObj).(MultiaccountTypeWithIDORMWithBeforeStrictUpdateSave); ok {
+		if db, err = hook.BeforeStrictUpdateSave(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -1940,19 +1930,9 @@ func DefaultStrictUpdatePrimaryUUIDType(ctx context.Context, in *PrimaryUUIDType
 	if err != nil {
 		return nil, err
 	}
-	count := 1
-	err = db.Model(&ormObj).Where("id=?", ormObj.Id).Count(&count).Error
-	if err != nil {
-		return nil, err
-	}
-	if hook, ok := interface{}(&ormObj).(PrimaryUUIDTypeORMWithBeforeStrictUpdateSave); ok {
-		if db, err = hook.BeforeStrictUpdateSave(ctx, db); err != nil {
-			return nil, err
-		}
-	}
-	if err = db.Set("gorm:association_autoupdate", false).Set("gorm:association_autocreate", false).Set("gorm:association_save_reference", false).Save(&ormObj).Error; err != nil {
-		return nil, err
-	}
+	var count int64
+	lockedRow := &PrimaryUUIDTypeORM{}
+	count = db.Model(&ormObj).Set("gorm:query_option", "FOR UPDATE").Where("id=?", ormObj.Id).First(lockedRow).RowsAffected
 	if hook, ok := interface{}(&ormObj).(PrimaryUUIDTypeORMWithBeforeStrictUpdateCleanup); ok {
 		if db, err = hook.BeforeStrictUpdateCleanup(ctx, db); err != nil {
 			return nil, err
@@ -1966,6 +1946,11 @@ func DefaultStrictUpdatePrimaryUUIDType(ctx context.Context, in *PrimaryUUIDType
 	*filterChild.PrimaryUUIDTypeId = *ormObj.Id
 	if err = db.Where(filterChild).Delete(ExternalChildORM{}).Error; err != nil {
 		return nil, err
+	}
+	if hook, ok := interface{}(&ormObj).(PrimaryUUIDTypeORMWithBeforeStrictUpdateSave); ok {
+		if db, err = hook.BeforeStrictUpdateSave(ctx, db); err != nil {
+			return nil, err
+		}
 	}
 	if err = db.Save(&ormObj).Error; err != nil {
 		return nil, err
@@ -2268,19 +2253,9 @@ func DefaultStrictUpdatePrimaryStringType(ctx context.Context, in *PrimaryString
 	if err != nil {
 		return nil, err
 	}
-	count := 1
-	err = db.Model(&ormObj).Where("id=?", ormObj.Id).Count(&count).Error
-	if err != nil {
-		return nil, err
-	}
-	if hook, ok := interface{}(&ormObj).(PrimaryStringTypeORMWithBeforeStrictUpdateSave); ok {
-		if db, err = hook.BeforeStrictUpdateSave(ctx, db); err != nil {
-			return nil, err
-		}
-	}
-	if err = db.Set("gorm:association_autoupdate", false).Set("gorm:association_autocreate", false).Set("gorm:association_save_reference", false).Save(&ormObj).Error; err != nil {
-		return nil, err
-	}
+	var count int64
+	lockedRow := &PrimaryStringTypeORM{}
+	count = db.Model(&ormObj).Set("gorm:query_option", "FOR UPDATE").Where("id=?", ormObj.Id).First(lockedRow).RowsAffected
 	if hook, ok := interface{}(&ormObj).(PrimaryStringTypeORMWithBeforeStrictUpdateCleanup); ok {
 		if db, err = hook.BeforeStrictUpdateCleanup(ctx, db); err != nil {
 			return nil, err
@@ -2294,6 +2269,11 @@ func DefaultStrictUpdatePrimaryStringType(ctx context.Context, in *PrimaryString
 	*filterChild.PrimaryStringTypeId = ormObj.Id
 	if err = db.Where(filterChild).Delete(ExternalChildORM{}).Error; err != nil {
 		return nil, err
+	}
+	if hook, ok := interface{}(&ormObj).(PrimaryStringTypeORMWithBeforeStrictUpdateSave); ok {
+		if db, err = hook.BeforeStrictUpdateSave(ctx, db); err != nil {
+			return nil, err
+		}
 	}
 	if err = db.Save(&ormObj).Error; err != nil {
 		return nil, err
@@ -2596,19 +2576,9 @@ func DefaultStrictUpdateTestTag(ctx context.Context, in *TestTag, db *gorm1.DB) 
 	if err != nil {
 		return nil, err
 	}
-	count := 1
-	err = db.Model(&ormObj).Where("id=?", ormObj.Id).Count(&count).Error
-	if err != nil {
-		return nil, err
-	}
-	if hook, ok := interface{}(&ormObj).(TestTagORMWithBeforeStrictUpdateSave); ok {
-		if db, err = hook.BeforeStrictUpdateSave(ctx, db); err != nil {
-			return nil, err
-		}
-	}
-	if err = db.Set("gorm:association_autoupdate", false).Set("gorm:association_autocreate", false).Set("gorm:association_save_reference", false).Save(&ormObj).Error; err != nil {
-		return nil, err
-	}
+	var count int64
+	lockedRow := &TestTagORM{}
+	count = db.Model(&ormObj).Set("gorm:query_option", "FOR UPDATE").Where("id=?", ormObj.Id).First(lockedRow).RowsAffected
 	if hook, ok := interface{}(&ormObj).(TestTagORMWithBeforeStrictUpdateCleanup); ok {
 		if db, err = hook.BeforeStrictUpdateCleanup(ctx, db); err != nil {
 			return nil, err
@@ -2622,6 +2592,11 @@ func DefaultStrictUpdateTestTag(ctx context.Context, in *TestTag, db *gorm1.DB) 
 	*filterTestTagAssoc.TestTagId = ormObj.Id
 	if err = db.Where(filterTestTagAssoc).Delete(TestTagAssociationORM{}).Error; err != nil {
 		return nil, err
+	}
+	if hook, ok := interface{}(&ormObj).(TestTagORMWithBeforeStrictUpdateSave); ok {
+		if db, err = hook.BeforeStrictUpdateSave(ctx, db); err != nil {
+			return nil, err
+		}
 	}
 	if err = db.Save(&ormObj).Error; err != nil {
 		return nil, err

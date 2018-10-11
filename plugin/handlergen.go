@@ -614,7 +614,7 @@ func (p *OrmPlugin) generateStrictUpdateHandler(message *generator.Descriptor) {
 	if getMessageOptions(message).GetMultiAccount() {
 		p.generateAccountIdWhereClause()
 	}
-	p.P(`count := 1`)
+	p.P(`var count int64`)
 	// add default ordering by primary key
 	ormable := p.getOrmable(typeName)
 	if p.hasPrimaryKey(ormable) {
@@ -623,18 +623,12 @@ func (p *OrmPlugin) generateStrictUpdateHandler(message *generator.Descriptor) {
 		if len(column) == 0 {
 			column = jgorm.ToDBName(pkName)
 		}
-		p.P(`err = db.Model(&ormObj).Where("`, column, `=?", ormObj.`, pkName, `).Count(&count).Error`)
-		p.P(`if err != nil {`)
-		p.P(`return nil, err`)
-		p.P(`}`)
+		p.P(`lockedRow := &`, typeName, `ORM{}`)
+		p.P(`count = db.Model(&ormObj).Set("gorm:query_option", "FOR UPDATE").Where("`, column, `=?", ormObj.`, pkName, `).First(lockedRow).RowsAffected`)
 	}
-	p.generateBeforeHookCall(ormable, "StrictUpdateSave")
-	p.P(`if err = db.Set("gorm:association_autoupdate", false).Set("gorm:association_autocreate", false).Set("gorm:association_save_reference", false).Save(&ormObj).Error; err != nil {`)
-	p.P(`return nil, err`)
-	p.P(`}`)
-
 	p.generateBeforeHookCall(ormable, "StrictUpdateCleanup")
 	p.removeChildAssociations(message)
+	p.generateBeforeHookCall(ormable, "StrictUpdateSave")
 	p.P(`if err = db.Save(&ormObj).Error; err != nil {`)
 	p.P(`return nil, err`)
 	p.P(`}`)
