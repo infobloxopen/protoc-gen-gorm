@@ -28,7 +28,7 @@ func (p *OrmPlugin) generateDefaultHandlers(file *generator.FileDescriptor) {
 	}
 }
 
-func (p *OrmPlugin) generateAccoundIdWhereClause() {
+func (p *OrmPlugin) generateAccountIdWhereClause() {
 	p.P(`accountID, err := `, p.Import(authImport), `.GetAccountID(ctx, nil)`)
 	p.P(`if err != nil {`)
 	p.P(`return nil, err`)
@@ -477,15 +477,13 @@ func (p *OrmPlugin) generateListHandler(message *generator.Descriptor) {
 	p.P(`if err != nil {`)
 	p.P(`return nil, err`)
 	p.P(`}`)
-	if getMessageOptions(message).GetMultiAccount() {
-		p.generateAccoundIdWhereClause()
-	}
 	p.generateBeforeListHookCall(ormable, "ApplyQuery")
 	p.P(`db, err = `, p.Import(tkgormImport), `.ApplyCollectionOperators(ctx, db, &`, ormable.Name, `{}, &`, typeName, `{}, `, f, `,`, s, `,`, pg, `,`, fs, `)`)
 	p.P(`if err != nil {`)
 	p.P(`return nil, err`)
 	p.P(`}`)
 	p.generateBeforeListHookCall(ormable, "Find")
+	p.P(`db = db.Where(&ormObj)`)
 
 	// add default ordering by primary key
 	if p.hasPrimaryKey(ormable) {
@@ -614,7 +612,7 @@ func (p *OrmPlugin) generateStrictUpdateHandler(message *generator.Descriptor) {
 	p.P(`return nil, err`)
 	p.P(`}`)
 	if getMessageOptions(message).GetMultiAccount() {
-		p.generateAccoundIdWhereClause()
+		p.generateAccountIdWhereClause()
 	}
 	p.P(`count := 1`)
 	// add default ordering by primary key

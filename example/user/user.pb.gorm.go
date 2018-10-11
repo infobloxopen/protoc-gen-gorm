@@ -1239,11 +1239,6 @@ func DefaultListUser(ctx context.Context, db *gorm1.DB) ([]*User, error) {
 	if err != nil {
 		return nil, err
 	}
-	accountID, err := auth1.GetAccountID(ctx, nil)
-	if err != nil {
-		return nil, err
-	}
-	db = db.Where(map[string]interface{}{"account_id": accountID})
 	if hook, ok := interface{}(&ormObj).(UserORMWithBeforeListApplyQuery); ok {
 		if db, err = hook.BeforeListApplyQuery(ctx, db); err != nil {
 			return nil, err
@@ -1258,6 +1253,7 @@ func DefaultListUser(ctx context.Context, db *gorm1.DB) ([]*User, error) {
 			return nil, err
 		}
 	}
+	db = db.Where(&ormObj)
 	db = db.Order("id")
 	ormResponse := []UserORM{}
 	if err := db.Find(&ormResponse).Error; err != nil {
@@ -1561,11 +1557,6 @@ func DefaultListEmail(ctx context.Context, db *gorm1.DB) ([]*Email, error) {
 	if err != nil {
 		return nil, err
 	}
-	accountID, err := auth1.GetAccountID(ctx, nil)
-	if err != nil {
-		return nil, err
-	}
-	db = db.Where(map[string]interface{}{"account_id": accountID})
 	if hook, ok := interface{}(&ormObj).(EmailORMWithBeforeListApplyQuery); ok {
 		if db, err = hook.BeforeListApplyQuery(ctx, db); err != nil {
 			return nil, err
@@ -1580,6 +1571,7 @@ func DefaultListEmail(ctx context.Context, db *gorm1.DB) ([]*Email, error) {
 			return nil, err
 		}
 	}
+	db = db.Where(&ormObj)
 	db = db.Order("id")
 	ormResponse := []EmailORM{}
 	if err := db.Find(&ormResponse).Error; err != nil {
@@ -1887,11 +1879,6 @@ func DefaultListAddress(ctx context.Context, db *gorm1.DB) ([]*Address, error) {
 	if err != nil {
 		return nil, err
 	}
-	accountID, err := auth1.GetAccountID(ctx, nil)
-	if err != nil {
-		return nil, err
-	}
-	db = db.Where(map[string]interface{}{"account_id": accountID})
 	if hook, ok := interface{}(&ormObj).(AddressORMWithBeforeListApplyQuery); ok {
 		if db, err = hook.BeforeListApplyQuery(ctx, db); err != nil {
 			return nil, err
@@ -1906,6 +1893,7 @@ func DefaultListAddress(ctx context.Context, db *gorm1.DB) ([]*Address, error) {
 			return nil, err
 		}
 	}
+	db = db.Where(&ormObj)
 	db = db.Order("id")
 	ormResponse := []AddressORM{}
 	if err := db.Find(&ormResponse).Error; err != nil {
@@ -2205,11 +2193,6 @@ func DefaultListLanguage(ctx context.Context, db *gorm1.DB) ([]*Language, error)
 	if err != nil {
 		return nil, err
 	}
-	accountID, err := auth1.GetAccountID(ctx, nil)
-	if err != nil {
-		return nil, err
-	}
-	db = db.Where(map[string]interface{}{"account_id": accountID})
 	if hook, ok := interface{}(&ormObj).(LanguageORMWithBeforeListApplyQuery); ok {
 		if db, err = hook.BeforeListApplyQuery(ctx, db); err != nil {
 			return nil, err
@@ -2224,6 +2207,7 @@ func DefaultListLanguage(ctx context.Context, db *gorm1.DB) ([]*Language, error)
 			return nil, err
 		}
 	}
+	db = db.Where(&ormObj)
 	db = db.Order("id")
 	ormResponse := []LanguageORM{}
 	if err := db.Find(&ormResponse).Error; err != nil {
@@ -2527,11 +2511,6 @@ func DefaultListCreditCard(ctx context.Context, db *gorm1.DB) ([]*CreditCard, er
 	if err != nil {
 		return nil, err
 	}
-	accountID, err := auth1.GetAccountID(ctx, nil)
-	if err != nil {
-		return nil, err
-	}
-	db = db.Where(map[string]interface{}{"account_id": accountID})
 	if hook, ok := interface{}(&ormObj).(CreditCardORMWithBeforeListApplyQuery); ok {
 		if db, err = hook.BeforeListApplyQuery(ctx, db); err != nil {
 			return nil, err
@@ -2546,6 +2525,7 @@ func DefaultListCreditCard(ctx context.Context, db *gorm1.DB) ([]*CreditCard, er
 			return nil, err
 		}
 	}
+	db = db.Where(&ormObj)
 	db = db.Order("id")
 	ormResponse := []CreditCardORM{}
 	if err := db.Find(&ormResponse).Error; err != nil {
@@ -2645,11 +2625,6 @@ func DefaultListTask(ctx context.Context, db *gorm1.DB) ([]*Task, error) {
 	if err != nil {
 		return nil, err
 	}
-	accountID, err := auth1.GetAccountID(ctx, nil)
-	if err != nil {
-		return nil, err
-	}
-	db = db.Where(map[string]interface{}{"account_id": accountID})
 	if hook, ok := interface{}(&ormObj).(TaskORMWithBeforeListApplyQuery); ok {
 		if db, err = hook.BeforeListApplyQuery(ctx, db); err != nil {
 			return nil, err
@@ -2664,6 +2639,7 @@ func DefaultListTask(ctx context.Context, db *gorm1.DB) ([]*Task, error) {
 			return nil, err
 		}
 	}
+	db = db.Where(&ormObj)
 	ormResponse := []TaskORM{}
 	if err := db.Find(&ormResponse).Error; err != nil {
 		return nil, err

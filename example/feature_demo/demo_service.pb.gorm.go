@@ -499,6 +499,7 @@ func DefaultListIntPoint(ctx context.Context, db *gorm1.DB, f *query1.Filtering,
 			return nil, err
 		}
 	}
+	db = db.Where(&ormObj)
 	db = db.Order("id")
 	ormResponse := []IntPointORM{}
 	if err := db.Find(&ormResponse).Error; err != nil {
@@ -604,6 +605,7 @@ func DefaultListSomething(ctx context.Context, db *gorm1.DB) ([]*Something, erro
 			return nil, err
 		}
 	}
+	db = db.Where(&ormObj)
 	ormResponse := []SomethingORM{}
 	if err := db.Find(&ormResponse).Error; err != nil {
 		return nil, err
@@ -708,6 +710,7 @@ func DefaultListCircle(ctx context.Context, db *gorm1.DB) ([]*Circle, error) {
 			return nil, err
 		}
 	}
+	db = db.Where(&ormObj)
 	ormResponse := []CircleORM{}
 	if err := db.Find(&ormResponse).Error; err != nil {
 		return nil, err

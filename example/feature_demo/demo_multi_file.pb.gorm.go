@@ -390,6 +390,7 @@ func DefaultListExternalChild(ctx context.Context, db *gorm1.DB) ([]*ExternalChi
 			return nil, err
 		}
 	}
+	db = db.Where(&ormObj)
 	db = db.Order("id")
 	ormResponse := []ExternalChildORM{}
 	if err := db.Find(&ormResponse).Error; err != nil {

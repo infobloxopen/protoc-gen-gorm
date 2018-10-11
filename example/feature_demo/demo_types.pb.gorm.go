@@ -954,6 +954,7 @@ func DefaultListTestTypes(ctx context.Context, db *gorm1.DB) ([]*TestTypes, erro
 			return nil, err
 		}
 	}
+	db = db.Where(&ormObj)
 	ormResponse := []TestTypesORM{}
 	if err := db.Find(&ormResponse).Error; err != nil {
 		return nil, err
@@ -1373,6 +1374,7 @@ func DefaultListTypeWithID(ctx context.Context, db *gorm1.DB) ([]*TypeWithID, er
 			return nil, err
 		}
 	}
+	db = db.Where(&ormObj)
 	db = db.Order("id")
 	ormResponse := []TypeWithIDORM{}
 	if err := db.Find(&ormResponse).Error; err != nil {
@@ -1664,11 +1666,6 @@ func DefaultListMultiaccountTypeWithID(ctx context.Context, db *gorm1.DB) ([]*Mu
 	if err != nil {
 		return nil, err
 	}
-	accountID, err := auth1.GetAccountID(ctx, nil)
-	if err != nil {
-		return nil, err
-	}
-	db = db.Where(map[string]interface{}{"account_id": accountID})
 	if hook, ok := interface{}(&ormObj).(MultiaccountTypeWithIDORMWithBeforeListApplyQuery); ok {
 		if db, err = hook.BeforeListApplyQuery(ctx, db); err != nil {
 			return nil, err
@@ -1683,6 +1680,7 @@ func DefaultListMultiaccountTypeWithID(ctx context.Context, db *gorm1.DB) ([]*Mu
 			return nil, err
 		}
 	}
+	db = db.Where(&ormObj)
 	db = db.Order("id")
 	ormResponse := []MultiaccountTypeWithIDORM{}
 	if err := db.Find(&ormResponse).Error; err != nil {
@@ -1774,11 +1772,6 @@ func DefaultListMultiaccountTypeWithoutID(ctx context.Context, db *gorm1.DB) ([]
 	if err != nil {
 		return nil, err
 	}
-	accountID, err := auth1.GetAccountID(ctx, nil)
-	if err != nil {
-		return nil, err
-	}
-	db = db.Where(map[string]interface{}{"account_id": accountID})
 	if hook, ok := interface{}(&ormObj).(MultiaccountTypeWithoutIDORMWithBeforeListApplyQuery); ok {
 		if db, err = hook.BeforeListApplyQuery(ctx, db); err != nil {
 			return nil, err
@@ -1793,6 +1786,7 @@ func DefaultListMultiaccountTypeWithoutID(ctx context.Context, db *gorm1.DB) ([]
 			return nil, err
 		}
 	}
+	db = db.Where(&ormObj)
 	ormResponse := []MultiaccountTypeWithoutIDORM{}
 	if err := db.Find(&ormResponse).Error; err != nil {
 		return nil, err
@@ -2119,6 +2113,7 @@ func DefaultListPrimaryUUIDType(ctx context.Context, db *gorm1.DB) ([]*PrimaryUU
 			return nil, err
 		}
 	}
+	db = db.Where(&ormObj)
 	db = db.Order("id")
 	ormResponse := []PrimaryUUIDTypeORM{}
 	if err := db.Find(&ormResponse).Error; err != nil {
@@ -2446,6 +2441,7 @@ func DefaultListPrimaryStringType(ctx context.Context, db *gorm1.DB) ([]*Primary
 			return nil, err
 		}
 	}
+	db = db.Where(&ormObj)
 	db = db.Order("id")
 	ormResponse := []PrimaryStringTypeORM{}
 	if err := db.Find(&ormResponse).Error; err != nil {
@@ -2773,6 +2769,7 @@ func DefaultListTestTag(ctx context.Context, db *gorm1.DB) ([]*TestTag, error) {
 			return nil, err
 		}
 	}
+	db = db.Where(&ormObj)
 	db = db.Order("id")
 	ormResponse := []TestTagORM{}
 	if err := db.Find(&ormResponse).Error; err != nil {
@@ -2878,6 +2875,7 @@ func DefaultListTestTagAssociation(ctx context.Context, db *gorm1.DB) ([]*TestTa
 			return nil, err
 		}
 	}
+	db = db.Where(&ormObj)
 	ormResponse := []TestTagAssociationORM{}
 	if err := db.Find(&ormResponse).Error; err != nil {
 		return nil, err
@@ -3000,6 +2998,7 @@ func DefaultListPrimaryIncluded(ctx context.Context, db *gorm1.DB) ([]*PrimaryIn
 			return nil, err
 		}
 	}
+	db = db.Where(&ormObj)
 	db = db.Order("id")
 	ormResponse := []PrimaryIncludedORM{}
 	if err := db.Find(&ormResponse).Error; err != nil {
