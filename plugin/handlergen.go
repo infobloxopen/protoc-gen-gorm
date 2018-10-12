@@ -28,6 +28,14 @@ func (p *OrmPlugin) generateDefaultHandlers(file *generator.FileDescriptor) {
 	}
 }
 
+func (p *OrmPlugin) generateAccountIdWhereClause() {
+	p.P(`accountID, err := `, p.Import(authImport), `.GetAccountID(ctx, nil)`)
+	p.P(`if err != nil {`)
+	p.P(`return nil, err`)
+	p.P(`}`)
+	p.P(`db = db.Where(map[string]interface{}{"account_id": accountID})`)
+}
+
 func (p *OrmPlugin) generateBeforeHookDef(orm *OrmableType, method string) {
 	p.P(`type `, orm.Name, `WithBefore`, method, ` interface {`)
 	p.P(`Before`, method, `(context.Context, *`, p.Import(gormImport), `.DB) (*`, p.Import(gormImport), `.DB, error)`)
@@ -101,7 +109,6 @@ func (p *OrmPlugin) generateReadHandler(message *generator.Descriptor) {
 	p.P(`if err != nil {`)
 	p.P(`return nil, err`)
 	p.P(`}`)
-
 	k, f := p.findPrimaryKey(ormable)
 	if strings.Contains(f.Type, "*") {
 		p.P(`if ormObj.`, k, ` == nil || *ormObj.`, k, ` == `, p.guessZeroValue(f.Type), ` {`)
@@ -304,7 +311,7 @@ func (p *OrmPlugin) generatePatchHandler(message *generator.Descriptor) {
 	typeName := p.TypeName(message)
 	ormable := p.getOrmable(typeName)
 
-	if opts := getMessageOptions(message); opts != nil && opts.GetMultiAccount() {
+	if getMessageOptions(message).GetMultiAccount() {
 		isMultiAccount = true
 	}
 
@@ -604,8 +611,10 @@ func (p *OrmPlugin) generateStrictUpdateHandler(message *generator.Descriptor) {
 	p.P(`if err != nil {`)
 	p.P(`return nil, err`)
 	p.P(`}`)
-
-	p.P(`count := 1`)
+	if getMessageOptions(message).GetMultiAccount() {
+		p.generateAccountIdWhereClause()
+	}
+	p.P(`var count int64`)
 	// add default ordering by primary key
 	ormable := p.getOrmable(typeName)
 	if p.hasPrimaryKey(ormable) {
@@ -614,17 +623,12 @@ func (p *OrmPlugin) generateStrictUpdateHandler(message *generator.Descriptor) {
 		if len(column) == 0 {
 			column = jgorm.ToDBName(pkName)
 		}
-		p.P(`err = db.Model(&ormObj).Where("`, column, `=?", ormObj.`, pkName, `).Count(&count).Error`)
-		p.P(`if err != nil {`)
-		p.P(`return nil, err`)
-		p.P(`}`)
+		p.P(`lockedRow := &`, typeName, `ORM{}`)
+		p.P(`count = db.Model(&ormObj).Set("gorm:query_option", "FOR UPDATE").Where("`, column, `=?", ormObj.`, pkName, `).First(lockedRow).RowsAffected`)
 	}
 	p.generateBeforeHookCall(ormable, "StrictUpdateCleanup")
 	p.removeChildAssociations(message)
 	p.generateBeforeHookCall(ormable, "StrictUpdateSave")
-	if getMessageOptions(message).GetMultiAccount() {
-		p.P(`db = db.Where(&`, typeName, `ORM{AccountID: ormObj.AccountID})`)
-	}
 	p.P(`if err = db.Save(&ormObj).Error; err != nil {`)
 	p.P(`return nil, err`)
 	p.P(`}`)
@@ -697,9 +701,6 @@ func (p *OrmPlugin) removeChildAssociationsByName(message *generator.Descriptor,
 			ormDesc = "*" + ormDesc
 		}
 		p.P(filterDesc, " = ", ormDesc)
-		if _, ok := assocOrmable.Fields["AccountID"]; ok {
-			p.P(`filter`, fieldName, `.AccountID = ormObj.AccountID`)
-		}
 		p.P(`if err = db.Where(filter`, fieldName, `).Delete(`, strings.Trim(field.Type, "[]*"), `{}).Error; err != nil {`)
 		p.P(`return nil, err`)
 		p.P(`}`)

@@ -349,11 +349,9 @@ func DefaultStrictUpdateIntPoint(ctx context.Context, in *IntPoint, db *gorm1.DB
 	if err != nil {
 		return nil, err
 	}
-	count := 1
-	err = db.Model(&ormObj).Where("id=?", ormObj.Id).Count(&count).Error
-	if err != nil {
-		return nil, err
-	}
+	var count int64
+	lockedRow := &IntPointORM{}
+	count = db.Model(&ormObj).Set("gorm:query_option", "FOR UPDATE").Where("id=?", ormObj.Id).First(lockedRow).RowsAffected
 	if hook, ok := interface{}(&ormObj).(IntPointORMWithBeforeStrictUpdateCleanup); ok {
 		if db, err = hook.BeforeStrictUpdateCleanup(ctx, db); err != nil {
 			return nil, err

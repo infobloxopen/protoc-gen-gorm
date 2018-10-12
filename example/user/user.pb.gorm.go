@@ -970,11 +970,14 @@ func DefaultStrictUpdateUser(ctx context.Context, in *User, db *gorm1.DB) (*User
 	if err != nil {
 		return nil, err
 	}
-	count := 1
-	err = db.Model(&ormObj).Where("id=?", ormObj.Id).Count(&count).Error
+	accountID, err := auth1.GetAccountID(ctx, nil)
 	if err != nil {
 		return nil, err
 	}
+	db = db.Where(map[string]interface{}{"account_id": accountID})
+	var count int64
+	lockedRow := &UserORM{}
+	count = db.Model(&ormObj).Set("gorm:query_option", "FOR UPDATE").Where("id=?", ormObj.Id).First(lockedRow).RowsAffected
 	if hook, ok := interface{}(&ormObj).(UserORMWithBeforeStrictUpdateCleanup); ok {
 		if db, err = hook.BeforeStrictUpdateCleanup(ctx, db); err != nil {
 			return nil, err
@@ -986,7 +989,6 @@ func DefaultStrictUpdateUser(ctx context.Context, in *User, db *gorm1.DB) (*User
 	}
 	filterCreditCard.UserId = new(string)
 	*filterCreditCard.UserId = ormObj.Id
-	filterCreditCard.AccountID = ormObj.AccountID
 	if err = db.Where(filterCreditCard).Delete(CreditCardORM{}).Error; err != nil {
 		return nil, err
 	}
@@ -996,7 +998,6 @@ func DefaultStrictUpdateUser(ctx context.Context, in *User, db *gorm1.DB) (*User
 	}
 	filterEmails.UserId = new(string)
 	*filterEmails.UserId = ormObj.Id
-	filterEmails.AccountID = ormObj.AccountID
 	if err = db.Where(filterEmails).Delete(EmailORM{}).Error; err != nil {
 		return nil, err
 	}
@@ -1005,7 +1006,6 @@ func DefaultStrictUpdateUser(ctx context.Context, in *User, db *gorm1.DB) (*User
 		return nil, errors.New("Can't do overwriting update with no Id value for UserORM")
 	}
 	filterTasks.UserId = ormObj.Id
-	filterTasks.AccountID = ormObj.AccountID
 	if err = db.Where(filterTasks).Delete(TaskORM{}).Error; err != nil {
 		return nil, err
 	}
@@ -1014,7 +1014,6 @@ func DefaultStrictUpdateUser(ctx context.Context, in *User, db *gorm1.DB) (*User
 			return nil, err
 		}
 	}
-	db = db.Where(&UserORM{AccountID: ormObj.AccountID})
 	if err = db.Save(&ormObj).Error; err != nil {
 		return nil, err
 	}
@@ -1404,11 +1403,14 @@ func DefaultStrictUpdateEmail(ctx context.Context, in *Email, db *gorm1.DB) (*Em
 	if err != nil {
 		return nil, err
 	}
-	count := 1
-	err = db.Model(&ormObj).Where("id=?", ormObj.Id).Count(&count).Error
+	accountID, err := auth1.GetAccountID(ctx, nil)
 	if err != nil {
 		return nil, err
 	}
+	db = db.Where(map[string]interface{}{"account_id": accountID})
+	var count int64
+	lockedRow := &EmailORM{}
+	count = db.Model(&ormObj).Set("gorm:query_option", "FOR UPDATE").Where("id=?", ormObj.Id).First(lockedRow).RowsAffected
 	if hook, ok := interface{}(&ormObj).(EmailORMWithBeforeStrictUpdateCleanup); ok {
 		if db, err = hook.BeforeStrictUpdateCleanup(ctx, db); err != nil {
 			return nil, err
@@ -1419,7 +1421,6 @@ func DefaultStrictUpdateEmail(ctx context.Context, in *Email, db *gorm1.DB) (*Em
 			return nil, err
 		}
 	}
-	db = db.Where(&EmailORM{AccountID: ormObj.AccountID})
 	if err = db.Save(&ormObj).Error; err != nil {
 		return nil, err
 	}
@@ -1715,11 +1716,14 @@ func DefaultStrictUpdateAddress(ctx context.Context, in *Address, db *gorm1.DB) 
 	if err != nil {
 		return nil, err
 	}
-	count := 1
-	err = db.Model(&ormObj).Where("id=?", ormObj.Id).Count(&count).Error
+	accountID, err := auth1.GetAccountID(ctx, nil)
 	if err != nil {
 		return nil, err
 	}
+	db = db.Where(map[string]interface{}{"account_id": accountID})
+	var count int64
+	lockedRow := &AddressORM{}
+	count = db.Model(&ormObj).Set("gorm:query_option", "FOR UPDATE").Where("id=?", ormObj.Id).First(lockedRow).RowsAffected
 	if hook, ok := interface{}(&ormObj).(AddressORMWithBeforeStrictUpdateCleanup); ok {
 		if db, err = hook.BeforeStrictUpdateCleanup(ctx, db); err != nil {
 			return nil, err
@@ -1730,7 +1734,6 @@ func DefaultStrictUpdateAddress(ctx context.Context, in *Address, db *gorm1.DB) 
 			return nil, err
 		}
 	}
-	db = db.Where(&AddressORM{AccountID: ormObj.AccountID})
 	if err = db.Save(&ormObj).Error; err != nil {
 		return nil, err
 	}
@@ -2030,11 +2033,14 @@ func DefaultStrictUpdateLanguage(ctx context.Context, in *Language, db *gorm1.DB
 	if err != nil {
 		return nil, err
 	}
-	count := 1
-	err = db.Model(&ormObj).Where("id=?", ormObj.Id).Count(&count).Error
+	accountID, err := auth1.GetAccountID(ctx, nil)
 	if err != nil {
 		return nil, err
 	}
+	db = db.Where(map[string]interface{}{"account_id": accountID})
+	var count int64
+	lockedRow := &LanguageORM{}
+	count = db.Model(&ormObj).Set("gorm:query_option", "FOR UPDATE").Where("id=?", ormObj.Id).First(lockedRow).RowsAffected
 	if hook, ok := interface{}(&ormObj).(LanguageORMWithBeforeStrictUpdateCleanup); ok {
 		if db, err = hook.BeforeStrictUpdateCleanup(ctx, db); err != nil {
 			return nil, err
@@ -2045,7 +2051,6 @@ func DefaultStrictUpdateLanguage(ctx context.Context, in *Language, db *gorm1.DB
 			return nil, err
 		}
 	}
-	db = db.Where(&LanguageORM{AccountID: ormObj.AccountID})
 	if err = db.Save(&ormObj).Error; err != nil {
 		return nil, err
 	}
@@ -2337,11 +2342,14 @@ func DefaultStrictUpdateCreditCard(ctx context.Context, in *CreditCard, db *gorm
 	if err != nil {
 		return nil, err
 	}
-	count := 1
-	err = db.Model(&ormObj).Where("id=?", ormObj.Id).Count(&count).Error
+	accountID, err := auth1.GetAccountID(ctx, nil)
 	if err != nil {
 		return nil, err
 	}
+	db = db.Where(map[string]interface{}{"account_id": accountID})
+	var count int64
+	lockedRow := &CreditCardORM{}
+	count = db.Model(&ormObj).Set("gorm:query_option", "FOR UPDATE").Where("id=?", ormObj.Id).First(lockedRow).RowsAffected
 	if hook, ok := interface{}(&ormObj).(CreditCardORMWithBeforeStrictUpdateCleanup); ok {
 		if db, err = hook.BeforeStrictUpdateCleanup(ctx, db); err != nil {
 			return nil, err
@@ -2352,7 +2360,6 @@ func DefaultStrictUpdateCreditCard(ctx context.Context, in *CreditCard, db *gorm
 			return nil, err
 		}
 	}
-	db = db.Where(&CreditCardORM{AccountID: ormObj.AccountID})
 	if err = db.Save(&ormObj).Error; err != nil {
 		return nil, err
 	}
