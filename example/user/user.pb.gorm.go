@@ -961,6 +961,53 @@ type UserORMWithAfterDelete interface {
 	AfterDelete(context.Context, *gorm1.DB) error
 }
 
+func DefaultDeleteUserSet(ctx context.Context, in []*User, db *gorm1.DB) error {
+	if in == nil {
+		return errors.New("Nil argument to DefaultDeleteUserSet")
+	}
+	keys := []string{}
+	for _, obj := range in {
+		ormObj, err := obj.ToORM(ctx)
+		if err != nil {
+			return err
+		}
+		if hook, ok := interface{}(&ormObj).(UserORMWithBeforeDeleteSet); ok {
+			if db, err = hook.BeforeDeleteSet(ctx, db); err != nil {
+				return err
+			}
+		}
+		if ormObj.Id == "" {
+			return errors.New("A non-zero ID value is required for a delete call")
+		}
+		keys = append(keys, ormObj.Id)
+	}
+	acctId, err := auth1.GetAccountID(ctx, nil)
+	if err != nil {
+		return err
+	}
+	err = db.Where("account_id = ? AND Id in (?)", acctId, keys).Delete(&UserORM{}).Error
+	if err != nil {
+		return err
+	}
+	for _, obj := range in {
+		ormObj, err := obj.ToORM(ctx)
+		if err != nil {
+			return err
+		}
+		if hook, ok := interface{}(&ormObj).(UserORMWithAfterDeleteSet); ok {
+			err = hook.AfterDeleteSet(ctx, db)
+		}
+	}
+	return err
+}
+
+type UserORMWithBeforeDeleteSet interface {
+	BeforeDeleteSet(context.Context, *gorm1.DB) (*gorm1.DB, error)
+}
+type UserORMWithAfterDeleteSet interface {
+	AfterDeleteSet(context.Context, *gorm1.DB) error
+}
+
 // DefaultStrictUpdateUser clears first level 1:many children and then executes a gorm update call
 func DefaultStrictUpdateUser(ctx context.Context, in *User, db *gorm1.DB) (*User, error) {
 	if in == nil {
@@ -1394,6 +1441,53 @@ type EmailORMWithAfterDelete interface {
 	AfterDelete(context.Context, *gorm1.DB) error
 }
 
+func DefaultDeleteEmailSet(ctx context.Context, in []*Email, db *gorm1.DB) error {
+	if in == nil {
+		return errors.New("Nil argument to DefaultDeleteEmailSet")
+	}
+	keys := []string{}
+	for _, obj := range in {
+		ormObj, err := obj.ToORM(ctx)
+		if err != nil {
+			return err
+		}
+		if hook, ok := interface{}(&ormObj).(EmailORMWithBeforeDeleteSet); ok {
+			if db, err = hook.BeforeDeleteSet(ctx, db); err != nil {
+				return err
+			}
+		}
+		if ormObj.Id == "" {
+			return errors.New("A non-zero ID value is required for a delete call")
+		}
+		keys = append(keys, ormObj.Id)
+	}
+	acctId, err := auth1.GetAccountID(ctx, nil)
+	if err != nil {
+		return err
+	}
+	err = db.Where("account_id = ? AND Id in (?)", acctId, keys).Delete(&EmailORM{}).Error
+	if err != nil {
+		return err
+	}
+	for _, obj := range in {
+		ormObj, err := obj.ToORM(ctx)
+		if err != nil {
+			return err
+		}
+		if hook, ok := interface{}(&ormObj).(EmailORMWithAfterDeleteSet); ok {
+			err = hook.AfterDeleteSet(ctx, db)
+		}
+	}
+	return err
+}
+
+type EmailORMWithBeforeDeleteSet interface {
+	BeforeDeleteSet(context.Context, *gorm1.DB) (*gorm1.DB, error)
+}
+type EmailORMWithAfterDeleteSet interface {
+	AfterDeleteSet(context.Context, *gorm1.DB) error
+}
+
 // DefaultStrictUpdateEmail clears first level 1:many children and then executes a gorm update call
 func DefaultStrictUpdateEmail(ctx context.Context, in *Email, db *gorm1.DB) (*Email, error) {
 	if in == nil {
@@ -1705,6 +1799,53 @@ type AddressORMWithBeforeDelete interface {
 }
 type AddressORMWithAfterDelete interface {
 	AfterDelete(context.Context, *gorm1.DB) error
+}
+
+func DefaultDeleteAddressSet(ctx context.Context, in []*Address, db *gorm1.DB) error {
+	if in == nil {
+		return errors.New("Nil argument to DefaultDeleteAddressSet")
+	}
+	keys := []int64{}
+	for _, obj := range in {
+		ormObj, err := obj.ToORM(ctx)
+		if err != nil {
+			return err
+		}
+		if hook, ok := interface{}(&ormObj).(AddressORMWithBeforeDeleteSet); ok {
+			if db, err = hook.BeforeDeleteSet(ctx, db); err != nil {
+				return err
+			}
+		}
+		if ormObj.Id == 0 {
+			return errors.New("A non-zero ID value is required for a delete call")
+		}
+		keys = append(keys, ormObj.Id)
+	}
+	acctId, err := auth1.GetAccountID(ctx, nil)
+	if err != nil {
+		return err
+	}
+	err = db.Where("account_id = ? AND Id in (?)", acctId, keys).Delete(&AddressORM{}).Error
+	if err != nil {
+		return err
+	}
+	for _, obj := range in {
+		ormObj, err := obj.ToORM(ctx)
+		if err != nil {
+			return err
+		}
+		if hook, ok := interface{}(&ormObj).(AddressORMWithAfterDeleteSet); ok {
+			err = hook.AfterDeleteSet(ctx, db)
+		}
+	}
+	return err
+}
+
+type AddressORMWithBeforeDeleteSet interface {
+	BeforeDeleteSet(context.Context, *gorm1.DB) (*gorm1.DB, error)
+}
+type AddressORMWithAfterDeleteSet interface {
+	AfterDeleteSet(context.Context, *gorm1.DB) error
 }
 
 // DefaultStrictUpdateAddress clears first level 1:many children and then executes a gorm update call
@@ -2024,6 +2165,53 @@ type LanguageORMWithAfterDelete interface {
 	AfterDelete(context.Context, *gorm1.DB) error
 }
 
+func DefaultDeleteLanguageSet(ctx context.Context, in []*Language, db *gorm1.DB) error {
+	if in == nil {
+		return errors.New("Nil argument to DefaultDeleteLanguageSet")
+	}
+	keys := []int64{}
+	for _, obj := range in {
+		ormObj, err := obj.ToORM(ctx)
+		if err != nil {
+			return err
+		}
+		if hook, ok := interface{}(&ormObj).(LanguageORMWithBeforeDeleteSet); ok {
+			if db, err = hook.BeforeDeleteSet(ctx, db); err != nil {
+				return err
+			}
+		}
+		if ormObj.Id == 0 {
+			return errors.New("A non-zero ID value is required for a delete call")
+		}
+		keys = append(keys, ormObj.Id)
+	}
+	acctId, err := auth1.GetAccountID(ctx, nil)
+	if err != nil {
+		return err
+	}
+	err = db.Where("account_id = ? AND Id in (?)", acctId, keys).Delete(&LanguageORM{}).Error
+	if err != nil {
+		return err
+	}
+	for _, obj := range in {
+		ormObj, err := obj.ToORM(ctx)
+		if err != nil {
+			return err
+		}
+		if hook, ok := interface{}(&ormObj).(LanguageORMWithAfterDeleteSet); ok {
+			err = hook.AfterDeleteSet(ctx, db)
+		}
+	}
+	return err
+}
+
+type LanguageORMWithBeforeDeleteSet interface {
+	BeforeDeleteSet(context.Context, *gorm1.DB) (*gorm1.DB, error)
+}
+type LanguageORMWithAfterDeleteSet interface {
+	AfterDeleteSet(context.Context, *gorm1.DB) error
+}
+
 // DefaultStrictUpdateLanguage clears first level 1:many children and then executes a gorm update call
 func DefaultStrictUpdateLanguage(ctx context.Context, in *Language, db *gorm1.DB) (*Language, error) {
 	if in == nil {
@@ -2331,6 +2519,53 @@ type CreditCardORMWithBeforeDelete interface {
 }
 type CreditCardORMWithAfterDelete interface {
 	AfterDelete(context.Context, *gorm1.DB) error
+}
+
+func DefaultDeleteCreditCardSet(ctx context.Context, in []*CreditCard, db *gorm1.DB) error {
+	if in == nil {
+		return errors.New("Nil argument to DefaultDeleteCreditCardSet")
+	}
+	keys := []int64{}
+	for _, obj := range in {
+		ormObj, err := obj.ToORM(ctx)
+		if err != nil {
+			return err
+		}
+		if hook, ok := interface{}(&ormObj).(CreditCardORMWithBeforeDeleteSet); ok {
+			if db, err = hook.BeforeDeleteSet(ctx, db); err != nil {
+				return err
+			}
+		}
+		if ormObj.Id == 0 {
+			return errors.New("A non-zero ID value is required for a delete call")
+		}
+		keys = append(keys, ormObj.Id)
+	}
+	acctId, err := auth1.GetAccountID(ctx, nil)
+	if err != nil {
+		return err
+	}
+	err = db.Where("account_id = ? AND Id in (?)", acctId, keys).Delete(&CreditCardORM{}).Error
+	if err != nil {
+		return err
+	}
+	for _, obj := range in {
+		ormObj, err := obj.ToORM(ctx)
+		if err != nil {
+			return err
+		}
+		if hook, ok := interface{}(&ormObj).(CreditCardORMWithAfterDeleteSet); ok {
+			err = hook.AfterDeleteSet(ctx, db)
+		}
+	}
+	return err
+}
+
+type CreditCardORMWithBeforeDeleteSet interface {
+	BeforeDeleteSet(context.Context, *gorm1.DB) (*gorm1.DB, error)
+}
+type CreditCardORMWithAfterDeleteSet interface {
+	AfterDeleteSet(context.Context, *gorm1.DB) error
 }
 
 // DefaultStrictUpdateCreditCard clears first level 1:many children and then executes a gorm update call

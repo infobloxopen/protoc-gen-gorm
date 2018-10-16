@@ -19,6 +19,7 @@ func (p *OrmPlugin) generateDefaultHandlers(file *generator.FileDescriptor) {
 			if p.hasPrimaryKey(p.getOrmable(p.TypeName(message))) && p.hasIDField(message) {
 				p.generateReadHandler(message)
 				p.generateDeleteHandler(message)
+				p.generateDeleteSetHandler(message)
 				p.generateStrictUpdateHandler(message)
 				p.generatePatchHandler(message)
 			}
@@ -436,6 +437,70 @@ func (p *OrmPlugin) generateBeforeDeleteHookCall(orm *OrmableType) {
 func (p *OrmPlugin) generateAfterDeleteHookCall(orm *OrmableType) {
 	p.P(`if hook, ok := interface{}(&ormObj).(`, orm.Name, `WithAfterDelete); ok {`)
 	p.P(`err = hook.AfterDelete(ctx, db)`)
+	p.P(`}`)
+}
+
+func (p *OrmPlugin) generateDeleteSetHandler(message *generator.Descriptor) {
+	typeName := p.TypeName(message)
+	p.P(`func DefaultDelete`, typeName, `Set(ctx context.Context, in []*`,
+		typeName, `, db *`, p.Import(gormImport), `.DB) error {`)
+	p.P(`if in == nil {`)
+	p.P(`return errors.New("Nil argument to DefaultDelete`, typeName, `Set")`)
+	p.P(`}`)
+	ormable := p.getOrmable(typeName)
+	pkName, pk := p.findPrimaryKey(ormable)
+	p.P(`keys := []`, pk.Type, `{}`)
+	p.P(`for _, obj := range in {`)
+	p.P(`ormObj, err := obj.ToORM(ctx)`)
+	p.P(`if err != nil {`)
+	p.P(`return err`)
+	p.P(`}`)
+	p.generateBeforeDeleteSetHookCall(ormable)
+	if strings.Contains(pk.Type, "*") {
+		p.P(`if ormObj.`, pkName, ` == nil || *ormObj.`, pkName, ` == `, p.guessZeroValue(pk.Type), ` {`)
+	} else {
+		p.P(`if ormObj.`, pkName, ` == `, p.guessZeroValue(pk.Type), `{`)
+	}
+	p.P(`return errors.New("A non-zero ID value is required for a delete call")`)
+	p.P(`}`)
+	p.P(`keys = append(keys, ormObj.`, pkName, `)`)
+	p.P(`}`)
+	if getMessageOptions(message).GetMultiAccount() {
+		p.P(`acctId, err := `, p.Import(authImport), `.GetAccountID(ctx, nil)`)
+		p.P(`if err != nil {`)
+		p.P(`return err`)
+		p.P(`}`)
+		p.P(`err = db.Where("account_id = ? AND `, pkName, ` in (?)", acctId, keys).Delete(&`, ormable.Name, `{}).Error`)
+	} else {
+		p.P(`err := db.Where("`, pkName, ` in (?)", keys).Delete(&`, ormable.Name, `{}).Error`)
+	}
+	p.P(`if err != nil {`)
+	p.P(`return err`)
+	p.P(`}`)
+	p.P(`for _, obj := range in {`)
+	p.P(`ormObj, err := obj.ToORM(ctx)`)
+	p.P(`if err != nil {`)
+	p.P(`return err`)
+	p.P(`}`)
+	p.generateAfterDeleteSetHookCall(ormable)
+	p.P(`}`)
+	p.P(`return err`)
+	p.P(`}`)
+	p.generateBeforeHookDef(ormable, "DeleteSet")
+	p.generateAfterHookDef(ormable, "DeleteSet")
+}
+
+func (p *OrmPlugin) generateBeforeDeleteSetHookCall(orm *OrmableType) {
+	p.P(`if hook, ok := interface{}(&ormObj).(`, orm.Name, `WithBeforeDeleteSet); ok {`)
+	p.P(`if db, err = hook.BeforeDeleteSet(ctx, db); err != nil {`)
+	p.P(`return err`)
+	p.P(`}`)
+	p.P(`}`)
+}
+
+func (p *OrmPlugin) generateAfterDeleteSetHookCall(orm *OrmableType) {
+	p.P(`if hook, ok := interface{}(&ormObj).(`, orm.Name, `WithAfterDeleteSet); ok {`)
+	p.P(`err = hook.AfterDeleteSet(ctx, db)`)
 	p.P(`}`)
 }
 

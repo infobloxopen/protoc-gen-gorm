@@ -34,9 +34,6 @@ It has these top-level messages:
 	ListSomethingResponse
 	Something
 	ListIntPointRequest
-	Circle
-	ListCircleRequest
-	ListCircleResponse
 */
 package example
 
@@ -237,6 +234,49 @@ type ExternalChildORMWithBeforeDelete interface {
 }
 type ExternalChildORMWithAfterDelete interface {
 	AfterDelete(context.Context, *gorm1.DB) error
+}
+
+func DefaultDeleteExternalChildSet(ctx context.Context, in []*ExternalChild, db *gorm1.DB) error {
+	if in == nil {
+		return errors.New("Nil argument to DefaultDeleteExternalChildSet")
+	}
+	keys := []string{}
+	for _, obj := range in {
+		ormObj, err := obj.ToORM(ctx)
+		if err != nil {
+			return err
+		}
+		if hook, ok := interface{}(&ormObj).(ExternalChildORMWithBeforeDeleteSet); ok {
+			if db, err = hook.BeforeDeleteSet(ctx, db); err != nil {
+				return err
+			}
+		}
+		if ormObj.Id == "" {
+			return errors.New("A non-zero ID value is required for a delete call")
+		}
+		keys = append(keys, ormObj.Id)
+	}
+	err := db.Where("Id in (?)", keys).Delete(&ExternalChildORM{}).Error
+	if err != nil {
+		return err
+	}
+	for _, obj := range in {
+		ormObj, err := obj.ToORM(ctx)
+		if err != nil {
+			return err
+		}
+		if hook, ok := interface{}(&ormObj).(ExternalChildORMWithAfterDeleteSet); ok {
+			err = hook.AfterDeleteSet(ctx, db)
+		}
+	}
+	return err
+}
+
+type ExternalChildORMWithBeforeDeleteSet interface {
+	BeforeDeleteSet(context.Context, *gorm1.DB) (*gorm1.DB, error)
+}
+type ExternalChildORMWithAfterDeleteSet interface {
+	AfterDeleteSet(context.Context, *gorm1.DB) error
 }
 
 // DefaultStrictUpdateExternalChild clears first level 1:many children and then executes a gorm update call

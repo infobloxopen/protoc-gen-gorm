@@ -10,11 +10,12 @@ import (
 )
 
 const (
-	createService = "Create"
-	readService   = "Read"
-	updateService = "Update"
-	deleteService = "Delete"
-	listService   = "List"
+	createService    = "Create"
+	readService      = "Read"
+	updateService    = "Update"
+	deleteService    = "Delete"
+	deleteSetService = "DeleteSet"
+	listService      = "List"
 )
 
 type autogenService struct {
@@ -68,6 +69,9 @@ func (p *OrmPlugin) parseServices(file *generator.FileDescriptor) {
 			} else if methodName == deleteService {
 				verb = deleteService
 				follows, baseType = p.followsDeleteConventions(inType, outType, method)
+			} else if methodName == deleteSetService {
+				verb = deleteSetService
+				follows, baseType = p.followsDeleteSetConventions(inType, outType, method)
 			} else if methodName == listService {
 				verb = listService
 				follows, baseType = p.followsListConventions(inType, outType, methodName)
@@ -114,6 +118,8 @@ func (p *OrmPlugin) generateDefaultServer(file *generator.FileDescriptor) {
 				p.generateUpdateServerMethod(service, method)
 			case deleteService:
 				p.generateDeleteServerMethod(service, method)
+			case deleteSetService:
+				p.generateDeleteSetServerMethod(service, method)
 			case listService:
 				p.generateListServerMethod(service, method)
 			default:
@@ -345,6 +351,60 @@ func (p *OrmPlugin) followsDeleteConventions(inType generator.Object, outType ge
 	}
 	if !hasID {
 		p.warning(`stub will be generated for %s since %s incoming message doesn't have "id" field`, methodName, p.TypeName(inType))
+		return false, ""
+	}
+	typeName := generator.CamelCase(getMethodOptions(method).GetObjectType())
+	if typeName == "" {
+		p.warning(`stub will be generated for %s since (gorm.method).object_type option is not specified`, methodName)
+		return false, ""
+	}
+	if !p.isOrmable(typeName) {
+		p.warning(`stub will be generated for %s since %s is not an ormable type`, methodName, typeName)
+		return false, ""
+	}
+	if !p.hasPrimaryKey(p.getOrmable(typeName)) {
+		p.warning(`stub will be generated for %s since %s ormable type doesn't have a primary key`, methodName, typeName)
+		return false, ""
+	}
+	return true, typeName
+}
+
+func (p *OrmPlugin) generateDeleteSetServerMethod(service autogenService, method autogenMethod) {
+	p.generateMethodSignature(service, method)
+	if method.followsConvention {
+		typeName := method.baseType
+		p.generateDBSetup(service)
+		p.P(`objs := []*`, typeName, `{}`)
+		p.P(`for _, id := range in.Ids {`)
+		p.P(`objs = append(objs, &`, typeName, `{Id: id})`)
+		p.P(`}`)
+		p.generatePreserviceCall(service.ccName, method.baseType, method.ccName)
+		p.P(`err := DefaultDelete`, typeName, `Set(ctx, objs, db)`)
+		p.P(`if err != nil {`)
+		p.P(`return nil, err`)
+		p.P(`}`)
+		p.P(`out := &`, p.TypeName(method.outType), `{}`)
+		p.generatePostserviceCall(service.ccName, method.baseType, method.ccName)
+		p.P(`return out, nil`)
+		p.P(`}`)
+		p.generatePreserviceHook(service.ccName, method.baseType, method.ccName)
+		p.generatePostserviceHook(service.ccName, method.baseType, p.TypeName(method.outType), method.ccName)
+	} else {
+		p.generateEmptyBody(method.outType)
+	}
+}
+
+func (p *OrmPlugin) followsDeleteSetConventions(inType generator.Object, outType generator.Object, method *descriptor.MethodDescriptorProto) (bool, string) {
+	inMsg := inType.(*generator.Descriptor)
+	methodName := generator.CamelCase(method.GetName())
+	var hasIDs bool
+	for _, field := range inMsg.Field {
+		if field.GetName() == "ids" {
+			hasIDs = true
+		}
+	}
+	if !hasIDs {
+		p.warning(`stub will be generated for %s since %s incoming message doesn't have "ids" field`, methodName, p.TypeName(inType))
 		return false, ""
 	}
 	typeName := generator.CamelCase(getMethodOptions(method).GetObjectType())
