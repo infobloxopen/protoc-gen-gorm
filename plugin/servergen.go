@@ -399,7 +399,7 @@ func (p *OrmPlugin) followsDeleteSetConventions(inType generator.Object, outType
 	methodName := generator.CamelCase(method.GetName())
 	var hasIDs bool
 	for _, field := range inMsg.Field {
-		if field.GetName() == "ids" {
+		if field.GetName() == "ids" && field.IsRepeated() {
 			hasIDs = true
 		}
 	}
