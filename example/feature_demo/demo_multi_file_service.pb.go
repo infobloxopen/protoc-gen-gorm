@@ -27,8 +27,8 @@ const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 
 type ReadAccountRequest struct {
 	// For a read request, the id field is the only to be specified
-	Id                   uint64                `protobuf:"varint,1,opt,name=id" json:"id,omitempty"`
-	Fields               *query.FieldSelection `protobuf:"bytes,2,opt,name=fields" json:"fields,omitempty"`
+	Id                   uint64                `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	Fields               *query.FieldSelection `protobuf:"bytes,2,opt,name=fields,proto3" json:"fields,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}              `json:"-"`
 	XXX_unrecognized     []byte                `json:"-"`
 	XXX_sizecache        int32                 `json:"-"`
@@ -38,7 +38,7 @@ func (m *ReadAccountRequest) Reset()         { *m = ReadAccountRequest{} }
 func (m *ReadAccountRequest) String() string { return proto.CompactTextString(m) }
 func (*ReadAccountRequest) ProtoMessage()    {}
 func (*ReadAccountRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_demo_multi_file_service_75be9055ce928c9f, []int{0}
+	return fileDescriptor_demo_multi_file_service_dc819d729312aab3, []int{0}
 }
 func (m *ReadAccountRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ReadAccountRequest.Unmarshal(m, b)
@@ -73,7 +73,7 @@ func (m *ReadAccountRequest) GetFields() *query.FieldSelection {
 }
 
 type ReadBlogPostsResponse struct {
-	Posts                []*BlogPost `protobuf:"bytes,1,rep,name=posts" json:"posts,omitempty"`
+	Posts                []*BlogPost `protobuf:"bytes,1,rep,name=posts,proto3" json:"posts,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}    `json:"-"`
 	XXX_unrecognized     []byte      `json:"-"`
 	XXX_sizecache        int32       `json:"-"`
@@ -83,7 +83,7 @@ func (m *ReadBlogPostsResponse) Reset()         { *m = ReadBlogPostsResponse{} }
 func (m *ReadBlogPostsResponse) String() string { return proto.CompactTextString(m) }
 func (*ReadBlogPostsResponse) ProtoMessage()    {}
 func (*ReadBlogPostsResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_demo_multi_file_service_75be9055ce928c9f, []int{1}
+	return fileDescriptor_demo_multi_file_service_dc819d729312aab3, []int{1}
 }
 func (m *ReadBlogPostsResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ReadBlogPostsResponse.Unmarshal(m, b)
@@ -123,8 +123,9 @@ var _ grpc.ClientConn
 // is compatible with the grpc package it is being compiled against.
 const _ = grpc.SupportPackageIsVersion4
 
-// Client API for BlogPostService service
-
+// BlogPostServiceClient is the client API for BlogPostService service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type BlogPostServiceClient interface {
 	Read(ctx context.Context, in *ReadAccountRequest, opts ...grpc.CallOption) (*ReadBlogPostsResponse, error)
 }
@@ -139,15 +140,14 @@ func NewBlogPostServiceClient(cc *grpc.ClientConn) BlogPostServiceClient {
 
 func (c *blogPostServiceClient) Read(ctx context.Context, in *ReadAccountRequest, opts ...grpc.CallOption) (*ReadBlogPostsResponse, error) {
 	out := new(ReadBlogPostsResponse)
-	err := grpc.Invoke(ctx, "/example.BlogPostService/Read", in, out, c.cc, opts...)
+	err := c.cc.Invoke(ctx, "/example.BlogPostService/Read", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-// Server API for BlogPostService service
-
+// BlogPostServiceServer is the server API for BlogPostService service.
 type BlogPostServiceServer interface {
 	Read(context.Context, *ReadAccountRequest) (*ReadBlogPostsResponse, error)
 }
@@ -188,10 +188,10 @@ var _BlogPostService_serviceDesc = grpc.ServiceDesc{
 }
 
 func init() {
-	proto.RegisterFile("example/feature_demo/demo_multi_file_service.proto", fileDescriptor_demo_multi_file_service_75be9055ce928c9f)
+	proto.RegisterFile("example/feature_demo/demo_multi_file_service.proto", fileDescriptor_demo_multi_file_service_dc819d729312aab3)
 }
 
-var fileDescriptor_demo_multi_file_service_75be9055ce928c9f = []byte{
+var fileDescriptor_demo_multi_file_service_dc819d729312aab3 = []byte{
 	// 332 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x91, 0xcf, 0x4b, 0xc3, 0x30,
 	0x14, 0xc7, 0x69, 0x9d, 0x53, 0x32, 0x50, 0x2c, 0x08, 0xb3, 0x8a, 0x8c, 0x5d, 0x1c, 0x42, 0x1b,
