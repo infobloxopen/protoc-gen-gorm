@@ -986,7 +986,7 @@ func DefaultDeleteUserSet(ctx context.Context, in []*User, db *gorm1.DB) error {
 	if err != nil {
 		return err
 	}
-	err = db.Where("account_id = ? AND Id in (?)", acctId, keys).Delete(&UserORM{}).Error
+	err = db.Where("account_id = ? AND id in (?)", acctId, keys).Delete(&UserORM{}).Error
 	if err != nil {
 		return err
 	}
@@ -1461,7 +1461,7 @@ func DefaultDeleteEmailSet(ctx context.Context, in []*Email, db *gorm1.DB) error
 	if err != nil {
 		return err
 	}
-	err = db.Where("account_id = ? AND Id in (?)", acctId, keys).Delete(&EmailORM{}).Error
+	err = db.Where("account_id = ? AND id in (?)", acctId, keys).Delete(&EmailORM{}).Error
 	if err != nil {
 		return err
 	}
@@ -1816,7 +1816,7 @@ func DefaultDeleteAddressSet(ctx context.Context, in []*Address, db *gorm1.DB) e
 	if err != nil {
 		return err
 	}
-	err = db.Where("account_id = ? AND Id in (?)", acctId, keys).Delete(&AddressORM{}).Error
+	err = db.Where("account_id = ? AND id in (?)", acctId, keys).Delete(&AddressORM{}).Error
 	if err != nil {
 		return err
 	}
@@ -2175,7 +2175,7 @@ func DefaultDeleteLanguageSet(ctx context.Context, in []*Language, db *gorm1.DB)
 	if err != nil {
 		return err
 	}
-	err = db.Where("account_id = ? AND Id in (?)", acctId, keys).Delete(&LanguageORM{}).Error
+	err = db.Where("account_id = ? AND id in (?)", acctId, keys).Delete(&LanguageORM{}).Error
 	if err != nil {
 		return err
 	}
@@ -2526,7 +2526,7 @@ func DefaultDeleteCreditCardSet(ctx context.Context, in []*CreditCard, db *gorm1
 	if err != nil {
 		return err
 	}
-	err = db.Where("account_id = ? AND Id in (?)", acctId, keys).Delete(&CreditCardORM{}).Error
+	err = db.Where("account_id = ? AND id in (?)", acctId, keys).Delete(&CreditCardORM{}).Error
 	if err != nil {
 		return err
 	}

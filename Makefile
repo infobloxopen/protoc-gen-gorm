@@ -19,7 +19,7 @@ GENERATOR            := $(DOCKER_RUNNER) $(DOCKER_GENERATOR)
 GENGORM_IMAGE      := $(IMAGE_REGISTRY)/atlas-gentool
 GENGORM_DOCKERFILE := $(DOCKERFILE_PATH)/Dockerfile
 
-default: vendor options install
+default: vendor install
 
 .PHONY: vendor
 vendor:

@@ -1578,7 +1578,7 @@ func DefaultDeleteMultiaccountTypeWithIDSet(ctx context.Context, in []*Multiacco
 	if err != nil {
 		return err
 	}
-	err = db.Where("account_id = ? AND Id in (?)", acctId, keys).Delete(&MultiaccountTypeWithIDORM{}).Error
+	err = db.Where("account_id = ? AND id in (?)", acctId, keys).Delete(&MultiaccountTypeWithIDORM{}).Error
 	if err != nil {
 		return err
 	}

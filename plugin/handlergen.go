@@ -450,6 +450,10 @@ func (p *OrmPlugin) generateDeleteSetHandler(message *generator.Descriptor) {
 	p.P(`var err error`)
 	ormable := p.getOrmable(typeName)
 	pkName, pk := p.findPrimaryKey(ormable)
+	column := pk.GetTag().GetColumn()
+	if len(column) != 0 {
+		pkName = column
+	}
 	p.P(`keys := []`, pk.Type, `{}`)
 	p.P(`for _, obj := range in {`)
 	p.P(`ormObj, err := obj.ToORM(ctx)`)
@@ -471,7 +475,7 @@ func (p *OrmPlugin) generateDeleteSetHandler(message *generator.Descriptor) {
 		p.P(`if err != nil {`)
 		p.P(`return err`)
 		p.P(`}`)
-		p.P(`err = db.Where("account_id = ? AND `, pkName, ` in (?)", acctId, keys).Delete(&`, ormable.Name, `{}).Error`)
+		p.P(`err = db.Where("account_id = ? AND `, jgorm.ToDBName(pkName), ` in (?)", acctId, keys).Delete(&`, ormable.Name, `{}).Error`)
 	} else {
 		p.P(`err = db.Where("`, jgorm.ToDBName(pkName), ` in (?)", keys).Delete(&`, ormable.Name, `{}).Error`)
 	}
