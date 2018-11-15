@@ -496,6 +496,12 @@ func (p *OrmPlugin) generatePagedRequestHandling(pg string) {
 	p.P(fmt.Sprintf(`offset=in.Get%s().GetOffset()+size`, pg))
 	p.P(`}`)
 	p.P(fmt.Sprintf(`resPaging = &%s.PageInfo{Offset: offset}`, p.Import(queryImport)))
+	p.P(fmt.Sprintf(`} else if len(res) == %s.DefaultLimit {`, p.Import(queryImport)))
+	p.P(`var offset int32 = 0`)
+	p.P(fmt.Sprintf(`if in.Get%s() != nil {`,  pg))
+	p.P(fmt.Sprintf(`offset = in.Get%s().GetOffset()`, pg))
+	p.P(`}`)
+	p.P(fmt.Sprintf(`resPaging = &%s.PageInfo{Offset: offset + %s.DefaultLimit}`, p.Import(queryImport), p.Import(queryImport)))
 	p.P(`}`)
 }
 
