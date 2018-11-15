@@ -8,7 +8,6 @@ It is generated from these files:
 	example/feature_demo/demo_multi_file.proto
 	example/feature_demo/demo_types.proto
 	example/feature_demo/demo_service.proto
-	example/feature_demo/demo_multi_file_service.proto
 
 It has these top-level messages:
 	ExternalChild
@@ -39,8 +38,6 @@ It has these top-level messages:
 	Circle
 	ListCircleRequest
 	ListCircleResponse
-	ReadAccountRequest
-	ReadBlogPostsResponse
 */
 package example
 

@@ -872,6 +872,12 @@ func (m *IntPointServiceDefaultServer) List(ctx context.Context, in *ListIntPoin
 			offset = in.GetPaging().GetOffset() + size
 		}
 		resPaging = &query1.PageInfo{Offset: offset}
+	} else if len(res) == query1.DefaultLimit {
+		var offset int32 = 0
+		if in.GetPaging() != nil {
+			offset = in.GetPaging().GetOffset()
+		}
+		resPaging = &query1.PageInfo{Offset: offset + query1.DefaultLimit}
 	}
 	out := &ListIntPointResponse{Results: res, PageInfo: resPaging}
 	if custom, ok := interface{}(in).(IntPointServiceIntPointWithAfterList); ok {
@@ -1105,6 +1111,12 @@ func (m *IntPointTxnDefaultServer) List(ctx context.Context, in *ListIntPointReq
 			offset = in.GetPaging().GetOffset() + size
 		}
 		resPaging = &query1.PageInfo{Offset: offset}
+	} else if len(res) == query1.DefaultLimit {
+		var offset int32 = 0
+		if in.GetPaging() != nil {
+			offset = in.GetPaging().GetOffset()
+		}
+		resPaging = &query1.PageInfo{Offset: offset + query1.DefaultLimit}
 	}
 	out := &ListIntPointResponse{Results: res, PageInfo: resPaging}
 	if custom, ok := interface{}(in).(IntPointTxnIntPointWithAfterList); ok {
