@@ -57,6 +57,11 @@ message DeleteIntPointRequest {
     uint32 id = 1;
 }
 
+message DeleteIntPointsRequest {
+    // Only the id is needed for a delete request
+    repeated uint32 ids = 1;
+}
+
 // By convention, on DELETE no response data is given, so either a
 // google.protobuf.empty, or an empty struct is sufficient
 message DeleteIntPointResponse {
@@ -125,6 +130,11 @@ service IntPointTxn {
   rpc Update ( UpdateIntPointRequest ) returns ( UpdateIntPointResponse ) {}
   rpc List ( ListIntPointRequest ) returns ( ListIntPointResponse ) {}
   rpc Delete ( DeleteIntPointRequest ) returns  ( DeleteIntPointResponse ) {
+      // This option is required because the type/table can't be inferred
+      // by the return type
+      option (gorm.method).object_type = "int_point";
+  }
+  rpc DeleteSet ( DeleteIntPointsRequest ) returns  ( DeleteIntPointResponse ) {
       // This option is required because the type/table can't be inferred
       // by the return type
       option (gorm.method).object_type = "int_point";

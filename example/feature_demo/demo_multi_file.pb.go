@@ -20,7 +20,7 @@ var _ = math.Inf
 const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 
 type ExternalChild struct {
-	Id                   string   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Id                   string   `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -30,7 +30,7 @@ func (m *ExternalChild) Reset()         { *m = ExternalChild{} }
 func (m *ExternalChild) String() string { return proto.CompactTextString(m) }
 func (*ExternalChild) ProtoMessage()    {}
 func (*ExternalChild) Descriptor() ([]byte, []int) {
-	return fileDescriptor_demo_multi_file_0d05b182204ea955, []int{0}
+	return fileDescriptor_demo_multi_file_06cb680dddacbc7f, []int{0}
 }
 func (m *ExternalChild) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ExternalChild.Unmarshal(m, b)
@@ -58,9 +58,9 @@ func (m *ExternalChild) GetId() string {
 }
 
 type BlogPost struct {
-	Id                   uint64   `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
-	Title                string   `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
-	Author               string   `protobuf:"bytes,3,opt,name=author,proto3" json:"author,omitempty"`
+	Id                   uint64   `protobuf:"varint,1,opt,name=id" json:"id,omitempty"`
+	Title                string   `protobuf:"bytes,2,opt,name=title" json:"title,omitempty"`
+	Author               string   `protobuf:"bytes,3,opt,name=author" json:"author,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -70,7 +70,7 @@ func (m *BlogPost) Reset()         { *m = BlogPost{} }
 func (m *BlogPost) String() string { return proto.CompactTextString(m) }
 func (*BlogPost) ProtoMessage()    {}
 func (*BlogPost) Descriptor() ([]byte, []int) {
-	return fileDescriptor_demo_multi_file_0d05b182204ea955, []int{1}
+	return fileDescriptor_demo_multi_file_06cb680dddacbc7f, []int{1}
 }
 func (m *BlogPost) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_BlogPost.Unmarshal(m, b)
@@ -117,10 +117,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("example/feature_demo/demo_multi_file.proto", fileDescriptor_demo_multi_file_0d05b182204ea955)
+	proto.RegisterFile("example/feature_demo/demo_multi_file.proto", fileDescriptor_demo_multi_file_06cb680dddacbc7f)
 }
 
-var fileDescriptor_demo_multi_file_0d05b182204ea955 = []byte{
+var fileDescriptor_demo_multi_file_06cb680dddacbc7f = []byte{
 	// 227 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x90, 0x3d, 0x4b, 0xc4, 0x40,
 	0x10, 0x86, 0x49, 0xd4, 0x78, 0x2e, 0x68, 0x11, 0x44, 0xa2, 0x95, 0x5c, 0xa3, 0x08, 0x77, 0x5b,

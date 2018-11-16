@@ -340,6 +340,44 @@ type IntPointORMWithAfterDelete interface {
 	AfterDelete(context.Context, *gorm1.DB) error
 }
 
+func DefaultDeleteIntPointSet(ctx context.Context, in []*IntPoint, db *gorm1.DB) error {
+	if in == nil {
+		return errors.New("Nil argument to DefaultDeleteIntPointSet")
+	}
+	var err error
+	keys := []uint32{}
+	for _, obj := range in {
+		ormObj, err := obj.ToORM(ctx)
+		if err != nil {
+			return err
+		}
+		if ormObj.Id == 0 {
+			return errors.New("A non-zero ID value is required for a delete call")
+		}
+		keys = append(keys, ormObj.Id)
+	}
+	if hook, ok := interface{}(&IntPointORM{}).(IntPointORMWithBeforeDeleteSet); ok {
+		if db, err = hook.BeforeDeleteSet(ctx, in, db); err != nil {
+			return err
+		}
+	}
+	err = db.Where("id in (?)", keys).Delete(&IntPointORM{}).Error
+	if err != nil {
+		return err
+	}
+	if hook, ok := interface{}(&IntPointORM{}).(IntPointORMWithAfterDeleteSet); ok {
+		err = hook.AfterDeleteSet(ctx, in, db)
+	}
+	return err
+}
+
+type IntPointORMWithBeforeDeleteSet interface {
+	BeforeDeleteSet(context.Context, []*IntPoint, *gorm1.DB) (*gorm1.DB, error)
+}
+type IntPointORMWithAfterDeleteSet interface {
+	AfterDeleteSet(context.Context, []*IntPoint, *gorm1.DB) error
+}
+
 // DefaultStrictUpdateIntPoint clears first level 1:many children and then executes a gorm update call
 func DefaultStrictUpdateIntPoint(ctx context.Context, in *IntPoint, db *gorm1.DB) (*IntPoint, error) {
 	if in == nil {
@@ -1164,6 +1202,50 @@ type IntPointTxnIntPointWithBeforeDelete interface {
 // IntPointTxnIntPointWithAfterDelete called before DefaultDeleteIntPoint in the default Delete handler
 type IntPointTxnIntPointWithAfterDelete interface {
 	AfterDelete(context.Context, *DeleteIntPointResponse, *gorm1.DB) error
+}
+
+// DeleteSet ...
+func (m *IntPointTxnDefaultServer) DeleteSet(ctx context.Context, in *DeleteIntPointsRequest) (*DeleteIntPointResponse, error) {
+	txn, ok := gorm2.FromContext(ctx)
+	if !ok {
+		return nil, errors.New("Database Transaction For Request Missing")
+	}
+	db := txn.Begin()
+	if db.Error != nil {
+		return nil, db.Error
+	}
+	objs := []*IntPoint{}
+	for _, id := range in.Ids {
+		objs = append(objs, &IntPoint{Id: id})
+	}
+	if custom, ok := interface{}(in).(IntPointTxnIntPointWithBeforeDeleteSet); ok {
+		var err error
+		if db, err = custom.BeforeDeleteSet(ctx, db); err != nil {
+			return nil, err
+		}
+	}
+	err := DefaultDeleteIntPointSet(ctx, objs, db)
+	if err != nil {
+		return nil, err
+	}
+	out := &DeleteIntPointResponse{}
+	if custom, ok := interface{}(in).(IntPointTxnIntPointWithAfterDeleteSet); ok {
+		var err error
+		if err = custom.AfterDeleteSet(ctx, out, db); err != nil {
+			return nil, err
+		}
+	}
+	return out, nil
+}
+
+// IntPointTxnIntPointWithBeforeDeleteSet called before DefaultDeleteSetIntPoint in the default DeleteSet handler
+type IntPointTxnIntPointWithBeforeDeleteSet interface {
+	BeforeDeleteSet(context.Context, *gorm1.DB) (*gorm1.DB, error)
+}
+
+// IntPointTxnIntPointWithAfterDeleteSet called before DefaultDeleteSetIntPoint in the default DeleteSet handler
+type IntPointTxnIntPointWithAfterDeleteSet interface {
+	AfterDeleteSet(context.Context, *DeleteIntPointResponse, *gorm1.DB) error
 }
 
 // CustomMethod ...

@@ -1099,6 +1099,44 @@ type TypeWithIDORMWithAfterDelete interface {
 	AfterDelete(context.Context, *gorm1.DB) error
 }
 
+func DefaultDeleteTypeWithIDSet(ctx context.Context, in []*TypeWithID, db *gorm1.DB) error {
+	if in == nil {
+		return errors.New("Nil argument to DefaultDeleteTypeWithIDSet")
+	}
+	var err error
+	keys := []uint32{}
+	for _, obj := range in {
+		ormObj, err := obj.ToORM(ctx)
+		if err != nil {
+			return err
+		}
+		if ormObj.Id == 0 {
+			return errors.New("A non-zero ID value is required for a delete call")
+		}
+		keys = append(keys, ormObj.Id)
+	}
+	if hook, ok := interface{}(&TypeWithIDORM{}).(TypeWithIDORMWithBeforeDeleteSet); ok {
+		if db, err = hook.BeforeDeleteSet(ctx, in, db); err != nil {
+			return err
+		}
+	}
+	err = db.Where("id in (?)", keys).Delete(&TypeWithIDORM{}).Error
+	if err != nil {
+		return err
+	}
+	if hook, ok := interface{}(&TypeWithIDORM{}).(TypeWithIDORMWithAfterDeleteSet); ok {
+		err = hook.AfterDeleteSet(ctx, in, db)
+	}
+	return err
+}
+
+type TypeWithIDORMWithBeforeDeleteSet interface {
+	BeforeDeleteSet(context.Context, []*TypeWithID, *gorm1.DB) (*gorm1.DB, error)
+}
+type TypeWithIDORMWithAfterDeleteSet interface {
+	AfterDeleteSet(context.Context, []*TypeWithID, *gorm1.DB) error
+}
+
 // DefaultStrictUpdateTypeWithID clears first level 1:many children and then executes a gorm update call
 func DefaultStrictUpdateTypeWithID(ctx context.Context, in *TypeWithID, db *gorm1.DB) (*TypeWithID, error) {
 	if in == nil {
@@ -1515,6 +1553,48 @@ type MultiaccountTypeWithIDORMWithAfterDelete interface {
 	AfterDelete(context.Context, *gorm1.DB) error
 }
 
+func DefaultDeleteMultiaccountTypeWithIDSet(ctx context.Context, in []*MultiaccountTypeWithID, db *gorm1.DB) error {
+	if in == nil {
+		return errors.New("Nil argument to DefaultDeleteMultiaccountTypeWithIDSet")
+	}
+	var err error
+	keys := []uint64{}
+	for _, obj := range in {
+		ormObj, err := obj.ToORM(ctx)
+		if err != nil {
+			return err
+		}
+		if ormObj.Id == 0 {
+			return errors.New("A non-zero ID value is required for a delete call")
+		}
+		keys = append(keys, ormObj.Id)
+	}
+	if hook, ok := interface{}(&MultiaccountTypeWithIDORM{}).(MultiaccountTypeWithIDORMWithBeforeDeleteSet); ok {
+		if db, err = hook.BeforeDeleteSet(ctx, in, db); err != nil {
+			return err
+		}
+	}
+	acctId, err := auth1.GetAccountID(ctx, nil)
+	if err != nil {
+		return err
+	}
+	err = db.Where("account_id = ? AND id in (?)", acctId, keys).Delete(&MultiaccountTypeWithIDORM{}).Error
+	if err != nil {
+		return err
+	}
+	if hook, ok := interface{}(&MultiaccountTypeWithIDORM{}).(MultiaccountTypeWithIDORMWithAfterDeleteSet); ok {
+		err = hook.AfterDeleteSet(ctx, in, db)
+	}
+	return err
+}
+
+type MultiaccountTypeWithIDORMWithBeforeDeleteSet interface {
+	BeforeDeleteSet(context.Context, []*MultiaccountTypeWithID, *gorm1.DB) (*gorm1.DB, error)
+}
+type MultiaccountTypeWithIDORMWithAfterDeleteSet interface {
+	AfterDeleteSet(context.Context, []*MultiaccountTypeWithID, *gorm1.DB) error
+}
+
 // DefaultStrictUpdateMultiaccountTypeWithID clears first level 1:many children and then executes a gorm update call
 func DefaultStrictUpdateMultiaccountTypeWithID(ctx context.Context, in *MultiaccountTypeWithID, db *gorm1.DB) (*MultiaccountTypeWithID, error) {
 	if in == nil {
@@ -1921,6 +2001,44 @@ type PrimaryUUIDTypeORMWithAfterDelete interface {
 	AfterDelete(context.Context, *gorm1.DB) error
 }
 
+func DefaultDeletePrimaryUUIDTypeSet(ctx context.Context, in []*PrimaryUUIDType, db *gorm1.DB) error {
+	if in == nil {
+		return errors.New("Nil argument to DefaultDeletePrimaryUUIDTypeSet")
+	}
+	var err error
+	keys := []*go_uuid1.UUID{}
+	for _, obj := range in {
+		ormObj, err := obj.ToORM(ctx)
+		if err != nil {
+			return err
+		}
+		if ormObj.Id == nil || *ormObj.Id == go_uuid1.Nil {
+			return errors.New("A non-zero ID value is required for a delete call")
+		}
+		keys = append(keys, ormObj.Id)
+	}
+	if hook, ok := interface{}(&PrimaryUUIDTypeORM{}).(PrimaryUUIDTypeORMWithBeforeDeleteSet); ok {
+		if db, err = hook.BeforeDeleteSet(ctx, in, db); err != nil {
+			return err
+		}
+	}
+	err = db.Where("id in (?)", keys).Delete(&PrimaryUUIDTypeORM{}).Error
+	if err != nil {
+		return err
+	}
+	if hook, ok := interface{}(&PrimaryUUIDTypeORM{}).(PrimaryUUIDTypeORMWithAfterDeleteSet); ok {
+		err = hook.AfterDeleteSet(ctx, in, db)
+	}
+	return err
+}
+
+type PrimaryUUIDTypeORMWithBeforeDeleteSet interface {
+	BeforeDeleteSet(context.Context, []*PrimaryUUIDType, *gorm1.DB) (*gorm1.DB, error)
+}
+type PrimaryUUIDTypeORMWithAfterDeleteSet interface {
+	AfterDeleteSet(context.Context, []*PrimaryUUIDType, *gorm1.DB) error
+}
+
 // DefaultStrictUpdatePrimaryUUIDType clears first level 1:many children and then executes a gorm update call
 func DefaultStrictUpdatePrimaryUUIDType(ctx context.Context, in *PrimaryUUIDType, db *gorm1.DB) (*PrimaryUUIDType, error) {
 	if in == nil {
@@ -2244,6 +2362,44 @@ type PrimaryStringTypeORMWithAfterDelete interface {
 	AfterDelete(context.Context, *gorm1.DB) error
 }
 
+func DefaultDeletePrimaryStringTypeSet(ctx context.Context, in []*PrimaryStringType, db *gorm1.DB) error {
+	if in == nil {
+		return errors.New("Nil argument to DefaultDeletePrimaryStringTypeSet")
+	}
+	var err error
+	keys := []string{}
+	for _, obj := range in {
+		ormObj, err := obj.ToORM(ctx)
+		if err != nil {
+			return err
+		}
+		if ormObj.Id == "" {
+			return errors.New("A non-zero ID value is required for a delete call")
+		}
+		keys = append(keys, ormObj.Id)
+	}
+	if hook, ok := interface{}(&PrimaryStringTypeORM{}).(PrimaryStringTypeORMWithBeforeDeleteSet); ok {
+		if db, err = hook.BeforeDeleteSet(ctx, in, db); err != nil {
+			return err
+		}
+	}
+	err = db.Where("id in (?)", keys).Delete(&PrimaryStringTypeORM{}).Error
+	if err != nil {
+		return err
+	}
+	if hook, ok := interface{}(&PrimaryStringTypeORM{}).(PrimaryStringTypeORMWithAfterDeleteSet); ok {
+		err = hook.AfterDeleteSet(ctx, in, db)
+	}
+	return err
+}
+
+type PrimaryStringTypeORMWithBeforeDeleteSet interface {
+	BeforeDeleteSet(context.Context, []*PrimaryStringType, *gorm1.DB) (*gorm1.DB, error)
+}
+type PrimaryStringTypeORMWithAfterDeleteSet interface {
+	AfterDeleteSet(context.Context, []*PrimaryStringType, *gorm1.DB) error
+}
+
 // DefaultStrictUpdatePrimaryStringType clears first level 1:many children and then executes a gorm update call
 func DefaultStrictUpdatePrimaryStringType(ctx context.Context, in *PrimaryStringType, db *gorm1.DB) (*PrimaryStringType, error) {
 	if in == nil {
@@ -2565,6 +2721,44 @@ type TestTagORMWithBeforeDelete interface {
 }
 type TestTagORMWithAfterDelete interface {
 	AfterDelete(context.Context, *gorm1.DB) error
+}
+
+func DefaultDeleteTestTagSet(ctx context.Context, in []*TestTag, db *gorm1.DB) error {
+	if in == nil {
+		return errors.New("Nil argument to DefaultDeleteTestTagSet")
+	}
+	var err error
+	keys := []string{}
+	for _, obj := range in {
+		ormObj, err := obj.ToORM(ctx)
+		if err != nil {
+			return err
+		}
+		if ormObj.Id == "" {
+			return errors.New("A non-zero ID value is required for a delete call")
+		}
+		keys = append(keys, ormObj.Id)
+	}
+	if hook, ok := interface{}(&TestTagORM{}).(TestTagORMWithBeforeDeleteSet); ok {
+		if db, err = hook.BeforeDeleteSet(ctx, in, db); err != nil {
+			return err
+		}
+	}
+	err = db.Where("id in (?)", keys).Delete(&TestTagORM{}).Error
+	if err != nil {
+		return err
+	}
+	if hook, ok := interface{}(&TestTagORM{}).(TestTagORMWithAfterDeleteSet); ok {
+		err = hook.AfterDeleteSet(ctx, in, db)
+	}
+	return err
+}
+
+type TestTagORMWithBeforeDeleteSet interface {
+	BeforeDeleteSet(context.Context, []*TestTag, *gorm1.DB) (*gorm1.DB, error)
+}
+type TestTagORMWithAfterDeleteSet interface {
+	AfterDeleteSet(context.Context, []*TestTag, *gorm1.DB) error
 }
 
 // DefaultStrictUpdateTestTag clears first level 1:many children and then executes a gorm update call

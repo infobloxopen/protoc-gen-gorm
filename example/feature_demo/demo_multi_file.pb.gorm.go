@@ -31,6 +31,7 @@ It has these top-level messages:
 	UpdateIntPointRequest
 	UpdateIntPointResponse
 	DeleteIntPointRequest
+	DeleteIntPointsRequest
 	DeleteIntPointResponse
 	ListIntPointResponse
 	ListSomethingResponse
@@ -313,6 +314,44 @@ type ExternalChildORMWithBeforeDelete interface {
 }
 type ExternalChildORMWithAfterDelete interface {
 	AfterDelete(context.Context, *gorm1.DB) error
+}
+
+func DefaultDeleteExternalChildSet(ctx context.Context, in []*ExternalChild, db *gorm1.DB) error {
+	if in == nil {
+		return errors.New("Nil argument to DefaultDeleteExternalChildSet")
+	}
+	var err error
+	keys := []string{}
+	for _, obj := range in {
+		ormObj, err := obj.ToORM(ctx)
+		if err != nil {
+			return err
+		}
+		if ormObj.Id == "" {
+			return errors.New("A non-zero ID value is required for a delete call")
+		}
+		keys = append(keys, ormObj.Id)
+	}
+	if hook, ok := interface{}(&ExternalChildORM{}).(ExternalChildORMWithBeforeDeleteSet); ok {
+		if db, err = hook.BeforeDeleteSet(ctx, in, db); err != nil {
+			return err
+		}
+	}
+	err = db.Where("id in (?)", keys).Delete(&ExternalChildORM{}).Error
+	if err != nil {
+		return err
+	}
+	if hook, ok := interface{}(&ExternalChildORM{}).(ExternalChildORMWithAfterDeleteSet); ok {
+		err = hook.AfterDeleteSet(ctx, in, db)
+	}
+	return err
+}
+
+type ExternalChildORMWithBeforeDeleteSet interface {
+	BeforeDeleteSet(context.Context, []*ExternalChild, *gorm1.DB) (*gorm1.DB, error)
+}
+type ExternalChildORMWithAfterDeleteSet interface {
+	AfterDeleteSet(context.Context, []*ExternalChild, *gorm1.DB) error
 }
 
 // DefaultStrictUpdateExternalChild clears first level 1:many children and then executes a gorm update call
@@ -605,6 +644,44 @@ type BlogPostORMWithBeforeDelete interface {
 }
 type BlogPostORMWithAfterDelete interface {
 	AfterDelete(context.Context, *gorm1.DB) error
+}
+
+func DefaultDeleteBlogPostSet(ctx context.Context, in []*BlogPost, db *gorm1.DB) error {
+	if in == nil {
+		return errors.New("Nil argument to DefaultDeleteBlogPostSet")
+	}
+	var err error
+	keys := []uint64{}
+	for _, obj := range in {
+		ormObj, err := obj.ToORM(ctx)
+		if err != nil {
+			return err
+		}
+		if ormObj.Id == 0 {
+			return errors.New("A non-zero ID value is required for a delete call")
+		}
+		keys = append(keys, ormObj.Id)
+	}
+	if hook, ok := interface{}(&BlogPostORM{}).(BlogPostORMWithBeforeDeleteSet); ok {
+		if db, err = hook.BeforeDeleteSet(ctx, in, db); err != nil {
+			return err
+		}
+	}
+	err = db.Where("id in (?)", keys).Delete(&BlogPostORM{}).Error
+	if err != nil {
+		return err
+	}
+	if hook, ok := interface{}(&BlogPostORM{}).(BlogPostORMWithAfterDeleteSet); ok {
+		err = hook.AfterDeleteSet(ctx, in, db)
+	}
+	return err
+}
+
+type BlogPostORMWithBeforeDeleteSet interface {
+	BeforeDeleteSet(context.Context, []*BlogPost, *gorm1.DB) (*gorm1.DB, error)
+}
+type BlogPostORMWithAfterDeleteSet interface {
+	AfterDeleteSet(context.Context, []*BlogPost, *gorm1.DB) error
 }
 
 // DefaultStrictUpdateBlogPost clears first level 1:many children and then executes a gorm update call
