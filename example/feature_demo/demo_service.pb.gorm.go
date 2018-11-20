@@ -356,7 +356,7 @@ func DefaultDeleteIntPointSet(ctx context.Context, in []*IntPoint, db *gorm1.DB)
 		}
 		keys = append(keys, ormObj.Id)
 	}
-	if hook, ok := interface{}(&IntPointORM{}).(IntPointORMWithBeforeDeleteSet); ok {
+	if hook, ok := (interface{}(&IntPointORM{})).(IntPointORMWithBeforeDeleteSet); ok {
 		if db, err = hook.BeforeDeleteSet(ctx, in, db); err != nil {
 			return err
 		}
@@ -365,7 +365,7 @@ func DefaultDeleteIntPointSet(ctx context.Context, in []*IntPoint, db *gorm1.DB)
 	if err != nil {
 		return err
 	}
-	if hook, ok := interface{}(&IntPointORM{}).(IntPointORMWithAfterDeleteSet); ok {
+	if hook, ok := (interface{}(&IntPointORM{})).(IntPointORMWithAfterDeleteSet); ok {
 		err = hook.AfterDeleteSet(ctx, in, db)
 	}
 	return err

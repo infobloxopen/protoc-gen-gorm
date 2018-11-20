@@ -977,7 +977,7 @@ func DefaultDeleteUserSet(ctx context.Context, in []*User, db *gorm1.DB) error {
 		}
 		keys = append(keys, ormObj.Id)
 	}
-	if hook, ok := interface{}(&UserORM{}).(UserORMWithBeforeDeleteSet); ok {
+	if hook, ok := (interface{}(&UserORM{})).(UserORMWithBeforeDeleteSet); ok {
 		if db, err = hook.BeforeDeleteSet(ctx, in, db); err != nil {
 			return err
 		}
@@ -990,7 +990,7 @@ func DefaultDeleteUserSet(ctx context.Context, in []*User, db *gorm1.DB) error {
 	if err != nil {
 		return err
 	}
-	if hook, ok := interface{}(&UserORM{}).(UserORMWithAfterDeleteSet); ok {
+	if hook, ok := (interface{}(&UserORM{})).(UserORMWithAfterDeleteSet); ok {
 		err = hook.AfterDeleteSet(ctx, in, db)
 	}
 	return err
@@ -1452,7 +1452,7 @@ func DefaultDeleteEmailSet(ctx context.Context, in []*Email, db *gorm1.DB) error
 		}
 		keys = append(keys, ormObj.Id)
 	}
-	if hook, ok := interface{}(&EmailORM{}).(EmailORMWithBeforeDeleteSet); ok {
+	if hook, ok := (interface{}(&EmailORM{})).(EmailORMWithBeforeDeleteSet); ok {
 		if db, err = hook.BeforeDeleteSet(ctx, in, db); err != nil {
 			return err
 		}
@@ -1465,7 +1465,7 @@ func DefaultDeleteEmailSet(ctx context.Context, in []*Email, db *gorm1.DB) error
 	if err != nil {
 		return err
 	}
-	if hook, ok := interface{}(&EmailORM{}).(EmailORMWithAfterDeleteSet); ok {
+	if hook, ok := (interface{}(&EmailORM{})).(EmailORMWithAfterDeleteSet); ok {
 		err = hook.AfterDeleteSet(ctx, in, db)
 	}
 	return err
@@ -1807,7 +1807,7 @@ func DefaultDeleteAddressSet(ctx context.Context, in []*Address, db *gorm1.DB) e
 		}
 		keys = append(keys, ormObj.Id)
 	}
-	if hook, ok := interface{}(&AddressORM{}).(AddressORMWithBeforeDeleteSet); ok {
+	if hook, ok := (interface{}(&AddressORM{})).(AddressORMWithBeforeDeleteSet); ok {
 		if db, err = hook.BeforeDeleteSet(ctx, in, db); err != nil {
 			return err
 		}
@@ -1820,7 +1820,7 @@ func DefaultDeleteAddressSet(ctx context.Context, in []*Address, db *gorm1.DB) e
 	if err != nil {
 		return err
 	}
-	if hook, ok := interface{}(&AddressORM{}).(AddressORMWithAfterDeleteSet); ok {
+	if hook, ok := (interface{}(&AddressORM{})).(AddressORMWithAfterDeleteSet); ok {
 		err = hook.AfterDeleteSet(ctx, in, db)
 	}
 	return err
@@ -2166,7 +2166,7 @@ func DefaultDeleteLanguageSet(ctx context.Context, in []*Language, db *gorm1.DB)
 		}
 		keys = append(keys, ormObj.Id)
 	}
-	if hook, ok := interface{}(&LanguageORM{}).(LanguageORMWithBeforeDeleteSet); ok {
+	if hook, ok := (interface{}(&LanguageORM{})).(LanguageORMWithBeforeDeleteSet); ok {
 		if db, err = hook.BeforeDeleteSet(ctx, in, db); err != nil {
 			return err
 		}
@@ -2179,7 +2179,7 @@ func DefaultDeleteLanguageSet(ctx context.Context, in []*Language, db *gorm1.DB)
 	if err != nil {
 		return err
 	}
-	if hook, ok := interface{}(&LanguageORM{}).(LanguageORMWithAfterDeleteSet); ok {
+	if hook, ok := (interface{}(&LanguageORM{})).(LanguageORMWithAfterDeleteSet); ok {
 		err = hook.AfterDeleteSet(ctx, in, db)
 	}
 	return err
@@ -2517,7 +2517,7 @@ func DefaultDeleteCreditCardSet(ctx context.Context, in []*CreditCard, db *gorm1
 		}
 		keys = append(keys, ormObj.Id)
 	}
-	if hook, ok := interface{}(&CreditCardORM{}).(CreditCardORMWithBeforeDeleteSet); ok {
+	if hook, ok := (interface{}(&CreditCardORM{})).(CreditCardORMWithBeforeDeleteSet); ok {
 		if db, err = hook.BeforeDeleteSet(ctx, in, db); err != nil {
 			return err
 		}
@@ -2530,7 +2530,7 @@ func DefaultDeleteCreditCardSet(ctx context.Context, in []*CreditCard, db *gorm1
 	if err != nil {
 		return err
 	}
-	if hook, ok := interface{}(&CreditCardORM{}).(CreditCardORMWithAfterDeleteSet); ok {
+	if hook, ok := (interface{}(&CreditCardORM{})).(CreditCardORMWithAfterDeleteSet); ok {
 		err = hook.AfterDeleteSet(ctx, in, db)
 	}
 	return err

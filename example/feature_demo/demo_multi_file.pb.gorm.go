@@ -8,7 +8,6 @@ It is generated from these files:
 	example/feature_demo/demo_multi_file.proto
 	example/feature_demo/demo_types.proto
 	example/feature_demo/demo_service.proto
-	example/feature_demo/demo_multi_file_service.proto
 
 It has these top-level messages:
 	ExternalChild
@@ -40,8 +39,6 @@ It has these top-level messages:
 	Circle
 	ListCircleRequest
 	ListCircleResponse
-	ReadAccountRequest
-	ReadBlogPostsResponse
 */
 package example
 
@@ -332,7 +329,7 @@ func DefaultDeleteExternalChildSet(ctx context.Context, in []*ExternalChild, db 
 		}
 		keys = append(keys, ormObj.Id)
 	}
-	if hook, ok := interface{}(&ExternalChildORM{}).(ExternalChildORMWithBeforeDeleteSet); ok {
+	if hook, ok := (interface{}(&ExternalChildORM{})).(ExternalChildORMWithBeforeDeleteSet); ok {
 		if db, err = hook.BeforeDeleteSet(ctx, in, db); err != nil {
 			return err
 		}
@@ -341,7 +338,7 @@ func DefaultDeleteExternalChildSet(ctx context.Context, in []*ExternalChild, db 
 	if err != nil {
 		return err
 	}
-	if hook, ok := interface{}(&ExternalChildORM{}).(ExternalChildORMWithAfterDeleteSet); ok {
+	if hook, ok := (interface{}(&ExternalChildORM{})).(ExternalChildORMWithAfterDeleteSet); ok {
 		err = hook.AfterDeleteSet(ctx, in, db)
 	}
 	return err
@@ -662,7 +659,7 @@ func DefaultDeleteBlogPostSet(ctx context.Context, in []*BlogPost, db *gorm1.DB)
 		}
 		keys = append(keys, ormObj.Id)
 	}
-	if hook, ok := interface{}(&BlogPostORM{}).(BlogPostORMWithBeforeDeleteSet); ok {
+	if hook, ok := (interface{}(&BlogPostORM{})).(BlogPostORMWithBeforeDeleteSet); ok {
 		if db, err = hook.BeforeDeleteSet(ctx, in, db); err != nil {
 			return err
 		}
@@ -671,7 +668,7 @@ func DefaultDeleteBlogPostSet(ctx context.Context, in []*BlogPost, db *gorm1.DB)
 	if err != nil {
 		return err
 	}
-	if hook, ok := interface{}(&BlogPostORM{}).(BlogPostORMWithAfterDeleteSet); ok {
+	if hook, ok := (interface{}(&BlogPostORM{})).(BlogPostORMWithAfterDeleteSet); ok {
 		err = hook.AfterDeleteSet(ctx, in, db)
 	}
 	return err
