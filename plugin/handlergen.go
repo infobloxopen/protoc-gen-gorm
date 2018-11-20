@@ -494,7 +494,7 @@ func (p *OrmPlugin) generateDeleteSetHandler(message *generator.Descriptor) {
 }
 
 func (p *OrmPlugin) generateBeforeDeleteSetHookCall(orm *OrmableType) {
-	p.P(`if hook, ok := interface{}(&`, orm.Name, `{}).(`, orm.Name, `WithBeforeDeleteSet); ok {`)
+	p.P(`if hook, ok := (interface{}(&`, orm.Name, `{})).(`, orm.Name, `WithBeforeDeleteSet); ok {`)
 	p.P(`if db, err = hook.BeforeDeleteSet(ctx, in, db); err != nil {`)
 	p.P(`return err`)
 	p.P(`}`)
@@ -502,7 +502,7 @@ func (p *OrmPlugin) generateBeforeDeleteSetHookCall(orm *OrmableType) {
 }
 
 func (p *OrmPlugin) generateAfterDeleteSetHookCall(orm *OrmableType) {
-	p.P(`if hook, ok := interface{}(&`, orm.Name, `{}).(`, orm.Name, `WithAfterDeleteSet); ok {`)
+	p.P(`if hook, ok := (interface{}(&`, orm.Name, `{})).(`, orm.Name, `WithAfterDeleteSet); ok {`)
 	p.P(`err = hook.AfterDeleteSet(ctx, in, db)`)
 	p.P(`}`)
 }
