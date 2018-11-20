@@ -1115,7 +1115,7 @@ func DefaultDeleteTypeWithIDSet(ctx context.Context, in []*TypeWithID, db *gorm1
 		}
 		keys = append(keys, ormObj.Id)
 	}
-	if hook, ok := interface{}(&TypeWithIDORM{}).(TypeWithIDORMWithBeforeDeleteSet); ok {
+	if hook, ok := (interface{}(&TypeWithIDORM{})).(TypeWithIDORMWithBeforeDeleteSet); ok {
 		if db, err = hook.BeforeDeleteSet(ctx, in, db); err != nil {
 			return err
 		}
@@ -1124,7 +1124,7 @@ func DefaultDeleteTypeWithIDSet(ctx context.Context, in []*TypeWithID, db *gorm1
 	if err != nil {
 		return err
 	}
-	if hook, ok := interface{}(&TypeWithIDORM{}).(TypeWithIDORMWithAfterDeleteSet); ok {
+	if hook, ok := (interface{}(&TypeWithIDORM{})).(TypeWithIDORMWithAfterDeleteSet); ok {
 		err = hook.AfterDeleteSet(ctx, in, db)
 	}
 	return err
@@ -1569,7 +1569,7 @@ func DefaultDeleteMultiaccountTypeWithIDSet(ctx context.Context, in []*Multiacco
 		}
 		keys = append(keys, ormObj.Id)
 	}
-	if hook, ok := interface{}(&MultiaccountTypeWithIDORM{}).(MultiaccountTypeWithIDORMWithBeforeDeleteSet); ok {
+	if hook, ok := (interface{}(&MultiaccountTypeWithIDORM{})).(MultiaccountTypeWithIDORMWithBeforeDeleteSet); ok {
 		if db, err = hook.BeforeDeleteSet(ctx, in, db); err != nil {
 			return err
 		}
@@ -1582,7 +1582,7 @@ func DefaultDeleteMultiaccountTypeWithIDSet(ctx context.Context, in []*Multiacco
 	if err != nil {
 		return err
 	}
-	if hook, ok := interface{}(&MultiaccountTypeWithIDORM{}).(MultiaccountTypeWithIDORMWithAfterDeleteSet); ok {
+	if hook, ok := (interface{}(&MultiaccountTypeWithIDORM{})).(MultiaccountTypeWithIDORMWithAfterDeleteSet); ok {
 		err = hook.AfterDeleteSet(ctx, in, db)
 	}
 	return err
@@ -2017,7 +2017,7 @@ func DefaultDeletePrimaryUUIDTypeSet(ctx context.Context, in []*PrimaryUUIDType,
 		}
 		keys = append(keys, ormObj.Id)
 	}
-	if hook, ok := interface{}(&PrimaryUUIDTypeORM{}).(PrimaryUUIDTypeORMWithBeforeDeleteSet); ok {
+	if hook, ok := (interface{}(&PrimaryUUIDTypeORM{})).(PrimaryUUIDTypeORMWithBeforeDeleteSet); ok {
 		if db, err = hook.BeforeDeleteSet(ctx, in, db); err != nil {
 			return err
 		}
@@ -2026,7 +2026,7 @@ func DefaultDeletePrimaryUUIDTypeSet(ctx context.Context, in []*PrimaryUUIDType,
 	if err != nil {
 		return err
 	}
-	if hook, ok := interface{}(&PrimaryUUIDTypeORM{}).(PrimaryUUIDTypeORMWithAfterDeleteSet); ok {
+	if hook, ok := (interface{}(&PrimaryUUIDTypeORM{})).(PrimaryUUIDTypeORMWithAfterDeleteSet); ok {
 		err = hook.AfterDeleteSet(ctx, in, db)
 	}
 	return err
@@ -2378,7 +2378,7 @@ func DefaultDeletePrimaryStringTypeSet(ctx context.Context, in []*PrimaryStringT
 		}
 		keys = append(keys, ormObj.Id)
 	}
-	if hook, ok := interface{}(&PrimaryStringTypeORM{}).(PrimaryStringTypeORMWithBeforeDeleteSet); ok {
+	if hook, ok := (interface{}(&PrimaryStringTypeORM{})).(PrimaryStringTypeORMWithBeforeDeleteSet); ok {
 		if db, err = hook.BeforeDeleteSet(ctx, in, db); err != nil {
 			return err
 		}
@@ -2387,7 +2387,7 @@ func DefaultDeletePrimaryStringTypeSet(ctx context.Context, in []*PrimaryStringT
 	if err != nil {
 		return err
 	}
-	if hook, ok := interface{}(&PrimaryStringTypeORM{}).(PrimaryStringTypeORMWithAfterDeleteSet); ok {
+	if hook, ok := (interface{}(&PrimaryStringTypeORM{})).(PrimaryStringTypeORMWithAfterDeleteSet); ok {
 		err = hook.AfterDeleteSet(ctx, in, db)
 	}
 	return err
@@ -2739,7 +2739,7 @@ func DefaultDeleteTestTagSet(ctx context.Context, in []*TestTag, db *gorm1.DB) e
 		}
 		keys = append(keys, ormObj.Id)
 	}
-	if hook, ok := interface{}(&TestTagORM{}).(TestTagORMWithBeforeDeleteSet); ok {
+	if hook, ok := (interface{}(&TestTagORM{})).(TestTagORMWithBeforeDeleteSet); ok {
 		if db, err = hook.BeforeDeleteSet(ctx, in, db); err != nil {
 			return err
 		}
@@ -2748,7 +2748,7 @@ func DefaultDeleteTestTagSet(ctx context.Context, in []*TestTag, db *gorm1.DB) e
 	if err != nil {
 		return err
 	}
-	if hook, ok := interface{}(&TestTagORM{}).(TestTagORMWithAfterDeleteSet); ok {
+	if hook, ok := (interface{}(&TestTagORM{})).(TestTagORMWithAfterDeleteSet); ok {
 		err = hook.AfterDeleteSet(ctx, in, db)
 	}
 	return err
