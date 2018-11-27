@@ -24,7 +24,6 @@ import time "time"
 
 import auth1 "github.com/infobloxopen/atlas-app-toolkit/auth"
 import field_mask1 "google.golang.org/genproto/protobuf/field_mask"
-import gateway1 "github.com/infobloxopen/atlas-app-toolkit/gateway"
 import gorm1 "github.com/jinzhu/gorm"
 import gorm2 "github.com/infobloxopen/atlas-app-toolkit/gorm"
 import ptypes1 "github.com/golang/protobuf/ptypes"
@@ -1068,9 +1067,6 @@ func DefaultStrictUpdateUser(ctx context.Context, in *User, db *gorm1.DB) (*User
 	if err != nil {
 		return nil, err
 	}
-	if count == 0 {
-		err = gateway1.SetCreated(ctx, "")
-	}
 	return &pbResponse, err
 }
 
@@ -1517,9 +1513,6 @@ func DefaultStrictUpdateEmail(ctx context.Context, in *Email, db *gorm1.DB) (*Em
 	if err != nil {
 		return nil, err
 	}
-	if count == 0 {
-		err = gateway1.SetCreated(ctx, "")
-	}
 	return &pbResponse, err
 }
 
@@ -1871,9 +1864,6 @@ func DefaultStrictUpdateAddress(ctx context.Context, in *Address, db *gorm1.DB) 
 	pbResponse, err := ormObj.ToPB(ctx)
 	if err != nil {
 		return nil, err
-	}
-	if count == 0 {
-		err = gateway1.SetCreated(ctx, "")
 	}
 	return &pbResponse, err
 }
@@ -2231,9 +2221,6 @@ func DefaultStrictUpdateLanguage(ctx context.Context, in *Language, db *gorm1.DB
 	if err != nil {
 		return nil, err
 	}
-	if count == 0 {
-		err = gateway1.SetCreated(ctx, "")
-	}
 	return &pbResponse, err
 }
 
@@ -2581,9 +2568,6 @@ func DefaultStrictUpdateCreditCard(ctx context.Context, in *CreditCard, db *gorm
 	pbResponse, err := ormObj.ToPB(ctx)
 	if err != nil {
 		return nil, err
-	}
-	if count == 0 {
-		err = gateway1.SetCreated(ctx, "")
 	}
 	return &pbResponse, err
 }

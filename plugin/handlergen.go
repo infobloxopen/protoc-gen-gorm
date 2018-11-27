@@ -706,9 +706,11 @@ func (p *OrmPlugin) generateStrictUpdateHandler(message *generator.Descriptor) {
 	p.P(`return nil, err`)
 	p.P(`}`)
 
-	p.P(`if count == 0 {`)
-	p.P(`err = `, p.Import(gatewayImport), `.SetCreated(ctx, "")`)
-	p.P(`}`)
+	if p.gateway {
+		p.P(`if count == 0 {`)
+		p.P(`err = `, p.Import(gatewayImport), `.SetCreated(ctx, "")`)
+		p.P(`}`)
+	}
 
 	p.P(`return &pbResponse, err`)
 	p.P(`}`)

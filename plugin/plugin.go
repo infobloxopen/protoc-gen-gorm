@@ -93,6 +93,7 @@ type OrmPlugin struct {
 	*generator.Generator
 	dbEngine        int
 	stringEnums     bool
+	gateway         bool
 	ormableTypes    map[string]*OrmableType
 	EmptyFiles      []string
 	currentPackage  string
@@ -127,6 +128,9 @@ func (p *OrmPlugin) Init(g *generator.Generator) {
 	}
 	if strings.EqualFold(g.Param["enums"], "string") {
 		p.stringEnums = true
+	}
+	if _, ok := g.Param["gateway"]; ok {
+		p.gateway = true
 	}
 	if _, ok := g.Param["quiet"]; ok {
 		p.suppressWarn = true
