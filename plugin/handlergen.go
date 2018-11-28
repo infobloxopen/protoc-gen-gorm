@@ -682,17 +682,18 @@ func (p *OrmPlugin) generateStrictUpdateHandler(message *generator.Descriptor) {
 	if getMessageOptions(message).GetMultiAccount() {
 		p.generateAccountIdWhereClause()
 	}
-	p.P(`var count int64`)
-	// add default ordering by primary key
 	ormable := p.getOrmable(typeName)
-	if p.hasPrimaryKey(ormable) {
-		pkName, pk := p.findPrimaryKey(ormable)
-		column := pk.GetTag().GetColumn()
-		if len(column) == 0 {
-			column = jgorm.ToDBName(pkName)
+	if p.gateway {
+		p.P(`var count int64`)
+		if p.hasPrimaryKey(ormable) {
+			pkName, pk := p.findPrimaryKey(ormable)
+			column := pk.GetTag().GetColumn()
+			if len(column) == 0 {
+				column = jgorm.ToDBName(pkName)
+			}
+			p.P(`lockedRow := &`, typeName, `ORM{}`)
+			p.P(`count = db.Model(&ormObj).Set("gorm:query_option", "FOR UPDATE").Where("`, column, `=?", ormObj.`, pkName, `).First(lockedRow).RowsAffected`)
 		}
-		p.P(`lockedRow := &`, typeName, `ORM{}`)
-		p.P(`count = db.Model(&ormObj).Set("gorm:query_option", "FOR UPDATE").Where("`, column, `=?", ormObj.`, pkName, `).First(lockedRow).RowsAffected`)
 	}
 	p.generateBeforeHookCall(ormable, "StrictUpdateCleanup")
 	p.removeChildAssociations(message)
