@@ -791,6 +791,10 @@ func (m *IntPointServiceDefaultServer) Create(ctx context.Context, in *CreateInt
 		return nil, err
 	}
 	out := &CreateIntPointResponse{Result: res}
+	err = gateway1.SetCreated(ctx, "")
+	if err != nil {
+		return nil, err
+	}
 	if custom, ok := interface{}(in).(IntPointServiceIntPointWithAfterCreate); ok {
 		var err error
 		if err = custom.AfterCreate(ctx, out, db); err != nil {
@@ -1003,6 +1007,10 @@ func (m *IntPointTxnDefaultServer) Create(ctx context.Context, in *CreateIntPoin
 		return nil, err
 	}
 	out := &CreateIntPointResponse{Result: res}
+	err = gateway1.SetCreated(ctx, "")
+	if err != nil {
+		return nil, err
+	}
 	if custom, ok := interface{}(in).(IntPointTxnIntPointWithAfterCreate); ok {
 		var err error
 		if err = custom.AfterCreate(ctx, out, db); err != nil {
