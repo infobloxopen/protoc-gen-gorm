@@ -139,6 +139,12 @@ func (p *OrmPlugin) generateCreateServerMethod(service autogenService, method au
 		p.P(`return nil, err`)
 		p.P(`}`)
 		p.P(`out := &`, p.TypeName(method.outType), `{Result: res}`)
+		if p.gateway {
+			p.P(`err = `, p.Import(gatewayImport), `.SetCreated(ctx, "")`)
+			p.P(`if err != nil {`)
+			p.P(`return nil, err`)
+			p.P(`}`)
+		}
 		p.generatePostserviceCall(service.ccName, method.baseType, createService)
 		p.P(`return out, nil`)
 		p.P(`}`)
