@@ -9,8 +9,8 @@ IMAGE_VERSION  ?= dev-gengorm
 
 # configuration for the protobuf gentool
 SRCROOT_ON_HOST      := $(shell dirname $(abspath $(lastword $(MAKEFILE_LIST))))
-SRCROOT_IN_CONTAINER := /home/go/src/$(PROJECT_ROOT)
-DOCKERPATH           := /home/go/src
+SRCROOT_IN_CONTAINER := /go/src/$(PROJECT_ROOT)
+DOCKERPATH           := /go/src
 DOCKER_RUNNER        := docker run --rm
 DOCKER_RUNNER        += -v $(SRCROOT_ON_HOST):$(SRCROOT_IN_CONTAINER)
 DOCKER_GENERATOR     := infoblox/atlas-gentool:dev-gengorm
@@ -70,9 +70,10 @@ gentool-example: gentool
 	@$(GENERATOR) \
 		--go_out="plugins=grpc:$(DOCKERPATH)" \
 		--gorm_out="engine=postgres,enums=string:$(DOCKERPATH)" \
-			example/feature_demo/demo_multi_file.proto \
-			example/feature_demo/demo_types.proto \
-			example/feature_demo/demo_service.proto
+		example/feature_demo/demo_multi_file.proto \
+		example/feature_demo/demo_types.proto \
+		example/feature_demo/demo_service.proto \
+		example/feature_demo/demo_multi_file_service.proto
 
 	@$(GENERATOR) \
 		--go_out="plugins=grpc:$(DOCKERPATH)" \

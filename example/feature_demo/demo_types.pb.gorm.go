@@ -159,6 +159,8 @@ type TypeWithIDORM struct {
 	MultiAccountTypes []*JoinTable    `gorm:"foreignkey:TypeWithIDID"`
 	Point             *IntPointORM    `gorm:"foreignkey:IntPointId;association_foreignkey:Id"`
 	SecretInt         int32           `gorm:"-"`
+	TagSizeTest       string          `gorm:"size:512"`
+	TagTest           float32         `gorm:"type:float;precision:6"`
 	Things            []*TestTypesORM `gorm:"foreignkey:ThingsTypeWithIDId;association_foreignkey:Id"`
 	User              *user.UserORM   `gorm:"foreignkey:UserId;association_foreignkey:Id"`
 	UserId            *string
@@ -218,6 +220,8 @@ func (m *TypeWithID) ToORM(ctx context.Context) (TypeWithIDORM, error) {
 			return to, err
 		}
 	}
+	to.TagTest = m.TagTest
+	to.TagSizeTest = m.TagSizeTest
 	if posthook, ok := interface{}(m).(TypeWithIDWithAfterToORM); ok {
 		err = posthook.AfterToORM(ctx, &to)
 	}
@@ -271,6 +275,8 @@ func (m *TypeWithIDORM) ToPB(ctx context.Context) (TypeWithID, error) {
 	if m.Address != nil && m.Address.IPNet != nil {
 		to.Address = &types1.InetValue{Value: m.Address.String()}
 	}
+	to.TagTest = m.TagTest
+	to.TagSizeTest = m.TagSizeTest
 	if posthook, ok := interface{}(m).(TypeWithIDWithAfterToPB); ok {
 		err = posthook.AfterToPB(ctx, &to)
 	}
@@ -1377,6 +1383,14 @@ func DefaultApplyFieldMaskTypeWithID(ctx context.Context, patchee *TypeWithID, p
 		if f == prefix+"SyntheticField" {
 			updatedSyntheticField = true
 			patchee.SyntheticField = patcher.SyntheticField
+			continue
+		}
+		if f == prefix+"TagTest" {
+			patchee.TagTest = patcher.TagTest
+			continue
+		}
+		if f == prefix+"TagSizeTest" {
+			patchee.TagSizeTest = patcher.TagSizeTest
 			continue
 		}
 	}
