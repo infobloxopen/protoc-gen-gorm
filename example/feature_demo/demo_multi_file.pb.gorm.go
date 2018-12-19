@@ -404,6 +404,59 @@ type ExternalChildORMWithAfterStrictUpdateSave interface {
 	AfterStrictUpdateSave(context.Context, *gorm1.DB) error
 }
 
+// DefaultReplaceExternalChild executes a basic gorm update call with replace behavior
+func DefaultReplaceExternalChild(ctx context.Context, in *ExternalChild, db *gorm1.DB) (*ExternalChild, error) {
+	if in == nil {
+		return nil, errors.New("Nil argument to DefaultReplaceExternalChild")
+	}
+
+	var err error
+
+	if hook, ok := interface{}(in).(interface {
+		ValidateDeniedFields() map[string][]string
+	}); ok {
+		ignoreFields := hook.ValidateDeniedFields()["PUT"]
+		if len(ignoreFields) > 0 {
+			if hook, ok := interface{}(in).(interface {
+				BeforeReplaceRead(context.Context, *gorm1.DB) (*gorm1.DB, error)
+			}); ok {
+				if db, err = hook.BeforeReplaceRead(ctx, db); err != nil {
+					return nil, err
+				}
+			}
+			pbReadRes, err := DefaultReadExternalChild(ctx, &ExternalChild{Id: in.GetId()}, db, nil)
+			if err != nil {
+				return nil, err
+			}
+
+			updateMask := &field_mask1.FieldMask{Paths: ignoreFields}
+			if _, err := DefaultApplyFieldMaskExternalChild(ctx, in, pbReadRes, updateMask, "", db, ""); err != nil {
+				return nil, err
+			}
+		}
+	}
+
+	if hook, ok := interface{}(in).(interface {
+		BeforeReplaceSave(context.Context, *gorm1.DB) (*gorm1.DB, error)
+	}); ok {
+		if db, err = hook.BeforeReplaceSave(ctx, db); err != nil {
+			return nil, err
+		}
+	}
+	pbResponse, err := DefaultStrictUpdateExternalChild(ctx, in, db)
+	if err != nil {
+		return nil, err
+	}
+	if hook, ok := interface{}(in).(interface {
+		AfterReplaceSave(context.Context, *ExternalChild, *gorm1.DB) error
+	}); ok {
+		if err = hook.AfterReplaceSave(ctx, in, db); err != nil {
+			return nil, err
+		}
+	}
+	return pbResponse, nil
+}
+
 // DefaultPatchExternalChild executes a basic gorm update call with patch behavior
 func DefaultPatchExternalChild(ctx context.Context, in *ExternalChild, updateMask *field_mask1.FieldMask, db *gorm1.DB) (*ExternalChild, error) {
 	if in == nil {
@@ -460,15 +513,31 @@ type ExternalChildWithAfterPatchSave interface {
 }
 
 // DefaultApplyFieldMaskExternalChild patches an pbObject with patcher according to a field mask.
-func DefaultApplyFieldMaskExternalChild(ctx context.Context, patchee *ExternalChild, patcher *ExternalChild, updateMask *field_mask1.FieldMask, prefix string, db *gorm1.DB) (*ExternalChild, error) {
+func DefaultApplyFieldMaskExternalChild(ctx context.Context, patchee *ExternalChild, patcher *ExternalChild, updateMask *field_mask1.FieldMask, prefix string, db *gorm1.DB, keyOfDeniedFields string) (*ExternalChild, error) {
 	if patcher == nil {
 		return nil, nil
 	} else if patchee == nil {
 		return nil, errors.New("Patchee inputs to DefaultApplyFieldMaskExternalChild must be non-nil")
 	}
+	var ignoreFields map[string]bool
+	if keyOfDeniedFields != "" {
+		if hook, ok := interface{}(patchee).(interface {
+			ValidateDeniedFields() map[string][]string
+		}); ok {
+			deniedFields := hook.ValidateDeniedFields()[keyOfDeniedFields]
+			if len(deniedFields) > 0 {
+				for _, f := range deniedFields {
+					ignoreFields[f] = true
+				}
+			}
+		}
+	}
 	var err error
 	for _, f := range updateMask.Paths {
 		if f == prefix+"Id" {
+			if ignoreFields["Id"] {
+				continue
+			}
 			patchee.Id = patcher.Id
 			continue
 		}
@@ -734,6 +803,59 @@ type BlogPostORMWithAfterStrictUpdateSave interface {
 	AfterStrictUpdateSave(context.Context, *gorm1.DB) error
 }
 
+// DefaultReplaceBlogPost executes a basic gorm update call with replace behavior
+func DefaultReplaceBlogPost(ctx context.Context, in *BlogPost, db *gorm1.DB) (*BlogPost, error) {
+	if in == nil {
+		return nil, errors.New("Nil argument to DefaultReplaceBlogPost")
+	}
+
+	var err error
+
+	if hook, ok := interface{}(in).(interface {
+		ValidateDeniedFields() map[string][]string
+	}); ok {
+		ignoreFields := hook.ValidateDeniedFields()["PUT"]
+		if len(ignoreFields) > 0 {
+			if hook, ok := interface{}(in).(interface {
+				BeforeReplaceRead(context.Context, *gorm1.DB) (*gorm1.DB, error)
+			}); ok {
+				if db, err = hook.BeforeReplaceRead(ctx, db); err != nil {
+					return nil, err
+				}
+			}
+			pbReadRes, err := DefaultReadBlogPost(ctx, &BlogPost{Id: in.GetId()}, db, nil)
+			if err != nil {
+				return nil, err
+			}
+
+			updateMask := &field_mask1.FieldMask{Paths: ignoreFields}
+			if _, err := DefaultApplyFieldMaskBlogPost(ctx, in, pbReadRes, updateMask, "", db, ""); err != nil {
+				return nil, err
+			}
+		}
+	}
+
+	if hook, ok := interface{}(in).(interface {
+		BeforeReplaceSave(context.Context, *gorm1.DB) (*gorm1.DB, error)
+	}); ok {
+		if db, err = hook.BeforeReplaceSave(ctx, db); err != nil {
+			return nil, err
+		}
+	}
+	pbResponse, err := DefaultStrictUpdateBlogPost(ctx, in, db)
+	if err != nil {
+		return nil, err
+	}
+	if hook, ok := interface{}(in).(interface {
+		AfterReplaceSave(context.Context, *BlogPost, *gorm1.DB) error
+	}); ok {
+		if err = hook.AfterReplaceSave(ctx, in, db); err != nil {
+			return nil, err
+		}
+	}
+	return pbResponse, nil
+}
+
 // DefaultPatchBlogPost executes a basic gorm update call with patch behavior
 func DefaultPatchBlogPost(ctx context.Context, in *BlogPost, updateMask *field_mask1.FieldMask, db *gorm1.DB) (*BlogPost, error) {
 	if in == nil {
@@ -790,23 +912,45 @@ type BlogPostWithAfterPatchSave interface {
 }
 
 // DefaultApplyFieldMaskBlogPost patches an pbObject with patcher according to a field mask.
-func DefaultApplyFieldMaskBlogPost(ctx context.Context, patchee *BlogPost, patcher *BlogPost, updateMask *field_mask1.FieldMask, prefix string, db *gorm1.DB) (*BlogPost, error) {
+func DefaultApplyFieldMaskBlogPost(ctx context.Context, patchee *BlogPost, patcher *BlogPost, updateMask *field_mask1.FieldMask, prefix string, db *gorm1.DB, keyOfDeniedFields string) (*BlogPost, error) {
 	if patcher == nil {
 		return nil, nil
 	} else if patchee == nil {
 		return nil, errors.New("Patchee inputs to DefaultApplyFieldMaskBlogPost must be non-nil")
 	}
+	var ignoreFields map[string]bool
+	if keyOfDeniedFields != "" {
+		if hook, ok := interface{}(patchee).(interface {
+			ValidateDeniedFields() map[string][]string
+		}); ok {
+			deniedFields := hook.ValidateDeniedFields()[keyOfDeniedFields]
+			if len(deniedFields) > 0 {
+				for _, f := range deniedFields {
+					ignoreFields[f] = true
+				}
+			}
+		}
+	}
 	var err error
 	for _, f := range updateMask.Paths {
 		if f == prefix+"Id" {
+			if ignoreFields["Id"] {
+				continue
+			}
 			patchee.Id = patcher.Id
 			continue
 		}
 		if f == prefix+"Title" {
+			if ignoreFields["Title"] {
+				continue
+			}
 			patchee.Title = patcher.Title
 			continue
 		}
 		if f == prefix+"Author" {
+			if ignoreFields["Author"] {
+				continue
+			}
 			patchee.Author = patcher.Author
 			continue
 		}

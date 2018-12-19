@@ -348,6 +348,71 @@ func (p *OrmPlugin) hasIDField(message *generator.Descriptor) bool {
 }
 
 func (p *OrmPlugin) generateReplaceHandler(message *generator.Descriptor) {
+	var isMultiAccount bool
+
+	typeName := p.TypeName(message)
+
+	if getMessageOptions(message).GetMultiAccount() {
+		isMultiAccount = true
+	}
+
+	if isMultiAccount && !p.hasIDField(message) {
+		p.P(fmt.Sprintf("// Cannot autogen DefaultReplace%s: this is a multi-account table without an \"id\" field in the message.\n", typeName))
+		return
+	}
+
+	p.P(`// DefaultReplace`, typeName, ` executes a basic gorm update call with replace behavior`)
+	p.P(`func DefaultReplace`, typeName, `(ctx context.Context, in *`, typeName, `, db *`, p.Import(gormImport), `.DB) (*`, typeName, `, error) {`)
+	p.P(`	if in == nil {`)
+	p.P(`		return nil, errors.New("Nil argument to DefaultReplace`, typeName, `")`)
+	p.P(`	}`)
+	p.P(``)
+	p.P(`	var err error`)
+	p.P(``)
+	p.P(`	if hook, ok := interface{}(in).(interface {`)
+	p.P(`		ValidateDeniedFields() map[string][]string`)
+	p.P(`	}); ok {`)
+	p.P(`		ignoreFields := hook.ValidateDeniedFields()["PUT"]`)
+	p.P(`		if len(ignoreFields) > 0 {`)
+	p.P(`			if hook, ok := interface{}(in).(interface {`)
+	p.P(`				BeforeReplaceRead(context.Context, *`, p.Import(gormImport), `.DB) (*`, p.Import(gormImport), `.DB, error)`)
+	p.P(`			}); ok {`)
+	p.P(`				if db, err = hook.BeforeReplaceRead(ctx, db); err != nil {`)
+	p.P(`					return nil, err`)
+	p.P(`				}`)
+	p.P(`			}`)
+	p.P(`			pbReadRes, err := DefaultRead`, typeName, `(ctx, &`, typeName, `{Id: in.GetId()}, db, nil)`)
+	p.P(`			if err != nil {`)
+	p.P(`				return nil, err`)
+	p.P(`			}`)
+	p.P()
+	p.P(`			updateMask := &`, p.Import(fmImport), `.FieldMask{Paths: ignoreFields}`)
+	p.P(`			if _, err := DefaultApplyFieldMask`, typeName, `(ctx, in, pbReadRes, updateMask, "", db, ""); err != nil {`)
+	p.P(`				return nil, err`)
+	p.P(`			}`)
+	p.P(`		}`)
+	p.P(`	}`)
+	p.P()
+	p.P(`	if hook, ok := interface{}(in).(interface {`)
+	p.P(`		BeforeReplaceSave(context.Context, *`, p.Import(gormImport), `.DB) (*`, p.Import(gormImport), `.DB, error)`)
+	p.P(`	}); ok {`)
+	p.P(`		if db, err = hook.BeforeReplaceSave(ctx, db); err != nil {`)
+	p.P(`			return nil, err`)
+	p.P(`		}`)
+	p.P(`	}`)
+	p.P(`	pbResponse, err := DefaultStrictUpdate`, typeName, `(ctx, in, db)`)
+	p.P(`	if err != nil {`)
+	p.P(`		return nil, err`)
+	p.P(`	}`)
+	p.P(`	if hook, ok := interface{}(in).(interface {`)
+	p.P(`		AfterReplaceSave(context.Context, *`, typeName, `, *`, p.Import(gormImport), `.DB) error`)
+	p.P(`	}); ok {`)
+	p.P(`		if err = hook.AfterReplaceSave(ctx, in, db); err != nil {`)
+	p.P(`			return nil, err`)
+	p.P(`		}`)
+	p.P(`	}`)
+	p.P(`	return pbResponse, nil`)
+	p.P(`}`)
 }
 
 func (p *OrmPlugin) generatePatchHandler(message *generator.Descriptor) {

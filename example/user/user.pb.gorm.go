@@ -1077,6 +1077,59 @@ type UserORMWithAfterStrictUpdateSave interface {
 	AfterStrictUpdateSave(context.Context, *gorm1.DB) error
 }
 
+// DefaultReplaceUser executes a basic gorm update call with replace behavior
+func DefaultReplaceUser(ctx context.Context, in *User, db *gorm1.DB) (*User, error) {
+	if in == nil {
+		return nil, errors.New("Nil argument to DefaultReplaceUser")
+	}
+
+	var err error
+
+	if hook, ok := interface{}(in).(interface {
+		ValidateDeniedFields() map[string][]string
+	}); ok {
+		ignoreFields := hook.ValidateDeniedFields()["PUT"]
+		if len(ignoreFields) > 0 {
+			if hook, ok := interface{}(in).(interface {
+				BeforeReplaceRead(context.Context, *gorm1.DB) (*gorm1.DB, error)
+			}); ok {
+				if db, err = hook.BeforeReplaceRead(ctx, db); err != nil {
+					return nil, err
+				}
+			}
+			pbReadRes, err := DefaultReadUser(ctx, &User{Id: in.GetId()}, db, nil)
+			if err != nil {
+				return nil, err
+			}
+
+			updateMask := &field_mask1.FieldMask{Paths: ignoreFields}
+			if _, err := DefaultApplyFieldMaskUser(ctx, in, pbReadRes, updateMask, "", db, ""); err != nil {
+				return nil, err
+			}
+		}
+	}
+
+	if hook, ok := interface{}(in).(interface {
+		BeforeReplaceSave(context.Context, *gorm1.DB) (*gorm1.DB, error)
+	}); ok {
+		if db, err = hook.BeforeReplaceSave(ctx, db); err != nil {
+			return nil, err
+		}
+	}
+	pbResponse, err := DefaultStrictUpdateUser(ctx, in, db)
+	if err != nil {
+		return nil, err
+	}
+	if hook, ok := interface{}(in).(interface {
+		AfterReplaceSave(context.Context, *User, *gorm1.DB) error
+	}); ok {
+		if err = hook.AfterReplaceSave(ctx, in, db); err != nil {
+			return nil, err
+		}
+	}
+	return pbResponse, nil
+}
+
 // DefaultPatchUser executes a basic gorm update call with patch behavior
 func DefaultPatchUser(ctx context.Context, in *User, updateMask *field_mask1.FieldMask, db *gorm1.DB) (*User, error) {
 	if in == nil {
@@ -1133,11 +1186,24 @@ type UserWithAfterPatchSave interface {
 }
 
 // DefaultApplyFieldMaskUser patches an pbObject with patcher according to a field mask.
-func DefaultApplyFieldMaskUser(ctx context.Context, patchee *User, patcher *User, updateMask *field_mask1.FieldMask, prefix string, db *gorm1.DB) (*User, error) {
+func DefaultApplyFieldMaskUser(ctx context.Context, patchee *User, patcher *User, updateMask *field_mask1.FieldMask, prefix string, db *gorm1.DB, keyOfDeniedFields string) (*User, error) {
 	if patcher == nil {
 		return nil, nil
 	} else if patchee == nil {
 		return nil, errors.New("Patchee inputs to DefaultApplyFieldMaskUser must be non-nil")
+	}
+	var ignoreFields map[string]bool
+	if keyOfDeniedFields != "" {
+		if hook, ok := interface{}(patchee).(interface {
+			ValidateDeniedFields() map[string][]string
+		}); ok {
+			deniedFields := hook.ValidateDeniedFields()[keyOfDeniedFields]
+			if len(deniedFields) > 0 {
+				for _, f := range deniedFields {
+					ignoreFields[f] = true
+				}
+			}
+		}
 	}
 	var err error
 	var updatedCreditCard bool
@@ -1145,30 +1211,51 @@ func DefaultApplyFieldMaskUser(ctx context.Context, patchee *User, patcher *User
 	var updatedShippingAddress bool
 	for i, f := range updateMask.Paths {
 		if f == prefix+"Id" {
+			if ignoreFields["Id"] {
+				continue
+			}
 			patchee.Id = patcher.Id
 			continue
 		}
 		if f == prefix+"CreatedAt" {
+			if ignoreFields["CreatedAt"] {
+				continue
+			}
 			patchee.CreatedAt = patcher.CreatedAt
 			continue
 		}
 		if f == prefix+"UpdatedAt" {
+			if ignoreFields["UpdatedAt"] {
+				continue
+			}
 			patchee.UpdatedAt = patcher.UpdatedAt
 			continue
 		}
 		if f == prefix+"Birthday" {
+			if ignoreFields["Birthday"] {
+				continue
+			}
 			patchee.Birthday = patcher.Birthday
 			continue
 		}
 		if f == prefix+"Age" {
+			if ignoreFields["Age"] {
+				continue
+			}
 			patchee.Age = patcher.Age
 			continue
 		}
 		if f == prefix+"Num" {
+			if ignoreFields["Num"] {
+				continue
+			}
 			patchee.Num = patcher.Num
 			continue
 		}
 		if strings.HasPrefix(f, prefix+"CreditCard.") && !updatedCreditCard {
+			if ignoreFields["CreditCard"] {
+				continue
+			}
 			updatedCreditCard = true
 			if patcher.CreditCard == nil {
 				patchee.CreditCard = nil
@@ -1177,7 +1264,7 @@ func DefaultApplyFieldMaskUser(ctx context.Context, patchee *User, patcher *User
 			if patchee.CreditCard == nil {
 				patchee.CreditCard = &CreditCard{}
 			}
-			if o, err := DefaultApplyFieldMaskCreditCard(ctx, patchee.CreditCard, patcher.CreditCard, &field_mask1.FieldMask{Paths: updateMask.Paths[i:]}, prefix+"CreditCard.", db); err != nil {
+			if o, err := DefaultApplyFieldMaskCreditCard(ctx, patchee.CreditCard, patcher.CreditCard, &field_mask1.FieldMask{Paths: updateMask.Paths[i:]}, prefix+"CreditCard.", db, keyOfDeniedFields); err != nil {
 				return nil, err
 			} else {
 				patchee.CreditCard = o
@@ -1185,19 +1272,31 @@ func DefaultApplyFieldMaskUser(ctx context.Context, patchee *User, patcher *User
 			continue
 		}
 		if f == prefix+"CreditCard" {
+			if ignoreFields["CreditCard"] {
+				continue
+			}
 			updatedCreditCard = true
 			patchee.CreditCard = patcher.CreditCard
 			continue
 		}
 		if f == prefix+"Emails" {
+			if ignoreFields["Emails"] {
+				continue
+			}
 			patchee.Emails = patcher.Emails
 			continue
 		}
 		if f == prefix+"Tasks" {
+			if ignoreFields["Tasks"] {
+				continue
+			}
 			patchee.Tasks = patcher.Tasks
 			continue
 		}
 		if strings.HasPrefix(f, prefix+"BillingAddress.") && !updatedBillingAddress {
+			if ignoreFields["BillingAddress"] {
+				continue
+			}
 			updatedBillingAddress = true
 			if patcher.BillingAddress == nil {
 				patchee.BillingAddress = nil
@@ -1206,7 +1305,7 @@ func DefaultApplyFieldMaskUser(ctx context.Context, patchee *User, patcher *User
 			if patchee.BillingAddress == nil {
 				patchee.BillingAddress = &Address{}
 			}
-			if o, err := DefaultApplyFieldMaskAddress(ctx, patchee.BillingAddress, patcher.BillingAddress, &field_mask1.FieldMask{Paths: updateMask.Paths[i:]}, prefix+"BillingAddress.", db); err != nil {
+			if o, err := DefaultApplyFieldMaskAddress(ctx, patchee.BillingAddress, patcher.BillingAddress, &field_mask1.FieldMask{Paths: updateMask.Paths[i:]}, prefix+"BillingAddress.", db, keyOfDeniedFields); err != nil {
 				return nil, err
 			} else {
 				patchee.BillingAddress = o
@@ -1214,11 +1313,17 @@ func DefaultApplyFieldMaskUser(ctx context.Context, patchee *User, patcher *User
 			continue
 		}
 		if f == prefix+"BillingAddress" {
+			if ignoreFields["BillingAddress"] {
+				continue
+			}
 			updatedBillingAddress = true
 			patchee.BillingAddress = patcher.BillingAddress
 			continue
 		}
 		if strings.HasPrefix(f, prefix+"ShippingAddress.") && !updatedShippingAddress {
+			if ignoreFields["ShippingAddress"] {
+				continue
+			}
 			updatedShippingAddress = true
 			if patcher.ShippingAddress == nil {
 				patchee.ShippingAddress = nil
@@ -1227,7 +1332,7 @@ func DefaultApplyFieldMaskUser(ctx context.Context, patchee *User, patcher *User
 			if patchee.ShippingAddress == nil {
 				patchee.ShippingAddress = &Address{}
 			}
-			if o, err := DefaultApplyFieldMaskAddress(ctx, patchee.ShippingAddress, patcher.ShippingAddress, &field_mask1.FieldMask{Paths: updateMask.Paths[i:]}, prefix+"ShippingAddress.", db); err != nil {
+			if o, err := DefaultApplyFieldMaskAddress(ctx, patchee.ShippingAddress, patcher.ShippingAddress, &field_mask1.FieldMask{Paths: updateMask.Paths[i:]}, prefix+"ShippingAddress.", db, keyOfDeniedFields); err != nil {
 				return nil, err
 			} else {
 				patchee.ShippingAddress = o
@@ -1235,23 +1340,38 @@ func DefaultApplyFieldMaskUser(ctx context.Context, patchee *User, patcher *User
 			continue
 		}
 		if f == prefix+"ShippingAddress" {
+			if ignoreFields["ShippingAddress"] {
+				continue
+			}
 			updatedShippingAddress = true
 			patchee.ShippingAddress = patcher.ShippingAddress
 			continue
 		}
 		if f == prefix+"Languages" {
+			if ignoreFields["Languages"] {
+				continue
+			}
 			patchee.Languages = patcher.Languages
 			continue
 		}
 		if f == prefix+"Friends" {
+			if ignoreFields["Friends"] {
+				continue
+			}
 			patchee.Friends = patcher.Friends
 			continue
 		}
 		if f == prefix+"ShippingAddressId" {
+			if ignoreFields["ShippingAddressId"] {
+				continue
+			}
 			patchee.ShippingAddressId = patcher.ShippingAddressId
 			continue
 		}
 		if f == prefix+"ExternalUuid" {
+			if ignoreFields["ExternalUuid"] {
+				continue
+			}
 			patchee.ExternalUuid = patcher.ExternalUuid
 			continue
 		}
@@ -1520,6 +1640,59 @@ type EmailORMWithAfterStrictUpdateSave interface {
 	AfterStrictUpdateSave(context.Context, *gorm1.DB) error
 }
 
+// DefaultReplaceEmail executes a basic gorm update call with replace behavior
+func DefaultReplaceEmail(ctx context.Context, in *Email, db *gorm1.DB) (*Email, error) {
+	if in == nil {
+		return nil, errors.New("Nil argument to DefaultReplaceEmail")
+	}
+
+	var err error
+
+	if hook, ok := interface{}(in).(interface {
+		ValidateDeniedFields() map[string][]string
+	}); ok {
+		ignoreFields := hook.ValidateDeniedFields()["PUT"]
+		if len(ignoreFields) > 0 {
+			if hook, ok := interface{}(in).(interface {
+				BeforeReplaceRead(context.Context, *gorm1.DB) (*gorm1.DB, error)
+			}); ok {
+				if db, err = hook.BeforeReplaceRead(ctx, db); err != nil {
+					return nil, err
+				}
+			}
+			pbReadRes, err := DefaultReadEmail(ctx, &Email{Id: in.GetId()}, db, nil)
+			if err != nil {
+				return nil, err
+			}
+
+			updateMask := &field_mask1.FieldMask{Paths: ignoreFields}
+			if _, err := DefaultApplyFieldMaskEmail(ctx, in, pbReadRes, updateMask, "", db, ""); err != nil {
+				return nil, err
+			}
+		}
+	}
+
+	if hook, ok := interface{}(in).(interface {
+		BeforeReplaceSave(context.Context, *gorm1.DB) (*gorm1.DB, error)
+	}); ok {
+		if db, err = hook.BeforeReplaceSave(ctx, db); err != nil {
+			return nil, err
+		}
+	}
+	pbResponse, err := DefaultStrictUpdateEmail(ctx, in, db)
+	if err != nil {
+		return nil, err
+	}
+	if hook, ok := interface{}(in).(interface {
+		AfterReplaceSave(context.Context, *Email, *gorm1.DB) error
+	}); ok {
+		if err = hook.AfterReplaceSave(ctx, in, db); err != nil {
+			return nil, err
+		}
+	}
+	return pbResponse, nil
+}
+
 // DefaultPatchEmail executes a basic gorm update call with patch behavior
 func DefaultPatchEmail(ctx context.Context, in *Email, updateMask *field_mask1.FieldMask, db *gorm1.DB) (*Email, error) {
 	if in == nil {
@@ -1576,31 +1749,59 @@ type EmailWithAfterPatchSave interface {
 }
 
 // DefaultApplyFieldMaskEmail patches an pbObject with patcher according to a field mask.
-func DefaultApplyFieldMaskEmail(ctx context.Context, patchee *Email, patcher *Email, updateMask *field_mask1.FieldMask, prefix string, db *gorm1.DB) (*Email, error) {
+func DefaultApplyFieldMaskEmail(ctx context.Context, patchee *Email, patcher *Email, updateMask *field_mask1.FieldMask, prefix string, db *gorm1.DB, keyOfDeniedFields string) (*Email, error) {
 	if patcher == nil {
 		return nil, nil
 	} else if patchee == nil {
 		return nil, errors.New("Patchee inputs to DefaultApplyFieldMaskEmail must be non-nil")
 	}
+	var ignoreFields map[string]bool
+	if keyOfDeniedFields != "" {
+		if hook, ok := interface{}(patchee).(interface {
+			ValidateDeniedFields() map[string][]string
+		}); ok {
+			deniedFields := hook.ValidateDeniedFields()[keyOfDeniedFields]
+			if len(deniedFields) > 0 {
+				for _, f := range deniedFields {
+					ignoreFields[f] = true
+				}
+			}
+		}
+	}
 	var err error
 	for _, f := range updateMask.Paths {
 		if f == prefix+"Id" {
+			if ignoreFields["Id"] {
+				continue
+			}
 			patchee.Id = patcher.Id
 			continue
 		}
 		if f == prefix+"Email" {
+			if ignoreFields["Email"] {
+				continue
+			}
 			patchee.Email = patcher.Email
 			continue
 		}
 		if f == prefix+"Subscribed" {
+			if ignoreFields["Subscribed"] {
+				continue
+			}
 			patchee.Subscribed = patcher.Subscribed
 			continue
 		}
 		if f == prefix+"UserId" {
+			if ignoreFields["UserId"] {
+				continue
+			}
 			patchee.UserId = patcher.UserId
 			continue
 		}
 		if f == prefix+"ExternalNotNull" {
+			if ignoreFields["ExternalNotNull"] {
+				continue
+			}
 			patchee.ExternalNotNull = patcher.ExternalNotNull
 			continue
 		}
@@ -1869,6 +2070,59 @@ type AddressORMWithAfterStrictUpdateSave interface {
 	AfterStrictUpdateSave(context.Context, *gorm1.DB) error
 }
 
+// DefaultReplaceAddress executes a basic gorm update call with replace behavior
+func DefaultReplaceAddress(ctx context.Context, in *Address, db *gorm1.DB) (*Address, error) {
+	if in == nil {
+		return nil, errors.New("Nil argument to DefaultReplaceAddress")
+	}
+
+	var err error
+
+	if hook, ok := interface{}(in).(interface {
+		ValidateDeniedFields() map[string][]string
+	}); ok {
+		ignoreFields := hook.ValidateDeniedFields()["PUT"]
+		if len(ignoreFields) > 0 {
+			if hook, ok := interface{}(in).(interface {
+				BeforeReplaceRead(context.Context, *gorm1.DB) (*gorm1.DB, error)
+			}); ok {
+				if db, err = hook.BeforeReplaceRead(ctx, db); err != nil {
+					return nil, err
+				}
+			}
+			pbReadRes, err := DefaultReadAddress(ctx, &Address{Id: in.GetId()}, db, nil)
+			if err != nil {
+				return nil, err
+			}
+
+			updateMask := &field_mask1.FieldMask{Paths: ignoreFields}
+			if _, err := DefaultApplyFieldMaskAddress(ctx, in, pbReadRes, updateMask, "", db, ""); err != nil {
+				return nil, err
+			}
+		}
+	}
+
+	if hook, ok := interface{}(in).(interface {
+		BeforeReplaceSave(context.Context, *gorm1.DB) (*gorm1.DB, error)
+	}); ok {
+		if db, err = hook.BeforeReplaceSave(ctx, db); err != nil {
+			return nil, err
+		}
+	}
+	pbResponse, err := DefaultStrictUpdateAddress(ctx, in, db)
+	if err != nil {
+		return nil, err
+	}
+	if hook, ok := interface{}(in).(interface {
+		AfterReplaceSave(context.Context, *Address, *gorm1.DB) error
+	}); ok {
+		if err = hook.AfterReplaceSave(ctx, in, db); err != nil {
+			return nil, err
+		}
+	}
+	return pbResponse, nil
+}
+
 // DefaultPatchAddress executes a basic gorm update call with patch behavior
 func DefaultPatchAddress(ctx context.Context, in *Address, updateMask *field_mask1.FieldMask, db *gorm1.DB) (*Address, error) {
 	if in == nil {
@@ -1925,35 +2179,66 @@ type AddressWithAfterPatchSave interface {
 }
 
 // DefaultApplyFieldMaskAddress patches an pbObject with patcher according to a field mask.
-func DefaultApplyFieldMaskAddress(ctx context.Context, patchee *Address, patcher *Address, updateMask *field_mask1.FieldMask, prefix string, db *gorm1.DB) (*Address, error) {
+func DefaultApplyFieldMaskAddress(ctx context.Context, patchee *Address, patcher *Address, updateMask *field_mask1.FieldMask, prefix string, db *gorm1.DB, keyOfDeniedFields string) (*Address, error) {
 	if patcher == nil {
 		return nil, nil
 	} else if patchee == nil {
 		return nil, errors.New("Patchee inputs to DefaultApplyFieldMaskAddress must be non-nil")
 	}
+	var ignoreFields map[string]bool
+	if keyOfDeniedFields != "" {
+		if hook, ok := interface{}(patchee).(interface {
+			ValidateDeniedFields() map[string][]string
+		}); ok {
+			deniedFields := hook.ValidateDeniedFields()[keyOfDeniedFields]
+			if len(deniedFields) > 0 {
+				for _, f := range deniedFields {
+					ignoreFields[f] = true
+				}
+			}
+		}
+	}
 	var err error
 	for _, f := range updateMask.Paths {
 		if f == prefix+"Id" {
+			if ignoreFields["Id"] {
+				continue
+			}
 			patchee.Id = patcher.Id
 			continue
 		}
 		if f == prefix+"Address_1" {
+			if ignoreFields["Address_1"] {
+				continue
+			}
 			patchee.Address_1 = patcher.Address_1
 			continue
 		}
 		if f == prefix+"Address_2" {
+			if ignoreFields["Address_2"] {
+				continue
+			}
 			patchee.Address_2 = patcher.Address_2
 			continue
 		}
 		if f == prefix+"Post" {
+			if ignoreFields["Post"] {
+				continue
+			}
 			patchee.Post = patcher.Post
 			continue
 		}
 		if f == prefix+"External" {
+			if ignoreFields["External"] {
+				continue
+			}
 			patchee.External = patcher.External
 			continue
 		}
 		if f == prefix+"ImplicitFk" {
+			if ignoreFields["ImplicitFk"] {
+				continue
+			}
 			patchee.ImplicitFk = patcher.ImplicitFk
 			continue
 		}
@@ -2222,6 +2507,59 @@ type LanguageORMWithAfterStrictUpdateSave interface {
 	AfterStrictUpdateSave(context.Context, *gorm1.DB) error
 }
 
+// DefaultReplaceLanguage executes a basic gorm update call with replace behavior
+func DefaultReplaceLanguage(ctx context.Context, in *Language, db *gorm1.DB) (*Language, error) {
+	if in == nil {
+		return nil, errors.New("Nil argument to DefaultReplaceLanguage")
+	}
+
+	var err error
+
+	if hook, ok := interface{}(in).(interface {
+		ValidateDeniedFields() map[string][]string
+	}); ok {
+		ignoreFields := hook.ValidateDeniedFields()["PUT"]
+		if len(ignoreFields) > 0 {
+			if hook, ok := interface{}(in).(interface {
+				BeforeReplaceRead(context.Context, *gorm1.DB) (*gorm1.DB, error)
+			}); ok {
+				if db, err = hook.BeforeReplaceRead(ctx, db); err != nil {
+					return nil, err
+				}
+			}
+			pbReadRes, err := DefaultReadLanguage(ctx, &Language{Id: in.GetId()}, db, nil)
+			if err != nil {
+				return nil, err
+			}
+
+			updateMask := &field_mask1.FieldMask{Paths: ignoreFields}
+			if _, err := DefaultApplyFieldMaskLanguage(ctx, in, pbReadRes, updateMask, "", db, ""); err != nil {
+				return nil, err
+			}
+		}
+	}
+
+	if hook, ok := interface{}(in).(interface {
+		BeforeReplaceSave(context.Context, *gorm1.DB) (*gorm1.DB, error)
+	}); ok {
+		if db, err = hook.BeforeReplaceSave(ctx, db); err != nil {
+			return nil, err
+		}
+	}
+	pbResponse, err := DefaultStrictUpdateLanguage(ctx, in, db)
+	if err != nil {
+		return nil, err
+	}
+	if hook, ok := interface{}(in).(interface {
+		AfterReplaceSave(context.Context, *Language, *gorm1.DB) error
+	}); ok {
+		if err = hook.AfterReplaceSave(ctx, in, db); err != nil {
+			return nil, err
+		}
+	}
+	return pbResponse, nil
+}
+
 // DefaultPatchLanguage executes a basic gorm update call with patch behavior
 func DefaultPatchLanguage(ctx context.Context, in *Language, updateMask *field_mask1.FieldMask, db *gorm1.DB) (*Language, error) {
 	if in == nil {
@@ -2278,27 +2616,52 @@ type LanguageWithAfterPatchSave interface {
 }
 
 // DefaultApplyFieldMaskLanguage patches an pbObject with patcher according to a field mask.
-func DefaultApplyFieldMaskLanguage(ctx context.Context, patchee *Language, patcher *Language, updateMask *field_mask1.FieldMask, prefix string, db *gorm1.DB) (*Language, error) {
+func DefaultApplyFieldMaskLanguage(ctx context.Context, patchee *Language, patcher *Language, updateMask *field_mask1.FieldMask, prefix string, db *gorm1.DB, keyOfDeniedFields string) (*Language, error) {
 	if patcher == nil {
 		return nil, nil
 	} else if patchee == nil {
 		return nil, errors.New("Patchee inputs to DefaultApplyFieldMaskLanguage must be non-nil")
 	}
+	var ignoreFields map[string]bool
+	if keyOfDeniedFields != "" {
+		if hook, ok := interface{}(patchee).(interface {
+			ValidateDeniedFields() map[string][]string
+		}); ok {
+			deniedFields := hook.ValidateDeniedFields()[keyOfDeniedFields]
+			if len(deniedFields) > 0 {
+				for _, f := range deniedFields {
+					ignoreFields[f] = true
+				}
+			}
+		}
+	}
 	var err error
 	for _, f := range updateMask.Paths {
 		if f == prefix+"Id" {
+			if ignoreFields["Id"] {
+				continue
+			}
 			patchee.Id = patcher.Id
 			continue
 		}
 		if f == prefix+"Name" {
+			if ignoreFields["Name"] {
+				continue
+			}
 			patchee.Name = patcher.Name
 			continue
 		}
 		if f == prefix+"Code" {
+			if ignoreFields["Code"] {
+				continue
+			}
 			patchee.Code = patcher.Code
 			continue
 		}
 		if f == prefix+"ExternalInt" {
+			if ignoreFields["ExternalInt"] {
+				continue
+			}
 			patchee.ExternalInt = patcher.ExternalInt
 			continue
 		}
@@ -2567,6 +2930,59 @@ type CreditCardORMWithAfterStrictUpdateSave interface {
 	AfterStrictUpdateSave(context.Context, *gorm1.DB) error
 }
 
+// DefaultReplaceCreditCard executes a basic gorm update call with replace behavior
+func DefaultReplaceCreditCard(ctx context.Context, in *CreditCard, db *gorm1.DB) (*CreditCard, error) {
+	if in == nil {
+		return nil, errors.New("Nil argument to DefaultReplaceCreditCard")
+	}
+
+	var err error
+
+	if hook, ok := interface{}(in).(interface {
+		ValidateDeniedFields() map[string][]string
+	}); ok {
+		ignoreFields := hook.ValidateDeniedFields()["PUT"]
+		if len(ignoreFields) > 0 {
+			if hook, ok := interface{}(in).(interface {
+				BeforeReplaceRead(context.Context, *gorm1.DB) (*gorm1.DB, error)
+			}); ok {
+				if db, err = hook.BeforeReplaceRead(ctx, db); err != nil {
+					return nil, err
+				}
+			}
+			pbReadRes, err := DefaultReadCreditCard(ctx, &CreditCard{Id: in.GetId()}, db, nil)
+			if err != nil {
+				return nil, err
+			}
+
+			updateMask := &field_mask1.FieldMask{Paths: ignoreFields}
+			if _, err := DefaultApplyFieldMaskCreditCard(ctx, in, pbReadRes, updateMask, "", db, ""); err != nil {
+				return nil, err
+			}
+		}
+	}
+
+	if hook, ok := interface{}(in).(interface {
+		BeforeReplaceSave(context.Context, *gorm1.DB) (*gorm1.DB, error)
+	}); ok {
+		if db, err = hook.BeforeReplaceSave(ctx, db); err != nil {
+			return nil, err
+		}
+	}
+	pbResponse, err := DefaultStrictUpdateCreditCard(ctx, in, db)
+	if err != nil {
+		return nil, err
+	}
+	if hook, ok := interface{}(in).(interface {
+		AfterReplaceSave(context.Context, *CreditCard, *gorm1.DB) error
+	}); ok {
+		if err = hook.AfterReplaceSave(ctx, in, db); err != nil {
+			return nil, err
+		}
+	}
+	return pbResponse, nil
+}
+
 // DefaultPatchCreditCard executes a basic gorm update call with patch behavior
 func DefaultPatchCreditCard(ctx context.Context, in *CreditCard, updateMask *field_mask1.FieldMask, db *gorm1.DB) (*CreditCard, error) {
 	if in == nil {
@@ -2623,31 +3039,59 @@ type CreditCardWithAfterPatchSave interface {
 }
 
 // DefaultApplyFieldMaskCreditCard patches an pbObject with patcher according to a field mask.
-func DefaultApplyFieldMaskCreditCard(ctx context.Context, patchee *CreditCard, patcher *CreditCard, updateMask *field_mask1.FieldMask, prefix string, db *gorm1.DB) (*CreditCard, error) {
+func DefaultApplyFieldMaskCreditCard(ctx context.Context, patchee *CreditCard, patcher *CreditCard, updateMask *field_mask1.FieldMask, prefix string, db *gorm1.DB, keyOfDeniedFields string) (*CreditCard, error) {
 	if patcher == nil {
 		return nil, nil
 	} else if patchee == nil {
 		return nil, errors.New("Patchee inputs to DefaultApplyFieldMaskCreditCard must be non-nil")
 	}
+	var ignoreFields map[string]bool
+	if keyOfDeniedFields != "" {
+		if hook, ok := interface{}(patchee).(interface {
+			ValidateDeniedFields() map[string][]string
+		}); ok {
+			deniedFields := hook.ValidateDeniedFields()[keyOfDeniedFields]
+			if len(deniedFields) > 0 {
+				for _, f := range deniedFields {
+					ignoreFields[f] = true
+				}
+			}
+		}
+	}
 	var err error
 	for _, f := range updateMask.Paths {
 		if f == prefix+"Id" {
+			if ignoreFields["Id"] {
+				continue
+			}
 			patchee.Id = patcher.Id
 			continue
 		}
 		if f == prefix+"CreatedAt" {
+			if ignoreFields["CreatedAt"] {
+				continue
+			}
 			patchee.CreatedAt = patcher.CreatedAt
 			continue
 		}
 		if f == prefix+"UpdatedAt" {
+			if ignoreFields["UpdatedAt"] {
+				continue
+			}
 			patchee.UpdatedAt = patcher.UpdatedAt
 			continue
 		}
 		if f == prefix+"Number" {
+			if ignoreFields["Number"] {
+				continue
+			}
 			patchee.Number = patcher.Number
 			continue
 		}
 		if f == prefix+"UserId" {
+			if ignoreFields["UserId"] {
+				continue
+			}
 			patchee.UserId = patcher.UserId
 			continue
 		}
@@ -2745,23 +3189,45 @@ type TaskORMWithAfterCreate interface {
 }
 
 // DefaultApplyFieldMaskTask patches an pbObject with patcher according to a field mask.
-func DefaultApplyFieldMaskTask(ctx context.Context, patchee *Task, patcher *Task, updateMask *field_mask1.FieldMask, prefix string, db *gorm1.DB) (*Task, error) {
+func DefaultApplyFieldMaskTask(ctx context.Context, patchee *Task, patcher *Task, updateMask *field_mask1.FieldMask, prefix string, db *gorm1.DB, keyOfDeniedFields string) (*Task, error) {
 	if patcher == nil {
 		return nil, nil
 	} else if patchee == nil {
 		return nil, errors.New("Patchee inputs to DefaultApplyFieldMaskTask must be non-nil")
 	}
+	var ignoreFields map[string]bool
+	if keyOfDeniedFields != "" {
+		if hook, ok := interface{}(patchee).(interface {
+			ValidateDeniedFields() map[string][]string
+		}); ok {
+			deniedFields := hook.ValidateDeniedFields()[keyOfDeniedFields]
+			if len(deniedFields) > 0 {
+				for _, f := range deniedFields {
+					ignoreFields[f] = true
+				}
+			}
+		}
+	}
 	var err error
 	for _, f := range updateMask.Paths {
 		if f == prefix+"Name" {
+			if ignoreFields["Name"] {
+				continue
+			}
 			patchee.Name = patcher.Name
 			continue
 		}
 		if f == prefix+"Description" {
+			if ignoreFields["Description"] {
+				continue
+			}
 			patchee.Description = patcher.Description
 			continue
 		}
 		if f == prefix+"Priority" {
+			if ignoreFields["Priority"] {
+				continue
+			}
 			patchee.Priority = patcher.Priority
 			continue
 		}

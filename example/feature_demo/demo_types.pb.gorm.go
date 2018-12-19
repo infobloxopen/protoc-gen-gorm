@@ -159,6 +159,8 @@ type TypeWithIDORM struct {
 	MultiAccountTypes []*JoinTable    `gorm:"foreignkey:TypeWithIDID"`
 	Point             *IntPointORM    `gorm:"foreignkey:IntPointId;association_foreignkey:Id"`
 	SecretInt         int32           `gorm:"-"`
+	TagSizeTest       string          `gorm:"size:Ȁ"`
+	TagTest           float32         `gorm:"type:float;precision:"`
 	Things            []*TestTypesORM `gorm:"foreignkey:ThingsTypeWithIDId;association_foreignkey:Id"`
 	User              *user.UserORM   `gorm:"foreignkey:UserId;association_foreignkey:Id"`
 	UserId            *string
@@ -218,6 +220,8 @@ func (m *TypeWithID) ToORM(ctx context.Context) (TypeWithIDORM, error) {
 			return to, err
 		}
 	}
+	to.TagTest = m.TagTest
+	to.TagSizeTest = m.TagSizeTest
 	if posthook, ok := interface{}(m).(TypeWithIDWithAfterToORM); ok {
 		err = posthook.AfterToORM(ctx, &to)
 	}
@@ -271,6 +275,8 @@ func (m *TypeWithIDORM) ToPB(ctx context.Context) (TypeWithID, error) {
 	if m.Address != nil && m.Address.IPNet != nil {
 		to.Address = &types1.InetValue{Value: m.Address.String()}
 	}
+	to.TagTest = m.TagTest
+	to.TagSizeTest = m.TagSizeTest
 	if posthook, ok := interface{}(m).(TypeWithIDWithAfterToPB); ok {
 		err = posthook.AfterToPB(ctx, &to)
 	}
@@ -878,51 +884,94 @@ type TestTypesORMWithAfterCreate interface {
 }
 
 // DefaultApplyFieldMaskTestTypes patches an pbObject with patcher according to a field mask.
-func DefaultApplyFieldMaskTestTypes(ctx context.Context, patchee *TestTypes, patcher *TestTypes, updateMask *field_mask1.FieldMask, prefix string, db *gorm1.DB) (*TestTypes, error) {
+func DefaultApplyFieldMaskTestTypes(ctx context.Context, patchee *TestTypes, patcher *TestTypes, updateMask *field_mask1.FieldMask, prefix string, db *gorm1.DB, keyOfDeniedFields string) (*TestTypes, error) {
 	if patcher == nil {
 		return nil, nil
 	} else if patchee == nil {
 		return nil, errors.New("Patchee inputs to DefaultApplyFieldMaskTestTypes must be non-nil")
 	}
+	var ignoreFields map[string]bool
+	if keyOfDeniedFields != "" {
+		if hook, ok := interface{}(patchee).(interface {
+			ValidateDeniedFields() map[string][]string
+		}); ok {
+			deniedFields := hook.ValidateDeniedFields()[keyOfDeniedFields]
+			if len(deniedFields) > 0 {
+				for _, f := range deniedFields {
+					ignoreFields[f] = true
+				}
+			}
+		}
+	}
 	var err error
 	for _, f := range updateMask.Paths {
 		if f == prefix+"ApiOnlyString" {
+			if ignoreFields["ApiOnlyString"] {
+				continue
+			}
 			patchee.ApiOnlyString = patcher.ApiOnlyString
 			continue
 		}
 		if f == prefix+"Numbers" {
+			if ignoreFields["Numbers"] {
+				continue
+			}
 			patchee.Numbers = patcher.Numbers
 			continue
 		}
 		if f == prefix+"OptionalString" {
+			if ignoreFields["OptionalString"] {
+				continue
+			}
 			patchee.OptionalString = patcher.OptionalString
 			continue
 		}
 		if f == prefix+"BecomesInt" {
+			if ignoreFields["BecomesInt"] {
+				continue
+			}
 			patchee.BecomesInt = patcher.BecomesInt
 			continue
 		}
 		if f == prefix+"Nothingness" {
+			if ignoreFields["Nothingness"] {
+				continue
+			}
 			patchee.Nothingness = patcher.Nothingness
 			continue
 		}
 		if f == prefix+"Uuid" {
+			if ignoreFields["Uuid"] {
+				continue
+			}
 			patchee.Uuid = patcher.Uuid
 			continue
 		}
 		if f == prefix+"CreatedAt" {
+			if ignoreFields["CreatedAt"] {
+				continue
+			}
 			patchee.CreatedAt = patcher.CreatedAt
 			continue
 		}
 		if f == prefix+"TypeWithIdId" {
+			if ignoreFields["TypeWithIdId"] {
+				continue
+			}
 			patchee.TypeWithIdId = patcher.TypeWithIdId
 			continue
 		}
 		if f == prefix+"JsonField" {
+			if ignoreFields["JsonField"] {
+				continue
+			}
 			patchee.JsonField = patcher.JsonField
 			continue
 		}
 		if f == prefix+"NullableUuid" {
+			if ignoreFields["NullableUuid"] {
+				continue
+			}
 			patchee.NullableUuid = patcher.NullableUuid
 			continue
 		}
@@ -1205,6 +1254,59 @@ type TypeWithIDORMWithAfterStrictUpdateSave interface {
 	AfterStrictUpdateSave(context.Context, *gorm1.DB) error
 }
 
+// DefaultReplaceTypeWithID executes a basic gorm update call with replace behavior
+func DefaultReplaceTypeWithID(ctx context.Context, in *TypeWithID, db *gorm1.DB) (*TypeWithID, error) {
+	if in == nil {
+		return nil, errors.New("Nil argument to DefaultReplaceTypeWithID")
+	}
+
+	var err error
+
+	if hook, ok := interface{}(in).(interface {
+		ValidateDeniedFields() map[string][]string
+	}); ok {
+		ignoreFields := hook.ValidateDeniedFields()["PUT"]
+		if len(ignoreFields) > 0 {
+			if hook, ok := interface{}(in).(interface {
+				BeforeReplaceRead(context.Context, *gorm1.DB) (*gorm1.DB, error)
+			}); ok {
+				if db, err = hook.BeforeReplaceRead(ctx, db); err != nil {
+					return nil, err
+				}
+			}
+			pbReadRes, err := DefaultReadTypeWithID(ctx, &TypeWithID{Id: in.GetId()}, db, nil)
+			if err != nil {
+				return nil, err
+			}
+
+			updateMask := &field_mask1.FieldMask{Paths: ignoreFields}
+			if _, err := DefaultApplyFieldMaskTypeWithID(ctx, in, pbReadRes, updateMask, "", db, ""); err != nil {
+				return nil, err
+			}
+		}
+	}
+
+	if hook, ok := interface{}(in).(interface {
+		BeforeReplaceSave(context.Context, *gorm1.DB) (*gorm1.DB, error)
+	}); ok {
+		if db, err = hook.BeforeReplaceSave(ctx, db); err != nil {
+			return nil, err
+		}
+	}
+	pbResponse, err := DefaultStrictUpdateTypeWithID(ctx, in, db)
+	if err != nil {
+		return nil, err
+	}
+	if hook, ok := interface{}(in).(interface {
+		AfterReplaceSave(context.Context, *TypeWithID, *gorm1.DB) error
+	}); ok {
+		if err = hook.AfterReplaceSave(ctx, in, db); err != nil {
+			return nil, err
+		}
+	}
+	return pbResponse, nil
+}
+
 // DefaultPatchTypeWithID executes a basic gorm update call with patch behavior
 func DefaultPatchTypeWithID(ctx context.Context, in *TypeWithID, updateMask *field_mask1.FieldMask, db *gorm1.DB) (*TypeWithID, error) {
 	if in == nil {
@@ -1261,11 +1363,24 @@ type TypeWithIDWithAfterPatchSave interface {
 }
 
 // DefaultApplyFieldMaskTypeWithID patches an pbObject with patcher according to a field mask.
-func DefaultApplyFieldMaskTypeWithID(ctx context.Context, patchee *TypeWithID, patcher *TypeWithID, updateMask *field_mask1.FieldMask, prefix string, db *gorm1.DB) (*TypeWithID, error) {
+func DefaultApplyFieldMaskTypeWithID(ctx context.Context, patchee *TypeWithID, patcher *TypeWithID, updateMask *field_mask1.FieldMask, prefix string, db *gorm1.DB, keyOfDeniedFields string) (*TypeWithID, error) {
 	if patcher == nil {
 		return nil, nil
 	} else if patchee == nil {
 		return nil, errors.New("Patchee inputs to DefaultApplyFieldMaskTypeWithID must be non-nil")
+	}
+	var ignoreFields map[string]bool
+	if keyOfDeniedFields != "" {
+		if hook, ok := interface{}(patchee).(interface {
+			ValidateDeniedFields() map[string][]string
+		}); ok {
+			deniedFields := hook.ValidateDeniedFields()[keyOfDeniedFields]
+			if len(deniedFields) > 0 {
+				for _, f := range deniedFields {
+					ignoreFields[f] = true
+				}
+			}
+		}
 	}
 	var err error
 	var updatedANestedObject bool
@@ -1274,18 +1389,30 @@ func DefaultApplyFieldMaskTypeWithID(ctx context.Context, patchee *TypeWithID, p
 	var updatedSyntheticField bool
 	for i, f := range updateMask.Paths {
 		if f == prefix+"Id" {
+			if ignoreFields["Id"] {
+				continue
+			}
 			patchee.Id = patcher.Id
 			continue
 		}
 		if f == prefix+"Ip" {
+			if ignoreFields["Ip"] {
+				continue
+			}
 			patchee.Ip = patcher.Ip
 			continue
 		}
 		if f == prefix+"Things" {
+			if ignoreFields["Things"] {
+				continue
+			}
 			patchee.Things = patcher.Things
 			continue
 		}
 		if strings.HasPrefix(f, prefix+"ANestedObject.") && !updatedANestedObject {
+			if ignoreFields["ANestedObject"] {
+				continue
+			}
 			updatedANestedObject = true
 			if patcher.ANestedObject == nil {
 				patchee.ANestedObject = nil
@@ -1294,7 +1421,7 @@ func DefaultApplyFieldMaskTypeWithID(ctx context.Context, patchee *TypeWithID, p
 			if patchee.ANestedObject == nil {
 				patchee.ANestedObject = &TestTypes{}
 			}
-			if o, err := DefaultApplyFieldMaskTestTypes(ctx, patchee.ANestedObject, patcher.ANestedObject, &field_mask1.FieldMask{Paths: updateMask.Paths[i:]}, prefix+"ANestedObject.", db); err != nil {
+			if o, err := DefaultApplyFieldMaskTestTypes(ctx, patchee.ANestedObject, patcher.ANestedObject, &field_mask1.FieldMask{Paths: updateMask.Paths[i:]}, prefix+"ANestedObject.", db, keyOfDeniedFields); err != nil {
 				return nil, err
 			} else {
 				patchee.ANestedObject = o
@@ -1302,11 +1429,17 @@ func DefaultApplyFieldMaskTypeWithID(ctx context.Context, patchee *TypeWithID, p
 			continue
 		}
 		if f == prefix+"ANestedObject" {
+			if ignoreFields["ANestedObject"] {
+				continue
+			}
 			updatedANestedObject = true
 			patchee.ANestedObject = patcher.ANestedObject
 			continue
 		}
 		if strings.HasPrefix(f, prefix+"Point.") && !updatedPoint {
+			if ignoreFields["Point"] {
+				continue
+			}
 			updatedPoint = true
 			if patcher.Point == nil {
 				patchee.Point = nil
@@ -1315,7 +1448,7 @@ func DefaultApplyFieldMaskTypeWithID(ctx context.Context, patchee *TypeWithID, p
 			if patchee.Point == nil {
 				patchee.Point = &IntPoint{}
 			}
-			if o, err := DefaultApplyFieldMaskIntPoint(ctx, patchee.Point, patcher.Point, &field_mask1.FieldMask{Paths: updateMask.Paths[i:]}, prefix+"Point.", db); err != nil {
+			if o, err := DefaultApplyFieldMaskIntPoint(ctx, patchee.Point, patcher.Point, &field_mask1.FieldMask{Paths: updateMask.Paths[i:]}, prefix+"Point.", db, keyOfDeniedFields); err != nil {
 				return nil, err
 			} else {
 				patchee.Point = o
@@ -1323,11 +1456,17 @@ func DefaultApplyFieldMaskTypeWithID(ctx context.Context, patchee *TypeWithID, p
 			continue
 		}
 		if f == prefix+"Point" {
+			if ignoreFields["Point"] {
+				continue
+			}
 			updatedPoint = true
 			patchee.Point = patcher.Point
 			continue
 		}
 		if strings.HasPrefix(f, prefix+"User.") && !updatedUser {
+			if ignoreFields["User"] {
+				continue
+			}
 			updatedUser = true
 			if patcher.User == nil {
 				patchee.User = nil
@@ -1336,7 +1475,7 @@ func DefaultApplyFieldMaskTypeWithID(ctx context.Context, patchee *TypeWithID, p
 			if patchee.User == nil {
 				patchee.User = &user.User{}
 			}
-			if o, err := user.DefaultApplyFieldMaskUser(ctx, patchee.User, patcher.User, &field_mask1.FieldMask{Paths: updateMask.Paths[i:]}, prefix+"User.", db); err != nil {
+			if o, err := user.DefaultApplyFieldMaskUser(ctx, patchee.User, patcher.User, &field_mask1.FieldMask{Paths: updateMask.Paths[i:]}, prefix+"User.", db, keyOfDeniedFields); err != nil {
 				return nil, err
 			} else {
 				patchee.User = o
@@ -1344,19 +1483,31 @@ func DefaultApplyFieldMaskTypeWithID(ctx context.Context, patchee *TypeWithID, p
 			continue
 		}
 		if f == prefix+"User" {
+			if ignoreFields["User"] {
+				continue
+			}
 			updatedUser = true
 			patchee.User = patcher.User
 			continue
 		}
 		if f == prefix+"Address" {
+			if ignoreFields["Address"] {
+				continue
+			}
 			patchee.Address = patcher.Address
 			continue
 		}
 		if f == prefix+"MultiaccountTypeIds" {
+			if ignoreFields["MultiaccountTypeIds"] {
+				continue
+			}
 			patchee.MultiaccountTypeIds = patcher.MultiaccountTypeIds
 			continue
 		}
 		if strings.HasPrefix(f, prefix+"SyntheticField.") && !updatedSyntheticField {
+			if ignoreFields["SyntheticField"] {
+				continue
+			}
 			if patcher.SyntheticField == nil {
 				patchee.SyntheticField = nil
 				continue
@@ -1375,8 +1526,25 @@ func DefaultApplyFieldMaskTypeWithID(ctx context.Context, patchee *TypeWithID, p
 			}
 		}
 		if f == prefix+"SyntheticField" {
+			if ignoreFields["SyntheticField"] {
+				continue
+			}
 			updatedSyntheticField = true
 			patchee.SyntheticField = patcher.SyntheticField
+			continue
+		}
+		if f == prefix+"TagTest" {
+			if ignoreFields["TagTest"] {
+				continue
+			}
+			patchee.TagTest = patcher.TagTest
+			continue
+		}
+		if f == prefix+"TagSizeTest" {
+			if ignoreFields["TagSizeTest"] {
+				continue
+			}
+			patchee.TagSizeTest = patcher.TagSizeTest
 			continue
 		}
 	}
@@ -1650,6 +1818,59 @@ type MultiaccountTypeWithIDORMWithAfterStrictUpdateSave interface {
 	AfterStrictUpdateSave(context.Context, *gorm1.DB) error
 }
 
+// DefaultReplaceMultiaccountTypeWithID executes a basic gorm update call with replace behavior
+func DefaultReplaceMultiaccountTypeWithID(ctx context.Context, in *MultiaccountTypeWithID, db *gorm1.DB) (*MultiaccountTypeWithID, error) {
+	if in == nil {
+		return nil, errors.New("Nil argument to DefaultReplaceMultiaccountTypeWithID")
+	}
+
+	var err error
+
+	if hook, ok := interface{}(in).(interface {
+		ValidateDeniedFields() map[string][]string
+	}); ok {
+		ignoreFields := hook.ValidateDeniedFields()["PUT"]
+		if len(ignoreFields) > 0 {
+			if hook, ok := interface{}(in).(interface {
+				BeforeReplaceRead(context.Context, *gorm1.DB) (*gorm1.DB, error)
+			}); ok {
+				if db, err = hook.BeforeReplaceRead(ctx, db); err != nil {
+					return nil, err
+				}
+			}
+			pbReadRes, err := DefaultReadMultiaccountTypeWithID(ctx, &MultiaccountTypeWithID{Id: in.GetId()}, db, nil)
+			if err != nil {
+				return nil, err
+			}
+
+			updateMask := &field_mask1.FieldMask{Paths: ignoreFields}
+			if _, err := DefaultApplyFieldMaskMultiaccountTypeWithID(ctx, in, pbReadRes, updateMask, "", db, ""); err != nil {
+				return nil, err
+			}
+		}
+	}
+
+	if hook, ok := interface{}(in).(interface {
+		BeforeReplaceSave(context.Context, *gorm1.DB) (*gorm1.DB, error)
+	}); ok {
+		if db, err = hook.BeforeReplaceSave(ctx, db); err != nil {
+			return nil, err
+		}
+	}
+	pbResponse, err := DefaultStrictUpdateMultiaccountTypeWithID(ctx, in, db)
+	if err != nil {
+		return nil, err
+	}
+	if hook, ok := interface{}(in).(interface {
+		AfterReplaceSave(context.Context, *MultiaccountTypeWithID, *gorm1.DB) error
+	}); ok {
+		if err = hook.AfterReplaceSave(ctx, in, db); err != nil {
+			return nil, err
+		}
+	}
+	return pbResponse, nil
+}
+
 // DefaultPatchMultiaccountTypeWithID executes a basic gorm update call with patch behavior
 func DefaultPatchMultiaccountTypeWithID(ctx context.Context, in *MultiaccountTypeWithID, updateMask *field_mask1.FieldMask, db *gorm1.DB) (*MultiaccountTypeWithID, error) {
 	if in == nil {
@@ -1706,19 +1927,38 @@ type MultiaccountTypeWithIDWithAfterPatchSave interface {
 }
 
 // DefaultApplyFieldMaskMultiaccountTypeWithID patches an pbObject with patcher according to a field mask.
-func DefaultApplyFieldMaskMultiaccountTypeWithID(ctx context.Context, patchee *MultiaccountTypeWithID, patcher *MultiaccountTypeWithID, updateMask *field_mask1.FieldMask, prefix string, db *gorm1.DB) (*MultiaccountTypeWithID, error) {
+func DefaultApplyFieldMaskMultiaccountTypeWithID(ctx context.Context, patchee *MultiaccountTypeWithID, patcher *MultiaccountTypeWithID, updateMask *field_mask1.FieldMask, prefix string, db *gorm1.DB, keyOfDeniedFields string) (*MultiaccountTypeWithID, error) {
 	if patcher == nil {
 		return nil, nil
 	} else if patchee == nil {
 		return nil, errors.New("Patchee inputs to DefaultApplyFieldMaskMultiaccountTypeWithID must be non-nil")
 	}
+	var ignoreFields map[string]bool
+	if keyOfDeniedFields != "" {
+		if hook, ok := interface{}(patchee).(interface {
+			ValidateDeniedFields() map[string][]string
+		}); ok {
+			deniedFields := hook.ValidateDeniedFields()[keyOfDeniedFields]
+			if len(deniedFields) > 0 {
+				for _, f := range deniedFields {
+					ignoreFields[f] = true
+				}
+			}
+		}
+	}
 	var err error
 	for _, f := range updateMask.Paths {
 		if f == prefix+"Id" {
+			if ignoreFields["Id"] {
+				continue
+			}
 			patchee.Id = patcher.Id
 			continue
 		}
 		if f == prefix+"SomeField" {
+			if ignoreFields["SomeField"] {
+				continue
+			}
 			patchee.SomeField = patcher.SomeField
 			continue
 		}
@@ -1816,15 +2056,31 @@ type MultiaccountTypeWithoutIDORMWithAfterCreate interface {
 }
 
 // DefaultApplyFieldMaskMultiaccountTypeWithoutID patches an pbObject with patcher according to a field mask.
-func DefaultApplyFieldMaskMultiaccountTypeWithoutID(ctx context.Context, patchee *MultiaccountTypeWithoutID, patcher *MultiaccountTypeWithoutID, updateMask *field_mask1.FieldMask, prefix string, db *gorm1.DB) (*MultiaccountTypeWithoutID, error) {
+func DefaultApplyFieldMaskMultiaccountTypeWithoutID(ctx context.Context, patchee *MultiaccountTypeWithoutID, patcher *MultiaccountTypeWithoutID, updateMask *field_mask1.FieldMask, prefix string, db *gorm1.DB, keyOfDeniedFields string) (*MultiaccountTypeWithoutID, error) {
 	if patcher == nil {
 		return nil, nil
 	} else if patchee == nil {
 		return nil, errors.New("Patchee inputs to DefaultApplyFieldMaskMultiaccountTypeWithoutID must be non-nil")
 	}
+	var ignoreFields map[string]bool
+	if keyOfDeniedFields != "" {
+		if hook, ok := interface{}(patchee).(interface {
+			ValidateDeniedFields() map[string][]string
+		}); ok {
+			deniedFields := hook.ValidateDeniedFields()[keyOfDeniedFields]
+			if len(deniedFields) > 0 {
+				for _, f := range deniedFields {
+					ignoreFields[f] = true
+				}
+			}
+		}
+	}
 	var err error
 	for _, f := range updateMask.Paths {
 		if f == prefix+"SomeField" {
+			if ignoreFields["SomeField"] {
+				continue
+			}
 			patchee.SomeField = patcher.SomeField
 			continue
 		}
@@ -2098,6 +2354,59 @@ type PrimaryUUIDTypeORMWithAfterStrictUpdateSave interface {
 	AfterStrictUpdateSave(context.Context, *gorm1.DB) error
 }
 
+// DefaultReplacePrimaryUUIDType executes a basic gorm update call with replace behavior
+func DefaultReplacePrimaryUUIDType(ctx context.Context, in *PrimaryUUIDType, db *gorm1.DB) (*PrimaryUUIDType, error) {
+	if in == nil {
+		return nil, errors.New("Nil argument to DefaultReplacePrimaryUUIDType")
+	}
+
+	var err error
+
+	if hook, ok := interface{}(in).(interface {
+		ValidateDeniedFields() map[string][]string
+	}); ok {
+		ignoreFields := hook.ValidateDeniedFields()["PUT"]
+		if len(ignoreFields) > 0 {
+			if hook, ok := interface{}(in).(interface {
+				BeforeReplaceRead(context.Context, *gorm1.DB) (*gorm1.DB, error)
+			}); ok {
+				if db, err = hook.BeforeReplaceRead(ctx, db); err != nil {
+					return nil, err
+				}
+			}
+			pbReadRes, err := DefaultReadPrimaryUUIDType(ctx, &PrimaryUUIDType{Id: in.GetId()}, db, nil)
+			if err != nil {
+				return nil, err
+			}
+
+			updateMask := &field_mask1.FieldMask{Paths: ignoreFields}
+			if _, err := DefaultApplyFieldMaskPrimaryUUIDType(ctx, in, pbReadRes, updateMask, "", db, ""); err != nil {
+				return nil, err
+			}
+		}
+	}
+
+	if hook, ok := interface{}(in).(interface {
+		BeforeReplaceSave(context.Context, *gorm1.DB) (*gorm1.DB, error)
+	}); ok {
+		if db, err = hook.BeforeReplaceSave(ctx, db); err != nil {
+			return nil, err
+		}
+	}
+	pbResponse, err := DefaultStrictUpdatePrimaryUUIDType(ctx, in, db)
+	if err != nil {
+		return nil, err
+	}
+	if hook, ok := interface{}(in).(interface {
+		AfterReplaceSave(context.Context, *PrimaryUUIDType, *gorm1.DB) error
+	}); ok {
+		if err = hook.AfterReplaceSave(ctx, in, db); err != nil {
+			return nil, err
+		}
+	}
+	return pbResponse, nil
+}
+
 // DefaultPatchPrimaryUUIDType executes a basic gorm update call with patch behavior
 func DefaultPatchPrimaryUUIDType(ctx context.Context, in *PrimaryUUIDType, updateMask *field_mask1.FieldMask, db *gorm1.DB) (*PrimaryUUIDType, error) {
 	if in == nil {
@@ -2154,20 +2463,39 @@ type PrimaryUUIDTypeWithAfterPatchSave interface {
 }
 
 // DefaultApplyFieldMaskPrimaryUUIDType patches an pbObject with patcher according to a field mask.
-func DefaultApplyFieldMaskPrimaryUUIDType(ctx context.Context, patchee *PrimaryUUIDType, patcher *PrimaryUUIDType, updateMask *field_mask1.FieldMask, prefix string, db *gorm1.DB) (*PrimaryUUIDType, error) {
+func DefaultApplyFieldMaskPrimaryUUIDType(ctx context.Context, patchee *PrimaryUUIDType, patcher *PrimaryUUIDType, updateMask *field_mask1.FieldMask, prefix string, db *gorm1.DB, keyOfDeniedFields string) (*PrimaryUUIDType, error) {
 	if patcher == nil {
 		return nil, nil
 	} else if patchee == nil {
 		return nil, errors.New("Patchee inputs to DefaultApplyFieldMaskPrimaryUUIDType must be non-nil")
 	}
+	var ignoreFields map[string]bool
+	if keyOfDeniedFields != "" {
+		if hook, ok := interface{}(patchee).(interface {
+			ValidateDeniedFields() map[string][]string
+		}); ok {
+			deniedFields := hook.ValidateDeniedFields()[keyOfDeniedFields]
+			if len(deniedFields) > 0 {
+				for _, f := range deniedFields {
+					ignoreFields[f] = true
+				}
+			}
+		}
+	}
 	var err error
 	var updatedChild bool
 	for i, f := range updateMask.Paths {
 		if f == prefix+"Id" {
+			if ignoreFields["Id"] {
+				continue
+			}
 			patchee.Id = patcher.Id
 			continue
 		}
 		if strings.HasPrefix(f, prefix+"Child.") && !updatedChild {
+			if ignoreFields["Child"] {
+				continue
+			}
 			updatedChild = true
 			if patcher.Child == nil {
 				patchee.Child = nil
@@ -2176,7 +2504,7 @@ func DefaultApplyFieldMaskPrimaryUUIDType(ctx context.Context, patchee *PrimaryU
 			if patchee.Child == nil {
 				patchee.Child = &ExternalChild{}
 			}
-			if o, err := DefaultApplyFieldMaskExternalChild(ctx, patchee.Child, patcher.Child, &field_mask1.FieldMask{Paths: updateMask.Paths[i:]}, prefix+"Child.", db); err != nil {
+			if o, err := DefaultApplyFieldMaskExternalChild(ctx, patchee.Child, patcher.Child, &field_mask1.FieldMask{Paths: updateMask.Paths[i:]}, prefix+"Child.", db, keyOfDeniedFields); err != nil {
 				return nil, err
 			} else {
 				patchee.Child = o
@@ -2184,6 +2512,9 @@ func DefaultApplyFieldMaskPrimaryUUIDType(ctx context.Context, patchee *PrimaryU
 			continue
 		}
 		if f == prefix+"Child" {
+			if ignoreFields["Child"] {
+				continue
+			}
 			updatedChild = true
 			patchee.Child = patcher.Child
 			continue
@@ -2459,6 +2790,59 @@ type PrimaryStringTypeORMWithAfterStrictUpdateSave interface {
 	AfterStrictUpdateSave(context.Context, *gorm1.DB) error
 }
 
+// DefaultReplacePrimaryStringType executes a basic gorm update call with replace behavior
+func DefaultReplacePrimaryStringType(ctx context.Context, in *PrimaryStringType, db *gorm1.DB) (*PrimaryStringType, error) {
+	if in == nil {
+		return nil, errors.New("Nil argument to DefaultReplacePrimaryStringType")
+	}
+
+	var err error
+
+	if hook, ok := interface{}(in).(interface {
+		ValidateDeniedFields() map[string][]string
+	}); ok {
+		ignoreFields := hook.ValidateDeniedFields()["PUT"]
+		if len(ignoreFields) > 0 {
+			if hook, ok := interface{}(in).(interface {
+				BeforeReplaceRead(context.Context, *gorm1.DB) (*gorm1.DB, error)
+			}); ok {
+				if db, err = hook.BeforeReplaceRead(ctx, db); err != nil {
+					return nil, err
+				}
+			}
+			pbReadRes, err := DefaultReadPrimaryStringType(ctx, &PrimaryStringType{Id: in.GetId()}, db, nil)
+			if err != nil {
+				return nil, err
+			}
+
+			updateMask := &field_mask1.FieldMask{Paths: ignoreFields}
+			if _, err := DefaultApplyFieldMaskPrimaryStringType(ctx, in, pbReadRes, updateMask, "", db, ""); err != nil {
+				return nil, err
+			}
+		}
+	}
+
+	if hook, ok := interface{}(in).(interface {
+		BeforeReplaceSave(context.Context, *gorm1.DB) (*gorm1.DB, error)
+	}); ok {
+		if db, err = hook.BeforeReplaceSave(ctx, db); err != nil {
+			return nil, err
+		}
+	}
+	pbResponse, err := DefaultStrictUpdatePrimaryStringType(ctx, in, db)
+	if err != nil {
+		return nil, err
+	}
+	if hook, ok := interface{}(in).(interface {
+		AfterReplaceSave(context.Context, *PrimaryStringType, *gorm1.DB) error
+	}); ok {
+		if err = hook.AfterReplaceSave(ctx, in, db); err != nil {
+			return nil, err
+		}
+	}
+	return pbResponse, nil
+}
+
 // DefaultPatchPrimaryStringType executes a basic gorm update call with patch behavior
 func DefaultPatchPrimaryStringType(ctx context.Context, in *PrimaryStringType, updateMask *field_mask1.FieldMask, db *gorm1.DB) (*PrimaryStringType, error) {
 	if in == nil {
@@ -2515,20 +2899,39 @@ type PrimaryStringTypeWithAfterPatchSave interface {
 }
 
 // DefaultApplyFieldMaskPrimaryStringType patches an pbObject with patcher according to a field mask.
-func DefaultApplyFieldMaskPrimaryStringType(ctx context.Context, patchee *PrimaryStringType, patcher *PrimaryStringType, updateMask *field_mask1.FieldMask, prefix string, db *gorm1.DB) (*PrimaryStringType, error) {
+func DefaultApplyFieldMaskPrimaryStringType(ctx context.Context, patchee *PrimaryStringType, patcher *PrimaryStringType, updateMask *field_mask1.FieldMask, prefix string, db *gorm1.DB, keyOfDeniedFields string) (*PrimaryStringType, error) {
 	if patcher == nil {
 		return nil, nil
 	} else if patchee == nil {
 		return nil, errors.New("Patchee inputs to DefaultApplyFieldMaskPrimaryStringType must be non-nil")
 	}
+	var ignoreFields map[string]bool
+	if keyOfDeniedFields != "" {
+		if hook, ok := interface{}(patchee).(interface {
+			ValidateDeniedFields() map[string][]string
+		}); ok {
+			deniedFields := hook.ValidateDeniedFields()[keyOfDeniedFields]
+			if len(deniedFields) > 0 {
+				for _, f := range deniedFields {
+					ignoreFields[f] = true
+				}
+			}
+		}
+	}
 	var err error
 	var updatedChild bool
 	for i, f := range updateMask.Paths {
 		if f == prefix+"Id" {
+			if ignoreFields["Id"] {
+				continue
+			}
 			patchee.Id = patcher.Id
 			continue
 		}
 		if strings.HasPrefix(f, prefix+"Child.") && !updatedChild {
+			if ignoreFields["Child"] {
+				continue
+			}
 			updatedChild = true
 			if patcher.Child == nil {
 				patchee.Child = nil
@@ -2537,7 +2940,7 @@ func DefaultApplyFieldMaskPrimaryStringType(ctx context.Context, patchee *Primar
 			if patchee.Child == nil {
 				patchee.Child = &ExternalChild{}
 			}
-			if o, err := DefaultApplyFieldMaskExternalChild(ctx, patchee.Child, patcher.Child, &field_mask1.FieldMask{Paths: updateMask.Paths[i:]}, prefix+"Child.", db); err != nil {
+			if o, err := DefaultApplyFieldMaskExternalChild(ctx, patchee.Child, patcher.Child, &field_mask1.FieldMask{Paths: updateMask.Paths[i:]}, prefix+"Child.", db, keyOfDeniedFields); err != nil {
 				return nil, err
 			} else {
 				patchee.Child = o
@@ -2545,6 +2948,9 @@ func DefaultApplyFieldMaskPrimaryStringType(ctx context.Context, patchee *Primar
 			continue
 		}
 		if f == prefix+"Child" {
+			if ignoreFields["Child"] {
+				continue
+			}
 			updatedChild = true
 			patchee.Child = patcher.Child
 			continue
@@ -2820,6 +3226,59 @@ type TestTagORMWithAfterStrictUpdateSave interface {
 	AfterStrictUpdateSave(context.Context, *gorm1.DB) error
 }
 
+// DefaultReplaceTestTag executes a basic gorm update call with replace behavior
+func DefaultReplaceTestTag(ctx context.Context, in *TestTag, db *gorm1.DB) (*TestTag, error) {
+	if in == nil {
+		return nil, errors.New("Nil argument to DefaultReplaceTestTag")
+	}
+
+	var err error
+
+	if hook, ok := interface{}(in).(interface {
+		ValidateDeniedFields() map[string][]string
+	}); ok {
+		ignoreFields := hook.ValidateDeniedFields()["PUT"]
+		if len(ignoreFields) > 0 {
+			if hook, ok := interface{}(in).(interface {
+				BeforeReplaceRead(context.Context, *gorm1.DB) (*gorm1.DB, error)
+			}); ok {
+				if db, err = hook.BeforeReplaceRead(ctx, db); err != nil {
+					return nil, err
+				}
+			}
+			pbReadRes, err := DefaultReadTestTag(ctx, &TestTag{Id: in.GetId()}, db, nil)
+			if err != nil {
+				return nil, err
+			}
+
+			updateMask := &field_mask1.FieldMask{Paths: ignoreFields}
+			if _, err := DefaultApplyFieldMaskTestTag(ctx, in, pbReadRes, updateMask, "", db, ""); err != nil {
+				return nil, err
+			}
+		}
+	}
+
+	if hook, ok := interface{}(in).(interface {
+		BeforeReplaceSave(context.Context, *gorm1.DB) (*gorm1.DB, error)
+	}); ok {
+		if db, err = hook.BeforeReplaceSave(ctx, db); err != nil {
+			return nil, err
+		}
+	}
+	pbResponse, err := DefaultStrictUpdateTestTag(ctx, in, db)
+	if err != nil {
+		return nil, err
+	}
+	if hook, ok := interface{}(in).(interface {
+		AfterReplaceSave(context.Context, *TestTag, *gorm1.DB) error
+	}); ok {
+		if err = hook.AfterReplaceSave(ctx, in, db); err != nil {
+			return nil, err
+		}
+	}
+	return pbResponse, nil
+}
+
 // DefaultPatchTestTag executes a basic gorm update call with patch behavior
 func DefaultPatchTestTag(ctx context.Context, in *TestTag, updateMask *field_mask1.FieldMask, db *gorm1.DB) (*TestTag, error) {
 	if in == nil {
@@ -2876,20 +3335,39 @@ type TestTagWithAfterPatchSave interface {
 }
 
 // DefaultApplyFieldMaskTestTag patches an pbObject with patcher according to a field mask.
-func DefaultApplyFieldMaskTestTag(ctx context.Context, patchee *TestTag, patcher *TestTag, updateMask *field_mask1.FieldMask, prefix string, db *gorm1.DB) (*TestTag, error) {
+func DefaultApplyFieldMaskTestTag(ctx context.Context, patchee *TestTag, patcher *TestTag, updateMask *field_mask1.FieldMask, prefix string, db *gorm1.DB, keyOfDeniedFields string) (*TestTag, error) {
 	if patcher == nil {
 		return nil, nil
 	} else if patchee == nil {
 		return nil, errors.New("Patchee inputs to DefaultApplyFieldMaskTestTag must be non-nil")
 	}
+	var ignoreFields map[string]bool
+	if keyOfDeniedFields != "" {
+		if hook, ok := interface{}(patchee).(interface {
+			ValidateDeniedFields() map[string][]string
+		}); ok {
+			deniedFields := hook.ValidateDeniedFields()[keyOfDeniedFields]
+			if len(deniedFields) > 0 {
+				for _, f := range deniedFields {
+					ignoreFields[f] = true
+				}
+			}
+		}
+	}
 	var err error
 	var updatedTestTagAssoc bool
 	for i, f := range updateMask.Paths {
 		if f == prefix+"Id" {
+			if ignoreFields["Id"] {
+				continue
+			}
 			patchee.Id = patcher.Id
 			continue
 		}
 		if strings.HasPrefix(f, prefix+"TestTagAssoc.") && !updatedTestTagAssoc {
+			if ignoreFields["TestTagAssoc"] {
+				continue
+			}
 			updatedTestTagAssoc = true
 			if patcher.TestTagAssoc == nil {
 				patchee.TestTagAssoc = nil
@@ -2898,7 +3376,7 @@ func DefaultApplyFieldMaskTestTag(ctx context.Context, patchee *TestTag, patcher
 			if patchee.TestTagAssoc == nil {
 				patchee.TestTagAssoc = &TestTagAssociation{}
 			}
-			if o, err := DefaultApplyFieldMaskTestTagAssociation(ctx, patchee.TestTagAssoc, patcher.TestTagAssoc, &field_mask1.FieldMask{Paths: updateMask.Paths[i:]}, prefix+"TestTagAssoc.", db); err != nil {
+			if o, err := DefaultApplyFieldMaskTestTagAssociation(ctx, patchee.TestTagAssoc, patcher.TestTagAssoc, &field_mask1.FieldMask{Paths: updateMask.Paths[i:]}, prefix+"TestTagAssoc.", db, keyOfDeniedFields); err != nil {
 				return nil, err
 			} else {
 				patchee.TestTagAssoc = o
@@ -2906,6 +3384,9 @@ func DefaultApplyFieldMaskTestTag(ctx context.Context, patchee *TestTag, patcher
 			continue
 		}
 		if f == prefix+"TestTagAssoc" {
+			if ignoreFields["TestTagAssoc"] {
+				continue
+			}
 			updatedTestTagAssoc = true
 			patchee.TestTagAssoc = patcher.TestTagAssoc
 			continue
@@ -3004,15 +3485,31 @@ type TestTagAssociationORMWithAfterCreate interface {
 }
 
 // DefaultApplyFieldMaskTestTagAssociation patches an pbObject with patcher according to a field mask.
-func DefaultApplyFieldMaskTestTagAssociation(ctx context.Context, patchee *TestTagAssociation, patcher *TestTagAssociation, updateMask *field_mask1.FieldMask, prefix string, db *gorm1.DB) (*TestTagAssociation, error) {
+func DefaultApplyFieldMaskTestTagAssociation(ctx context.Context, patchee *TestTagAssociation, patcher *TestTagAssociation, updateMask *field_mask1.FieldMask, prefix string, db *gorm1.DB, keyOfDeniedFields string) (*TestTagAssociation, error) {
 	if patcher == nil {
 		return nil, nil
 	} else if patchee == nil {
 		return nil, errors.New("Patchee inputs to DefaultApplyFieldMaskTestTagAssociation must be non-nil")
 	}
+	var ignoreFields map[string]bool
+	if keyOfDeniedFields != "" {
+		if hook, ok := interface{}(patchee).(interface {
+			ValidateDeniedFields() map[string][]string
+		}); ok {
+			deniedFields := hook.ValidateDeniedFields()[keyOfDeniedFields]
+			if len(deniedFields) > 0 {
+				for _, f := range deniedFields {
+					ignoreFields[f] = true
+				}
+			}
+		}
+	}
 	var err error
 	for _, f := range updateMask.Paths {
 		if f == prefix+"SomeField" {
+			if ignoreFields["SomeField"] {
+				continue
+			}
 			patchee.SomeField = patcher.SomeField
 			continue
 		}
@@ -3109,16 +3606,32 @@ type PrimaryIncludedORMWithAfterCreate interface {
 }
 
 // DefaultApplyFieldMaskPrimaryIncluded patches an pbObject with patcher according to a field mask.
-func DefaultApplyFieldMaskPrimaryIncluded(ctx context.Context, patchee *PrimaryIncluded, patcher *PrimaryIncluded, updateMask *field_mask1.FieldMask, prefix string, db *gorm1.DB) (*PrimaryIncluded, error) {
+func DefaultApplyFieldMaskPrimaryIncluded(ctx context.Context, patchee *PrimaryIncluded, patcher *PrimaryIncluded, updateMask *field_mask1.FieldMask, prefix string, db *gorm1.DB, keyOfDeniedFields string) (*PrimaryIncluded, error) {
 	if patcher == nil {
 		return nil, nil
 	} else if patchee == nil {
 		return nil, errors.New("Patchee inputs to DefaultApplyFieldMaskPrimaryIncluded must be non-nil")
 	}
+	var ignoreFields map[string]bool
+	if keyOfDeniedFields != "" {
+		if hook, ok := interface{}(patchee).(interface {
+			ValidateDeniedFields() map[string][]string
+		}); ok {
+			deniedFields := hook.ValidateDeniedFields()[keyOfDeniedFields]
+			if len(deniedFields) > 0 {
+				for _, f := range deniedFields {
+					ignoreFields[f] = true
+				}
+			}
+		}
+	}
 	var err error
 	var updatedChild bool
 	for i, f := range updateMask.Paths {
 		if strings.HasPrefix(f, prefix+"Child.") && !updatedChild {
+			if ignoreFields["Child"] {
+				continue
+			}
 			updatedChild = true
 			if patcher.Child == nil {
 				patchee.Child = nil
@@ -3127,7 +3640,7 @@ func DefaultApplyFieldMaskPrimaryIncluded(ctx context.Context, patchee *PrimaryI
 			if patchee.Child == nil {
 				patchee.Child = &ExternalChild{}
 			}
-			if o, err := DefaultApplyFieldMaskExternalChild(ctx, patchee.Child, patcher.Child, &field_mask1.FieldMask{Paths: updateMask.Paths[i:]}, prefix+"Child.", db); err != nil {
+			if o, err := DefaultApplyFieldMaskExternalChild(ctx, patchee.Child, patcher.Child, &field_mask1.FieldMask{Paths: updateMask.Paths[i:]}, prefix+"Child.", db, keyOfDeniedFields); err != nil {
 				return nil, err
 			} else {
 				patchee.Child = o
@@ -3135,6 +3648,9 @@ func DefaultApplyFieldMaskPrimaryIncluded(ctx context.Context, patchee *PrimaryI
 			continue
 		}
 		if f == prefix+"Child" {
+			if ignoreFields["Child"] {
+				continue
+			}
 			updatedChild = true
 			patchee.Child = patcher.Child
 			continue
