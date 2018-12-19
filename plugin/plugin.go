@@ -429,13 +429,13 @@ func (p *OrmPlugin) renderGormTag(field *Field) string {
 		gormRes += fmt.Sprintf("column:%s;", tag.GetColumn())
 	}
 	if tag.Type != nil {
-		gormRes += fmt.Sprintf("type:%s;", string(tag.GetType()))
+		gormRes += fmt.Sprintf("type:%s;", tag.GetType())
 	}
 	if tag.Size_ != nil {
-		gormRes += fmt.Sprintf("size:%s;", string(tag.GetSize_()))
+		gormRes += fmt.Sprintf("size:%d;", tag.GetSize_())
 	}
 	if tag.Precision != nil {
-		gormRes += fmt.Sprintf("precision:%s;", string(tag.GetPrecision()))
+		gormRes += fmt.Sprintf("precision:%d;", tag.GetPrecision())
 	}
 	if tag.GetPrimaryKey() {
 		gormRes += "primary_key;"
