@@ -1152,7 +1152,7 @@ func DefaultPatchUser(ctx context.Context, in *User, updateMask *field_mask1.Fie
 			return nil, err
 		}
 	}
-	if _, err := DefaultApplyFieldMaskUser(ctx, &pbObj, in, updateMask, "", db); err != nil {
+	if _, err := DefaultApplyFieldMaskUser(ctx, &pbObj, in, updateMask, "", db, "PATCH"); err != nil {
 		return nil, err
 	}
 	if hook, ok := interface{}(&pbObj).(UserWithBeforePatchSave); ok {
@@ -1715,7 +1715,7 @@ func DefaultPatchEmail(ctx context.Context, in *Email, updateMask *field_mask1.F
 			return nil, err
 		}
 	}
-	if _, err := DefaultApplyFieldMaskEmail(ctx, &pbObj, in, updateMask, "", db); err != nil {
+	if _, err := DefaultApplyFieldMaskEmail(ctx, &pbObj, in, updateMask, "", db, "PATCH"); err != nil {
 		return nil, err
 	}
 	if hook, ok := interface{}(&pbObj).(EmailWithBeforePatchSave); ok {
@@ -2145,7 +2145,7 @@ func DefaultPatchAddress(ctx context.Context, in *Address, updateMask *field_mas
 			return nil, err
 		}
 	}
-	if _, err := DefaultApplyFieldMaskAddress(ctx, &pbObj, in, updateMask, "", db); err != nil {
+	if _, err := DefaultApplyFieldMaskAddress(ctx, &pbObj, in, updateMask, "", db, "PATCH"); err != nil {
 		return nil, err
 	}
 	if hook, ok := interface{}(&pbObj).(AddressWithBeforePatchSave); ok {
@@ -2582,7 +2582,7 @@ func DefaultPatchLanguage(ctx context.Context, in *Language, updateMask *field_m
 			return nil, err
 		}
 	}
-	if _, err := DefaultApplyFieldMaskLanguage(ctx, &pbObj, in, updateMask, "", db); err != nil {
+	if _, err := DefaultApplyFieldMaskLanguage(ctx, &pbObj, in, updateMask, "", db, "PATCH"); err != nil {
 		return nil, err
 	}
 	if hook, ok := interface{}(&pbObj).(LanguageWithBeforePatchSave); ok {
@@ -3005,7 +3005,7 @@ func DefaultPatchCreditCard(ctx context.Context, in *CreditCard, updateMask *fie
 			return nil, err
 		}
 	}
-	if _, err := DefaultApplyFieldMaskCreditCard(ctx, &pbObj, in, updateMask, "", db); err != nil {
+	if _, err := DefaultApplyFieldMaskCreditCard(ctx, &pbObj, in, updateMask, "", db, "PATCH"); err != nil {
 		return nil, err
 	}
 	if hook, ok := interface{}(&pbObj).(CreditCardWithBeforePatchSave); ok {

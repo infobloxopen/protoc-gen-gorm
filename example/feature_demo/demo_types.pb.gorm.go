@@ -1329,7 +1329,7 @@ func DefaultPatchTypeWithID(ctx context.Context, in *TypeWithID, updateMask *fie
 			return nil, err
 		}
 	}
-	if _, err := DefaultApplyFieldMaskTypeWithID(ctx, &pbObj, in, updateMask, "", db); err != nil {
+	if _, err := DefaultApplyFieldMaskTypeWithID(ctx, &pbObj, in, updateMask, "", db, "PATCH"); err != nil {
 		return nil, err
 	}
 	if hook, ok := interface{}(&pbObj).(TypeWithIDWithBeforePatchSave); ok {
@@ -1893,7 +1893,7 @@ func DefaultPatchMultiaccountTypeWithID(ctx context.Context, in *MultiaccountTyp
 			return nil, err
 		}
 	}
-	if _, err := DefaultApplyFieldMaskMultiaccountTypeWithID(ctx, &pbObj, in, updateMask, "", db); err != nil {
+	if _, err := DefaultApplyFieldMaskMultiaccountTypeWithID(ctx, &pbObj, in, updateMask, "", db, "PATCH"); err != nil {
 		return nil, err
 	}
 	if hook, ok := interface{}(&pbObj).(MultiaccountTypeWithIDWithBeforePatchSave); ok {
@@ -2429,7 +2429,7 @@ func DefaultPatchPrimaryUUIDType(ctx context.Context, in *PrimaryUUIDType, updat
 			return nil, err
 		}
 	}
-	if _, err := DefaultApplyFieldMaskPrimaryUUIDType(ctx, &pbObj, in, updateMask, "", db); err != nil {
+	if _, err := DefaultApplyFieldMaskPrimaryUUIDType(ctx, &pbObj, in, updateMask, "", db, "PATCH"); err != nil {
 		return nil, err
 	}
 	if hook, ok := interface{}(&pbObj).(PrimaryUUIDTypeWithBeforePatchSave); ok {
@@ -2865,7 +2865,7 @@ func DefaultPatchPrimaryStringType(ctx context.Context, in *PrimaryStringType, u
 			return nil, err
 		}
 	}
-	if _, err := DefaultApplyFieldMaskPrimaryStringType(ctx, &pbObj, in, updateMask, "", db); err != nil {
+	if _, err := DefaultApplyFieldMaskPrimaryStringType(ctx, &pbObj, in, updateMask, "", db, "PATCH"); err != nil {
 		return nil, err
 	}
 	if hook, ok := interface{}(&pbObj).(PrimaryStringTypeWithBeforePatchSave); ok {
@@ -3301,7 +3301,7 @@ func DefaultPatchTestTag(ctx context.Context, in *TestTag, updateMask *field_mas
 			return nil, err
 		}
 	}
-	if _, err := DefaultApplyFieldMaskTestTag(ctx, &pbObj, in, updateMask, "", db); err != nil {
+	if _, err := DefaultApplyFieldMaskTestTag(ctx, &pbObj, in, updateMask, "", db, "PATCH"); err != nil {
 		return nil, err
 	}
 	if hook, ok := interface{}(&pbObj).(TestTagWithBeforePatchSave); ok {

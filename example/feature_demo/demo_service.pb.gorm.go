@@ -503,7 +503,7 @@ func DefaultPatchIntPoint(ctx context.Context, in *IntPoint, updateMask *field_m
 			return nil, err
 		}
 	}
-	if _, err := DefaultApplyFieldMaskIntPoint(ctx, &pbObj, in, updateMask, "", db); err != nil {
+	if _, err := DefaultApplyFieldMaskIntPoint(ctx, &pbObj, in, updateMask, "", db, "PATCH"); err != nil {
 		return nil, err
 	}
 	if hook, ok := interface{}(&pbObj).(IntPointWithBeforePatchSave); ok {

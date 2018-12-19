@@ -479,7 +479,7 @@ func DefaultPatchExternalChild(ctx context.Context, in *ExternalChild, updateMas
 			return nil, err
 		}
 	}
-	if _, err := DefaultApplyFieldMaskExternalChild(ctx, &pbObj, in, updateMask, "", db); err != nil {
+	if _, err := DefaultApplyFieldMaskExternalChild(ctx, &pbObj, in, updateMask, "", db, "PATCH"); err != nil {
 		return nil, err
 	}
 	if hook, ok := interface{}(&pbObj).(ExternalChildWithBeforePatchSave); ok {
@@ -878,7 +878,7 @@ func DefaultPatchBlogPost(ctx context.Context, in *BlogPost, updateMask *field_m
 			return nil, err
 		}
 	}
-	if _, err := DefaultApplyFieldMaskBlogPost(ctx, &pbObj, in, updateMask, "", db); err != nil {
+	if _, err := DefaultApplyFieldMaskBlogPost(ctx, &pbObj, in, updateMask, "", db, "PATCH"); err != nil {
 		return nil, err
 	}
 	if hook, ok := interface{}(&pbObj).(BlogPostWithBeforePatchSave); ok {

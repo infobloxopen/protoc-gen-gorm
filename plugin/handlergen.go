@@ -453,7 +453,7 @@ func (p *OrmPlugin) generatePatchHandler(message *generator.Descriptor) {
 	p.P(`pbObj = *pbReadRes`)
 
 	p.generateBeforePatchHookCall(ormable, "ApplyFieldMask")
-	p.P(`if _, err := DefaultApplyFieldMask`, typeName, `(ctx, &pbObj, in, updateMask, "", db); err != nil {`)
+	p.P(`if _, err := DefaultApplyFieldMask`, typeName, `(ctx, &pbObj, in, updateMask, "", db, "PATCH"); err != nil {`)
 	p.P(`return nil, err`)
 	p.P(`}`)
 
