@@ -9,9 +9,9 @@ IMAGE_VERSION  ?= dev-gengorm
 
 # configuration for the protobuf gentool
 SRCROOT_ON_HOST      := $(shell dirname $(abspath $(lastword $(MAKEFILE_LIST))))
-SRCROOT_IN_CONTAINER := /home/go/src/$(PROJECT_ROOT)
-DOCKERPATH           := /home/go/src
-DOCKER_RUNNER        := docker run --rm 
+SRCROOT_IN_CONTAINER := /go/src/$(PROJECT_ROOT)
+DOCKERPATH           := /go/src
+DOCKER_RUNNER        := docker run --rm
 DOCKER_RUNNER        += -v $(SRCROOT_ON_HOST):$(SRCROOT_IN_CONTAINER)
 DOCKER_GENERATOR     := infoblox/atlas-gentool:dev-gengorm
 GENERATOR            := $(DOCKER_RUNNER) $(DOCKER_GENERATOR)

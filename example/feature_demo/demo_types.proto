@@ -94,6 +94,8 @@ message TypeWithID {
   gorm.types.InetValue address = 7;
   repeated uint32 multiaccount_type_ids = 8 [(gorm.field).drop = true];
   APIOnlyType synthetic_field = 9;
+  float tag_test = 10 [(gorm.field).tag = {type: "float" , precision: 6}];
+  string tag_size_test = 11 [(gorm.field).tag = {size: 512}];
 }
 
 // MultiaccountTypeWithID demonstrates the generated multi-account support

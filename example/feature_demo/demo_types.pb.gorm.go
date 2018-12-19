@@ -159,8 +159,8 @@ type TypeWithIDORM struct {
 	MultiAccountTypes []*JoinTable    `gorm:"foreignkey:TypeWithIDID"`
 	Point             *IntPointORM    `gorm:"foreignkey:IntPointId;association_foreignkey:Id"`
 	SecretInt         int32           `gorm:"-"`
-	TagSizeTest       string          `gorm:"size:Ȁ"`
-	TagTest           float32         `gorm:"type:float;precision:"`
+	TagSizeTest       string          `gorm:"size:512"`
+	TagTest           float32         `gorm:"type:float;precision:6"`
 	Things            []*TestTypesORM `gorm:"foreignkey:ThingsTypeWithIDId;association_foreignkey:Id"`
 	User              *user.UserORM   `gorm:"foreignkey:UserId;association_foreignkey:Id"`
 	UserId            *string
