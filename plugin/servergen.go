@@ -257,7 +257,7 @@ func (p *OrmPlugin) generateUpdateServerMethod(service autogenService, method au
 		p.generatePreserviceCall(service.ccName, method.baseType, method.ccName)
 		if method.fieldMaskName != "" {
 			p.P(`if in.Get`, method.fieldMaskName, `() == nil {`)
-			p.P(`res, err = DefaultStrictUpdate`, typeName, `(ctx, in.GetPayload(), db)`)
+			p.P(`res, err = DefaultReplace`, typeName, `(ctx, in.GetPayload(), db)`)
 			p.P(`} else {`)
 			p.P(`res, err = DefaultPatch`, typeName, `(ctx, in.GetPayload(), in.Get`, method.fieldMaskName, `(), db)`)
 			p.P(`}`)

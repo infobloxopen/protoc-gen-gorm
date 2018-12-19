@@ -21,6 +21,7 @@ func (p *OrmPlugin) generateDefaultHandlers(file *generator.FileDescriptor) {
 				p.generateDeleteHandler(message)
 				p.generateDeleteSetHandler(message)
 				p.generateStrictUpdateHandler(message)
+				p.generateReplaceHandler(message)
 				p.generatePatchHandler(message)
 			}
 			p.generateApplyFieldMask(message)
@@ -198,7 +199,7 @@ func (p *OrmPlugin) generateApplyFieldMask(message *generator.Descriptor) {
 	p.P(`// DefaultApplyFieldMask`, typeName, ` patches an pbObject with patcher according to a field mask.`)
 	p.P(`func DefaultApplyFieldMask`, typeName, `(ctx context.Context, patchee *`,
 		typeName, `, patcher *`, typeName, `, updateMask *`, p.Import(fmImport),
-		`.FieldMask, prefix string, db *`, p.Import(gormImport), `.DB) (*`, typeName, `, error) {`)
+		`.FieldMask, prefix string, db *`, p.Import(gormImport), `.DB, keyOfDeniedFields string) (*`, typeName, `, error) {`)
 
 	p.P(`if patcher == nil {`)
 	p.P(`return nil, nil`)
@@ -206,6 +207,21 @@ func (p *OrmPlugin) generateApplyFieldMask(message *generator.Descriptor) {
 	p.P(`return nil, errors.New("Patchee inputs to DefaultApplyFieldMask`,
 		typeName, ` must be non-nil")`)
 	p.P(`}`)
+
+	p.P(`var ignoreFields map[string]bool`)
+	p.P(`if keyOfDeniedFields != "" {`)
+	p.P(`if hook, ok := interface{}(patchee).(interface {`)
+	p.P(`ValidateDeniedFields() map[string][]string`)
+	p.P(`}); ok {`)
+	p.P(`deniedFields := hook.ValidateDeniedFields()[keyOfDeniedFields]`)
+	p.P(`if len(deniedFields) > 0 {`)
+	p.P(`for _, f := range deniedFields {`)
+	p.P(`ignoreFields[f] = true`)
+	p.P(`}`)
+	p.P(`}`)
+	p.P(`}`)
+	p.P(`}`)
+
 	p.P(`var err error`)
 	hasNested := false
 	for _, field := range message.GetField() {
@@ -228,6 +244,11 @@ func (p *OrmPlugin) generateApplyFieldMask(message *generator.Descriptor) {
 		//  for ormable message, do recursive patching
 		if field.IsMessage() && p.isOrmable(fieldType) && !field.IsRepeated() {
 			p.P(`if strings.HasPrefix(f, prefix+"`, ccName, `.") && !updated`, ccName, ` {`)
+
+			p.P(`if ignoreFields["`, ccName, `"] {`)
+			p.P(`continue`)
+			p.P(`}`)
+
 			p.P(`updated`, ccName, ` = true`)
 			p.P(`if patcher.`, ccName, ` == nil {`)
 			p.P(`patchee.`, ccName, ` = nil`)
@@ -239,11 +260,11 @@ func (p *OrmPlugin) generateApplyFieldMask(message *generator.Descriptor) {
 			if s := strings.Split(fieldType, "."); len(s) == 2 {
 				p.P(`if o, err := `, strings.TrimLeft(s[0], "*"), `.DefaultApplyFieldMask`, s[1], `(ctx, patchee.`, ccName,
 					`, patcher.`, ccName, `, &`, p.Import(fmImport),
-					`.FieldMask{Paths:updateMask.Paths[i:]}, prefix+"`, ccName, `.", db); err != nil {`)
+					`.FieldMask{Paths:updateMask.Paths[i:]}, prefix+"`, ccName, `.", db, keyOfDeniedFields); err != nil {`)
 			} else {
 				p.P(`if o, err := DefaultApplyFieldMask`, strings.TrimPrefix(fieldType, "*"), `(ctx, patchee.`, ccName,
 					`, patcher.`, ccName, `, &`, p.Import(fmImport),
-					`.FieldMask{Paths:updateMask.Paths[i:]}, prefix+"`, ccName, `.", db); err != nil {`)
+					`.FieldMask{Paths:updateMask.Paths[i:]}, prefix+"`, ccName, `.", db, keyOfDeniedFields); err != nil {`)
 			}
 			p.P(`return nil, err`)
 			p.P(`} else {`)
@@ -252,12 +273,22 @@ func (p *OrmPlugin) generateApplyFieldMask(message *generator.Descriptor) {
 			p.P(`continue`)
 			p.P(`}`)
 			p.P(`if f == prefix+"`, ccName, `" {`)
+
+			p.P(`if ignoreFields["`, ccName, `"] {`)
+			p.P(`continue`)
+			p.P(`}`)
+
 			p.P(`updated`, ccName, ` = true`)
 			p.P(`patchee.`, ccName, ` = patcher.`, ccName)
 			p.P(`continue`)
 			p.P(`}`)
 		} else if field.IsMessage() && !isSpecialType(fieldType) && !field.IsRepeated() {
 			p.P(`if strings.HasPrefix(f, prefix+"`, ccName, `.") && !updated`, ccName, ` {`)
+
+			p.P(`if ignoreFields["`, ccName, `"] {`)
+			p.P(`continue`)
+			p.P(`}`)
+
 			p.P(`if patcher.`, ccName, ` == nil {`)
 			p.P(`patchee.`, ccName, ` = nil`)
 			p.P(`continue`)
@@ -276,12 +307,22 @@ func (p *OrmPlugin) generateApplyFieldMask(message *generator.Descriptor) {
 			p.P(`}`)
 			p.P(`}`)
 			p.P(`if f == prefix+"`, ccName, `" {`)
+
+			p.P(`if ignoreFields["`, ccName, `"] {`)
+			p.P(`continue`)
+			p.P(`}`)
+
 			p.P(`updated`, ccName, ` = true`)
 			p.P(`patchee.`, ccName, ` = patcher.`, ccName)
 			p.P(`continue`)
 			p.P(`}`)
 		} else {
 			p.P(`if f == prefix+"`, ccName, `" {`)
+
+			p.P(`if ignoreFields["`, ccName, `"] {`)
+			p.P(`continue`)
+			p.P(`}`)
+
 			p.P(`patchee.`, ccName, ` = patcher.`, ccName)
 			p.P(`continue`)
 			p.P(`}`)
@@ -304,6 +345,9 @@ func (p *OrmPlugin) hasIDField(message *generator.Descriptor) bool {
 	}
 
 	return false
+}
+
+func (p *OrmPlugin) generateReplaceHandler(message *generator.Descriptor) {
 }
 
 func (p *OrmPlugin) generatePatchHandler(message *generator.Descriptor) {
