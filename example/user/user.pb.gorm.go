@@ -1192,7 +1192,7 @@ func DefaultApplyFieldMaskUser(ctx context.Context, patchee *User, patcher *User
 	} else if patchee == nil {
 		return nil, errors.New("Patchee inputs to DefaultApplyFieldMaskUser must be non-nil")
 	}
-	var ignoreFields map[string]bool
+	ignoreFields := map[string]bool{}
 	if keyOfDeniedFields != "" {
 		if hook, ok := interface{}(patchee).(interface {
 			ValidateDeniedFields() map[string][]string
@@ -1755,7 +1755,7 @@ func DefaultApplyFieldMaskEmail(ctx context.Context, patchee *Email, patcher *Em
 	} else if patchee == nil {
 		return nil, errors.New("Patchee inputs to DefaultApplyFieldMaskEmail must be non-nil")
 	}
-	var ignoreFields map[string]bool
+	ignoreFields := map[string]bool{}
 	if keyOfDeniedFields != "" {
 		if hook, ok := interface{}(patchee).(interface {
 			ValidateDeniedFields() map[string][]string
@@ -2185,7 +2185,7 @@ func DefaultApplyFieldMaskAddress(ctx context.Context, patchee *Address, patcher
 	} else if patchee == nil {
 		return nil, errors.New("Patchee inputs to DefaultApplyFieldMaskAddress must be non-nil")
 	}
-	var ignoreFields map[string]bool
+	ignoreFields := map[string]bool{}
 	if keyOfDeniedFields != "" {
 		if hook, ok := interface{}(patchee).(interface {
 			ValidateDeniedFields() map[string][]string
@@ -2622,7 +2622,7 @@ func DefaultApplyFieldMaskLanguage(ctx context.Context, patchee *Language, patch
 	} else if patchee == nil {
 		return nil, errors.New("Patchee inputs to DefaultApplyFieldMaskLanguage must be non-nil")
 	}
-	var ignoreFields map[string]bool
+	ignoreFields := map[string]bool{}
 	if keyOfDeniedFields != "" {
 		if hook, ok := interface{}(patchee).(interface {
 			ValidateDeniedFields() map[string][]string
@@ -3045,7 +3045,7 @@ func DefaultApplyFieldMaskCreditCard(ctx context.Context, patchee *CreditCard, p
 	} else if patchee == nil {
 		return nil, errors.New("Patchee inputs to DefaultApplyFieldMaskCreditCard must be non-nil")
 	}
-	var ignoreFields map[string]bool
+	ignoreFields := map[string]bool{}
 	if keyOfDeniedFields != "" {
 		if hook, ok := interface{}(patchee).(interface {
 			ValidateDeniedFields() map[string][]string
@@ -3195,7 +3195,7 @@ func DefaultApplyFieldMaskTask(ctx context.Context, patchee *Task, patcher *Task
 	} else if patchee == nil {
 		return nil, errors.New("Patchee inputs to DefaultApplyFieldMaskTask must be non-nil")
 	}
-	var ignoreFields map[string]bool
+	ignoreFields := map[string]bool{}
 	if keyOfDeniedFields != "" {
 		if hook, ok := interface{}(patchee).(interface {
 			ValidateDeniedFields() map[string][]string

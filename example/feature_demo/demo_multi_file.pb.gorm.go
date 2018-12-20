@@ -519,7 +519,7 @@ func DefaultApplyFieldMaskExternalChild(ctx context.Context, patchee *ExternalCh
 	} else if patchee == nil {
 		return nil, errors.New("Patchee inputs to DefaultApplyFieldMaskExternalChild must be non-nil")
 	}
-	var ignoreFields map[string]bool
+	ignoreFields := map[string]bool{}
 	if keyOfDeniedFields != "" {
 		if hook, ok := interface{}(patchee).(interface {
 			ValidateDeniedFields() map[string][]string
@@ -918,7 +918,7 @@ func DefaultApplyFieldMaskBlogPost(ctx context.Context, patchee *BlogPost, patch
 	} else if patchee == nil {
 		return nil, errors.New("Patchee inputs to DefaultApplyFieldMaskBlogPost must be non-nil")
 	}
-	var ignoreFields map[string]bool
+	ignoreFields := map[string]bool{}
 	if keyOfDeniedFields != "" {
 		if hook, ok := interface{}(patchee).(interface {
 			ValidateDeniedFields() map[string][]string

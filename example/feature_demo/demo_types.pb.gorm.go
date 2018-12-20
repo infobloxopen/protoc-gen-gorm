@@ -890,7 +890,7 @@ func DefaultApplyFieldMaskTestTypes(ctx context.Context, patchee *TestTypes, pat
 	} else if patchee == nil {
 		return nil, errors.New("Patchee inputs to DefaultApplyFieldMaskTestTypes must be non-nil")
 	}
-	var ignoreFields map[string]bool
+	ignoreFields := map[string]bool{}
 	if keyOfDeniedFields != "" {
 		if hook, ok := interface{}(patchee).(interface {
 			ValidateDeniedFields() map[string][]string
@@ -1369,7 +1369,7 @@ func DefaultApplyFieldMaskTypeWithID(ctx context.Context, patchee *TypeWithID, p
 	} else if patchee == nil {
 		return nil, errors.New("Patchee inputs to DefaultApplyFieldMaskTypeWithID must be non-nil")
 	}
-	var ignoreFields map[string]bool
+	ignoreFields := map[string]bool{}
 	if keyOfDeniedFields != "" {
 		if hook, ok := interface{}(patchee).(interface {
 			ValidateDeniedFields() map[string][]string
@@ -1933,7 +1933,7 @@ func DefaultApplyFieldMaskMultiaccountTypeWithID(ctx context.Context, patchee *M
 	} else if patchee == nil {
 		return nil, errors.New("Patchee inputs to DefaultApplyFieldMaskMultiaccountTypeWithID must be non-nil")
 	}
-	var ignoreFields map[string]bool
+	ignoreFields := map[string]bool{}
 	if keyOfDeniedFields != "" {
 		if hook, ok := interface{}(patchee).(interface {
 			ValidateDeniedFields() map[string][]string
@@ -2062,7 +2062,7 @@ func DefaultApplyFieldMaskMultiaccountTypeWithoutID(ctx context.Context, patchee
 	} else if patchee == nil {
 		return nil, errors.New("Patchee inputs to DefaultApplyFieldMaskMultiaccountTypeWithoutID must be non-nil")
 	}
-	var ignoreFields map[string]bool
+	ignoreFields := map[string]bool{}
 	if keyOfDeniedFields != "" {
 		if hook, ok := interface{}(patchee).(interface {
 			ValidateDeniedFields() map[string][]string
@@ -2469,7 +2469,7 @@ func DefaultApplyFieldMaskPrimaryUUIDType(ctx context.Context, patchee *PrimaryU
 	} else if patchee == nil {
 		return nil, errors.New("Patchee inputs to DefaultApplyFieldMaskPrimaryUUIDType must be non-nil")
 	}
-	var ignoreFields map[string]bool
+	ignoreFields := map[string]bool{}
 	if keyOfDeniedFields != "" {
 		if hook, ok := interface{}(patchee).(interface {
 			ValidateDeniedFields() map[string][]string
@@ -2905,7 +2905,7 @@ func DefaultApplyFieldMaskPrimaryStringType(ctx context.Context, patchee *Primar
 	} else if patchee == nil {
 		return nil, errors.New("Patchee inputs to DefaultApplyFieldMaskPrimaryStringType must be non-nil")
 	}
-	var ignoreFields map[string]bool
+	ignoreFields := map[string]bool{}
 	if keyOfDeniedFields != "" {
 		if hook, ok := interface{}(patchee).(interface {
 			ValidateDeniedFields() map[string][]string
@@ -3341,7 +3341,7 @@ func DefaultApplyFieldMaskTestTag(ctx context.Context, patchee *TestTag, patcher
 	} else if patchee == nil {
 		return nil, errors.New("Patchee inputs to DefaultApplyFieldMaskTestTag must be non-nil")
 	}
-	var ignoreFields map[string]bool
+	ignoreFields := map[string]bool{}
 	if keyOfDeniedFields != "" {
 		if hook, ok := interface{}(patchee).(interface {
 			ValidateDeniedFields() map[string][]string
@@ -3491,7 +3491,7 @@ func DefaultApplyFieldMaskTestTagAssociation(ctx context.Context, patchee *TestT
 	} else if patchee == nil {
 		return nil, errors.New("Patchee inputs to DefaultApplyFieldMaskTestTagAssociation must be non-nil")
 	}
-	var ignoreFields map[string]bool
+	ignoreFields := map[string]bool{}
 	if keyOfDeniedFields != "" {
 		if hook, ok := interface{}(patchee).(interface {
 			ValidateDeniedFields() map[string][]string
@@ -3612,7 +3612,7 @@ func DefaultApplyFieldMaskPrimaryIncluded(ctx context.Context, patchee *PrimaryI
 	} else if patchee == nil {
 		return nil, errors.New("Patchee inputs to DefaultApplyFieldMaskPrimaryIncluded must be non-nil")
 	}
-	var ignoreFields map[string]bool
+	ignoreFields := map[string]bool{}
 	if keyOfDeniedFields != "" {
 		if hook, ok := interface{}(patchee).(interface {
 			ValidateDeniedFields() map[string][]string

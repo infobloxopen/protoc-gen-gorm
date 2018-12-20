@@ -543,7 +543,7 @@ func DefaultApplyFieldMaskIntPoint(ctx context.Context, patchee *IntPoint, patch
 	} else if patchee == nil {
 		return nil, errors.New("Patchee inputs to DefaultApplyFieldMaskIntPoint must be non-nil")
 	}
-	var ignoreFields map[string]bool
+	ignoreFields := map[string]bool{}
 	if keyOfDeniedFields != "" {
 		if hook, ok := interface{}(patchee).(interface {
 			ValidateDeniedFields() map[string][]string
@@ -679,7 +679,7 @@ func DefaultApplyFieldMaskSomething(ctx context.Context, patchee *Something, pat
 	} else if patchee == nil {
 		return nil, errors.New("Patchee inputs to DefaultApplyFieldMaskSomething must be non-nil")
 	}
-	var ignoreFields map[string]bool
+	ignoreFields := map[string]bool{}
 	if keyOfDeniedFields != "" {
 		if hook, ok := interface{}(patchee).(interface {
 			ValidateDeniedFields() map[string][]string
@@ -800,7 +800,7 @@ func DefaultApplyFieldMaskCircle(ctx context.Context, patchee *Circle, patcher *
 	} else if patchee == nil {
 		return nil, errors.New("Patchee inputs to DefaultApplyFieldMaskCircle must be non-nil")
 	}
-	var ignoreFields map[string]bool
+	ignoreFields := map[string]bool{}
 	if keyOfDeniedFields != "" {
 		if hook, ok := interface{}(patchee).(interface {
 			ValidateDeniedFields() map[string][]string
