@@ -1274,7 +1274,7 @@ func DefaultReplaceTypeWithID(ctx context.Context, in *TypeWithID, db *gorm1.DB)
 					return nil, err
 				}
 			}
-			pbReadRes, err := DefaultReadTypeWithID(ctx, &TypeWithID{Id: in.GetId()}, db, nil)
+			pbReadRes, err := DefaultReadTypeWithID(ctx, &TypeWithID{Id: in.GetId()}, db)
 			if err != nil {
 				return nil, err
 			}
@@ -1838,7 +1838,7 @@ func DefaultReplaceMultiaccountTypeWithID(ctx context.Context, in *MultiaccountT
 					return nil, err
 				}
 			}
-			pbReadRes, err := DefaultReadMultiaccountTypeWithID(ctx, &MultiaccountTypeWithID{Id: in.GetId()}, db, nil)
+			pbReadRes, err := DefaultReadMultiaccountTypeWithID(ctx, &MultiaccountTypeWithID{Id: in.GetId()}, db)
 			if err != nil {
 				return nil, err
 			}
@@ -2374,7 +2374,7 @@ func DefaultReplacePrimaryUUIDType(ctx context.Context, in *PrimaryUUIDType, db 
 					return nil, err
 				}
 			}
-			pbReadRes, err := DefaultReadPrimaryUUIDType(ctx, &PrimaryUUIDType{Id: in.GetId()}, db, nil)
+			pbReadRes, err := DefaultReadPrimaryUUIDType(ctx, &PrimaryUUIDType{Id: in.GetId()}, db)
 			if err != nil {
 				return nil, err
 			}
@@ -2810,7 +2810,7 @@ func DefaultReplacePrimaryStringType(ctx context.Context, in *PrimaryStringType,
 					return nil, err
 				}
 			}
-			pbReadRes, err := DefaultReadPrimaryStringType(ctx, &PrimaryStringType{Id: in.GetId()}, db, nil)
+			pbReadRes, err := DefaultReadPrimaryStringType(ctx, &PrimaryStringType{Id: in.GetId()}, db)
 			if err != nil {
 				return nil, err
 			}
@@ -3246,7 +3246,7 @@ func DefaultReplaceTestTag(ctx context.Context, in *TestTag, db *gorm1.DB) (*Tes
 					return nil, err
 				}
 			}
-			pbReadRes, err := DefaultReadTestTag(ctx, &TestTag{Id: in.GetId()}, db, nil)
+			pbReadRes, err := DefaultReadTestTag(ctx, &TestTag{Id: in.GetId()}, db)
 			if err != nil {
 				return nil, err
 			}

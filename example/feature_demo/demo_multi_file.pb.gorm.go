@@ -424,7 +424,7 @@ func DefaultReplaceExternalChild(ctx context.Context, in *ExternalChild, db *gor
 					return nil, err
 				}
 			}
-			pbReadRes, err := DefaultReadExternalChild(ctx, &ExternalChild{Id: in.GetId()}, db, nil)
+			pbReadRes, err := DefaultReadExternalChild(ctx, &ExternalChild{Id: in.GetId()}, db)
 			if err != nil {
 				return nil, err
 			}
@@ -823,7 +823,7 @@ func DefaultReplaceBlogPost(ctx context.Context, in *BlogPost, db *gorm1.DB) (*B
 					return nil, err
 				}
 			}
-			pbReadRes, err := DefaultReadBlogPost(ctx, &BlogPost{Id: in.GetId()}, db, nil)
+			pbReadRes, err := DefaultReadBlogPost(ctx, &BlogPost{Id: in.GetId()}, db)
 			if err != nil {
 				return nil, err
 			}

@@ -1097,7 +1097,7 @@ func DefaultReplaceUser(ctx context.Context, in *User, db *gorm1.DB) (*User, err
 					return nil, err
 				}
 			}
-			pbReadRes, err := DefaultReadUser(ctx, &User{Id: in.GetId()}, db, nil)
+			pbReadRes, err := DefaultReadUser(ctx, &User{Id: in.GetId()}, db)
 			if err != nil {
 				return nil, err
 			}
@@ -1660,7 +1660,7 @@ func DefaultReplaceEmail(ctx context.Context, in *Email, db *gorm1.DB) (*Email, 
 					return nil, err
 				}
 			}
-			pbReadRes, err := DefaultReadEmail(ctx, &Email{Id: in.GetId()}, db, nil)
+			pbReadRes, err := DefaultReadEmail(ctx, &Email{Id: in.GetId()}, db)
 			if err != nil {
 				return nil, err
 			}
@@ -2090,7 +2090,7 @@ func DefaultReplaceAddress(ctx context.Context, in *Address, db *gorm1.DB) (*Add
 					return nil, err
 				}
 			}
-			pbReadRes, err := DefaultReadAddress(ctx, &Address{Id: in.GetId()}, db, nil)
+			pbReadRes, err := DefaultReadAddress(ctx, &Address{Id: in.GetId()}, db)
 			if err != nil {
 				return nil, err
 			}
@@ -2527,7 +2527,7 @@ func DefaultReplaceLanguage(ctx context.Context, in *Language, db *gorm1.DB) (*L
 					return nil, err
 				}
 			}
-			pbReadRes, err := DefaultReadLanguage(ctx, &Language{Id: in.GetId()}, db, nil)
+			pbReadRes, err := DefaultReadLanguage(ctx, &Language{Id: in.GetId()}, db)
 			if err != nil {
 				return nil, err
 			}
@@ -2950,7 +2950,7 @@ func DefaultReplaceCreditCard(ctx context.Context, in *CreditCard, db *gorm1.DB)
 					return nil, err
 				}
 			}
-			pbReadRes, err := DefaultReadCreditCard(ctx, &CreditCard{Id: in.GetId()}, db, nil)
+			pbReadRes, err := DefaultReadCreditCard(ctx, &CreditCard{Id: in.GetId()}, db)
 			if err != nil {
 				return nil, err
 			}

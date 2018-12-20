@@ -351,6 +351,7 @@ func (p *OrmPlugin) generateReplaceHandler(message *generator.Descriptor) {
 	var isMultiAccount bool
 
 	typeName := p.TypeName(message)
+	ormable := p.getOrmable(typeName)
 
 	if getMessageOptions(message).GetMultiAccount() {
 		isMultiAccount = true
@@ -381,7 +382,11 @@ func (p *OrmPlugin) generateReplaceHandler(message *generator.Descriptor) {
 	p.P(`					return nil, err`)
 	p.P(`				}`)
 	p.P(`			}`)
-	p.P(`			pbReadRes, err := DefaultRead`, typeName, `(ctx, &`, typeName, `{Id: in.GetId()}, db, nil)`)
+	if p.readHasFieldSelection(ormable) {
+		p.P(`		pbReadRes, err := DefaultRead`, typeName, `(ctx, &`, typeName, `{Id: in.GetId()}, db, nil)`)
+	} else {
+		p.P(`		pbReadRes, err := DefaultRead`, typeName, `(ctx, &`, typeName, `{Id: in.GetId()}, db)`)
+	}
 	p.P(`			if err != nil {`)
 	p.P(`				return nil, err`)
 	p.P(`			}`)
