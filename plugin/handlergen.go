@@ -208,7 +208,7 @@ func (p *OrmPlugin) generateApplyFieldMask(message *generator.Descriptor) {
 		typeName, ` must be non-nil")`)
 	p.P(`}`)
 
-	p.P(`var ignoreFields map[string]bool`)
+	p.P(`ignoreFields := map[string]bool{}`)
 	p.P(`if keyOfDeniedFields != "" {`)
 	p.P(`if hook, ok := interface{}(patchee).(interface {`)
 	p.P(`ValidateDeniedFields() map[string][]string`)
