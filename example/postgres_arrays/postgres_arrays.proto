@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package postgres.arrays;
+
+import "github.com/infobloxopen/protoc-gen-gorm/options/gorm.proto";
+
+option go_package = "github.com/infobloxopen/protoc-gen-gorm/example/postgres_arrays;postgres_arrays";
+
+message Example {
+    option (gorm.opts) = {ormable: true};
+
+    string id = 1 [(gorm.field).tag = {type: "uuid" primary_key: true}];
+    string description = 2;
+    repeated bool array_of_bools = 20;
+    repeated double array_of_float64 = 30;
+    repeated int64 array_of_int64 = 40;
+    repeated string array_of_string = 50;
+}

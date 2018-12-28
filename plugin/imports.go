@@ -47,6 +47,7 @@ var (
 	fmImport       = "google.golang.org/genproto/protobuf/field_mask"
 	queryImport    = "github.com/infobloxopen/atlas-app-toolkit/query"
 	gatewayImport  = "github.com/infobloxopen/atlas-app-toolkit/gateway"
+	pqImport       = "github.com/lib/pq"
 )
 
 type pkgImport struct {
