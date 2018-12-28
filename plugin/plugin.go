@@ -225,7 +225,24 @@ func (p *OrmPlugin) parseBasicFields(msg *generator.Descriptor) {
 		fieldName := generator.CamelCase(field.GetName())
 		fieldType, _ := p.GoType(msg, field)
 		var typePackage string
-		if (*(field.Type) != typeMessage || !p.isOrmable(fieldType)) && field.IsRepeated() {
+		if p.dbEngine == ENGINE_POSTGRES && p.IsAbleToMakePQArray(fieldType) {
+			switch fieldType {
+			case "[]bool":
+				fieldType = fmt.Sprintf("%s.BoolArray", p.Import(pqImport))
+				fieldOpts.Tag = tagWithType(tag, "bool[]")
+			case "[]float64":
+				fieldType = fmt.Sprintf("%s.Float64Array", p.Import(pqImport))
+				fieldOpts.Tag = tagWithType(tag, "float[]")
+			case "[]int64":
+				fieldType = fmt.Sprintf("%s.Int64Array", p.Import(pqImport))
+				fieldOpts.Tag = tagWithType(tag, "integer[]")
+			case "[]string":
+				fieldType = fmt.Sprintf("%s.StringArray", p.Import(pqImport))
+				fieldOpts.Tag = tagWithType(tag, "text[]")
+			default:
+				continue
+			}
+		} else if (*(field.Type) != typeMessage || !p.isOrmable(fieldType)) && field.IsRepeated() {
 			// Not implemented yet
 			continue
 		} else if *(field.Type) == typeEnum {
@@ -654,7 +671,20 @@ func (p *OrmPlugin) generateFieldConversion(message *generator.Descriptor, field
 	fieldName := generator.CamelCase(field.GetName())
 	fieldType, _ := p.GoType(message, field)
 	if field.IsRepeated() { // Repeated Object ----------------------------------
-		if p.isOrmable(fieldType) { // Repeated ORMable type
+		// Some repeated fields can be handled by github.com/lib/pq
+		if p.dbEngine == ENGINE_POSTGRES && p.IsAbleToMakePQArray(fieldType) {
+			switch fieldType {
+			case "[]bool":
+				p.P(`to.`, fieldName, ` = make(`, p.Import(pqImport), `.BoolArray, len(m.`, fieldName, `))`)
+			case "[]float64":
+				p.P(`to.`, fieldName, ` = make(`, p.Import(pqImport), `.Float64Array, len(m.`, fieldName, `))`)
+			case "[]int64":
+				p.P(`to.`, fieldName, ` = make(`, p.Import(pqImport), `.Int64Array, len(m.`, fieldName, `))`)
+			case "[]string":
+				p.P(`to.`, fieldName, ` = make(`, p.Import(pqImport), `.StringArray, len(m.`, fieldName, `))`)
+			}
+			p.P(`copy(to.`, fieldName, `, m.`, fieldName, `)`)
+		} else if p.isOrmable(fieldType) { // Repeated ORMable type
 			//fieldType = strings.Trim(fieldType, "[]*")
 
 			p.P(`for _, v := range m.`, fieldName, ` {`)

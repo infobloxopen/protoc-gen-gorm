@@ -137,6 +137,13 @@ Within the proto files, the following types are supported:
   invocation) or between packages. All associations can be generated properly
   within the same package, but cross package only the belongs-to and many-to-many
   will work.
+- some repeated types can be automatically handled for Postgres by github.com/lib/pq, and
+  as long as the engine is set to postgres then to/from mappings will be created (see the
+  example called [example/postgres_arrays/postgres_arrays.proto](example/postgres_arrays/postgres_arrays.proto)):
+  - []bool: pq.BoolArray
+  - []float64: pq.Float64Array
+  - []int64: pq.Int64Array
+  - []string: pq.StringArray
 
 ### Associations
 
