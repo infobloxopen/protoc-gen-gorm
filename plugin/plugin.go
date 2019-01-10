@@ -673,6 +673,7 @@ func (p *OrmPlugin) generateFieldConversion(message *generator.Descriptor, field
 	if field.IsRepeated() { // Repeated Object ----------------------------------
 		// Some repeated fields can be handled by github.com/lib/pq
 		if p.dbEngine == ENGINE_POSTGRES && p.IsAbleToMakePQArray(fieldType) {
+			p.P(`if m.`, fieldName, ` != nil {`)
 			switch fieldType {
 			case "[]bool":
 				p.P(`to.`, fieldName, ` = make(`, p.Import(pqImport), `.BoolArray, len(m.`, fieldName, `))`)
@@ -684,6 +685,7 @@ func (p *OrmPlugin) generateFieldConversion(message *generator.Descriptor, field
 				p.P(`to.`, fieldName, ` = make(`, p.Import(pqImport), `.StringArray, len(m.`, fieldName, `))`)
 			}
 			p.P(`copy(to.`, fieldName, `, m.`, fieldName, `)`)
+			p.P(`}`)
 		} else if p.isOrmable(fieldType) { // Repeated ORMable type
 			//fieldType = strings.Trim(fieldType, "[]*")
 

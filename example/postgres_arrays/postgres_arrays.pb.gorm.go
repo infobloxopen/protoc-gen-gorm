@@ -53,14 +53,22 @@ func (m *Example) ToORM(ctx context.Context) (ExampleORM, error) {
 	}
 	to.Id = m.Id
 	to.Description = m.Description
-	to.ArrayOfBools = make(pq1.BoolArray, len(m.ArrayOfBools))
-	copy(to.ArrayOfBools, m.ArrayOfBools)
-	to.ArrayOfFloat64 = make(pq1.Float64Array, len(m.ArrayOfFloat64))
-	copy(to.ArrayOfFloat64, m.ArrayOfFloat64)
-	to.ArrayOfInt64 = make(pq1.Int64Array, len(m.ArrayOfInt64))
-	copy(to.ArrayOfInt64, m.ArrayOfInt64)
-	to.ArrayOfString = make(pq1.StringArray, len(m.ArrayOfString))
-	copy(to.ArrayOfString, m.ArrayOfString)
+	if m.ArrayOfBools != nil {
+		to.ArrayOfBools = make(pq1.BoolArray, len(m.ArrayOfBools))
+		copy(to.ArrayOfBools, m.ArrayOfBools)
+	}
+	if m.ArrayOfFloat64 != nil {
+		to.ArrayOfFloat64 = make(pq1.Float64Array, len(m.ArrayOfFloat64))
+		copy(to.ArrayOfFloat64, m.ArrayOfFloat64)
+	}
+	if m.ArrayOfInt64 != nil {
+		to.ArrayOfInt64 = make(pq1.Int64Array, len(m.ArrayOfInt64))
+		copy(to.ArrayOfInt64, m.ArrayOfInt64)
+	}
+	if m.ArrayOfString != nil {
+		to.ArrayOfString = make(pq1.StringArray, len(m.ArrayOfString))
+		copy(to.ArrayOfString, m.ArrayOfString)
+	}
 	if posthook, ok := interface{}(m).(ExampleWithAfterToORM); ok {
 		err = posthook.AfterToORM(ctx, &to)
 	}
@@ -79,14 +87,22 @@ func (m *ExampleORM) ToPB(ctx context.Context) (Example, error) {
 	}
 	to.Id = m.Id
 	to.Description = m.Description
-	to.ArrayOfBools = make(pq1.BoolArray, len(m.ArrayOfBools))
-	copy(to.ArrayOfBools, m.ArrayOfBools)
-	to.ArrayOfFloat64 = make(pq1.Float64Array, len(m.ArrayOfFloat64))
-	copy(to.ArrayOfFloat64, m.ArrayOfFloat64)
-	to.ArrayOfInt64 = make(pq1.Int64Array, len(m.ArrayOfInt64))
-	copy(to.ArrayOfInt64, m.ArrayOfInt64)
-	to.ArrayOfString = make(pq1.StringArray, len(m.ArrayOfString))
-	copy(to.ArrayOfString, m.ArrayOfString)
+	if m.ArrayOfBools != nil {
+		to.ArrayOfBools = make(pq1.BoolArray, len(m.ArrayOfBools))
+		copy(to.ArrayOfBools, m.ArrayOfBools)
+	}
+	if m.ArrayOfFloat64 != nil {
+		to.ArrayOfFloat64 = make(pq1.Float64Array, len(m.ArrayOfFloat64))
+		copy(to.ArrayOfFloat64, m.ArrayOfFloat64)
+	}
+	if m.ArrayOfInt64 != nil {
+		to.ArrayOfInt64 = make(pq1.Int64Array, len(m.ArrayOfInt64))
+		copy(to.ArrayOfInt64, m.ArrayOfInt64)
+	}
+	if m.ArrayOfString != nil {
+		to.ArrayOfString = make(pq1.StringArray, len(m.ArrayOfString))
+		copy(to.ArrayOfString, m.ArrayOfString)
+	}
 	if posthook, ok := interface{}(m).(ExampleWithAfterToPB); ok {
 		err = posthook.AfterToPB(ctx, &to)
 	}
