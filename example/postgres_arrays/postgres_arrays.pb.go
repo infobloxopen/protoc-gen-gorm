@@ -20,12 +20,12 @@ var _ = math.Inf
 const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 
 type Example struct {
-	Id                   string    `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Description          string    `protobuf:"bytes,2,opt,name=description,proto3" json:"description,omitempty"`
-	ArrayOfBools         []bool    `protobuf:"varint,20,rep,packed,name=array_of_bools,json=arrayOfBools,proto3" json:"array_of_bools,omitempty"`
-	ArrayOfFloat64       []float64 `protobuf:"fixed64,30,rep,packed,name=array_of_float64,json=arrayOfFloat64,proto3" json:"array_of_float64,omitempty"`
-	ArrayOfInt64         []int64   `protobuf:"varint,40,rep,packed,name=array_of_int64,json=arrayOfInt64,proto3" json:"array_of_int64,omitempty"`
-	ArrayOfString        []string  `protobuf:"bytes,50,rep,name=array_of_string,json=arrayOfString,proto3" json:"array_of_string,omitempty"`
+	Id                   string    `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
+	Description          string    `protobuf:"bytes,2,opt,name=description" json:"description,omitempty"`
+	ArrayOfBools         []bool    `protobuf:"varint,20,rep,packed,name=array_of_bools,json=arrayOfBools" json:"array_of_bools,omitempty"`
+	ArrayOfFloat64       []float64 `protobuf:"fixed64,30,rep,packed,name=array_of_float64,json=arrayOfFloat64" json:"array_of_float64,omitempty"`
+	ArrayOfInt64         []int64   `protobuf:"varint,40,rep,packed,name=array_of_int64,json=arrayOfInt64" json:"array_of_int64,omitempty"`
+	ArrayOfString        []string  `protobuf:"bytes,50,rep,name=array_of_string,json=arrayOfString" json:"array_of_string,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}  `json:"-"`
 	XXX_unrecognized     []byte    `json:"-"`
 	XXX_sizecache        int32     `json:"-"`
@@ -35,7 +35,7 @@ func (m *Example) Reset()         { *m = Example{} }
 func (m *Example) String() string { return proto.CompactTextString(m) }
 func (*Example) ProtoMessage()    {}
 func (*Example) Descriptor() ([]byte, []int) {
-	return fileDescriptor_postgres_arrays_2ee8c4c45c217864, []int{0}
+	return fileDescriptor_postgres_arrays_b477d8058a1bc73b, []int{0}
 }
 func (m *Example) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Example.Unmarshal(m, b)
@@ -102,10 +102,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("postgres_arrays.proto", fileDescriptor_postgres_arrays_2ee8c4c45c217864)
+	proto.RegisterFile("postgres_arrays.proto", fileDescriptor_postgres_arrays_b477d8058a1bc73b)
 }
 
-var fileDescriptor_postgres_arrays_2ee8c4c45c217864 = []byte{
+var fileDescriptor_postgres_arrays_b477d8058a1bc73b = []byte{
 	// 288 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x91, 0x4f, 0x4b, 0xfb, 0x30,
 	0x18, 0x80, 0x49, 0xfb, 0x63, 0xbf, 0x2d, 0xea, 0x26, 0x41, 0xa1, 0xf3, 0x30, 0x82, 0x88, 0xe4,
