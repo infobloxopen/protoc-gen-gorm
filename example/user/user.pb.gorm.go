@@ -855,16 +855,16 @@ func DefaultCreateUser(ctx context.Context, in *User, db *gorm1.DB) (*User, erro
 	if err != nil {
 		return nil, err
 	}
-	if hook, ok := interface{}(&ormObj).(UserORMWithBeforeCreate); ok {
-		if db, err = hook.BeforeCreate(ctx, db); err != nil {
+	if hook, ok := interface{}(&ormObj).(UserORMWithBeforeCreate_); ok {
+		if db, err = hook.BeforeCreate_(ctx, db); err != nil {
 			return nil, err
 		}
 	}
 	if err = db.Create(&ormObj).Error; err != nil {
 		return nil, err
 	}
-	if hook, ok := interface{}(&ormObj).(UserORMWithAfterCreate); ok {
-		if err = hook.AfterCreate(ctx, db); err != nil {
+	if hook, ok := interface{}(&ormObj).(UserORMWithAfterCreate_); ok {
+		if err = hook.AfterCreate_(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -872,11 +872,11 @@ func DefaultCreateUser(ctx context.Context, in *User, db *gorm1.DB) (*User, erro
 	return &pbResponse, err
 }
 
-type UserORMWithBeforeCreate interface {
-	BeforeCreate(context.Context, *gorm1.DB) (*gorm1.DB, error)
+type UserORMWithBeforeCreate_ interface {
+	BeforeCreate_(context.Context, *gorm1.DB) (*gorm1.DB, error)
 }
-type UserORMWithAfterCreate interface {
-	AfterCreate(context.Context, *gorm1.DB) error
+type UserORMWithAfterCreate_ interface {
+	AfterCreate_(context.Context, *gorm1.DB) error
 }
 
 // DefaultReadUser executes a basic gorm read call
@@ -938,8 +938,8 @@ func DefaultDeleteUser(ctx context.Context, in *User, db *gorm1.DB) error {
 	if ormObj.Id == "" {
 		return errors.New("A non-zero ID value is required for a delete call")
 	}
-	if hook, ok := interface{}(&ormObj).(UserORMWithBeforeDelete); ok {
-		if db, err = hook.BeforeDelete(ctx, db); err != nil {
+	if hook, ok := interface{}(&ormObj).(UserORMWithBeforeDelete_); ok {
+		if db, err = hook.BeforeDelete_(ctx, db); err != nil {
 			return err
 		}
 	}
@@ -947,17 +947,17 @@ func DefaultDeleteUser(ctx context.Context, in *User, db *gorm1.DB) error {
 	if err != nil {
 		return err
 	}
-	if hook, ok := interface{}(&ormObj).(UserORMWithAfterDelete); ok {
-		err = hook.AfterDelete(ctx, db)
+	if hook, ok := interface{}(&ormObj).(UserORMWithAfterDelete_); ok {
+		err = hook.AfterDelete_(ctx, db)
 	}
 	return err
 }
 
-type UserORMWithBeforeDelete interface {
-	BeforeDelete(context.Context, *gorm1.DB) (*gorm1.DB, error)
+type UserORMWithBeforeDelete_ interface {
+	BeforeDelete_(context.Context, *gorm1.DB) (*gorm1.DB, error)
 }
-type UserORMWithAfterDelete interface {
-	AfterDelete(context.Context, *gorm1.DB) error
+type UserORMWithAfterDelete_ interface {
+	AfterDelete_(context.Context, *gorm1.DB) error
 }
 
 func DefaultDeleteUserSet(ctx context.Context, in []*User, db *gorm1.DB) error {
@@ -1324,16 +1324,16 @@ func DefaultCreateEmail(ctx context.Context, in *Email, db *gorm1.DB) (*Email, e
 	if err != nil {
 		return nil, err
 	}
-	if hook, ok := interface{}(&ormObj).(EmailORMWithBeforeCreate); ok {
-		if db, err = hook.BeforeCreate(ctx, db); err != nil {
+	if hook, ok := interface{}(&ormObj).(EmailORMWithBeforeCreate_); ok {
+		if db, err = hook.BeforeCreate_(ctx, db); err != nil {
 			return nil, err
 		}
 	}
 	if err = db.Create(&ormObj).Error; err != nil {
 		return nil, err
 	}
-	if hook, ok := interface{}(&ormObj).(EmailORMWithAfterCreate); ok {
-		if err = hook.AfterCreate(ctx, db); err != nil {
+	if hook, ok := interface{}(&ormObj).(EmailORMWithAfterCreate_); ok {
+		if err = hook.AfterCreate_(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -1341,11 +1341,11 @@ func DefaultCreateEmail(ctx context.Context, in *Email, db *gorm1.DB) (*Email, e
 	return &pbResponse, err
 }
 
-type EmailORMWithBeforeCreate interface {
-	BeforeCreate(context.Context, *gorm1.DB) (*gorm1.DB, error)
+type EmailORMWithBeforeCreate_ interface {
+	BeforeCreate_(context.Context, *gorm1.DB) (*gorm1.DB, error)
 }
-type EmailORMWithAfterCreate interface {
-	AfterCreate(context.Context, *gorm1.DB) error
+type EmailORMWithAfterCreate_ interface {
+	AfterCreate_(context.Context, *gorm1.DB) error
 }
 
 // DefaultReadEmail executes a basic gorm read call
@@ -1407,8 +1407,8 @@ func DefaultDeleteEmail(ctx context.Context, in *Email, db *gorm1.DB) error {
 	if ormObj.Id == "" {
 		return errors.New("A non-zero ID value is required for a delete call")
 	}
-	if hook, ok := interface{}(&ormObj).(EmailORMWithBeforeDelete); ok {
-		if db, err = hook.BeforeDelete(ctx, db); err != nil {
+	if hook, ok := interface{}(&ormObj).(EmailORMWithBeforeDelete_); ok {
+		if db, err = hook.BeforeDelete_(ctx, db); err != nil {
 			return err
 		}
 	}
@@ -1416,17 +1416,17 @@ func DefaultDeleteEmail(ctx context.Context, in *Email, db *gorm1.DB) error {
 	if err != nil {
 		return err
 	}
-	if hook, ok := interface{}(&ormObj).(EmailORMWithAfterDelete); ok {
-		err = hook.AfterDelete(ctx, db)
+	if hook, ok := interface{}(&ormObj).(EmailORMWithAfterDelete_); ok {
+		err = hook.AfterDelete_(ctx, db)
 	}
 	return err
 }
 
-type EmailORMWithBeforeDelete interface {
-	BeforeDelete(context.Context, *gorm1.DB) (*gorm1.DB, error)
+type EmailORMWithBeforeDelete_ interface {
+	BeforeDelete_(context.Context, *gorm1.DB) (*gorm1.DB, error)
 }
-type EmailORMWithAfterDelete interface {
-	AfterDelete(context.Context, *gorm1.DB) error
+type EmailORMWithAfterDelete_ interface {
+	AfterDelete_(context.Context, *gorm1.DB) error
 }
 
 func DefaultDeleteEmailSet(ctx context.Context, in []*Email, db *gorm1.DB) error {
@@ -1673,16 +1673,16 @@ func DefaultCreateAddress(ctx context.Context, in *Address, db *gorm1.DB) (*Addr
 	if err != nil {
 		return nil, err
 	}
-	if hook, ok := interface{}(&ormObj).(AddressORMWithBeforeCreate); ok {
-		if db, err = hook.BeforeCreate(ctx, db); err != nil {
+	if hook, ok := interface{}(&ormObj).(AddressORMWithBeforeCreate_); ok {
+		if db, err = hook.BeforeCreate_(ctx, db); err != nil {
 			return nil, err
 		}
 	}
 	if err = db.Create(&ormObj).Error; err != nil {
 		return nil, err
 	}
-	if hook, ok := interface{}(&ormObj).(AddressORMWithAfterCreate); ok {
-		if err = hook.AfterCreate(ctx, db); err != nil {
+	if hook, ok := interface{}(&ormObj).(AddressORMWithAfterCreate_); ok {
+		if err = hook.AfterCreate_(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -1690,11 +1690,11 @@ func DefaultCreateAddress(ctx context.Context, in *Address, db *gorm1.DB) (*Addr
 	return &pbResponse, err
 }
 
-type AddressORMWithBeforeCreate interface {
-	BeforeCreate(context.Context, *gorm1.DB) (*gorm1.DB, error)
+type AddressORMWithBeforeCreate_ interface {
+	BeforeCreate_(context.Context, *gorm1.DB) (*gorm1.DB, error)
 }
-type AddressORMWithAfterCreate interface {
-	AfterCreate(context.Context, *gorm1.DB) error
+type AddressORMWithAfterCreate_ interface {
+	AfterCreate_(context.Context, *gorm1.DB) error
 }
 
 // DefaultReadAddress executes a basic gorm read call
@@ -1756,8 +1756,8 @@ func DefaultDeleteAddress(ctx context.Context, in *Address, db *gorm1.DB) error 
 	if ormObj.Id == 0 {
 		return errors.New("A non-zero ID value is required for a delete call")
 	}
-	if hook, ok := interface{}(&ormObj).(AddressORMWithBeforeDelete); ok {
-		if db, err = hook.BeforeDelete(ctx, db); err != nil {
+	if hook, ok := interface{}(&ormObj).(AddressORMWithBeforeDelete_); ok {
+		if db, err = hook.BeforeDelete_(ctx, db); err != nil {
 			return err
 		}
 	}
@@ -1765,17 +1765,17 @@ func DefaultDeleteAddress(ctx context.Context, in *Address, db *gorm1.DB) error 
 	if err != nil {
 		return err
 	}
-	if hook, ok := interface{}(&ormObj).(AddressORMWithAfterDelete); ok {
-		err = hook.AfterDelete(ctx, db)
+	if hook, ok := interface{}(&ormObj).(AddressORMWithAfterDelete_); ok {
+		err = hook.AfterDelete_(ctx, db)
 	}
 	return err
 }
 
-type AddressORMWithBeforeDelete interface {
-	BeforeDelete(context.Context, *gorm1.DB) (*gorm1.DB, error)
+type AddressORMWithBeforeDelete_ interface {
+	BeforeDelete_(context.Context, *gorm1.DB) (*gorm1.DB, error)
 }
-type AddressORMWithAfterDelete interface {
-	AfterDelete(context.Context, *gorm1.DB) error
+type AddressORMWithAfterDelete_ interface {
+	AfterDelete_(context.Context, *gorm1.DB) error
 }
 
 func DefaultDeleteAddressSet(ctx context.Context, in []*Address, db *gorm1.DB) error {
@@ -2026,16 +2026,16 @@ func DefaultCreateLanguage(ctx context.Context, in *Language, db *gorm1.DB) (*La
 	if err != nil {
 		return nil, err
 	}
-	if hook, ok := interface{}(&ormObj).(LanguageORMWithBeforeCreate); ok {
-		if db, err = hook.BeforeCreate(ctx, db); err != nil {
+	if hook, ok := interface{}(&ormObj).(LanguageORMWithBeforeCreate_); ok {
+		if db, err = hook.BeforeCreate_(ctx, db); err != nil {
 			return nil, err
 		}
 	}
 	if err = db.Create(&ormObj).Error; err != nil {
 		return nil, err
 	}
-	if hook, ok := interface{}(&ormObj).(LanguageORMWithAfterCreate); ok {
-		if err = hook.AfterCreate(ctx, db); err != nil {
+	if hook, ok := interface{}(&ormObj).(LanguageORMWithAfterCreate_); ok {
+		if err = hook.AfterCreate_(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -2043,11 +2043,11 @@ func DefaultCreateLanguage(ctx context.Context, in *Language, db *gorm1.DB) (*La
 	return &pbResponse, err
 }
 
-type LanguageORMWithBeforeCreate interface {
-	BeforeCreate(context.Context, *gorm1.DB) (*gorm1.DB, error)
+type LanguageORMWithBeforeCreate_ interface {
+	BeforeCreate_(context.Context, *gorm1.DB) (*gorm1.DB, error)
 }
-type LanguageORMWithAfterCreate interface {
-	AfterCreate(context.Context, *gorm1.DB) error
+type LanguageORMWithAfterCreate_ interface {
+	AfterCreate_(context.Context, *gorm1.DB) error
 }
 
 // DefaultReadLanguage executes a basic gorm read call
@@ -2109,8 +2109,8 @@ func DefaultDeleteLanguage(ctx context.Context, in *Language, db *gorm1.DB) erro
 	if ormObj.Id == 0 {
 		return errors.New("A non-zero ID value is required for a delete call")
 	}
-	if hook, ok := interface{}(&ormObj).(LanguageORMWithBeforeDelete); ok {
-		if db, err = hook.BeforeDelete(ctx, db); err != nil {
+	if hook, ok := interface{}(&ormObj).(LanguageORMWithBeforeDelete_); ok {
+		if db, err = hook.BeforeDelete_(ctx, db); err != nil {
 			return err
 		}
 	}
@@ -2118,17 +2118,17 @@ func DefaultDeleteLanguage(ctx context.Context, in *Language, db *gorm1.DB) erro
 	if err != nil {
 		return err
 	}
-	if hook, ok := interface{}(&ormObj).(LanguageORMWithAfterDelete); ok {
-		err = hook.AfterDelete(ctx, db)
+	if hook, ok := interface{}(&ormObj).(LanguageORMWithAfterDelete_); ok {
+		err = hook.AfterDelete_(ctx, db)
 	}
 	return err
 }
 
-type LanguageORMWithBeforeDelete interface {
-	BeforeDelete(context.Context, *gorm1.DB) (*gorm1.DB, error)
+type LanguageORMWithBeforeDelete_ interface {
+	BeforeDelete_(context.Context, *gorm1.DB) (*gorm1.DB, error)
 }
-type LanguageORMWithAfterDelete interface {
-	AfterDelete(context.Context, *gorm1.DB) error
+type LanguageORMWithAfterDelete_ interface {
+	AfterDelete_(context.Context, *gorm1.DB) error
 }
 
 func DefaultDeleteLanguageSet(ctx context.Context, in []*Language, db *gorm1.DB) error {
@@ -2371,16 +2371,16 @@ func DefaultCreateCreditCard(ctx context.Context, in *CreditCard, db *gorm1.DB) 
 	if err != nil {
 		return nil, err
 	}
-	if hook, ok := interface{}(&ormObj).(CreditCardORMWithBeforeCreate); ok {
-		if db, err = hook.BeforeCreate(ctx, db); err != nil {
+	if hook, ok := interface{}(&ormObj).(CreditCardORMWithBeforeCreate_); ok {
+		if db, err = hook.BeforeCreate_(ctx, db); err != nil {
 			return nil, err
 		}
 	}
 	if err = db.Create(&ormObj).Error; err != nil {
 		return nil, err
 	}
-	if hook, ok := interface{}(&ormObj).(CreditCardORMWithAfterCreate); ok {
-		if err = hook.AfterCreate(ctx, db); err != nil {
+	if hook, ok := interface{}(&ormObj).(CreditCardORMWithAfterCreate_); ok {
+		if err = hook.AfterCreate_(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -2388,11 +2388,11 @@ func DefaultCreateCreditCard(ctx context.Context, in *CreditCard, db *gorm1.DB) 
 	return &pbResponse, err
 }
 
-type CreditCardORMWithBeforeCreate interface {
-	BeforeCreate(context.Context, *gorm1.DB) (*gorm1.DB, error)
+type CreditCardORMWithBeforeCreate_ interface {
+	BeforeCreate_(context.Context, *gorm1.DB) (*gorm1.DB, error)
 }
-type CreditCardORMWithAfterCreate interface {
-	AfterCreate(context.Context, *gorm1.DB) error
+type CreditCardORMWithAfterCreate_ interface {
+	AfterCreate_(context.Context, *gorm1.DB) error
 }
 
 // DefaultReadCreditCard executes a basic gorm read call
@@ -2454,8 +2454,8 @@ func DefaultDeleteCreditCard(ctx context.Context, in *CreditCard, db *gorm1.DB) 
 	if ormObj.Id == 0 {
 		return errors.New("A non-zero ID value is required for a delete call")
 	}
-	if hook, ok := interface{}(&ormObj).(CreditCardORMWithBeforeDelete); ok {
-		if db, err = hook.BeforeDelete(ctx, db); err != nil {
+	if hook, ok := interface{}(&ormObj).(CreditCardORMWithBeforeDelete_); ok {
+		if db, err = hook.BeforeDelete_(ctx, db); err != nil {
 			return err
 		}
 	}
@@ -2463,17 +2463,17 @@ func DefaultDeleteCreditCard(ctx context.Context, in *CreditCard, db *gorm1.DB) 
 	if err != nil {
 		return err
 	}
-	if hook, ok := interface{}(&ormObj).(CreditCardORMWithAfterDelete); ok {
-		err = hook.AfterDelete(ctx, db)
+	if hook, ok := interface{}(&ormObj).(CreditCardORMWithAfterDelete_); ok {
+		err = hook.AfterDelete_(ctx, db)
 	}
 	return err
 }
 
-type CreditCardORMWithBeforeDelete interface {
-	BeforeDelete(context.Context, *gorm1.DB) (*gorm1.DB, error)
+type CreditCardORMWithBeforeDelete_ interface {
+	BeforeDelete_(context.Context, *gorm1.DB) (*gorm1.DB, error)
 }
-type CreditCardORMWithAfterDelete interface {
-	AfterDelete(context.Context, *gorm1.DB) error
+type CreditCardORMWithAfterDelete_ interface {
+	AfterDelete_(context.Context, *gorm1.DB) error
 }
 
 func DefaultDeleteCreditCardSet(ctx context.Context, in []*CreditCard, db *gorm1.DB) error {
@@ -2720,16 +2720,16 @@ func DefaultCreateTask(ctx context.Context, in *Task, db *gorm1.DB) (*Task, erro
 	if err != nil {
 		return nil, err
 	}
-	if hook, ok := interface{}(&ormObj).(TaskORMWithBeforeCreate); ok {
-		if db, err = hook.BeforeCreate(ctx, db); err != nil {
+	if hook, ok := interface{}(&ormObj).(TaskORMWithBeforeCreate_); ok {
+		if db, err = hook.BeforeCreate_(ctx, db); err != nil {
 			return nil, err
 		}
 	}
 	if err = db.Create(&ormObj).Error; err != nil {
 		return nil, err
 	}
-	if hook, ok := interface{}(&ormObj).(TaskORMWithAfterCreate); ok {
-		if err = hook.AfterCreate(ctx, db); err != nil {
+	if hook, ok := interface{}(&ormObj).(TaskORMWithAfterCreate_); ok {
+		if err = hook.AfterCreate_(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -2737,11 +2737,11 @@ func DefaultCreateTask(ctx context.Context, in *Task, db *gorm1.DB) (*Task, erro
 	return &pbResponse, err
 }
 
-type TaskORMWithBeforeCreate interface {
-	BeforeCreate(context.Context, *gorm1.DB) (*gorm1.DB, error)
+type TaskORMWithBeforeCreate_ interface {
+	BeforeCreate_(context.Context, *gorm1.DB) (*gorm1.DB, error)
 }
-type TaskORMWithAfterCreate interface {
-	AfterCreate(context.Context, *gorm1.DB) error
+type TaskORMWithAfterCreate_ interface {
+	AfterCreate_(context.Context, *gorm1.DB) error
 }
 
 // DefaultApplyFieldMaskTask patches an pbObject with patcher according to a field mask.

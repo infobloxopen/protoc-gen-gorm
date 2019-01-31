@@ -235,16 +235,16 @@ func DefaultCreateIntPoint(ctx context.Context, in *IntPoint, db *gorm1.DB) (*In
 	if err != nil {
 		return nil, err
 	}
-	if hook, ok := interface{}(&ormObj).(IntPointORMWithBeforeCreate); ok {
-		if db, err = hook.BeforeCreate(ctx, db); err != nil {
+	if hook, ok := interface{}(&ormObj).(IntPointORMWithBeforeCreate_); ok {
+		if db, err = hook.BeforeCreate_(ctx, db); err != nil {
 			return nil, err
 		}
 	}
 	if err = db.Create(&ormObj).Error; err != nil {
 		return nil, err
 	}
-	if hook, ok := interface{}(&ormObj).(IntPointORMWithAfterCreate); ok {
-		if err = hook.AfterCreate(ctx, db); err != nil {
+	if hook, ok := interface{}(&ormObj).(IntPointORMWithAfterCreate_); ok {
+		if err = hook.AfterCreate_(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -252,11 +252,11 @@ func DefaultCreateIntPoint(ctx context.Context, in *IntPoint, db *gorm1.DB) (*In
 	return &pbResponse, err
 }
 
-type IntPointORMWithBeforeCreate interface {
-	BeforeCreate(context.Context, *gorm1.DB) (*gorm1.DB, error)
+type IntPointORMWithBeforeCreate_ interface {
+	BeforeCreate_(context.Context, *gorm1.DB) (*gorm1.DB, error)
 }
-type IntPointORMWithAfterCreate interface {
-	AfterCreate(context.Context, *gorm1.DB) error
+type IntPointORMWithAfterCreate_ interface {
+	AfterCreate_(context.Context, *gorm1.DB) error
 }
 
 // DefaultReadIntPoint executes a basic gorm read call
@@ -318,8 +318,8 @@ func DefaultDeleteIntPoint(ctx context.Context, in *IntPoint, db *gorm1.DB) erro
 	if ormObj.Id == 0 {
 		return errors.New("A non-zero ID value is required for a delete call")
 	}
-	if hook, ok := interface{}(&ormObj).(IntPointORMWithBeforeDelete); ok {
-		if db, err = hook.BeforeDelete(ctx, db); err != nil {
+	if hook, ok := interface{}(&ormObj).(IntPointORMWithBeforeDelete_); ok {
+		if db, err = hook.BeforeDelete_(ctx, db); err != nil {
 			return err
 		}
 	}
@@ -327,17 +327,17 @@ func DefaultDeleteIntPoint(ctx context.Context, in *IntPoint, db *gorm1.DB) erro
 	if err != nil {
 		return err
 	}
-	if hook, ok := interface{}(&ormObj).(IntPointORMWithAfterDelete); ok {
-		err = hook.AfterDelete(ctx, db)
+	if hook, ok := interface{}(&ormObj).(IntPointORMWithAfterDelete_); ok {
+		err = hook.AfterDelete_(ctx, db)
 	}
 	return err
 }
 
-type IntPointORMWithBeforeDelete interface {
-	BeforeDelete(context.Context, *gorm1.DB) (*gorm1.DB, error)
+type IntPointORMWithBeforeDelete_ interface {
+	BeforeDelete_(context.Context, *gorm1.DB) (*gorm1.DB, error)
 }
-type IntPointORMWithAfterDelete interface {
-	AfterDelete(context.Context, *gorm1.DB) error
+type IntPointORMWithAfterDelete_ interface {
+	AfterDelete_(context.Context, *gorm1.DB) error
 }
 
 func DefaultDeleteIntPointSet(ctx context.Context, in []*IntPoint, db *gorm1.DB) error {
@@ -573,16 +573,16 @@ func DefaultCreateSomething(ctx context.Context, in *Something, db *gorm1.DB) (*
 	if err != nil {
 		return nil, err
 	}
-	if hook, ok := interface{}(&ormObj).(SomethingORMWithBeforeCreate); ok {
-		if db, err = hook.BeforeCreate(ctx, db); err != nil {
+	if hook, ok := interface{}(&ormObj).(SomethingORMWithBeforeCreate_); ok {
+		if db, err = hook.BeforeCreate_(ctx, db); err != nil {
 			return nil, err
 		}
 	}
 	if err = db.Create(&ormObj).Error; err != nil {
 		return nil, err
 	}
-	if hook, ok := interface{}(&ormObj).(SomethingORMWithAfterCreate); ok {
-		if err = hook.AfterCreate(ctx, db); err != nil {
+	if hook, ok := interface{}(&ormObj).(SomethingORMWithAfterCreate_); ok {
+		if err = hook.AfterCreate_(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -590,11 +590,11 @@ func DefaultCreateSomething(ctx context.Context, in *Something, db *gorm1.DB) (*
 	return &pbResponse, err
 }
 
-type SomethingORMWithBeforeCreate interface {
-	BeforeCreate(context.Context, *gorm1.DB) (*gorm1.DB, error)
+type SomethingORMWithBeforeCreate_ interface {
+	BeforeCreate_(context.Context, *gorm1.DB) (*gorm1.DB, error)
 }
-type SomethingORMWithAfterCreate interface {
-	AfterCreate(context.Context, *gorm1.DB) error
+type SomethingORMWithAfterCreate_ interface {
+	AfterCreate_(context.Context, *gorm1.DB) error
 }
 
 // DefaultApplyFieldMaskSomething patches an pbObject with patcher according to a field mask.
@@ -678,16 +678,16 @@ func DefaultCreateCircle(ctx context.Context, in *Circle, db *gorm1.DB) (*Circle
 	if err != nil {
 		return nil, err
 	}
-	if hook, ok := interface{}(&ormObj).(CircleORMWithBeforeCreate); ok {
-		if db, err = hook.BeforeCreate(ctx, db); err != nil {
+	if hook, ok := interface{}(&ormObj).(CircleORMWithBeforeCreate_); ok {
+		if db, err = hook.BeforeCreate_(ctx, db); err != nil {
 			return nil, err
 		}
 	}
 	if err = db.Create(&ormObj).Error; err != nil {
 		return nil, err
 	}
-	if hook, ok := interface{}(&ormObj).(CircleORMWithAfterCreate); ok {
-		if err = hook.AfterCreate(ctx, db); err != nil {
+	if hook, ok := interface{}(&ormObj).(CircleORMWithAfterCreate_); ok {
+		if err = hook.AfterCreate_(ctx, db); err != nil {
 			return nil, err
 		}
 	}
@@ -695,11 +695,11 @@ func DefaultCreateCircle(ctx context.Context, in *Circle, db *gorm1.DB) (*Circle
 	return &pbResponse, err
 }
 
-type CircleORMWithBeforeCreate interface {
-	BeforeCreate(context.Context, *gorm1.DB) (*gorm1.DB, error)
+type CircleORMWithBeforeCreate_ interface {
+	BeforeCreate_(context.Context, *gorm1.DB) (*gorm1.DB, error)
 }
-type CircleORMWithAfterCreate interface {
-	AfterCreate(context.Context, *gorm1.DB) error
+type CircleORMWithAfterCreate_ interface {
+	AfterCreate_(context.Context, *gorm1.DB) error
 }
 
 // DefaultApplyFieldMaskCircle patches an pbObject with patcher according to a field mask.
