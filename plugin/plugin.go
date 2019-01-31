@@ -37,8 +37,8 @@ const (
 
 var wellKnownTypes = map[string]string{
 	"StringValue": "*string",
-	"DoubleValue": "*double",
-	"FloatValue":  "*float",
+	"DoubleValue": "*float64",
+	"FloatValue":  "*float32",
 	"Int32Value":  "*int32",
 	"Int64Value":  "*int64",
 	"UInt32Value": "*uint32",
