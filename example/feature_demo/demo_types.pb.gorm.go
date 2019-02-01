@@ -153,6 +153,8 @@ type TestTypesWithAfterToPB interface {
 type TypeWithIDORM struct {
 	ANestedObject     *TestTypesORM `gorm:"foreignkey:ANestedObjectTypeWithIDId;association_foreignkey:Id"`
 	Address           *types1.Inet  `gorm:"type:inet"`
+	DoubleField       *float64
+	FloatField        *float32
 	Id                uint32
 	IntPointId        *uint32
 	Ip                string          `gorm:"column:ip_addr"`
@@ -222,6 +224,14 @@ func (m *TypeWithID) ToORM(ctx context.Context) (TypeWithIDORM, error) {
 	}
 	to.TagTest = m.TagTest
 	to.TagSizeTest = m.TagSizeTest
+	if m.FloatField != nil {
+		v := m.FloatField.Value
+		to.FloatField = &v
+	}
+	if m.DoubleField != nil {
+		v := m.DoubleField.Value
+		to.DoubleField = &v
+	}
 	if posthook, ok := interface{}(m).(TypeWithIDWithAfterToORM); ok {
 		err = posthook.AfterToORM(ctx, &to)
 	}
@@ -277,6 +287,12 @@ func (m *TypeWithIDORM) ToPB(ctx context.Context) (TypeWithID, error) {
 	}
 	to.TagTest = m.TagTest
 	to.TagSizeTest = m.TagSizeTest
+	if m.FloatField != nil {
+		to.FloatField = &google_protobuf1.FloatValue{Value: *m.FloatField}
+	}
+	if m.DoubleField != nil {
+		to.DoubleField = &google_protobuf1.DoubleValue{Value: *m.DoubleField}
+	}
 	if posthook, ok := interface{}(m).(TypeWithIDWithAfterToPB); ok {
 		err = posthook.AfterToPB(ctx, &to)
 	}
@@ -1391,6 +1407,14 @@ func DefaultApplyFieldMaskTypeWithID(ctx context.Context, patchee *TypeWithID, p
 		}
 		if f == prefix+"TagSizeTest" {
 			patchee.TagSizeTest = patcher.TagSizeTest
+			continue
+		}
+		if f == prefix+"FloatField" {
+			patchee.FloatField = patcher.FloatField
+			continue
+		}
+		if f == prefix+"DoubleField" {
+			patchee.DoubleField = patcher.DoubleField
 			continue
 		}
 	}
