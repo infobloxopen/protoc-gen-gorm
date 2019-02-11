@@ -880,7 +880,9 @@ func (p *OrmPlugin) generateFieldConversion(message *generator.Descriptor, field
 				p.P(`}`)
 			} else {
 				p.P(`if m.`, fieldName, ` != "" {`)
-				p.P(`to.`, fieldName, ` = &`, p.Import(gtypesImport), `.ParseValue{Value: m.`, fieldName, `}`)
+				p.P(`if to.`, fieldName, `, err = `, p.Import(gtypesImport), `.ParseValue( m.`, fieldName, `); err != nil {`)
+				p.P(`return to, err`)
+				p.P(`}`)
 				p.P(`}`)
 			}
 		} else if p.isOrmable(fieldType) {
