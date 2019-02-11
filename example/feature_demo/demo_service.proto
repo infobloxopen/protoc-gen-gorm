@@ -2,11 +2,11 @@ syntax = "proto3";
 
 package example;
 import "google/protobuf/empty.proto";
-import "github.com/infobloxopen/protoc-gen-gorm/options/gorm.proto";
+import "github.com/YReshetko/protoc-gen-gorm/options/gorm.proto";
 import "google/protobuf/field_mask.proto";
 import "github.com/infobloxopen/atlas-app-toolkit/query/collection_operators.proto";
 
-option go_package = "github.com/infobloxopen/protoc-gen-gorm/example/feature_demo;example";
+option go_package = "github.com/YReshetko/protoc-gen-gorm/example/feature_demo;example";
 
 // IntPoint is a basic message type representing a single cartesian point
 // that we want to store in a database

@@ -10,7 +10,7 @@ import (
 	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/timestamp"
 	"github.com/golang/protobuf/ptypes/wrappers"
-	"github.com/infobloxopen/protoc-gen-gorm/types"
+	"github.com/YReshetko/protoc-gen-gorm/types"
 )
 
 func TestSuccessfulUnmarshalTypes(t *testing.T) {

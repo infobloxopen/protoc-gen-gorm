@@ -20,7 +20,7 @@ package user
 import proto "github.com/golang/protobuf/proto"
 import fmt "fmt"
 import math "math"
-import _ "github.com/infobloxopen/protoc-gen-gorm/options"
+import _ "github.com/YReshetko/protoc-gen-gorm/options"
 import google_protobuf1 "github.com/golang/protobuf/ptypes/timestamp"
 import atlas_rpc "github.com/infobloxopen/atlas-app-toolkit/rpc/resource"
 

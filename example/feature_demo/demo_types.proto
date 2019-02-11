@@ -1,16 +1,16 @@
 syntax = "proto3";
 
 package example;
-import "github.com/infobloxopen/protoc-gen-gorm/options/gorm.proto";
-import "github.com/infobloxopen/protoc-gen-gorm/types/types.proto";
+import "github.com/YReshetko/protoc-gen-gorm/options/gorm.proto";
+import "github.com/YReshetko/protoc-gen-gorm/types/types.proto";
 import "google/protobuf/wrappers.proto";
 import "google/protobuf/empty.proto";
 import "google/protobuf/timestamp.proto";
 import "example/feature_demo/demo_service.proto";
-import "github.com/infobloxopen/protoc-gen-gorm/example/user/user.proto";
+import "github.com/YReshetko/protoc-gen-gorm/example/user/user.proto";
 import "example/feature_demo/demo_multi_file.proto";
 
-option go_package = "github.com/infobloxopen/protoc-gen-gorm/example/feature_demo;example";
+option go_package = "github.com/YReshetko/protoc-gen-gorm/example/feature_demo;example";
 
 // test_types is a message that includes a representative sample of the
 // available types

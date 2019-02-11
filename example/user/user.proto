@@ -4,11 +4,11 @@ syntax = "proto3";
 
 package user;
 
-import "github.com/infobloxopen/protoc-gen-gorm/options/gorm.proto";
+import "github.com/YReshetko/protoc-gen-gorm/options/gorm.proto";
 import "google/protobuf/timestamp.proto";
 import "github.com/infobloxopen/atlas-app-toolkit/rpc/resource/resource.proto";
 
-option go_package = "github.com/infobloxopen/protoc-gen-gorm/example/user;user";
+option go_package = "github.com/YReshetko/protoc-gen-gorm/example/user;user";
 
 message User {
     option (gorm.opts) = {

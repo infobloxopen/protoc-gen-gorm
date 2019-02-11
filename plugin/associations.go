@@ -8,7 +8,7 @@ import (
 	jgorm "github.com/jinzhu/gorm"
 	"github.com/jinzhu/inflection"
 
-	gorm "github.com/infobloxopen/protoc-gen-gorm/options"
+	gorm "github.com/YReshetko/protoc-gen-gorm/options"
 )
 
 func (p *OrmPlugin) parseAssociations(msg *generator.Descriptor) {

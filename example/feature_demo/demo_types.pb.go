@@ -6,12 +6,12 @@ package example
 import proto "github.com/golang/protobuf/proto"
 import fmt "fmt"
 import math "math"
-import _ "github.com/infobloxopen/protoc-gen-gorm/options"
-import gorm_types "github.com/infobloxopen/protoc-gen-gorm/types"
+import _ "github.com/YReshetko/protoc-gen-gorm/options"
+import gorm_types "github.com/YReshetko/protoc-gen-gorm/types"
 import google_protobuf1 "github.com/golang/protobuf/ptypes/wrappers"
 import google_protobuf2 "github.com/golang/protobuf/ptypes/empty"
 import google_protobuf3 "github.com/golang/protobuf/ptypes/timestamp"
-import user "github.com/infobloxopen/protoc-gen-gorm/example/user"
+import user "github.com/YReshetko/protoc-gen-gorm/example/user"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal

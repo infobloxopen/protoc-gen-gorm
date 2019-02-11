@@ -7,7 +7,7 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/protoc-gen-gogo/descriptor"
 	"github.com/gogo/protobuf/protoc-gen-gogo/generator"
-	gorm "github.com/infobloxopen/protoc-gen-gorm/options"
+	gorm "github.com/YReshetko/protoc-gen-gorm/options"
 )
 
 func (p *OrmPlugin) getMsgName(o generator.Object) string {

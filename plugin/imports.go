@@ -13,9 +13,9 @@ import (
 // Imports that are added by default but unneeded in GORM code
 var unneededImports = []string{
 	"import proto \"github.com/gogo/protobuf/proto\"\n",
-	"import _ \"github.com/infobloxopen/protoc-gen-gorm/options\"\n",
+	"import _ \"github.com/YReshetko/protoc-gen-gorm/options\"\n",
 	// if needed will be imported with an alias
-	"import _ \"github.com/infobloxopen/protoc-gen-gorm/types\"\n",
+	"import _ \"github.com/YReshetko/protoc-gen-gorm/types\"\n",
 	"var _ = proto.Marshal\n",
 }
 
@@ -40,7 +40,7 @@ var (
 	uuidImport     = "github.com/satori/go.uuid"
 	authImport     = "github.com/infobloxopen/atlas-app-toolkit/auth"
 	gormpqImport   = "github.com/jinzhu/gorm/dialects/postgres"
-	gtypesImport   = "github.com/infobloxopen/protoc-gen-gorm/types"
+	gtypesImport   = "github.com/YReshetko/protoc-gen-gorm/types"
 	ptypesImport   = "github.com/golang/protobuf/ptypes"
 	wktImport      = "github.com/golang/protobuf/ptypes/wrappers"
 	resourceImport = "github.com/infobloxopen/atlas-app-toolkit/gorm/resource"

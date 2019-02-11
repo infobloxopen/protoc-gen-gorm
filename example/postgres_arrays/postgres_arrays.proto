@@ -2,9 +2,9 @@ syntax = "proto3";
 
 package postgres.arrays;
 
-import "github.com/infobloxopen/protoc-gen-gorm/options/gorm.proto";
+import "github.com/YReshetko/protoc-gen-gorm/options/gorm.proto";
 
-option go_package = "github.com/infobloxopen/protoc-gen-gorm/example/postgres_arrays;postgres_arrays";
+option go_package = "github.com/YReshetko/protoc-gen-gorm/example/postgres_arrays;postgres_arrays";
 
 message Example {
     option (gorm.opts) = {ormable: true};

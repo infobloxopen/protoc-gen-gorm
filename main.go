@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/gogo/protobuf/vanity/command"
-	"github.com/infobloxopen/protoc-gen-gorm/plugin"
+	"github.com/YReshetko/protoc-gen-gorm/plugin"
 )
 
 func main() {
