@@ -94,7 +94,8 @@ func isSpecialType(typeName string) bool {
 		protoTypeUUID,
 		protoTypeUUIDValue,
 		protoTypeResource,
-		protoTypeInet:
+		protoTypeInet,
+		protoTimeOnly:
 		return true
 	}
 	return false
