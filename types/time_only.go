@@ -41,7 +41,7 @@ func (t *TimeOnly) StringRepresentation() (string, error) {
 }
 
 func TimeOnlyBySimpleString(t string) (*TimeOnly, error) {
-	if !validTime.MatchString(t) {
+	if !validSimpleTime.MatchString(t) {
 
 		return nil, errors.New(fmt.Sprintf("Provided string %s does not represent simple time", t))
 	}
