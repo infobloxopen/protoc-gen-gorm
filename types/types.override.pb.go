@@ -101,3 +101,23 @@ func (m *InetValue) UnmarshalJSONPB(_ *jsonpb.Unmarshaler, data []byte) error {
 	m.Value = strings.Trim(string(data), `"`)
 	return nil
 }
+
+func (t *TimeOnly) MarshalJSONPB(*jsonpb.Marshaler) ([]byte, error) {
+	if !t.Valid() {
+		return []byte{}, fmt.Errorf(`Invalid time`, t.Value)
+	}
+	timeStr, err := t.StringRepresentation()
+	if err != nil {
+		return nil, err
+	}
+	return []byte(timeStr), nil
+}
+
+func (t *TimeOnly) UnmarshalJSONPB(_ *jsonpb.Unmarshaler, data []byte) error {
+	timeOnly, err := TimeOnlyByString(string(data))
+	if err != nil {
+		return err
+	}
+	t.Value = timeOnly.Value
+	return nil
+}

@@ -20,5 +20,5 @@ message InetValue {
 }
 
 message TimeOnly {
-  string value = 1;
+  uint64 value = 1;
 }
