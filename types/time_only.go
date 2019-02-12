@@ -14,7 +14,7 @@ const (
 	secondsInMinute uint64 = 60
 )
 
-var validTime = regexp.MustCompile(`^[0-9]{2}:[0-9]{2}:[0-9]{2}$`)
+var validTime = regexp.MustCompile(`^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$`)
 
 func ParseTime(value uint64) (string, error) {
 	t := &TimeOnly{Value: value}
@@ -44,9 +44,9 @@ func TimeOnlyByString(t string) (*TimeOnly, error) {
 	if !validTime.MatchString(t) {
 		return nil, errors.New(fmt.Sprintf("Provided string %s does not represent time", t))
 	}
-	h, _ := strconv.Atoi(t[0:1])
-	m, _ := strconv.Atoi(t[3:4])
-	s, _ := strconv.Atoi(t[6:7])
+	h, _ := strconv.Atoi(t[11:12])
+	m, _ := strconv.Atoi(t[14:15])
+	s, _ := strconv.Atoi(t[17:18])
 	result := uint64(h)*secondsInHour + uint64(m)*secondsInMinute + uint64(s)
 	time := &TimeOnly{Value: result}
 	if !time.Valid() {
