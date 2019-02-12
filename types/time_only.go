@@ -14,6 +14,7 @@ const (
 )
 
 var validTime = regexp.MustCompile(`^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$`)
+var validSimpleTime = regexp.MustCompile(`^[0-9]{2}:[0-9]{2}:[0-9]{2}$`)
 
 func ParseTime(value uint64) (string, error) {
 	t := &TimeOnly{Value: value}
@@ -39,10 +40,22 @@ func (t *TimeOnly) StringRepresentation() (string, error) {
 	return fmt.Sprintf("%s:%s:%s", uintToStringWithLeadingZero(h), uintToStringWithLeadingZero(m), uintToStringWithLeadingZero(s)), nil
 }
 
+func TimeOnlyBySimpleString(t string) (*TimeOnly, error) {
+	if !validTime.MatchString(t) {
+
+		return nil, errors.New(fmt.Sprintf("Provided string %s does not represent simple time", t))
+	}
+	return getTimeOnly(t)
+}
+
 func TimeOnlyByString(t string) (*TimeOnly, error) {
 	if !validTime.MatchString(t) {
 		return nil, errors.New(fmt.Sprintf("Provided string %s does not represent time", t))
 	}
+	return getTimeOnly(t[11 : 19])
+}
+
+func getTimeOnly(t string) (*TimeOnly, error)   {
 	h, _ := strconv.Atoi(t[11:13])
 	m, _ := strconv.Atoi(t[14:16])
 	s, _ := strconv.Atoi(t[17:19])
