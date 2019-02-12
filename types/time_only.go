@@ -10,7 +10,6 @@ import (
 const (
 	maxSeconds      uint64 = 86400
 	secondsInHour   uint64 = 3600
-	minutesInHour   uint64 = 60
 	secondsInMinute uint64 = 60
 )
 
@@ -35,8 +34,8 @@ func (t *TimeOnly) StringRepresentation() (string, error) {
 	}
 
 	h := t.Value / secondsInHour
-	m := (t.Value - h*minutesInHour) / secondsInMinute
-	s := (t.Value - h*minutesInHour - m*secondsInMinute)
+	m := (t.Value - h*secondsInHour) / secondsInMinute
+	s := (t.Value - h*secondsInHour - m*secondsInMinute)
 	return fmt.Sprintf("%s:%s:%s", uintToStringWithLeadingZero(h), uintToStringWithLeadingZero(m), uintToStringWithLeadingZero(s)), nil
 }
 
@@ -44,9 +43,12 @@ func TimeOnlyByString(t string) (*TimeOnly, error) {
 	if !validTime.MatchString(t) {
 		return nil, errors.New(fmt.Sprintf("Provided string %s does not represent time", t))
 	}
-	h, _ := strconv.Atoi(t[11:12])
-	m, _ := strconv.Atoi(t[14:15])
-	s, _ := strconv.Atoi(t[17:18])
+	h, _ := strconv.Atoi(t[11:13])
+	m, _ := strconv.Atoi(t[14:16])
+	s, _ := strconv.Atoi(t[17:19])
+	fmt.Println(t[11:12])
+	fmt.Println(t[14:15])
+	fmt.Println(t[17:18])
 	result := uint64(h)*secondsInHour + uint64(m)*secondsInMinute + uint64(s)
 	time := &TimeOnly{Value: result}
 	if !time.Valid() {

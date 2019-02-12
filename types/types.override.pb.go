@@ -104,7 +104,7 @@ func (m *InetValue) UnmarshalJSONPB(_ *jsonpb.Unmarshaler, data []byte) error {
 
 func (t *TimeOnly) MarshalJSONPB(*jsonpb.Marshaler) ([]byte, error) {
 	if !t.Valid() {
-		return []byte{}, fmt.Errorf(`Invalid time`, t.Value)
+		return []byte{}, fmt.Errorf(`Invalid time %d`, t.Value)
 	}
 	timeStr, err := t.StringRepresentation()
 	if err != nil {
