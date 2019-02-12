@@ -114,11 +114,11 @@ func (t *TimeOnly) MarshalJSONPB(*jsonpb.Marshaler) ([]byte, error) {
 }
 
 func (t *TimeOnly) UnmarshalJSONPB(_ *jsonpb.Unmarshaler, data []byte) error {
-	strTime := string(data)
-	if strTime[0] == '"' && strTime[len(strTime) - 1] == '"' {
-		strTime = strTime[1: len(strTime) - 1]
+	if data[0] == '"' && data[len(data)-1] == '"' {
+		data = data[1 : len(data)-1]
 	}
-	timeOnly, err := TimeOnlyBySimpleString(strTime)
+	strTime := string(data)
+	timeOnly, err := TimeOnlyByString(strTime)
 	if err != nil {
 		return err
 	}
