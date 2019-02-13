@@ -110,7 +110,7 @@ func (t *TimeOnly) MarshalJSONPB(*jsonpb.Marshaler) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	return []byte(timeStr), nil
+	return []byte(fmt.Sprintf(`%q`, timeStr)), nil
 }
 
 func (t *TimeOnly) UnmarshalJSONPB(_ *jsonpb.Unmarshaler, data []byte) error {
