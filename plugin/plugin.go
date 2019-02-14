@@ -14,7 +14,7 @@ import (
 
 	"log"
 
-	"github.com/YReshetko/protoc-gen-gorm/options"
+	"github.com/infobloxopen/protoc-gen-gorm/options"
 )
 
 const (

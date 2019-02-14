@@ -9,7 +9,7 @@ RUN CGO_ENABLED=0 GOOS=linux go build -o /out/usr/bin/protoc-gen-gorm main.go
 FROM infoblox/atlas-gentool:latest AS runner
 
 COPY --from=builder /out/usr/bin/protoc-gen-gorm /usr/bin/protoc-gen-gorm
-COPY --from=builder /go/src/github.com/YReshetko/protoc-gen-gorm/options/*.proto /go/src/github.com/YReshetko/protoc-gen-gorm/options
-COPY --from=builder /go/src/github.com/YReshetko/protoc-gen-gorm/types/*.proto /go/src/github.com/YReshetko/protoc-gen-gorm/types
+COPY --from=builder /go/src/github.com/infobloxopen/protoc-gen-gorm/options/*.proto /go/src/github.com/infobloxopen/protoc-gen-gorm/options
+COPY --from=builder /go/src/github.com/infobloxopen/protoc-gen-gorm/types/*.proto /go/src/github.com/infobloxopen/protoc-gen-gorm/types
 
 WORKDIR /go/src

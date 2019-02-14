@@ -17,14 +17,14 @@ import gorm2 "github.com/infobloxopen/atlas-app-toolkit/gorm"
 import postgres1 "github.com/jinzhu/gorm/dialects/postgres"
 import pq1 "github.com/lib/pq"
 import ptypes1 "github.com/golang/protobuf/ptypes"
-import types1 "github.com/YReshetko/protoc-gen-gorm/types"
+import types1 "github.com/infobloxopen/protoc-gen-gorm/types"
 
 import fmt "fmt"
 import math "math"
 import google_protobuf1 "github.com/golang/protobuf/ptypes/wrappers"
 import _ "github.com/golang/protobuf/ptypes/empty"
 import _ "github.com/golang/protobuf/ptypes/timestamp"
-import user "github.com/YReshetko/protoc-gen-gorm/example/user"
+import user "github.com/infobloxopen/protoc-gen-gorm/example/user"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = fmt.Errorf

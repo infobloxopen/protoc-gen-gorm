@@ -13,8 +13,6 @@ const (
 	secondsInMinute uint64 = 60
 )
 
-var validTime = regexp.MustCompile(`^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$`)
-var validSimpleTime = regexp.MustCompile(`^[0-9]{2}:[0-9]{2}:[0-9]{2}$`)
 var validators = []struct{
 	regexp *regexp.Regexp
 	timeExtractor func(string) string

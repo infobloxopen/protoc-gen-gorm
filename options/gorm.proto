@@ -1,7 +1,7 @@
 syntax = "proto2";
 package gorm;
 
-option go_package = "github.com/YReshetko/protoc-gen-gorm/options;gorm";
+option go_package = "github.com/infobloxopen/protoc-gen-gorm/options;gorm";
 
 import "google/protobuf/descriptor.proto";
 // TODO: The option number 52119 lies within the internally reserved extension

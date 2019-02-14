@@ -1,9 +1,9 @@
 syntax = "proto3";
 
 package example;
-import "github.com/YReshetko/protoc-gen-gorm/options/gorm.proto";
+import "github.com/infobloxopen/protoc-gen-gorm/options/gorm.proto";
 
-option go_package = "github.com/YReshetko/protoc-gen-gorm/example/feature_demo;example";
+option go_package = "github.com/infobloxopen/protoc-gen-gorm/example/feature_demo;example";
 
 message ExternalChild {
   option (gorm.opts) = {
