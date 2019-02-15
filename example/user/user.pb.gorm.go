@@ -1016,6 +1016,8 @@ func DefaultStrictUpdateUser(ctx context.Context, in *User, db *gorm1.DB) (*User
 		return nil, err
 	}
 	db = db.Where(map[string]interface{}{"account_id": accountID})
+	lockedRow := &UserORM{}
+	db.Model(&ormObj).Set("gorm:query_option", "FOR UPDATE").Where("id=?", ormObj.Id).First(lockedRow)
 	if hook, ok := interface{}(&ormObj).(UserORMWithBeforeStrictUpdateCleanup); ok {
 		if db, err = hook.BeforeStrictUpdateCleanup(ctx, db); err != nil {
 			return nil, err
@@ -1485,6 +1487,8 @@ func DefaultStrictUpdateEmail(ctx context.Context, in *Email, db *gorm1.DB) (*Em
 		return nil, err
 	}
 	db = db.Where(map[string]interface{}{"account_id": accountID})
+	lockedRow := &EmailORM{}
+	db.Model(&ormObj).Set("gorm:query_option", "FOR UPDATE").Where("id=?", ormObj.Id).First(lockedRow)
 	if hook, ok := interface{}(&ormObj).(EmailORMWithBeforeStrictUpdateCleanup); ok {
 		if db, err = hook.BeforeStrictUpdateCleanup(ctx, db); err != nil {
 			return nil, err
@@ -1834,6 +1838,8 @@ func DefaultStrictUpdateAddress(ctx context.Context, in *Address, db *gorm1.DB) 
 		return nil, err
 	}
 	db = db.Where(map[string]interface{}{"account_id": accountID})
+	lockedRow := &AddressORM{}
+	db.Model(&ormObj).Set("gorm:query_option", "FOR UPDATE").Where("id=?", ormObj.Id).First(lockedRow)
 	if hook, ok := interface{}(&ormObj).(AddressORMWithBeforeStrictUpdateCleanup); ok {
 		if db, err = hook.BeforeStrictUpdateCleanup(ctx, db); err != nil {
 			return nil, err
@@ -2187,6 +2193,8 @@ func DefaultStrictUpdateLanguage(ctx context.Context, in *Language, db *gorm1.DB
 		return nil, err
 	}
 	db = db.Where(map[string]interface{}{"account_id": accountID})
+	lockedRow := &LanguageORM{}
+	db.Model(&ormObj).Set("gorm:query_option", "FOR UPDATE").Where("id=?", ormObj.Id).First(lockedRow)
 	if hook, ok := interface{}(&ormObj).(LanguageORMWithBeforeStrictUpdateCleanup); ok {
 		if db, err = hook.BeforeStrictUpdateCleanup(ctx, db); err != nil {
 			return nil, err
@@ -2532,6 +2540,8 @@ func DefaultStrictUpdateCreditCard(ctx context.Context, in *CreditCard, db *gorm
 		return nil, err
 	}
 	db = db.Where(map[string]interface{}{"account_id": accountID})
+	lockedRow := &CreditCardORM{}
+	db.Model(&ormObj).Set("gorm:query_option", "FOR UPDATE").Where("id=?", ormObj.Id).First(lockedRow)
 	if hook, ok := interface{}(&ormObj).(CreditCardORMWithBeforeStrictUpdateCleanup); ok {
 		if db, err = hook.BeforeStrictUpdateCleanup(ctx, db); err != nil {
 			return nil, err

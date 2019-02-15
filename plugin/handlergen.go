@@ -687,15 +687,21 @@ func (p *OrmPlugin) generateStrictUpdateHandler(message *generator.Descriptor) {
 	ormable := p.getOrmable(typeName)
 	if p.gateway {
 		p.P(`var count int64`)
-		if p.hasPrimaryKey(ormable) {
-			pkName, pk := p.findPrimaryKey(ormable)
-			column := pk.GetTag().GetColumn()
-			if len(column) == 0 {
-				column = jgorm.ToDBName(pkName)
-			}
-			p.P(`lockedRow := &`, typeName, `ORM{}`)
-			p.P(`count = db.Model(&ormObj).Set("gorm:query_option", "FOR UPDATE").Where("`, column, `=?", ormObj.`, pkName, `).First(lockedRow).RowsAffected`)
+	}
+	if p.hasPrimaryKey(ormable) {
+		pkName, pk := p.findPrimaryKey(ormable)
+		column := pk.GetTag().GetColumn()
+		if len(column) == 0 {
+			column = jgorm.ToDBName(pkName)
 		}
+		p.P(`lockedRow := &`, typeName, `ORM{}`)
+		var count string
+		var rowsAffected string
+		if p.gateway {
+			count = `count = `
+			rowsAffected = `.RowsAffected`
+		}
+		p.P(count+`db.Model(&ormObj).Set("gorm:query_option", "FOR UPDATE").Where("`, column, `=?", ormObj.`, pkName, `).First(lockedRow)`+rowsAffected)
 	}
 	p.generateBeforeHookCall(ormable, "StrictUpdateCleanup")
 	p.removeChildAssociations(message)
