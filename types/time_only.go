@@ -78,11 +78,7 @@ func getTimeOnly(t string) (*TimeOnly, error)   {
 	s, _ := strconv.Atoi(t[6:8])
 	if s > 59 || s < 0 {return nil, errors.New(fmt.Sprintf("Seconds value outside expected range: %d", h))}
 	result := uint64(h)*secondsInHour + uint64(m)*secondsInMinute + uint64(s)
-	time := &TimeOnly{Value: result}
-	if !time.Valid() {
-		return nil, errors.New(fmt.Sprintf("The time exceeds %d (max value): %d", maxSeconds, result))
-	}
-	return time, nil
+	return &TimeOnly{Value: result}, nil
 }
 
 func uintToStringWithLeadingZero(t uint64) string {
