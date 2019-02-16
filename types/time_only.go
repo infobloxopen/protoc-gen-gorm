@@ -72,8 +72,11 @@ func TimeOnlyByString(s string) (*TimeOnly, error) {
 
 func getTimeOnly(t string) (*TimeOnly, error)   {
 	h, _ := strconv.Atoi(t[0:2])
+	if h > 23 || h < 0 {return nil, errors.New(fmt.Sprintf("Hours value outside expected range: %d", h))}
 	m, _ := strconv.Atoi(t[3:5])
+	if m > 59 || m < 0 {return nil, errors.New(fmt.Sprintf("Minutes value outside expected range: %d", m))}
 	s, _ := strconv.Atoi(t[6:8])
+	if s > 59 || s < 0 {return nil, errors.New(fmt.Sprintf("Seconds value outside expected range: %d", h))}
 	result := uint64(h)*secondsInHour + uint64(m)*secondsInMinute + uint64(s)
 	time := &TimeOnly{Value: result}
 	if !time.Valid() {
