@@ -60,6 +60,9 @@ message TestTypes {
   // The UUIDValue custom type should act like a StringValue at the API level, but is
   // automatically converted to and from a *uuid.UUID (github.com/satori/go.uuid)
   gorm.types.UUIDValue nullable_uuid = 10;
+  // The TimeOnly should act as uint32 value at business layer, but is automatically
+  // converted to/from string at API and ORM level
+  gorm.types.TimeOnly time_only = 11;
 }
 
 // TypeWithID demonstrates some basic assocation behavior
@@ -98,6 +101,8 @@ message TypeWithID {
   string tag_size_test = 11 [(gorm.field).tag = {size: 512}];
   google.protobuf.FloatValue float_field = 12;
   google.protobuf.DoubleValue double_field = 13;
+  // Limited support for DB type 'time', implemented via strings (string -> DB && DB -> string)
+  gorm.types.TimeOnly time_only = 14;
 }
 
 // MultiaccountTypeWithID demonstrates the generated multi-account support

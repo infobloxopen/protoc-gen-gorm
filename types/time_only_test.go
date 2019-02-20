@@ -7,7 +7,7 @@ import (
 
 func TestParseTime(t *testing.T) {
 	cases := []struct {
-		value         uint64
+		value         uint32
 		str           string
 		expectError bool
 	}{
@@ -34,9 +34,9 @@ func TestParseTime(t *testing.T) {
 	}
 }
 
-func TestParseValue(t *testing.T) {
+func TestTimeOnlyByString(t *testing.T) {
 	cases := []struct {
-		value       uint64
+		value       uint32
 		str         string
 		expectError bool
 	}{
@@ -51,7 +51,7 @@ func TestParseValue(t *testing.T) {
 
 	for _, v := range cases {
 		t.Run(fmt.Sprintf("Check time %s", v.str), func(t *testing.T) {
-			timeOnly, err := ParseValue(v.str)
+			timeOnly, err := TimeOnlyByString(v.str)
 			if err != nil && !v.expectError {
 				t.Errorf("Got unexpected error: %s", err)
 			}

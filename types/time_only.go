@@ -8,9 +8,9 @@ import (
 )
 
 const (
-	maxSeconds      uint64 = 86400
-	secondsInHour   uint64 = 3600
-	secondsInMinute uint64 = 60
+	maxSeconds      uint32 = 86400
+	secondsInHour   uint32 = 3600
+	secondsInMinute uint32 = 60
 )
 
 var validators = []struct{
@@ -32,17 +32,13 @@ var validators = []struct{
 
 }
 
-func ParseTime(value uint64) (string, error) {
+func ParseTime(value uint32) (string, error) {
 	t := &TimeOnly{Value: value}
 	str, err := t.StringRepresentation()
 	if err != nil {
 		return "", err
 	}
 	return str, nil
-}
-
-func ParseValue(value string) (*TimeOnly, error) {
-	return TimeOnlyByString(value)
 }
 
 func (t *TimeOnly) StringRepresentation() (string, error) {
@@ -77,11 +73,11 @@ func getTimeOnly(t string) (*TimeOnly, error)   {
 	if m > 59 || m < 0 {return nil, errors.New(fmt.Sprintf("Minutes value outside expected range: %d", m))}
 	s, _ := strconv.Atoi(t[6:8])
 	if s > 59 || s < 0 {return nil, errors.New(fmt.Sprintf("Seconds value outside expected range: %d", h))}
-	result := uint64(h)*secondsInHour + uint64(m)*secondsInMinute + uint64(s)
+	result := uint32(h)*secondsInHour + uint32(m)*secondsInMinute + uint32(s)
 	return &TimeOnly{Value: result}, nil
 }
 
-func uintToStringWithLeadingZero(t uint64) string {
+func uintToStringWithLeadingZero(t uint32) string {
 	out := strconv.Itoa(int(t))
 	if len(out) == 1 {
 		out = "0" + out

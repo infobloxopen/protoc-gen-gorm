@@ -322,6 +322,7 @@ func (p *OrmPlugin) parseBasicFields(msg *generator.Descriptor) {
 				}
 			} else if rawType == protoTimeOnly {
 				fieldType = "string"
+				fieldOpts.Tag = tagWithType(tag, "time")
 			} else {
 				continue
 			}
@@ -880,7 +881,7 @@ func (p *OrmPlugin) generateFieldConversion(message *generator.Descriptor, field
 				p.P(`}`)
 			} else {
 				p.P(`if m.`, fieldName, ` != "" {`)
-				p.P(`if to.`, fieldName, `, err = `, p.Import(gtypesImport), `.ParseValue( m.`, fieldName, `); err != nil {`)
+				p.P(`if to.`, fieldName, `, err = `, p.Import(gtypesImport), `.TimeOnlyByString( m.`, fieldName, `); err != nil {`)
 				p.P(`return to, err`)
 				p.P(`}`)
 				p.P(`}`)
