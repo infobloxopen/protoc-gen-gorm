@@ -214,6 +214,8 @@ func (p *OrmPlugin) generateApplyFieldMask(message *generator.Descriptor) {
 		if field.IsMessage() && !isSpecialType(fieldType) && !field.IsRepeated() {
 			p.P(`var updated`, generator.CamelCase(field.GetName()), ` bool`)
 			hasNested = true
+		} else if strings.HasSuffix(fieldType, protoTypeJSON) {
+			p.P(`var updated`, generator.CamelCase(field.GetName()), ` bool`)
 		}
 	}
 	// Patch pbObj with input according to a field mask.
@@ -228,7 +230,7 @@ func (p *OrmPlugin) generateApplyFieldMask(message *generator.Descriptor) {
 		fieldType, _ := p.GoType(message, field)
 		//  for ormable message, do recursive patching
 		if field.IsMessage() && p.isOrmable(fieldType) && !field.IsRepeated() {
-			p.P(`if strings.HasPrefix(f, prefix+"`, ccName, `.") && !updated`, ccName, ` {`)
+			p.P(`if !updated`, ccName, ` && strings.HasPrefix(f, prefix+"`, ccName, `.") {`)
 			p.P(`updated`, ccName, ` = true`)
 			p.P(`if patcher.`, ccName, ` == nil {`)
 			p.P(`patchee.`, ccName, ` = nil`)
@@ -258,7 +260,7 @@ func (p *OrmPlugin) generateApplyFieldMask(message *generator.Descriptor) {
 			p.P(`continue`)
 			p.P(`}`)
 		} else if field.IsMessage() && !isSpecialType(fieldType) && !field.IsRepeated() {
-			p.P(`if strings.HasPrefix(f, prefix+"`, ccName, `.") && !updated`, ccName, ` {`)
+			p.P(`if !updated`, ccName, ` && strings.HasPrefix(f, prefix+"`, ccName, `.") {`)
 			p.P(`if patcher.`, ccName, ` == nil {`)
 			p.P(`patchee.`, ccName, ` = nil`)
 			p.P(`continue`)
@@ -279,6 +281,12 @@ func (p *OrmPlugin) generateApplyFieldMask(message *generator.Descriptor) {
 			p.P(`if f == prefix+"`, ccName, `" {`)
 			p.P(`updated`, ccName, ` = true`)
 			p.P(`patchee.`, ccName, ` = patcher.`, ccName)
+			p.P(`continue`)
+			p.P(`}`)
+		} else if strings.HasSuffix(fieldType, protoTypeJSON) && !field.IsRepeated() {
+			p.P(`if !updated`, ccName, ` && strings.HasPrefix(f, prefix+"`, ccName, `") {`)
+			p.P(`patchee.`, ccName, ` = patcher.`, ccName)
+			p.P(`updated`, ccName, ` = true`)
 			p.P(`continue`)
 			p.P(`}`)
 		} else {

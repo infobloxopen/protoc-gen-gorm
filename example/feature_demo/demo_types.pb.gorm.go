@@ -907,6 +907,7 @@ func DefaultApplyFieldMaskTestTypes(ctx context.Context, patchee *TestTypes, pat
 		return nil, errors.New("Patchee inputs to DefaultApplyFieldMaskTestTypes must be non-nil")
 	}
 	var err error
+	var updatedJsonField bool
 	for _, f := range updateMask.Paths {
 		if f == prefix+"ApiOnlyString" {
 			patchee.ApiOnlyString = patcher.ApiOnlyString
@@ -940,8 +941,9 @@ func DefaultApplyFieldMaskTestTypes(ctx context.Context, patchee *TestTypes, pat
 			patchee.TypeWithIdId = patcher.TypeWithIdId
 			continue
 		}
-		if f == prefix+"JsonField" {
+		if !updatedJsonField && strings.HasPrefix(f, prefix+"JsonField") {
 			patchee.JsonField = patcher.JsonField
+			updatedJsonField = true
 			continue
 		}
 		if f == prefix+"NullableUuid" {
@@ -1307,7 +1309,7 @@ func DefaultApplyFieldMaskTypeWithID(ctx context.Context, patchee *TypeWithID, p
 			patchee.Things = patcher.Things
 			continue
 		}
-		if strings.HasPrefix(f, prefix+"ANestedObject.") && !updatedANestedObject {
+		if !updatedANestedObject && strings.HasPrefix(f, prefix+"ANestedObject.") {
 			updatedANestedObject = true
 			if patcher.ANestedObject == nil {
 				patchee.ANestedObject = nil
@@ -1328,7 +1330,7 @@ func DefaultApplyFieldMaskTypeWithID(ctx context.Context, patchee *TypeWithID, p
 			patchee.ANestedObject = patcher.ANestedObject
 			continue
 		}
-		if strings.HasPrefix(f, prefix+"Point.") && !updatedPoint {
+		if !updatedPoint && strings.HasPrefix(f, prefix+"Point.") {
 			updatedPoint = true
 			if patcher.Point == nil {
 				patchee.Point = nil
@@ -1349,7 +1351,7 @@ func DefaultApplyFieldMaskTypeWithID(ctx context.Context, patchee *TypeWithID, p
 			patchee.Point = patcher.Point
 			continue
 		}
-		if strings.HasPrefix(f, prefix+"User.") && !updatedUser {
+		if !updatedUser && strings.HasPrefix(f, prefix+"User.") {
 			updatedUser = true
 			if patcher.User == nil {
 				patchee.User = nil
@@ -1378,7 +1380,7 @@ func DefaultApplyFieldMaskTypeWithID(ctx context.Context, patchee *TypeWithID, p
 			patchee.MultiaccountTypeIds = patcher.MultiaccountTypeIds
 			continue
 		}
-		if strings.HasPrefix(f, prefix+"SyntheticField.") && !updatedSyntheticField {
+		if !updatedSyntheticField && strings.HasPrefix(f, prefix+"SyntheticField.") {
 			if patcher.SyntheticField == nil {
 				patchee.SyntheticField = nil
 				continue
@@ -2205,7 +2207,7 @@ func DefaultApplyFieldMaskPrimaryUUIDType(ctx context.Context, patchee *PrimaryU
 			patchee.Id = patcher.Id
 			continue
 		}
-		if strings.HasPrefix(f, prefix+"Child.") && !updatedChild {
+		if !updatedChild && strings.HasPrefix(f, prefix+"Child.") {
 			updatedChild = true
 			if patcher.Child == nil {
 				patchee.Child = nil
@@ -2566,7 +2568,7 @@ func DefaultApplyFieldMaskPrimaryStringType(ctx context.Context, patchee *Primar
 			patchee.Id = patcher.Id
 			continue
 		}
-		if strings.HasPrefix(f, prefix+"Child.") && !updatedChild {
+		if !updatedChild && strings.HasPrefix(f, prefix+"Child.") {
 			updatedChild = true
 			if patcher.Child == nil {
 				patchee.Child = nil
@@ -2927,7 +2929,7 @@ func DefaultApplyFieldMaskTestTag(ctx context.Context, patchee *TestTag, patcher
 			patchee.Id = patcher.Id
 			continue
 		}
-		if strings.HasPrefix(f, prefix+"TestTagAssoc.") && !updatedTestTagAssoc {
+		if !updatedTestTagAssoc && strings.HasPrefix(f, prefix+"TestTagAssoc.") {
 			updatedTestTagAssoc = true
 			if patcher.TestTagAssoc == nil {
 				patchee.TestTagAssoc = nil
@@ -3156,7 +3158,7 @@ func DefaultApplyFieldMaskPrimaryIncluded(ctx context.Context, patchee *PrimaryI
 	var err error
 	var updatedChild bool
 	for i, f := range updateMask.Paths {
-		if strings.HasPrefix(f, prefix+"Child.") && !updatedChild {
+		if !updatedChild && strings.HasPrefix(f, prefix+"Child.") {
 			updatedChild = true
 			if patcher.Child == nil {
 				patchee.Child = nil
