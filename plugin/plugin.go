@@ -27,6 +27,7 @@ const (
 	protoTypeUUIDValue = "UUIDValue"
 	protoTypeResource  = "Identifier"
 	protoTypeInet      = "InetValue"
+	protoTimeOnly      = "TimeOnly"
 )
 
 // DB Engine Enum
@@ -319,6 +320,9 @@ func (p *OrmPlugin) parseBasicFields(msg *generator.Descriptor) {
 				} else {
 					fieldOpts.Tag = tagWithType(tag, "varchar(48)")
 				}
+			} else if rawType == protoTimeOnly {
+				fieldType = "string"
+				fieldOpts.Tag = tagWithType(tag, "time")
 			} else {
 				continue
 			}
@@ -866,6 +870,20 @@ func (p *OrmPlugin) generateFieldConversion(message *generator.Descriptor, field
 			} else {
 				p.P(`if m.`, fieldName, ` != nil && m.`, fieldName, `.IPNet != nil {`)
 				p.P(`to.`, fieldName, ` = &`, p.Import(gtypesImport), `.InetValue{Value: m.`, fieldName, `.String()}`)
+				p.P(`}`)
+			}
+		} else if coreType == protoTimeOnly { // Time only to support time via string
+			if toORM {
+				p.P(`if m.`, fieldName, ` != nil {`)
+				p.P(`if to.`, fieldName, `, err = `, p.Import(gtypesImport), `.ParseTime(m.`, fieldName, `.Value); err != nil {`)
+				p.P(`return to, err`)
+				p.P(`}`)
+				p.P(`}`)
+			} else {
+				p.P(`if m.`, fieldName, ` != "" {`)
+				p.P(`if to.`, fieldName, `, err = `, p.Import(gtypesImport), `.TimeOnlyByString( m.`, fieldName, `); err != nil {`)
+				p.P(`return to, err`)
+				p.P(`}`)
 				p.P(`}`)
 			}
 		} else if p.isOrmable(fieldType) {

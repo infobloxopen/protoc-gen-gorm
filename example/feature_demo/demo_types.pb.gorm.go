@@ -40,6 +40,7 @@ type TestTypesORM struct {
 	NullableUuid              *go_uuid1.UUID   `gorm:"type:uuid"`
 	OptionalString            *string
 	ThingsTypeWithIDId        *uint32
+	TimeOnly                  string `gorm:"type:time"`
 	TypeWithIdId              uint32
 	Uuid                      go_uuid1.UUID `gorm:"type:uuid"`
 }
@@ -89,6 +90,11 @@ func (m *TestTypes) ToORM(ctx context.Context) (TestTypesORM, error) {
 		}
 		to.NullableUuid = &tempUUID
 	}
+	if m.TimeOnly != nil {
+		if to.TimeOnly, err = types1.ParseTime(m.TimeOnly.Value); err != nil {
+			return to, err
+		}
+	}
 	if posthook, ok := interface{}(m).(TestTypesWithAfterToORM); ok {
 		err = posthook.AfterToORM(ctx, &to)
 	}
@@ -120,6 +126,11 @@ func (m *TestTypesORM) ToPB(ctx context.Context) (TestTypes, error) {
 	}
 	if m.NullableUuid != nil {
 		to.NullableUuid = &types1.UUIDValue{Value: m.NullableUuid.String()}
+	}
+	if m.TimeOnly != "" {
+		if to.TimeOnly, err = types1.TimeOnlyByString(m.TimeOnly); err != nil {
+			return to, err
+		}
 	}
 	if posthook, ok := interface{}(m).(TestTypesWithAfterToPB); ok {
 		err = posthook.AfterToPB(ctx, &to)
@@ -164,6 +175,7 @@ type TypeWithIDORM struct {
 	TagSizeTest       string          `gorm:"size:512"`
 	TagTest           float32         `gorm:"type:float;precision:6"`
 	Things            []*TestTypesORM `gorm:"foreignkey:ThingsTypeWithIDId;association_foreignkey:Id"`
+	TimeOnly          string          `gorm:"type:time"`
 	User              *user.UserORM   `gorm:"foreignkey:UserId;association_foreignkey:Id"`
 	UserId            *string
 }
@@ -232,6 +244,11 @@ func (m *TypeWithID) ToORM(ctx context.Context) (TypeWithIDORM, error) {
 		v := m.DoubleField.Value
 		to.DoubleField = &v
 	}
+	if m.TimeOnly != nil {
+		if to.TimeOnly, err = types1.ParseTime(m.TimeOnly.Value); err != nil {
+			return to, err
+		}
+	}
 	if posthook, ok := interface{}(m).(TypeWithIDWithAfterToORM); ok {
 		err = posthook.AfterToORM(ctx, &to)
 	}
@@ -292,6 +309,11 @@ func (m *TypeWithIDORM) ToPB(ctx context.Context) (TypeWithID, error) {
 	}
 	if m.DoubleField != nil {
 		to.DoubleField = &google_protobuf1.DoubleValue{Value: *m.DoubleField}
+	}
+	if m.TimeOnly != "" {
+		if to.TimeOnly, err = types1.TimeOnlyByString(m.TimeOnly); err != nil {
+			return to, err
+		}
 	}
 	if posthook, ok := interface{}(m).(TypeWithIDWithAfterToPB); ok {
 		err = posthook.AfterToPB(ctx, &to)
@@ -948,6 +970,10 @@ func DefaultApplyFieldMaskTestTypes(ctx context.Context, patchee *TestTypes, pat
 			patchee.NullableUuid = patcher.NullableUuid
 			continue
 		}
+		if f == prefix+"TimeOnly" {
+			patchee.TimeOnly = patcher.TimeOnly
+			continue
+		}
 	}
 	if err != nil {
 		return nil, err
@@ -1415,6 +1441,10 @@ func DefaultApplyFieldMaskTypeWithID(ctx context.Context, patchee *TypeWithID, p
 		}
 		if f == prefix+"DoubleField" {
 			patchee.DoubleField = patcher.DoubleField
+			continue
+		}
+		if f == prefix+"TimeOnly" {
+			patchee.TimeOnly = patcher.TimeOnly
 			continue
 		}
 	}

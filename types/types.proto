@@ -18,3 +18,7 @@ message UUID {
 message InetValue {
   string value = 1;
 }
+
+message TimeOnly {
+  uint32 value = 1;
+}

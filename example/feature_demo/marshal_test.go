@@ -67,6 +67,7 @@ func TestBrokenUnmarshalTypes(t *testing.T) {
 		`{"json_field":{"top":{"something":1},2]}}`:          "invalid character '2' looking for beginning of object key string",
 		`{"uuid":""}`:                                        "invalid uuid '' does not match accepted format",
 		`{"uuid":"   6ba7b810-9dad-11d1-80b4-00c04fd430c8"}`: "invalid uuid '   6ba7b810-9dad-11d1-80b4-00c04fd430c8' does not match accepted format",
+		`{"time_only":"24:00:00"}`: 						  "Hours value outside expected range: 24",
 	} {
 		t.Run(in, func(t *testing.T) {
 			err := unmarshaler.Unmarshal(strings.NewReader(in), &TestTypes{})
@@ -85,15 +86,16 @@ func TestMarshalTypes(t *testing.T) {
 	// Will marshal with snake_case names and default values included
 	marshaler := &jsonpb.Marshaler{OrigName: true, EmitDefaults: true}
 	for expected, in := range map[string]TestTypes{
-		`{"api_only_string":"","numbers":[],"optional_string":null,"becomes_int":"UNKNOWN","nothingness":null,"uuid":null,"created_at":null,"type_with_id_id":0,"json_field":null,"nullable_uuid":null}`:                                   {},
-		`{"api_only_string":"Something","numbers":[],"optional_string":null,"becomes_int":"UNKNOWN","nothingness":null,"uuid":null,"created_at":null,"type_with_id_id":0,"json_field":null,"nullable_uuid":null}`:                          {ApiOnlyString: "Something"},
-		`{"api_only_string":"","numbers":[0,1,2,3],"optional_string":null,"becomes_int":"UNKNOWN","nothingness":null,"uuid":null,"created_at":null,"type_with_id_id":0,"json_field":null,"nullable_uuid":null}`:                            {Numbers: []int32{0, 1, 2, 3}},
-		`{"api_only_string":"","numbers":[],"optional_string":"Not nothing","becomes_int":"UNKNOWN","nothingness":null,"uuid":null,"created_at":null,"type_with_id_id":0,"json_field":null,"nullable_uuid":null}`:                          {OptionalString: &wrappers.StringValue{Value: "Not nothing"}},
-		`{"api_only_string":"","numbers":[],"optional_string":null,"becomes_int":"GOOD","nothingness":null,"uuid":null,"created_at":null,"type_with_id_id":0,"json_field":null,"nullable_uuid":null}`:                                      {BecomesInt: TestTypes_GOOD},
-		`{"api_only_string":"","numbers":[],"optional_string":null,"becomes_int":"UNKNOWN","nothingness":null,"uuid":"6ba7b810-9dad-11d1-80b4-00c04fd430c8","created_at":null,"type_with_id_id":0,"json_field":null,"nullable_uuid":null}`: {Uuid: &types.UUID{Value: "6ba7b810-9dad-11d1-80b4-00c04fd430c8"}},
-		`{"api_only_string":"","numbers":[],"optional_string":null,"becomes_int":"UNKNOWN","nothingness":null,"uuid":null,"created_at":"2009-11-17T20:34:58.651387237Z","type_with_id_id":0,"json_field":null,"nullable_uuid":null}`:       {CreatedAt: MustTimestampProto(time.Date(2009, 11, 17, 20, 34, 58, 651387237, time.UTC))},
-		`{"api_only_string":"","numbers":[],"optional_string":null,"becomes_int":"UNKNOWN","nothingness":null,"uuid":null,"created_at":null,"type_with_id_id":2,"json_field":null,"nullable_uuid":null}`:                                   {TypeWithIdId: 2},
-		`{"api_only_string":"","numbers":[],"optional_string":null,"becomes_int":"UNKNOWN","nothingness":null,"uuid":null,"created_at":null,"type_with_id_id":0,"json_field":{"text":[]},"nullable_uuid":null}`:                            {JsonField: &types.JSONValue{Value: `{"text":[]}`}},
+		`{"api_only_string":"","numbers":[],"optional_string":null,"becomes_int":"UNKNOWN","nothingness":null,"uuid":null,"created_at":null,"type_with_id_id":0,"json_field":null,"nullable_uuid":null,"time_only":null}`:                                   {},
+		`{"api_only_string":"Something","numbers":[],"optional_string":null,"becomes_int":"UNKNOWN","nothingness":null,"uuid":null,"created_at":null,"type_with_id_id":0,"json_field":null,"nullable_uuid":null,"time_only":null}`:                          {ApiOnlyString: "Something"},
+		`{"api_only_string":"","numbers":[0,1,2,3],"optional_string":null,"becomes_int":"UNKNOWN","nothingness":null,"uuid":null,"created_at":null,"type_with_id_id":0,"json_field":null,"nullable_uuid":null,"time_only":null}`:                            {Numbers: []int32{0, 1, 2, 3}},
+		`{"api_only_string":"","numbers":[],"optional_string":"Not nothing","becomes_int":"UNKNOWN","nothingness":null,"uuid":null,"created_at":null,"type_with_id_id":0,"json_field":null,"nullable_uuid":null,"time_only":null}`:                          {OptionalString: &wrappers.StringValue{Value: "Not nothing"}},
+		`{"api_only_string":"","numbers":[],"optional_string":null,"becomes_int":"GOOD","nothingness":null,"uuid":null,"created_at":null,"type_with_id_id":0,"json_field":null,"nullable_uuid":null,"time_only":null}`:                                      {BecomesInt: TestTypes_GOOD},
+		`{"api_only_string":"","numbers":[],"optional_string":null,"becomes_int":"UNKNOWN","nothingness":null,"uuid":"6ba7b810-9dad-11d1-80b4-00c04fd430c8","created_at":null,"type_with_id_id":0,"json_field":null,"nullable_uuid":null,"time_only":null}`: {Uuid: &types.UUID{Value: "6ba7b810-9dad-11d1-80b4-00c04fd430c8"}},
+		`{"api_only_string":"","numbers":[],"optional_string":null,"becomes_int":"UNKNOWN","nothingness":null,"uuid":null,"created_at":"2009-11-17T20:34:58.651387237Z","type_with_id_id":0,"json_field":null,"nullable_uuid":null,"time_only":null}`:       {CreatedAt: MustTimestampProto(time.Date(2009, 11, 17, 20, 34, 58, 651387237, time.UTC))},
+		`{"api_only_string":"","numbers":[],"optional_string":null,"becomes_int":"UNKNOWN","nothingness":null,"uuid":null,"created_at":null,"type_with_id_id":2,"json_field":null,"nullable_uuid":null,"time_only":null}`:                                   {TypeWithIdId: 2},
+		`{"api_only_string":"","numbers":[],"optional_string":null,"becomes_int":"UNKNOWN","nothingness":null,"uuid":null,"created_at":null,"type_with_id_id":0,"json_field":{"text":[]},"nullable_uuid":null,"time_only":null}`:                            {JsonField: &types.JSONValue{Value: `{"text":[]}`}},
+		`{"api_only_string":"","numbers":[],"optional_string":null,"becomes_int":"UNKNOWN","nothingness":null,"uuid":null,"created_at":null,"type_with_id_id":0,"json_field":null,"nullable_uuid":null,"time_only":"01:59:18"}`:                             {TimeOnly: &types.TimeOnly{7158}},
 	} {
 		out, err := marshaler.MarshalToString(&in)
 		if err != nil {
@@ -119,6 +121,7 @@ func TestMarshalTypesOmitEmpty(t *testing.T) {
 		`{"created_at":"2009-11-17T20:34:58.651387237Z"}`: {CreatedAt: MustTimestampProto(time.Date(2009, 11, 17, 20, 34, 58, 651387237, time.UTC))},
 		`{"type_with_id_id":2}`:                           {TypeWithIdId: 2},
 		`{"json_field":{"text":[]}}`:                      {JsonField: &types.JSONValue{Value: `{"text":[]}`}},
+		`{"time_only":"00:00:00"}`:                        {TimeOnly: &types.TimeOnly{0}},
 	} {
 		out, err := marshaller.MarshalToString(&in)
 		if err != nil {
