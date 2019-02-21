@@ -1170,7 +1170,7 @@ func DefaultApplyFieldMaskUser(ctx context.Context, patchee *User, patcher *User
 			patchee.Num = patcher.Num
 			continue
 		}
-		if strings.HasPrefix(f, prefix+"CreditCard.") && !updatedCreditCard {
+		if !updatedCreditCard && strings.HasPrefix(f, prefix+"CreditCard.") {
 			updatedCreditCard = true
 			if patcher.CreditCard == nil {
 				patchee.CreditCard = nil
@@ -1199,7 +1199,7 @@ func DefaultApplyFieldMaskUser(ctx context.Context, patchee *User, patcher *User
 			patchee.Tasks = patcher.Tasks
 			continue
 		}
-		if strings.HasPrefix(f, prefix+"BillingAddress.") && !updatedBillingAddress {
+		if !updatedBillingAddress && strings.HasPrefix(f, prefix+"BillingAddress.") {
 			updatedBillingAddress = true
 			if patcher.BillingAddress == nil {
 				patchee.BillingAddress = nil
@@ -1220,7 +1220,7 @@ func DefaultApplyFieldMaskUser(ctx context.Context, patchee *User, patcher *User
 			patchee.BillingAddress = patcher.BillingAddress
 			continue
 		}
-		if strings.HasPrefix(f, prefix+"ShippingAddress.") && !updatedShippingAddress {
+		if !updatedShippingAddress && strings.HasPrefix(f, prefix+"ShippingAddress.") {
 			updatedShippingAddress = true
 			if patcher.ShippingAddress == nil {
 				patchee.ShippingAddress = nil
