@@ -3,11 +3,11 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:6e9d2dddd10b5668251398cbd9848b2ea7ebec447d88255abd1437b96c487eb4"
+  digest = "1:5771b86b64a5e64d8e3d70337813686586210131ac4fb4c6a97b43c8e25e2253"
   name = "github.com/dgrijalva/jwt-go"
   packages = ["."]
   pruneopts = "UT"
-  revision = "0b96aaa707760d6ab28d9b9d1913ff5993328bae"
+  revision = "3af4c746e1c248ee8491a3e0c6f7a9cd831e95f8"
 
 [[projects]]
   digest = "1:2cd7915ab26ede7d95b8749e6b1f933f1c6d5398030684e6505940a10f31cfda"
@@ -81,27 +81,18 @@
   revision = "1325a051a2753cd67556b182843b1b693d0854cd"
 
 [[projects]]
-  digest = "1:8f8811f9be822914c3a25c6a071e93beb4c805d7b026cbf298bc577bc1cc945b"
-  name = "github.com/google/uuid"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "064e2069ce9c359c118179501254f67d7d37ba24"
-  version = "0.2"
-
-[[projects]]
-  branch = "master"
-  digest = "1:8fc303858c39e0afe678a634f6a051e177fd6f95d10d6aa686325fb6737481d5"
+  digest = "1:b0bb74a76da952e1e576cc2a0e53835de3ce4f3c0817fa062cd07aedbed27162"
   name = "github.com/grpc-ecosystem/go-grpc-middleware"
   packages = [
     ".",
     "auth",
     "logging/logrus/ctxlogrus",
     "tags",
-    "tags/logrus",
     "util/metautils",
   ]
   pruneopts = "UT"
-  revision = "e9c5d9645c437ab1b204cff969a2c0fb16cd4276"
+  revision = "c250d6563d4d4c20252cd865923440e829844f4e"
+  version = "v1.0.0"
 
 [[projects]]
   digest = "1:7bd43be58eca0c23d4ad1c157a27840e4b9c1ee30b40879078c04ce5b1095fc0"
@@ -124,18 +115,11 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:1a1206efd03a54d336dce7bb8719e74f2f8932f661cb9f57d5813a1d99c083d8"
-  name = "github.com/grpc-ecosystem/grpc-opentracing"
-  packages = ["go/otgrpc"]
-  pruneopts = "UT"
-  revision = "8e809c8a86450a29b90dcc9efbf062d0fe6d9746"
-
-[[projects]]
-  branch = "master"
-  digest = "1:12c3cdea2660ded68d623c571aaa39ef79b941d99c3d89329bcbd3182377b776"
+  digest = "1:a2c6774679e155ae4606ea040d1b3978fe137a52f891193adfc9e003a420c4d3"
   name = "github.com/infobloxopen/atlas-app-toolkit"
   packages = [
     "auth",
+    "errors",
     "gateway",
     "gorm",
     "gorm/resource",
@@ -143,47 +127,10 @@
     "rpc/errdetails",
     "rpc/errfields",
     "rpc/resource",
+    "util",
   ]
   pruneopts = "UT"
-  revision = "3237ef05103180be7acc83362b86947d5ffed3b2"
-
-[[projects]]
-  branch = "master"
-  digest = "1:e1f607322ae1aba3fc6ffaa75994ab56d894f31a39d2e025783382f1cb625829"
-  name = "github.com/infobloxopen/go-trees"
-  packages = [
-    "dltree",
-    "domain",
-    "domaintree",
-    "iptree",
-    "numtree",
-    "strtree",
-    "uintX/domaintree16",
-    "uintX/domaintree32",
-    "uintX/domaintree64",
-    "uintX/domaintree8",
-    "uintX/iptree16",
-    "uintX/iptree32",
-    "uintX/iptree64",
-    "uintX/iptree8",
-    "uintX/strtree16",
-    "uintX/strtree32",
-    "uintX/strtree64",
-    "uintX/strtree8",
-  ]
-  pruneopts = "UT"
-  revision = "a1e500cde93cdca91ae6c7366e0cb9f477c63603"
-
-[[projects]]
-  digest = "1:34447b2d58a54b71add4438870fd15f44041961b6fbf129432b5745c11796962"
-  name = "github.com/infobloxopen/themis"
-  packages = [
-    "pdp",
-    "pdp-service",
-    "pep",
-  ]
-  pruneopts = "UT"
-  revision = "d62bb103665cf16dfcee5083f4557163fb7a68ff"
+  revision = "534a084bf6faeb9f286df0ba98cd9ff73bbc8786"
 
 [[projects]]
   digest = "1:6895fbe5a10c5aebd1965cac6f6905dcdb21bee01e08912d3ba6a805c2485f6a"
@@ -205,8 +152,15 @@
   revision = "04140366298a54a039076d798123ffa108fff46c"
 
 [[projects]]
-  branch = "master"
-  digest = "1:2d370ad7a48d3523291ad53a04b9b1510c182880927f800b46221cc465427800"
+  digest = "1:0a69a1c0db3591fcefb47f115b224592c8dfa4368b7ba9fae509d5e16cdc95c8"
+  name = "github.com/konsorten/go-windows-terminal-sequences"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "5c8c8bd35d3832f5d134ae1e1e375b69a4d25242"
+  version = "v1.0.1"
+
+[[projects]]
+  digest = "1:b18ffc558326ebaed3b4a175617f1e12ed4e3f53d6ebfe5ba372a3de16d22278"
   name = "github.com/lib/pq"
   packages = [
     ".",
@@ -214,19 +168,8 @@
     "oid",
   ]
   pruneopts = "UT"
-  revision = "90697d60dd844d5ef6ff15135d0203f65d2f53b8"
-
-[[projects]]
-  digest = "1:450b7623b185031f3a456801155c8320209f75d0d4c4e633c6b1e59d44d6e392"
-  name = "github.com/opentracing/opentracing-go"
-  packages = [
-    ".",
-    "ext",
-    "log",
-  ]
-  pruneopts = "UT"
-  revision = "1949ddbfd147afd4d964a9f00b24eb291e0e7c38"
-  version = "v1.0.2"
+  revision = "4ded0e9383f75c197b3a2aaa6d590ac52df6fd79"
+  version = "v1.0.0"
 
 [[projects]]
   digest = "1:274f67cb6fed9588ea2521ecdac05a6d62a8c51c074c1fccc6a49a40ba80e925"
@@ -237,24 +180,24 @@
   version = "v1.2.0"
 
 [[projects]]
-  digest = "1:9e9193aa51197513b3abcb108970d831fbcf40ef96aa845c4f03276e1fa316d2"
+  digest = "1:87c2e02fb01c27060ccc5ba7c5a407cc91147726f8f40b70cceeedbc52b1f3a8"
   name = "github.com/sirupsen/logrus"
   packages = ["."]
   pruneopts = "UT"
-  revision = "c155da19408a8799da419ed3eeb0cb5db0ad5dbc"
-  version = "v1.0.5"
+  revision = "e1e72e9de974bd926e5c56f83753fba2df402ce5"
+  version = "v1.3.0"
 
 [[projects]]
   branch = "master"
-  digest = "1:3f3a05ae0b95893d90b9b3b5afdb79a9b3d96e4e36e099d841ae602e4aca0da8"
+  digest = "1:fde12c4da6237363bf36b81b59aa36a43d28061167ec4acb0d41fc49464e28b9"
   name = "golang.org/x/crypto"
   packages = ["ssh/terminal"]
   pruneopts = "UT"
-  revision = "a49355c7e3f8fe157a85be2f77e6e269a0f89602"
+  revision = "74369b46fc6756741c016591724fd1cb8e26845f"
 
 [[projects]]
   branch = "master"
-  digest = "1:68349a8c755738add0b9dcc25e5bfcbc11862520e0dfa9ebd32d8b489d7d4971"
+  digest = "1:fc7b6b4384e1e849d99eab58eca4f8c0a76bad4699117d5077a9a5c3c83e289e"
   name = "golang.org/x/net"
   packages = [
     "context",
@@ -266,18 +209,18 @@
     "trace",
   ]
   pruneopts = "UT"
-  revision = "292b43bbf7cb8d35ddf40f8d5100ef3837cced3f"
+  revision = "3a22650c66bd7f4fb6d1e8072ffd7b75c8a27898"
 
 [[projects]]
   branch = "master"
-  digest = "1:3364d01296ce7eeca363e3d530ae63a2092d6f8efb85fb3d101e8f6d7de83452"
+  digest = "1:0d703f14f9bbbe1070ff0ce86d749dcbc9d68fb0ae554252c09bd4bb37a072e7"
   name = "golang.org/x/sys"
   packages = [
     "unix",
     "windows",
   ]
   pruneopts = "UT"
-  revision = "1b2967e3c290b7c545b3db0deeda16e9be4f98a2"
+  revision = "983097b1a8a340cd1cc7df17d735154d89e10b1a"
 
 [[projects]]
   digest = "1:a2ab62866c75542dd18d2b069fec854577a20211d7c0ea6ae746072a1dccdd18"
@@ -316,23 +259,30 @@
   revision = "e92b116572682a5b432ddd840aeaba2a559eeff1"
 
 [[projects]]
-  digest = "1:2dab32a43451e320e49608ff4542fdfc653c95dcc35d0065ec9c6c3dd540ed74"
+  digest = "1:9ab5a33d8cb5c120602a34d2e985ce17956a4e8c2edce7e6961568f95e40c09a"
   name = "google.golang.org/grpc"
   packages = [
     ".",
     "balancer",
     "balancer/base",
     "balancer/roundrobin",
+    "binarylog/grpc_binarylog_v1",
     "codes",
     "connectivity",
     "credentials",
+    "credentials/internal",
     "encoding",
     "encoding/proto",
     "grpclog",
     "internal",
     "internal/backoff",
+    "internal/binarylog",
     "internal/channelz",
+    "internal/envconfig",
     "internal/grpcrand",
+    "internal/grpcsync",
+    "internal/syscall",
+    "internal/transport",
     "keepalive",
     "metadata",
     "naming",
@@ -343,11 +293,10 @@
     "stats",
     "status",
     "tap",
-    "transport",
   ]
   pruneopts = "UT"
-  revision = "168a6198bcb0ef175f7dacec0b8691fc141dc9b8"
-  version = "v1.13.0"
+  revision = "a02b0774206b209466313a0b525d2c738fe407eb"
+  version = "v1.18.0"
 
 [[projects]]
   digest = "1:342378ac4dcb378a5448dd723f0784ae519383532f5e70ade24132c4c8693202"

@@ -2,6 +2,7 @@ package example
 
 import (
 	"context"
+	"github.com/infobloxopen/protoc-gen-gorm/types"
 	"testing"
 )
 
@@ -20,6 +21,47 @@ func TestInet(t *testing.T) {
 		}
 		if orm.Address != nil {
 			t.Errorf("orm.Address= %v; want nil", orm.Address)
+		}
+	})
+}
+
+func TestTimeOnlyToORM(t *testing.T) {
+	t.Run("TimeOnly value to ORM", func(t *testing.T) {
+		defer func() {
+			if r := recover(); r != nil {
+				t.Errorf("expected no panic, but got %v", r)
+			}
+		}()
+		expectedTime := "01:59:18"
+		pb := &TypeWithID{TimeOnly: &types.TimeOnly{7158}}
+		orm, err := pb.ToORM(context.Background())
+		if err != nil {
+			t.Fatalf("failed to convert pb to orm: %v", err)
+		}
+		if orm.TimeOnly != expectedTime {
+			t.Errorf("orm.TimeOnly= %v; want %s", orm.TimeOnly, expectedTime)
+		}
+	})
+}
+
+func TestTimeOnlyToPB(t *testing.T) {
+	t.Run("TimeOnly value to PB", func(t *testing.T) {
+		defer func() {
+			if r := recover(); r != nil {
+				t.Errorf("expected no panic, but got %v", r)
+			}
+		}()
+		expectedTime := uint32(7158)
+		orm := &TypeWithIDORM{TimeOnly: "01:59:18"}
+		pb, err := orm.ToPB(context.Background())
+		if err != nil {
+			t.Fatalf("failed to convert pb to orm: %v", err)
+		}
+		if pb.TimeOnly == nil {
+			t.Fatal("TimeOnly should not be nil")
+		}
+		if pb.TimeOnly.Value != expectedTime {
+			t.Errorf("pb.TimeOnly.Value= %d; want %d", pb.TimeOnly.Value, expectedTime)
 		}
 	})
 }
