@@ -75,9 +75,11 @@ func (m *TestTypes) ToORM(ctx context.Context) (TestTypesORM, error) {
 		to.Uuid = go_uuid1.Nil
 	}
 	if m.CreatedAt != nil {
-		if to.CreatedAt, err = ptypes1.Timestamp(m.CreatedAt); err != nil {
+		var t time.Time
+		if t, err = ptypes1.Timestamp(m.CreatedAt); err != nil {
 			return to, err
 		}
+		to.CreatedAt = t
 	}
 	to.TypeWithIdId = m.TypeWithIdId
 	if m.JsonField != nil {
@@ -164,6 +166,7 @@ type TestTypesWithAfterToPB interface {
 type TypeWithIDORM struct {
 	ANestedObject     *TestTypesORM `gorm:"foreignkey:ANestedObjectTypeWithIDId;association_foreignkey:Id"`
 	Address           *types1.Inet  `gorm:"type:inet"`
+	DeletedAt         *time.Time
 	DoubleField       *float64
 	FloatField        *float32
 	Id                uint32
@@ -249,6 +252,13 @@ func (m *TypeWithID) ToORM(ctx context.Context) (TypeWithIDORM, error) {
 			return to, err
 		}
 	}
+	if m.DeletedAt != nil {
+		var t time.Time
+		if t, err = ptypes1.Timestamp(m.DeletedAt); err != nil {
+			return to, err
+		}
+		to.DeletedAt = &t
+	}
 	if posthook, ok := interface{}(m).(TypeWithIDWithAfterToORM); ok {
 		err = posthook.AfterToORM(ctx, &to)
 	}
@@ -312,6 +322,11 @@ func (m *TypeWithIDORM) ToPB(ctx context.Context) (TypeWithID, error) {
 	}
 	if m.TimeOnly != "" {
 		if to.TimeOnly, err = types1.TimeOnlyByString(m.TimeOnly); err != nil {
+			return to, err
+		}
+	}
+	if m.DeletedAt != nil {
+		if to.DeletedAt, err = ptypes1.TimestampProto(*m.DeletedAt); err != nil {
 			return to, err
 		}
 	}
@@ -1447,6 +1462,10 @@ func DefaultApplyFieldMaskTypeWithID(ctx context.Context, patchee *TypeWithID, p
 		}
 		if f == prefix+"TimeOnly" {
 			patchee.TimeOnly = patcher.TimeOnly
+			continue
+		}
+		if f == prefix+"DeletedAt" {
+			patchee.DeletedAt = patcher.DeletedAt
 			continue
 		}
 	}

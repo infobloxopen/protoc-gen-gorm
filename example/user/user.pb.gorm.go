@@ -78,19 +78,25 @@ func (m *User) ToORM(ctx context.Context) (UserORM, error) {
 		to.Id = v.(string)
 	}
 	if m.CreatedAt != nil {
-		if to.CreatedAt, err = ptypes1.Timestamp(m.CreatedAt); err != nil {
+		var t time.Time
+		if t, err = ptypes1.Timestamp(m.CreatedAt); err != nil {
 			return to, err
 		}
+		to.CreatedAt = t
 	}
 	if m.UpdatedAt != nil {
-		if to.UpdatedAt, err = ptypes1.Timestamp(m.UpdatedAt); err != nil {
+		var t time.Time
+		if t, err = ptypes1.Timestamp(m.UpdatedAt); err != nil {
 			return to, err
 		}
+		to.UpdatedAt = t
 	}
 	if m.Birthday != nil {
-		if to.Birthday, err = ptypes1.Timestamp(m.Birthday); err != nil {
+		var t time.Time
+		if t, err = ptypes1.Timestamp(m.Birthday); err != nil {
 			return to, err
 		}
+		to.Birthday = t
 	}
 	to.Num = m.Num
 	if m.CreditCard != nil {
@@ -680,14 +686,18 @@ func (m *CreditCard) ToORM(ctx context.Context) (CreditCardORM, error) {
 		to.Id = v
 	}
 	if m.CreatedAt != nil {
-		if to.CreatedAt, err = ptypes1.Timestamp(m.CreatedAt); err != nil {
+		var t time.Time
+		if t, err = ptypes1.Timestamp(m.CreatedAt); err != nil {
 			return to, err
 		}
+		to.CreatedAt = t
 	}
 	if m.UpdatedAt != nil {
-		if to.UpdatedAt, err = ptypes1.Timestamp(m.UpdatedAt); err != nil {
+		var t time.Time
+		if t, err = ptypes1.Timestamp(m.UpdatedAt); err != nil {
 			return to, err
 		}
+		to.UpdatedAt = t
 	}
 	to.Number = m.Number
 	if m.UserId != nil {

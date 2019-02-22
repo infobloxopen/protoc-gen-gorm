@@ -103,6 +103,7 @@ message TypeWithID {
   google.protobuf.DoubleValue double_field = 13;
   // Limited support for DB type 'time', implemented via strings (string -> DB && DB -> string)
   gorm.types.TimeOnly time_only = 14;
+  google.protobuf.Timestamp deleted_at = 15;
 }
 
 // MultiaccountTypeWithID demonstrates the generated multi-account support
