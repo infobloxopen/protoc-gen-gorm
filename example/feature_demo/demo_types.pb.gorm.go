@@ -4,11 +4,11 @@
 package example
 
 import context "context"
-import errors "errors"
 import strings "strings"
 import time "time"
 
 import auth1 "github.com/infobloxopen/atlas-app-toolkit/auth"
+import errors1 "github.com/infobloxopen/protoc-gen-gorm/plugin/errors"
 import field_mask1 "google.golang.org/genproto/protobuf/field_mask"
 import gateway1 "github.com/infobloxopen/atlas-app-toolkit/gateway"
 import go_uuid1 "github.com/satori/go.uuid"
@@ -906,7 +906,7 @@ type PrimaryIncludedWithAfterToPB interface {
 // DefaultCreateTestTypes executes a basic gorm create call
 func DefaultCreateTestTypes(ctx context.Context, in *TestTypes, db *gorm1.DB) (*TestTypes, error) {
 	if in == nil {
-		return nil, errors.New("Nil argument to DefaultCreateTestTypes")
+		return nil, errors1.NilArgumentError
 	}
 	ormObj, err := in.ToORM(ctx)
 	if err != nil {
@@ -941,7 +941,7 @@ func DefaultApplyFieldMaskTestTypes(ctx context.Context, patchee *TestTypes, pat
 	if patcher == nil {
 		return nil, nil
 	} else if patchee == nil {
-		return nil, errors.New("Patchee inputs to DefaultApplyFieldMaskTestTypes must be non-nil")
+		return nil, errors1.NilArgumentError
 	}
 	var err error
 	var updatedJsonField bool
@@ -1053,7 +1053,7 @@ type TestTypesORMWithAfterListFind interface {
 // DefaultCreateTypeWithID executes a basic gorm create call
 func DefaultCreateTypeWithID(ctx context.Context, in *TypeWithID, db *gorm1.DB) (*TypeWithID, error) {
 	if in == nil {
-		return nil, errors.New("Nil argument to DefaultCreateTypeWithID")
+		return nil, errors1.NilArgumentError
 	}
 	ormObj, err := in.ToORM(ctx)
 	if err != nil {
@@ -1086,14 +1086,14 @@ type TypeWithIDORMWithAfterCreate_ interface {
 // DefaultReadTypeWithID executes a basic gorm read call
 func DefaultReadTypeWithID(ctx context.Context, in *TypeWithID, db *gorm1.DB) (*TypeWithID, error) {
 	if in == nil {
-		return nil, errors.New("Nil argument to DefaultReadTypeWithID")
+		return nil, errors1.NilArgumentError
 	}
 	ormObj, err := in.ToORM(ctx)
 	if err != nil {
 		return nil, err
 	}
 	if ormObj.Id == 0 {
-		return nil, errors.New("DefaultReadTypeWithID requires a non-zero primary key")
+		return nil, errors1.EmptyIdError
 	}
 	if hook, ok := interface{}(&ormObj).(TypeWithIDORMWithBeforeReadApplyQuery); ok {
 		if db, err = hook.BeforeReadApplyQuery(ctx, db); err != nil {
@@ -1133,14 +1133,14 @@ type TypeWithIDORMWithAfterReadFind interface {
 
 func DefaultDeleteTypeWithID(ctx context.Context, in *TypeWithID, db *gorm1.DB) error {
 	if in == nil {
-		return errors.New("Nil argument to DefaultDeleteTypeWithID")
+		return errors1.NilArgumentError
 	}
 	ormObj, err := in.ToORM(ctx)
 	if err != nil {
 		return err
 	}
 	if ormObj.Id == 0 {
-		return errors.New("A non-zero ID value is required for a delete call")
+		return errors1.EmptyIdError
 	}
 	if hook, ok := interface{}(&ormObj).(TypeWithIDORMWithBeforeDelete_); ok {
 		if db, err = hook.BeforeDelete_(ctx, db); err != nil {
@@ -1166,7 +1166,7 @@ type TypeWithIDORMWithAfterDelete_ interface {
 
 func DefaultDeleteTypeWithIDSet(ctx context.Context, in []*TypeWithID, db *gorm1.DB) error {
 	if in == nil {
-		return errors.New("Nil argument to DefaultDeleteTypeWithIDSet")
+		return errors1.NilArgumentError
 	}
 	var err error
 	keys := []uint32{}
@@ -1176,7 +1176,7 @@ func DefaultDeleteTypeWithIDSet(ctx context.Context, in []*TypeWithID, db *gorm1
 			return err
 		}
 		if ormObj.Id == 0 {
-			return errors.New("A non-zero ID value is required for a delete call")
+			return errors1.EmptyIdError
 		}
 		keys = append(keys, ormObj.Id)
 	}
@@ -1221,7 +1221,7 @@ func DefaultStrictUpdateTypeWithID(ctx context.Context, in *TypeWithID, db *gorm
 	}
 	filterANestedObject := TestTypesORM{}
 	if ormObj.Id == 0 {
-		return nil, errors.New("Can't do overwriting update with no Id value for TypeWithIDORM")
+		return nil, errors1.EmptyIdError
 	}
 	filterANestedObject.ANestedObjectTypeWithIDId = new(uint32)
 	*filterANestedObject.ANestedObjectTypeWithIDId = ormObj.Id
@@ -1230,7 +1230,7 @@ func DefaultStrictUpdateTypeWithID(ctx context.Context, in *TypeWithID, db *gorm
 	}
 	filterThings := TestTypesORM{}
 	if ormObj.Id == 0 {
-		return nil, errors.New("Can't do overwriting update with no Id value for TypeWithIDORM")
+		return nil, errors1.EmptyIdError
 	}
 	filterThings.ThingsTypeWithIDId = new(uint32)
 	*filterThings.ThingsTypeWithIDId = ormObj.Id
@@ -1273,7 +1273,7 @@ type TypeWithIDORMWithAfterStrictUpdateSave interface {
 // DefaultPatchTypeWithID executes a basic gorm update call with patch behavior
 func DefaultPatchTypeWithID(ctx context.Context, in *TypeWithID, updateMask *field_mask1.FieldMask, db *gorm1.DB) (*TypeWithID, error) {
 	if in == nil {
-		return nil, errors.New("Nil argument to DefaultPatchTypeWithID")
+		return nil, errors1.NilArgumentError
 	}
 	var pbObj TypeWithID
 	var err error
@@ -1330,7 +1330,7 @@ func DefaultApplyFieldMaskTypeWithID(ctx context.Context, patchee *TypeWithID, p
 	if patcher == nil {
 		return nil, nil
 	} else if patchee == nil {
-		return nil, errors.New("Patchee inputs to DefaultApplyFieldMaskTypeWithID must be non-nil")
+		return nil, errors1.NilArgumentError
 	}
 	var err error
 	var updatedANestedObject bool
@@ -1531,7 +1531,7 @@ type TypeWithIDORMWithAfterListFind interface {
 // DefaultCreateMultiaccountTypeWithID executes a basic gorm create call
 func DefaultCreateMultiaccountTypeWithID(ctx context.Context, in *MultiaccountTypeWithID, db *gorm1.DB) (*MultiaccountTypeWithID, error) {
 	if in == nil {
-		return nil, errors.New("Nil argument to DefaultCreateMultiaccountTypeWithID")
+		return nil, errors1.NilArgumentError
 	}
 	ormObj, err := in.ToORM(ctx)
 	if err != nil {
@@ -1564,14 +1564,14 @@ type MultiaccountTypeWithIDORMWithAfterCreate_ interface {
 // DefaultReadMultiaccountTypeWithID executes a basic gorm read call
 func DefaultReadMultiaccountTypeWithID(ctx context.Context, in *MultiaccountTypeWithID, db *gorm1.DB) (*MultiaccountTypeWithID, error) {
 	if in == nil {
-		return nil, errors.New("Nil argument to DefaultReadMultiaccountTypeWithID")
+		return nil, errors1.NilArgumentError
 	}
 	ormObj, err := in.ToORM(ctx)
 	if err != nil {
 		return nil, err
 	}
 	if ormObj.Id == 0 {
-		return nil, errors.New("DefaultReadMultiaccountTypeWithID requires a non-zero primary key")
+		return nil, errors1.EmptyIdError
 	}
 	if hook, ok := interface{}(&ormObj).(MultiaccountTypeWithIDORMWithBeforeReadApplyQuery); ok {
 		if db, err = hook.BeforeReadApplyQuery(ctx, db); err != nil {
@@ -1611,14 +1611,14 @@ type MultiaccountTypeWithIDORMWithAfterReadFind interface {
 
 func DefaultDeleteMultiaccountTypeWithID(ctx context.Context, in *MultiaccountTypeWithID, db *gorm1.DB) error {
 	if in == nil {
-		return errors.New("Nil argument to DefaultDeleteMultiaccountTypeWithID")
+		return errors1.NilArgumentError
 	}
 	ormObj, err := in.ToORM(ctx)
 	if err != nil {
 		return err
 	}
 	if ormObj.Id == 0 {
-		return errors.New("A non-zero ID value is required for a delete call")
+		return errors1.EmptyIdError
 	}
 	if hook, ok := interface{}(&ormObj).(MultiaccountTypeWithIDORMWithBeforeDelete_); ok {
 		if db, err = hook.BeforeDelete_(ctx, db); err != nil {
@@ -1644,7 +1644,7 @@ type MultiaccountTypeWithIDORMWithAfterDelete_ interface {
 
 func DefaultDeleteMultiaccountTypeWithIDSet(ctx context.Context, in []*MultiaccountTypeWithID, db *gorm1.DB) error {
 	if in == nil {
-		return errors.New("Nil argument to DefaultDeleteMultiaccountTypeWithIDSet")
+		return errors1.NilArgumentError
 	}
 	var err error
 	keys := []uint64{}
@@ -1654,7 +1654,7 @@ func DefaultDeleteMultiaccountTypeWithIDSet(ctx context.Context, in []*Multiacco
 			return err
 		}
 		if ormObj.Id == 0 {
-			return errors.New("A non-zero ID value is required for a delete call")
+			return errors1.EmptyIdError
 		}
 		keys = append(keys, ormObj.Id)
 	}
@@ -1742,7 +1742,7 @@ type MultiaccountTypeWithIDORMWithAfterStrictUpdateSave interface {
 // DefaultPatchMultiaccountTypeWithID executes a basic gorm update call with patch behavior
 func DefaultPatchMultiaccountTypeWithID(ctx context.Context, in *MultiaccountTypeWithID, updateMask *field_mask1.FieldMask, db *gorm1.DB) (*MultiaccountTypeWithID, error) {
 	if in == nil {
-		return nil, errors.New("Nil argument to DefaultPatchMultiaccountTypeWithID")
+		return nil, errors1.NilArgumentError
 	}
 	var pbObj MultiaccountTypeWithID
 	var err error
@@ -1799,7 +1799,7 @@ func DefaultApplyFieldMaskMultiaccountTypeWithID(ctx context.Context, patchee *M
 	if patcher == nil {
 		return nil, nil
 	} else if patchee == nil {
-		return nil, errors.New("Patchee inputs to DefaultApplyFieldMaskMultiaccountTypeWithID must be non-nil")
+		return nil, errors1.NilArgumentError
 	}
 	var err error
 	for _, f := range updateMask.Paths {
@@ -1874,7 +1874,7 @@ type MultiaccountTypeWithIDORMWithAfterListFind interface {
 // DefaultCreateMultiaccountTypeWithoutID executes a basic gorm create call
 func DefaultCreateMultiaccountTypeWithoutID(ctx context.Context, in *MultiaccountTypeWithoutID, db *gorm1.DB) (*MultiaccountTypeWithoutID, error) {
 	if in == nil {
-		return nil, errors.New("Nil argument to DefaultCreateMultiaccountTypeWithoutID")
+		return nil, errors1.NilArgumentError
 	}
 	ormObj, err := in.ToORM(ctx)
 	if err != nil {
@@ -1909,7 +1909,7 @@ func DefaultApplyFieldMaskMultiaccountTypeWithoutID(ctx context.Context, patchee
 	if patcher == nil {
 		return nil, nil
 	} else if patchee == nil {
-		return nil, errors.New("Patchee inputs to DefaultApplyFieldMaskMultiaccountTypeWithoutID must be non-nil")
+		return nil, errors1.NilArgumentError
 	}
 	var err error
 	for _, f := range updateMask.Paths {
@@ -1979,7 +1979,7 @@ type MultiaccountTypeWithoutIDORMWithAfterListFind interface {
 // DefaultCreatePrimaryUUIDType executes a basic gorm create call
 func DefaultCreatePrimaryUUIDType(ctx context.Context, in *PrimaryUUIDType, db *gorm1.DB) (*PrimaryUUIDType, error) {
 	if in == nil {
-		return nil, errors.New("Nil argument to DefaultCreatePrimaryUUIDType")
+		return nil, errors1.NilArgumentError
 	}
 	ormObj, err := in.ToORM(ctx)
 	if err != nil {
@@ -2012,14 +2012,14 @@ type PrimaryUUIDTypeORMWithAfterCreate_ interface {
 // DefaultReadPrimaryUUIDType executes a basic gorm read call
 func DefaultReadPrimaryUUIDType(ctx context.Context, in *PrimaryUUIDType, db *gorm1.DB) (*PrimaryUUIDType, error) {
 	if in == nil {
-		return nil, errors.New("Nil argument to DefaultReadPrimaryUUIDType")
+		return nil, errors1.NilArgumentError
 	}
 	ormObj, err := in.ToORM(ctx)
 	if err != nil {
 		return nil, err
 	}
 	if ormObj.Id == nil || *ormObj.Id == go_uuid1.Nil {
-		return nil, errors.New("DefaultReadPrimaryUUIDType requires a non-zero primary key")
+		return nil, errors1.EmptyIdError
 	}
 	if hook, ok := interface{}(&ormObj).(PrimaryUUIDTypeORMWithBeforeReadApplyQuery); ok {
 		if db, err = hook.BeforeReadApplyQuery(ctx, db); err != nil {
@@ -2059,14 +2059,14 @@ type PrimaryUUIDTypeORMWithAfterReadFind interface {
 
 func DefaultDeletePrimaryUUIDType(ctx context.Context, in *PrimaryUUIDType, db *gorm1.DB) error {
 	if in == nil {
-		return errors.New("Nil argument to DefaultDeletePrimaryUUIDType")
+		return errors1.NilArgumentError
 	}
 	ormObj, err := in.ToORM(ctx)
 	if err != nil {
 		return err
 	}
 	if ormObj.Id == nil || *ormObj.Id == go_uuid1.Nil {
-		return errors.New("A non-zero ID value is required for a delete call")
+		return errors1.EmptyIdError
 	}
 	if hook, ok := interface{}(&ormObj).(PrimaryUUIDTypeORMWithBeforeDelete_); ok {
 		if db, err = hook.BeforeDelete_(ctx, db); err != nil {
@@ -2092,7 +2092,7 @@ type PrimaryUUIDTypeORMWithAfterDelete_ interface {
 
 func DefaultDeletePrimaryUUIDTypeSet(ctx context.Context, in []*PrimaryUUIDType, db *gorm1.DB) error {
 	if in == nil {
-		return errors.New("Nil argument to DefaultDeletePrimaryUUIDTypeSet")
+		return errors1.NilArgumentError
 	}
 	var err error
 	keys := []*go_uuid1.UUID{}
@@ -2102,7 +2102,7 @@ func DefaultDeletePrimaryUUIDTypeSet(ctx context.Context, in []*PrimaryUUIDType,
 			return err
 		}
 		if ormObj.Id == nil || *ormObj.Id == go_uuid1.Nil {
-			return errors.New("A non-zero ID value is required for a delete call")
+			return errors1.EmptyIdError
 		}
 		keys = append(keys, ormObj.Id)
 	}
@@ -2147,7 +2147,7 @@ func DefaultStrictUpdatePrimaryUUIDType(ctx context.Context, in *PrimaryUUIDType
 	}
 	filterChild := ExternalChildORM{}
 	if ormObj.Id == nil || *ormObj.Id == go_uuid1.Nil {
-		return nil, errors.New("Can't do overwriting update with no Id value for PrimaryUUIDTypeORM")
+		return nil, errors1.EmptyIdError
 	}
 	filterChild.PrimaryUUIDTypeId = new(go_uuid1.UUID)
 	*filterChild.PrimaryUUIDTypeId = *ormObj.Id
@@ -2190,7 +2190,7 @@ type PrimaryUUIDTypeORMWithAfterStrictUpdateSave interface {
 // DefaultPatchPrimaryUUIDType executes a basic gorm update call with patch behavior
 func DefaultPatchPrimaryUUIDType(ctx context.Context, in *PrimaryUUIDType, updateMask *field_mask1.FieldMask, db *gorm1.DB) (*PrimaryUUIDType, error) {
 	if in == nil {
-		return nil, errors.New("Nil argument to DefaultPatchPrimaryUUIDType")
+		return nil, errors1.NilArgumentError
 	}
 	var pbObj PrimaryUUIDType
 	var err error
@@ -2247,7 +2247,7 @@ func DefaultApplyFieldMaskPrimaryUUIDType(ctx context.Context, patchee *PrimaryU
 	if patcher == nil {
 		return nil, nil
 	} else if patchee == nil {
-		return nil, errors.New("Patchee inputs to DefaultApplyFieldMaskPrimaryUUIDType must be non-nil")
+		return nil, errors1.NilArgumentError
 	}
 	var err error
 	var updatedChild bool
@@ -2340,7 +2340,7 @@ type PrimaryUUIDTypeORMWithAfterListFind interface {
 // DefaultCreatePrimaryStringType executes a basic gorm create call
 func DefaultCreatePrimaryStringType(ctx context.Context, in *PrimaryStringType, db *gorm1.DB) (*PrimaryStringType, error) {
 	if in == nil {
-		return nil, errors.New("Nil argument to DefaultCreatePrimaryStringType")
+		return nil, errors1.NilArgumentError
 	}
 	ormObj, err := in.ToORM(ctx)
 	if err != nil {
@@ -2373,14 +2373,14 @@ type PrimaryStringTypeORMWithAfterCreate_ interface {
 // DefaultReadPrimaryStringType executes a basic gorm read call
 func DefaultReadPrimaryStringType(ctx context.Context, in *PrimaryStringType, db *gorm1.DB) (*PrimaryStringType, error) {
 	if in == nil {
-		return nil, errors.New("Nil argument to DefaultReadPrimaryStringType")
+		return nil, errors1.NilArgumentError
 	}
 	ormObj, err := in.ToORM(ctx)
 	if err != nil {
 		return nil, err
 	}
 	if ormObj.Id == "" {
-		return nil, errors.New("DefaultReadPrimaryStringType requires a non-zero primary key")
+		return nil, errors1.EmptyIdError
 	}
 	if hook, ok := interface{}(&ormObj).(PrimaryStringTypeORMWithBeforeReadApplyQuery); ok {
 		if db, err = hook.BeforeReadApplyQuery(ctx, db); err != nil {
@@ -2420,14 +2420,14 @@ type PrimaryStringTypeORMWithAfterReadFind interface {
 
 func DefaultDeletePrimaryStringType(ctx context.Context, in *PrimaryStringType, db *gorm1.DB) error {
 	if in == nil {
-		return errors.New("Nil argument to DefaultDeletePrimaryStringType")
+		return errors1.NilArgumentError
 	}
 	ormObj, err := in.ToORM(ctx)
 	if err != nil {
 		return err
 	}
 	if ormObj.Id == "" {
-		return errors.New("A non-zero ID value is required for a delete call")
+		return errors1.EmptyIdError
 	}
 	if hook, ok := interface{}(&ormObj).(PrimaryStringTypeORMWithBeforeDelete_); ok {
 		if db, err = hook.BeforeDelete_(ctx, db); err != nil {
@@ -2453,7 +2453,7 @@ type PrimaryStringTypeORMWithAfterDelete_ interface {
 
 func DefaultDeletePrimaryStringTypeSet(ctx context.Context, in []*PrimaryStringType, db *gorm1.DB) error {
 	if in == nil {
-		return errors.New("Nil argument to DefaultDeletePrimaryStringTypeSet")
+		return errors1.NilArgumentError
 	}
 	var err error
 	keys := []string{}
@@ -2463,7 +2463,7 @@ func DefaultDeletePrimaryStringTypeSet(ctx context.Context, in []*PrimaryStringT
 			return err
 		}
 		if ormObj.Id == "" {
-			return errors.New("A non-zero ID value is required for a delete call")
+			return errors1.EmptyIdError
 		}
 		keys = append(keys, ormObj.Id)
 	}
@@ -2508,7 +2508,7 @@ func DefaultStrictUpdatePrimaryStringType(ctx context.Context, in *PrimaryString
 	}
 	filterChild := ExternalChildORM{}
 	if ormObj.Id == "" {
-		return nil, errors.New("Can't do overwriting update with no Id value for PrimaryStringTypeORM")
+		return nil, errors1.EmptyIdError
 	}
 	filterChild.PrimaryStringTypeId = new(string)
 	*filterChild.PrimaryStringTypeId = ormObj.Id
@@ -2551,7 +2551,7 @@ type PrimaryStringTypeORMWithAfterStrictUpdateSave interface {
 // DefaultPatchPrimaryStringType executes a basic gorm update call with patch behavior
 func DefaultPatchPrimaryStringType(ctx context.Context, in *PrimaryStringType, updateMask *field_mask1.FieldMask, db *gorm1.DB) (*PrimaryStringType, error) {
 	if in == nil {
-		return nil, errors.New("Nil argument to DefaultPatchPrimaryStringType")
+		return nil, errors1.NilArgumentError
 	}
 	var pbObj PrimaryStringType
 	var err error
@@ -2608,7 +2608,7 @@ func DefaultApplyFieldMaskPrimaryStringType(ctx context.Context, patchee *Primar
 	if patcher == nil {
 		return nil, nil
 	} else if patchee == nil {
-		return nil, errors.New("Patchee inputs to DefaultApplyFieldMaskPrimaryStringType must be non-nil")
+		return nil, errors1.NilArgumentError
 	}
 	var err error
 	var updatedChild bool
@@ -2701,7 +2701,7 @@ type PrimaryStringTypeORMWithAfterListFind interface {
 // DefaultCreateTestTag executes a basic gorm create call
 func DefaultCreateTestTag(ctx context.Context, in *TestTag, db *gorm1.DB) (*TestTag, error) {
 	if in == nil {
-		return nil, errors.New("Nil argument to DefaultCreateTestTag")
+		return nil, errors1.NilArgumentError
 	}
 	ormObj, err := in.ToORM(ctx)
 	if err != nil {
@@ -2734,14 +2734,14 @@ type TestTagORMWithAfterCreate_ interface {
 // DefaultReadTestTag executes a basic gorm read call
 func DefaultReadTestTag(ctx context.Context, in *TestTag, db *gorm1.DB) (*TestTag, error) {
 	if in == nil {
-		return nil, errors.New("Nil argument to DefaultReadTestTag")
+		return nil, errors1.NilArgumentError
 	}
 	ormObj, err := in.ToORM(ctx)
 	if err != nil {
 		return nil, err
 	}
 	if ormObj.Id == "" {
-		return nil, errors.New("DefaultReadTestTag requires a non-zero primary key")
+		return nil, errors1.EmptyIdError
 	}
 	if hook, ok := interface{}(&ormObj).(TestTagORMWithBeforeReadApplyQuery); ok {
 		if db, err = hook.BeforeReadApplyQuery(ctx, db); err != nil {
@@ -2781,14 +2781,14 @@ type TestTagORMWithAfterReadFind interface {
 
 func DefaultDeleteTestTag(ctx context.Context, in *TestTag, db *gorm1.DB) error {
 	if in == nil {
-		return errors.New("Nil argument to DefaultDeleteTestTag")
+		return errors1.NilArgumentError
 	}
 	ormObj, err := in.ToORM(ctx)
 	if err != nil {
 		return err
 	}
 	if ormObj.Id == "" {
-		return errors.New("A non-zero ID value is required for a delete call")
+		return errors1.EmptyIdError
 	}
 	if hook, ok := interface{}(&ormObj).(TestTagORMWithBeforeDelete_); ok {
 		if db, err = hook.BeforeDelete_(ctx, db); err != nil {
@@ -2814,7 +2814,7 @@ type TestTagORMWithAfterDelete_ interface {
 
 func DefaultDeleteTestTagSet(ctx context.Context, in []*TestTag, db *gorm1.DB) error {
 	if in == nil {
-		return errors.New("Nil argument to DefaultDeleteTestTagSet")
+		return errors1.NilArgumentError
 	}
 	var err error
 	keys := []string{}
@@ -2824,7 +2824,7 @@ func DefaultDeleteTestTagSet(ctx context.Context, in []*TestTag, db *gorm1.DB) e
 			return err
 		}
 		if ormObj.Id == "" {
-			return errors.New("A non-zero ID value is required for a delete call")
+			return errors1.EmptyIdError
 		}
 		keys = append(keys, ormObj.Id)
 	}
@@ -2869,7 +2869,7 @@ func DefaultStrictUpdateTestTag(ctx context.Context, in *TestTag, db *gorm1.DB) 
 	}
 	filterTestTagAssoc := TestTagAssociationORM{}
 	if ormObj.Id == "" {
-		return nil, errors.New("Can't do overwriting update with no Id value for TestTagORM")
+		return nil, errors1.EmptyIdError
 	}
 	filterTestTagAssoc.TestTagId = new(string)
 	*filterTestTagAssoc.TestTagId = ormObj.Id
@@ -2912,7 +2912,7 @@ type TestTagORMWithAfterStrictUpdateSave interface {
 // DefaultPatchTestTag executes a basic gorm update call with patch behavior
 func DefaultPatchTestTag(ctx context.Context, in *TestTag, updateMask *field_mask1.FieldMask, db *gorm1.DB) (*TestTag, error) {
 	if in == nil {
-		return nil, errors.New("Nil argument to DefaultPatchTestTag")
+		return nil, errors1.NilArgumentError
 	}
 	var pbObj TestTag
 	var err error
@@ -2969,7 +2969,7 @@ func DefaultApplyFieldMaskTestTag(ctx context.Context, patchee *TestTag, patcher
 	if patcher == nil {
 		return nil, nil
 	} else if patchee == nil {
-		return nil, errors.New("Patchee inputs to DefaultApplyFieldMaskTestTag must be non-nil")
+		return nil, errors1.NilArgumentError
 	}
 	var err error
 	var updatedTestTagAssoc bool
@@ -3062,7 +3062,7 @@ type TestTagORMWithAfterListFind interface {
 // DefaultCreateTestTagAssociation executes a basic gorm create call
 func DefaultCreateTestTagAssociation(ctx context.Context, in *TestTagAssociation, db *gorm1.DB) (*TestTagAssociation, error) {
 	if in == nil {
-		return nil, errors.New("Nil argument to DefaultCreateTestTagAssociation")
+		return nil, errors1.NilArgumentError
 	}
 	ormObj, err := in.ToORM(ctx)
 	if err != nil {
@@ -3097,7 +3097,7 @@ func DefaultApplyFieldMaskTestTagAssociation(ctx context.Context, patchee *TestT
 	if patcher == nil {
 		return nil, nil
 	} else if patchee == nil {
-		return nil, errors.New("Patchee inputs to DefaultApplyFieldMaskTestTagAssociation must be non-nil")
+		return nil, errors1.NilArgumentError
 	}
 	var err error
 	for _, f := range updateMask.Paths {
@@ -3167,7 +3167,7 @@ type TestTagAssociationORMWithAfterListFind interface {
 // DefaultCreatePrimaryIncluded executes a basic gorm create call
 func DefaultCreatePrimaryIncluded(ctx context.Context, in *PrimaryIncluded, db *gorm1.DB) (*PrimaryIncluded, error) {
 	if in == nil {
-		return nil, errors.New("Nil argument to DefaultCreatePrimaryIncluded")
+		return nil, errors1.NilArgumentError
 	}
 	ormObj, err := in.ToORM(ctx)
 	if err != nil {
@@ -3202,7 +3202,7 @@ func DefaultApplyFieldMaskPrimaryIncluded(ctx context.Context, patchee *PrimaryI
 	if patcher == nil {
 		return nil, nil
 	} else if patchee == nil {
-		return nil, errors.New("Patchee inputs to DefaultApplyFieldMaskPrimaryIncluded must be non-nil")
+		return nil, errors1.NilArgumentError
 	}
 	var err error
 	var updatedChild bool

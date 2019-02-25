@@ -4,8 +4,8 @@
 package example
 
 import context "context"
-import errors "errors"
 
+import errors1 "github.com/infobloxopen/protoc-gen-gorm/plugin/errors"
 import field_mask1 "google.golang.org/genproto/protobuf/field_mask"
 import gateway1 "github.com/infobloxopen/atlas-app-toolkit/gateway"
 import gorm1 "github.com/jinzhu/gorm"
@@ -229,7 +229,7 @@ type CircleWithAfterToPB interface {
 // DefaultCreateIntPoint executes a basic gorm create call
 func DefaultCreateIntPoint(ctx context.Context, in *IntPoint, db *gorm1.DB) (*IntPoint, error) {
 	if in == nil {
-		return nil, errors.New("Nil argument to DefaultCreateIntPoint")
+		return nil, errors1.NilArgumentError
 	}
 	ormObj, err := in.ToORM(ctx)
 	if err != nil {
@@ -262,14 +262,14 @@ type IntPointORMWithAfterCreate_ interface {
 // DefaultReadIntPoint executes a basic gorm read call
 func DefaultReadIntPoint(ctx context.Context, in *IntPoint, db *gorm1.DB, fs *query1.FieldSelection) (*IntPoint, error) {
 	if in == nil {
-		return nil, errors.New("Nil argument to DefaultReadIntPoint")
+		return nil, errors1.NilArgumentError
 	}
 	ormObj, err := in.ToORM(ctx)
 	if err != nil {
 		return nil, err
 	}
 	if ormObj.Id == 0 {
-		return nil, errors.New("DefaultReadIntPoint requires a non-zero primary key")
+		return nil, errors1.EmptyIdError
 	}
 	if hook, ok := interface{}(&ormObj).(IntPointORMWithBeforeReadApplyQuery); ok {
 		if db, err = hook.BeforeReadApplyQuery(ctx, db, fs); err != nil {
@@ -309,14 +309,14 @@ type IntPointORMWithAfterReadFind interface {
 
 func DefaultDeleteIntPoint(ctx context.Context, in *IntPoint, db *gorm1.DB) error {
 	if in == nil {
-		return errors.New("Nil argument to DefaultDeleteIntPoint")
+		return errors1.NilArgumentError
 	}
 	ormObj, err := in.ToORM(ctx)
 	if err != nil {
 		return err
 	}
 	if ormObj.Id == 0 {
-		return errors.New("A non-zero ID value is required for a delete call")
+		return errors1.EmptyIdError
 	}
 	if hook, ok := interface{}(&ormObj).(IntPointORMWithBeforeDelete_); ok {
 		if db, err = hook.BeforeDelete_(ctx, db); err != nil {
@@ -342,7 +342,7 @@ type IntPointORMWithAfterDelete_ interface {
 
 func DefaultDeleteIntPointSet(ctx context.Context, in []*IntPoint, db *gorm1.DB) error {
 	if in == nil {
-		return errors.New("Nil argument to DefaultDeleteIntPointSet")
+		return errors1.NilArgumentError
 	}
 	var err error
 	keys := []uint32{}
@@ -352,7 +352,7 @@ func DefaultDeleteIntPointSet(ctx context.Context, in []*IntPoint, db *gorm1.DB)
 			return err
 		}
 		if ormObj.Id == 0 {
-			return errors.New("A non-zero ID value is required for a delete call")
+			return errors1.EmptyIdError
 		}
 		keys = append(keys, ormObj.Id)
 	}
@@ -431,7 +431,7 @@ type IntPointORMWithAfterStrictUpdateSave interface {
 // DefaultPatchIntPoint executes a basic gorm update call with patch behavior
 func DefaultPatchIntPoint(ctx context.Context, in *IntPoint, updateMask *field_mask1.FieldMask, db *gorm1.DB) (*IntPoint, error) {
 	if in == nil {
-		return nil, errors.New("Nil argument to DefaultPatchIntPoint")
+		return nil, errors1.NilArgumentError
 	}
 	var pbObj IntPoint
 	var err error
@@ -488,7 +488,7 @@ func DefaultApplyFieldMaskIntPoint(ctx context.Context, patchee *IntPoint, patch
 	if patcher == nil {
 		return nil, nil
 	} else if patchee == nil {
-		return nil, errors.New("Patchee inputs to DefaultApplyFieldMaskIntPoint must be non-nil")
+		return nil, errors1.NilArgumentError
 	}
 	var err error
 	for _, f := range updateMask.Paths {
@@ -567,7 +567,7 @@ type IntPointORMWithAfterListFind interface {
 // DefaultCreateSomething executes a basic gorm create call
 func DefaultCreateSomething(ctx context.Context, in *Something, db *gorm1.DB) (*Something, error) {
 	if in == nil {
-		return nil, errors.New("Nil argument to DefaultCreateSomething")
+		return nil, errors1.NilArgumentError
 	}
 	ormObj, err := in.ToORM(ctx)
 	if err != nil {
@@ -602,7 +602,7 @@ func DefaultApplyFieldMaskSomething(ctx context.Context, patchee *Something, pat
 	if patcher == nil {
 		return nil, nil
 	} else if patchee == nil {
-		return nil, errors.New("Patchee inputs to DefaultApplyFieldMaskSomething must be non-nil")
+		return nil, errors1.NilArgumentError
 	}
 	var err error
 	for _, f := range updateMask.Paths {
@@ -672,7 +672,7 @@ type SomethingORMWithAfterListFind interface {
 // DefaultCreateCircle executes a basic gorm create call
 func DefaultCreateCircle(ctx context.Context, in *Circle, db *gorm1.DB) (*Circle, error) {
 	if in == nil {
-		return nil, errors.New("Nil argument to DefaultCreateCircle")
+		return nil, errors1.NilArgumentError
 	}
 	ormObj, err := in.ToORM(ctx)
 	if err != nil {
@@ -707,7 +707,7 @@ func DefaultApplyFieldMaskCircle(ctx context.Context, patchee *Circle, patcher *
 	if patcher == nil {
 		return nil, nil
 	} else if patchee == nil {
-		return nil, errors.New("Patchee inputs to DefaultApplyFieldMaskCircle must be non-nil")
+		return nil, errors1.NilArgumentError
 	}
 	var err error
 	for _, f := range updateMask.Paths {
@@ -990,7 +990,7 @@ type IntPointTxnDefaultServer struct {
 func (m *IntPointTxnDefaultServer) Create(ctx context.Context, in *CreateIntPointRequest) (*CreateIntPointResponse, error) {
 	txn, ok := gorm2.FromContext(ctx)
 	if !ok {
-		return nil, errors.New("Database Transaction For Request Missing")
+		return nil, errors1.NoTransactionError
 	}
 	db := txn.Begin()
 	if db.Error != nil {
@@ -1034,7 +1034,7 @@ type IntPointTxnIntPointWithAfterCreate interface {
 func (m *IntPointTxnDefaultServer) Read(ctx context.Context, in *ReadIntPointRequest) (*ReadIntPointResponse, error) {
 	txn, ok := gorm2.FromContext(ctx)
 	if !ok {
-		return nil, errors.New("Database Transaction For Request Missing")
+		return nil, errors1.NoTransactionError
 	}
 	db := txn.Begin()
 	if db.Error != nil {
@@ -1076,7 +1076,7 @@ func (m *IntPointTxnDefaultServer) Update(ctx context.Context, in *UpdateIntPoin
 	var res *IntPoint
 	txn, ok := gorm2.FromContext(ctx)
 	if !ok {
-		return nil, errors.New("Database Transaction For Request Missing")
+		return nil, errors1.NoTransactionError
 	}
 	db := txn.Begin()
 	if db.Error != nil {
@@ -1120,7 +1120,7 @@ type IntPointTxnIntPointWithAfterUpdate interface {
 func (m *IntPointTxnDefaultServer) List(ctx context.Context, in *ListIntPointRequest) (*ListIntPointResponse, error) {
 	txn, ok := gorm2.FromContext(ctx)
 	if !ok {
-		return nil, errors.New("Database Transaction For Request Missing")
+		return nil, errors1.NoTransactionError
 	}
 	db := txn.Begin()
 	if db.Error != nil {
@@ -1176,7 +1176,7 @@ type IntPointTxnIntPointWithAfterList interface {
 func (m *IntPointTxnDefaultServer) Delete(ctx context.Context, in *DeleteIntPointRequest) (*DeleteIntPointResponse, error) {
 	txn, ok := gorm2.FromContext(ctx)
 	if !ok {
-		return nil, errors.New("Database Transaction For Request Missing")
+		return nil, errors1.NoTransactionError
 	}
 	db := txn.Begin()
 	if db.Error != nil {
@@ -1216,7 +1216,7 @@ type IntPointTxnIntPointWithAfterDelete interface {
 func (m *IntPointTxnDefaultServer) DeleteSet(ctx context.Context, in *DeleteIntPointsRequest) (*DeleteIntPointResponse, error) {
 	txn, ok := gorm2.FromContext(ctx)
 	if !ok {
-		return nil, errors.New("Database Transaction For Request Missing")
+		return nil, errors1.NoTransactionError
 	}
 	db := txn.Begin()
 	if db.Error != nil {

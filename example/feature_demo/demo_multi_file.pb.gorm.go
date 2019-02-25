@@ -46,8 +46,8 @@ It has these top-level messages:
 package example
 
 import context "context"
-import errors "errors"
 
+import errors1 "github.com/infobloxopen/protoc-gen-gorm/plugin/errors"
 import field_mask1 "google.golang.org/genproto/protobuf/field_mask"
 import gateway1 "github.com/infobloxopen/atlas-app-toolkit/gateway"
 import go_uuid1 "github.com/satori/go.uuid"
@@ -205,7 +205,7 @@ type BlogPostWithAfterToPB interface {
 // DefaultCreateExternalChild executes a basic gorm create call
 func DefaultCreateExternalChild(ctx context.Context, in *ExternalChild, db *gorm1.DB) (*ExternalChild, error) {
 	if in == nil {
-		return nil, errors.New("Nil argument to DefaultCreateExternalChild")
+		return nil, errors1.NilArgumentError
 	}
 	ormObj, err := in.ToORM(ctx)
 	if err != nil {
@@ -238,14 +238,14 @@ type ExternalChildORMWithAfterCreate_ interface {
 // DefaultReadExternalChild executes a basic gorm read call
 func DefaultReadExternalChild(ctx context.Context, in *ExternalChild, db *gorm1.DB) (*ExternalChild, error) {
 	if in == nil {
-		return nil, errors.New("Nil argument to DefaultReadExternalChild")
+		return nil, errors1.NilArgumentError
 	}
 	ormObj, err := in.ToORM(ctx)
 	if err != nil {
 		return nil, err
 	}
 	if ormObj.Id == "" {
-		return nil, errors.New("DefaultReadExternalChild requires a non-zero primary key")
+		return nil, errors1.EmptyIdError
 	}
 	if hook, ok := interface{}(&ormObj).(ExternalChildORMWithBeforeReadApplyQuery); ok {
 		if db, err = hook.BeforeReadApplyQuery(ctx, db); err != nil {
@@ -285,14 +285,14 @@ type ExternalChildORMWithAfterReadFind interface {
 
 func DefaultDeleteExternalChild(ctx context.Context, in *ExternalChild, db *gorm1.DB) error {
 	if in == nil {
-		return errors.New("Nil argument to DefaultDeleteExternalChild")
+		return errors1.NilArgumentError
 	}
 	ormObj, err := in.ToORM(ctx)
 	if err != nil {
 		return err
 	}
 	if ormObj.Id == "" {
-		return errors.New("A non-zero ID value is required for a delete call")
+		return errors1.EmptyIdError
 	}
 	if hook, ok := interface{}(&ormObj).(ExternalChildORMWithBeforeDelete_); ok {
 		if db, err = hook.BeforeDelete_(ctx, db); err != nil {
@@ -318,7 +318,7 @@ type ExternalChildORMWithAfterDelete_ interface {
 
 func DefaultDeleteExternalChildSet(ctx context.Context, in []*ExternalChild, db *gorm1.DB) error {
 	if in == nil {
-		return errors.New("Nil argument to DefaultDeleteExternalChildSet")
+		return errors1.NilArgumentError
 	}
 	var err error
 	keys := []string{}
@@ -328,7 +328,7 @@ func DefaultDeleteExternalChildSet(ctx context.Context, in []*ExternalChild, db 
 			return err
 		}
 		if ormObj.Id == "" {
-			return errors.New("A non-zero ID value is required for a delete call")
+			return errors1.EmptyIdError
 		}
 		keys = append(keys, ormObj.Id)
 	}
@@ -407,7 +407,7 @@ type ExternalChildORMWithAfterStrictUpdateSave interface {
 // DefaultPatchExternalChild executes a basic gorm update call with patch behavior
 func DefaultPatchExternalChild(ctx context.Context, in *ExternalChild, updateMask *field_mask1.FieldMask, db *gorm1.DB) (*ExternalChild, error) {
 	if in == nil {
-		return nil, errors.New("Nil argument to DefaultPatchExternalChild")
+		return nil, errors1.NilArgumentError
 	}
 	var pbObj ExternalChild
 	var err error
@@ -464,7 +464,7 @@ func DefaultApplyFieldMaskExternalChild(ctx context.Context, patchee *ExternalCh
 	if patcher == nil {
 		return nil, nil
 	} else if patchee == nil {
-		return nil, errors.New("Patchee inputs to DefaultApplyFieldMaskExternalChild must be non-nil")
+		return nil, errors1.NilArgumentError
 	}
 	var err error
 	for _, f := range updateMask.Paths {
@@ -535,7 +535,7 @@ type ExternalChildORMWithAfterListFind interface {
 // DefaultCreateBlogPost executes a basic gorm create call
 func DefaultCreateBlogPost(ctx context.Context, in *BlogPost, db *gorm1.DB) (*BlogPost, error) {
 	if in == nil {
-		return nil, errors.New("Nil argument to DefaultCreateBlogPost")
+		return nil, errors1.NilArgumentError
 	}
 	ormObj, err := in.ToORM(ctx)
 	if err != nil {
@@ -568,14 +568,14 @@ type BlogPostORMWithAfterCreate_ interface {
 // DefaultReadBlogPost executes a basic gorm read call
 func DefaultReadBlogPost(ctx context.Context, in *BlogPost, db *gorm1.DB) (*BlogPost, error) {
 	if in == nil {
-		return nil, errors.New("Nil argument to DefaultReadBlogPost")
+		return nil, errors1.NilArgumentError
 	}
 	ormObj, err := in.ToORM(ctx)
 	if err != nil {
 		return nil, err
 	}
 	if ormObj.Id == 0 {
-		return nil, errors.New("DefaultReadBlogPost requires a non-zero primary key")
+		return nil, errors1.EmptyIdError
 	}
 	if hook, ok := interface{}(&ormObj).(BlogPostORMWithBeforeReadApplyQuery); ok {
 		if db, err = hook.BeforeReadApplyQuery(ctx, db); err != nil {
@@ -615,14 +615,14 @@ type BlogPostORMWithAfterReadFind interface {
 
 func DefaultDeleteBlogPost(ctx context.Context, in *BlogPost, db *gorm1.DB) error {
 	if in == nil {
-		return errors.New("Nil argument to DefaultDeleteBlogPost")
+		return errors1.NilArgumentError
 	}
 	ormObj, err := in.ToORM(ctx)
 	if err != nil {
 		return err
 	}
 	if ormObj.Id == 0 {
-		return errors.New("A non-zero ID value is required for a delete call")
+		return errors1.EmptyIdError
 	}
 	if hook, ok := interface{}(&ormObj).(BlogPostORMWithBeforeDelete_); ok {
 		if db, err = hook.BeforeDelete_(ctx, db); err != nil {
@@ -648,7 +648,7 @@ type BlogPostORMWithAfterDelete_ interface {
 
 func DefaultDeleteBlogPostSet(ctx context.Context, in []*BlogPost, db *gorm1.DB) error {
 	if in == nil {
-		return errors.New("Nil argument to DefaultDeleteBlogPostSet")
+		return errors1.NilArgumentError
 	}
 	var err error
 	keys := []uint64{}
@@ -658,7 +658,7 @@ func DefaultDeleteBlogPostSet(ctx context.Context, in []*BlogPost, db *gorm1.DB)
 			return err
 		}
 		if ormObj.Id == 0 {
-			return errors.New("A non-zero ID value is required for a delete call")
+			return errors1.EmptyIdError
 		}
 		keys = append(keys, ormObj.Id)
 	}
@@ -737,7 +737,7 @@ type BlogPostORMWithAfterStrictUpdateSave interface {
 // DefaultPatchBlogPost executes a basic gorm update call with patch behavior
 func DefaultPatchBlogPost(ctx context.Context, in *BlogPost, updateMask *field_mask1.FieldMask, db *gorm1.DB) (*BlogPost, error) {
 	if in == nil {
-		return nil, errors.New("Nil argument to DefaultPatchBlogPost")
+		return nil, errors1.NilArgumentError
 	}
 	var pbObj BlogPost
 	var err error
@@ -794,7 +794,7 @@ func DefaultApplyFieldMaskBlogPost(ctx context.Context, patchee *BlogPost, patch
 	if patcher == nil {
 		return nil, nil
 	} else if patchee == nil {
-		return nil, errors.New("Patchee inputs to DefaultApplyFieldMaskBlogPost must be non-nil")
+		return nil, errors1.NilArgumentError
 	}
 	var err error
 	for _, f := range updateMask.Paths {

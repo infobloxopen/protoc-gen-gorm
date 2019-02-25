@@ -18,11 +18,11 @@ It has these top-level messages:
 package user
 
 import context "context"
-import errors "errors"
 import strings "strings"
 import time "time"
 
 import auth1 "github.com/infobloxopen/atlas-app-toolkit/auth"
+import errors1 "github.com/infobloxopen/protoc-gen-gorm/plugin/errors"
 import field_mask1 "google.golang.org/genproto/protobuf/field_mask"
 import gorm1 "github.com/jinzhu/gorm"
 import gorm2 "github.com/infobloxopen/atlas-app-toolkit/gorm"
@@ -859,7 +859,7 @@ type TaskWithAfterToPB interface {
 // DefaultCreateUser executes a basic gorm create call
 func DefaultCreateUser(ctx context.Context, in *User, db *gorm1.DB) (*User, error) {
 	if in == nil {
-		return nil, errors.New("Nil argument to DefaultCreateUser")
+		return nil, errors1.NilArgumentError
 	}
 	ormObj, err := in.ToORM(ctx)
 	if err != nil {
@@ -892,14 +892,14 @@ type UserORMWithAfterCreate_ interface {
 // DefaultReadUser executes a basic gorm read call
 func DefaultReadUser(ctx context.Context, in *User, db *gorm1.DB) (*User, error) {
 	if in == nil {
-		return nil, errors.New("Nil argument to DefaultReadUser")
+		return nil, errors1.NilArgumentError
 	}
 	ormObj, err := in.ToORM(ctx)
 	if err != nil {
 		return nil, err
 	}
 	if ormObj.Id == "" {
-		return nil, errors.New("DefaultReadUser requires a non-zero primary key")
+		return nil, errors1.EmptyIdError
 	}
 	if hook, ok := interface{}(&ormObj).(UserORMWithBeforeReadApplyQuery); ok {
 		if db, err = hook.BeforeReadApplyQuery(ctx, db); err != nil {
@@ -939,14 +939,14 @@ type UserORMWithAfterReadFind interface {
 
 func DefaultDeleteUser(ctx context.Context, in *User, db *gorm1.DB) error {
 	if in == nil {
-		return errors.New("Nil argument to DefaultDeleteUser")
+		return errors1.NilArgumentError
 	}
 	ormObj, err := in.ToORM(ctx)
 	if err != nil {
 		return err
 	}
 	if ormObj.Id == "" {
-		return errors.New("A non-zero ID value is required for a delete call")
+		return errors1.EmptyIdError
 	}
 	if hook, ok := interface{}(&ormObj).(UserORMWithBeforeDelete_); ok {
 		if db, err = hook.BeforeDelete_(ctx, db); err != nil {
@@ -972,7 +972,7 @@ type UserORMWithAfterDelete_ interface {
 
 func DefaultDeleteUserSet(ctx context.Context, in []*User, db *gorm1.DB) error {
 	if in == nil {
-		return errors.New("Nil argument to DefaultDeleteUserSet")
+		return errors1.NilArgumentError
 	}
 	var err error
 	keys := []string{}
@@ -982,7 +982,7 @@ func DefaultDeleteUserSet(ctx context.Context, in []*User, db *gorm1.DB) error {
 			return err
 		}
 		if ormObj.Id == "" {
-			return errors.New("A non-zero ID value is required for a delete call")
+			return errors1.EmptyIdError
 		}
 		keys = append(keys, ormObj.Id)
 	}
@@ -1035,7 +1035,7 @@ func DefaultStrictUpdateUser(ctx context.Context, in *User, db *gorm1.DB) (*User
 	}
 	filterCreditCard := CreditCardORM{}
 	if ormObj.Id == "" {
-		return nil, errors.New("Can't do overwriting update with no Id value for UserORM")
+		return nil, errors1.EmptyIdError
 	}
 	filterCreditCard.UserId = new(string)
 	*filterCreditCard.UserId = ormObj.Id
@@ -1044,7 +1044,7 @@ func DefaultStrictUpdateUser(ctx context.Context, in *User, db *gorm1.DB) (*User
 	}
 	filterEmails := EmailORM{}
 	if ormObj.Id == "" {
-		return nil, errors.New("Can't do overwriting update with no Id value for UserORM")
+		return nil, errors1.EmptyIdError
 	}
 	filterEmails.UserId = new(string)
 	*filterEmails.UserId = ormObj.Id
@@ -1053,7 +1053,7 @@ func DefaultStrictUpdateUser(ctx context.Context, in *User, db *gorm1.DB) (*User
 	}
 	filterTasks := TaskORM{}
 	if ormObj.Id == "" {
-		return nil, errors.New("Can't do overwriting update with no Id value for UserORM")
+		return nil, errors1.EmptyIdError
 	}
 	filterTasks.UserId = ormObj.Id
 	if err = db.Where(filterTasks).Delete(TaskORM{}).Error; err != nil {
@@ -1092,7 +1092,7 @@ type UserORMWithAfterStrictUpdateSave interface {
 // DefaultPatchUser executes a basic gorm update call with patch behavior
 func DefaultPatchUser(ctx context.Context, in *User, updateMask *field_mask1.FieldMask, db *gorm1.DB) (*User, error) {
 	if in == nil {
-		return nil, errors.New("Nil argument to DefaultPatchUser")
+		return nil, errors1.NilArgumentError
 	}
 	var pbObj User
 	var err error
@@ -1149,7 +1149,7 @@ func DefaultApplyFieldMaskUser(ctx context.Context, patchee *User, patcher *User
 	if patcher == nil {
 		return nil, nil
 	} else if patchee == nil {
-		return nil, errors.New("Patchee inputs to DefaultApplyFieldMaskUser must be non-nil")
+		return nil, errors1.NilArgumentError
 	}
 	var err error
 	var updatedCreditCard bool
@@ -1330,7 +1330,7 @@ type UserORMWithAfterListFind interface {
 // DefaultCreateEmail executes a basic gorm create call
 func DefaultCreateEmail(ctx context.Context, in *Email, db *gorm1.DB) (*Email, error) {
 	if in == nil {
-		return nil, errors.New("Nil argument to DefaultCreateEmail")
+		return nil, errors1.NilArgumentError
 	}
 	ormObj, err := in.ToORM(ctx)
 	if err != nil {
@@ -1363,14 +1363,14 @@ type EmailORMWithAfterCreate_ interface {
 // DefaultReadEmail executes a basic gorm read call
 func DefaultReadEmail(ctx context.Context, in *Email, db *gorm1.DB) (*Email, error) {
 	if in == nil {
-		return nil, errors.New("Nil argument to DefaultReadEmail")
+		return nil, errors1.NilArgumentError
 	}
 	ormObj, err := in.ToORM(ctx)
 	if err != nil {
 		return nil, err
 	}
 	if ormObj.Id == "" {
-		return nil, errors.New("DefaultReadEmail requires a non-zero primary key")
+		return nil, errors1.EmptyIdError
 	}
 	if hook, ok := interface{}(&ormObj).(EmailORMWithBeforeReadApplyQuery); ok {
 		if db, err = hook.BeforeReadApplyQuery(ctx, db); err != nil {
@@ -1410,14 +1410,14 @@ type EmailORMWithAfterReadFind interface {
 
 func DefaultDeleteEmail(ctx context.Context, in *Email, db *gorm1.DB) error {
 	if in == nil {
-		return errors.New("Nil argument to DefaultDeleteEmail")
+		return errors1.NilArgumentError
 	}
 	ormObj, err := in.ToORM(ctx)
 	if err != nil {
 		return err
 	}
 	if ormObj.Id == "" {
-		return errors.New("A non-zero ID value is required for a delete call")
+		return errors1.EmptyIdError
 	}
 	if hook, ok := interface{}(&ormObj).(EmailORMWithBeforeDelete_); ok {
 		if db, err = hook.BeforeDelete_(ctx, db); err != nil {
@@ -1443,7 +1443,7 @@ type EmailORMWithAfterDelete_ interface {
 
 func DefaultDeleteEmailSet(ctx context.Context, in []*Email, db *gorm1.DB) error {
 	if in == nil {
-		return errors.New("Nil argument to DefaultDeleteEmailSet")
+		return errors1.NilArgumentError
 	}
 	var err error
 	keys := []string{}
@@ -1453,7 +1453,7 @@ func DefaultDeleteEmailSet(ctx context.Context, in []*Email, db *gorm1.DB) error
 			return err
 		}
 		if ormObj.Id == "" {
-			return errors.New("A non-zero ID value is required for a delete call")
+			return errors1.EmptyIdError
 		}
 		keys = append(keys, ormObj.Id)
 	}
@@ -1537,7 +1537,7 @@ type EmailORMWithAfterStrictUpdateSave interface {
 // DefaultPatchEmail executes a basic gorm update call with patch behavior
 func DefaultPatchEmail(ctx context.Context, in *Email, updateMask *field_mask1.FieldMask, db *gorm1.DB) (*Email, error) {
 	if in == nil {
-		return nil, errors.New("Nil argument to DefaultPatchEmail")
+		return nil, errors1.NilArgumentError
 	}
 	var pbObj Email
 	var err error
@@ -1594,7 +1594,7 @@ func DefaultApplyFieldMaskEmail(ctx context.Context, patchee *Email, patcher *Em
 	if patcher == nil {
 		return nil, nil
 	} else if patchee == nil {
-		return nil, errors.New("Patchee inputs to DefaultApplyFieldMaskEmail must be non-nil")
+		return nil, errors1.NilArgumentError
 	}
 	var err error
 	for _, f := range updateMask.Paths {
@@ -1681,7 +1681,7 @@ type EmailORMWithAfterListFind interface {
 // DefaultCreateAddress executes a basic gorm create call
 func DefaultCreateAddress(ctx context.Context, in *Address, db *gorm1.DB) (*Address, error) {
 	if in == nil {
-		return nil, errors.New("Nil argument to DefaultCreateAddress")
+		return nil, errors1.NilArgumentError
 	}
 	ormObj, err := in.ToORM(ctx)
 	if err != nil {
@@ -1714,14 +1714,14 @@ type AddressORMWithAfterCreate_ interface {
 // DefaultReadAddress executes a basic gorm read call
 func DefaultReadAddress(ctx context.Context, in *Address, db *gorm1.DB) (*Address, error) {
 	if in == nil {
-		return nil, errors.New("Nil argument to DefaultReadAddress")
+		return nil, errors1.NilArgumentError
 	}
 	ormObj, err := in.ToORM(ctx)
 	if err != nil {
 		return nil, err
 	}
 	if ormObj.Id == 0 {
-		return nil, errors.New("DefaultReadAddress requires a non-zero primary key")
+		return nil, errors1.EmptyIdError
 	}
 	if hook, ok := interface{}(&ormObj).(AddressORMWithBeforeReadApplyQuery); ok {
 		if db, err = hook.BeforeReadApplyQuery(ctx, db); err != nil {
@@ -1761,14 +1761,14 @@ type AddressORMWithAfterReadFind interface {
 
 func DefaultDeleteAddress(ctx context.Context, in *Address, db *gorm1.DB) error {
 	if in == nil {
-		return errors.New("Nil argument to DefaultDeleteAddress")
+		return errors1.NilArgumentError
 	}
 	ormObj, err := in.ToORM(ctx)
 	if err != nil {
 		return err
 	}
 	if ormObj.Id == 0 {
-		return errors.New("A non-zero ID value is required for a delete call")
+		return errors1.EmptyIdError
 	}
 	if hook, ok := interface{}(&ormObj).(AddressORMWithBeforeDelete_); ok {
 		if db, err = hook.BeforeDelete_(ctx, db); err != nil {
@@ -1794,7 +1794,7 @@ type AddressORMWithAfterDelete_ interface {
 
 func DefaultDeleteAddressSet(ctx context.Context, in []*Address, db *gorm1.DB) error {
 	if in == nil {
-		return errors.New("Nil argument to DefaultDeleteAddressSet")
+		return errors1.NilArgumentError
 	}
 	var err error
 	keys := []int64{}
@@ -1804,7 +1804,7 @@ func DefaultDeleteAddressSet(ctx context.Context, in []*Address, db *gorm1.DB) e
 			return err
 		}
 		if ormObj.Id == 0 {
-			return errors.New("A non-zero ID value is required for a delete call")
+			return errors1.EmptyIdError
 		}
 		keys = append(keys, ormObj.Id)
 	}
@@ -1888,7 +1888,7 @@ type AddressORMWithAfterStrictUpdateSave interface {
 // DefaultPatchAddress executes a basic gorm update call with patch behavior
 func DefaultPatchAddress(ctx context.Context, in *Address, updateMask *field_mask1.FieldMask, db *gorm1.DB) (*Address, error) {
 	if in == nil {
-		return nil, errors.New("Nil argument to DefaultPatchAddress")
+		return nil, errors1.NilArgumentError
 	}
 	var pbObj Address
 	var err error
@@ -1945,7 +1945,7 @@ func DefaultApplyFieldMaskAddress(ctx context.Context, patchee *Address, patcher
 	if patcher == nil {
 		return nil, nil
 	} else if patchee == nil {
-		return nil, errors.New("Patchee inputs to DefaultApplyFieldMaskAddress must be non-nil")
+		return nil, errors1.NilArgumentError
 	}
 	var err error
 	for _, f := range updateMask.Paths {
@@ -2036,7 +2036,7 @@ type AddressORMWithAfterListFind interface {
 // DefaultCreateLanguage executes a basic gorm create call
 func DefaultCreateLanguage(ctx context.Context, in *Language, db *gorm1.DB) (*Language, error) {
 	if in == nil {
-		return nil, errors.New("Nil argument to DefaultCreateLanguage")
+		return nil, errors1.NilArgumentError
 	}
 	ormObj, err := in.ToORM(ctx)
 	if err != nil {
@@ -2069,14 +2069,14 @@ type LanguageORMWithAfterCreate_ interface {
 // DefaultReadLanguage executes a basic gorm read call
 func DefaultReadLanguage(ctx context.Context, in *Language, db *gorm1.DB) (*Language, error) {
 	if in == nil {
-		return nil, errors.New("Nil argument to DefaultReadLanguage")
+		return nil, errors1.NilArgumentError
 	}
 	ormObj, err := in.ToORM(ctx)
 	if err != nil {
 		return nil, err
 	}
 	if ormObj.Id == 0 {
-		return nil, errors.New("DefaultReadLanguage requires a non-zero primary key")
+		return nil, errors1.EmptyIdError
 	}
 	if hook, ok := interface{}(&ormObj).(LanguageORMWithBeforeReadApplyQuery); ok {
 		if db, err = hook.BeforeReadApplyQuery(ctx, db); err != nil {
@@ -2116,14 +2116,14 @@ type LanguageORMWithAfterReadFind interface {
 
 func DefaultDeleteLanguage(ctx context.Context, in *Language, db *gorm1.DB) error {
 	if in == nil {
-		return errors.New("Nil argument to DefaultDeleteLanguage")
+		return errors1.NilArgumentError
 	}
 	ormObj, err := in.ToORM(ctx)
 	if err != nil {
 		return err
 	}
 	if ormObj.Id == 0 {
-		return errors.New("A non-zero ID value is required for a delete call")
+		return errors1.EmptyIdError
 	}
 	if hook, ok := interface{}(&ormObj).(LanguageORMWithBeforeDelete_); ok {
 		if db, err = hook.BeforeDelete_(ctx, db); err != nil {
@@ -2149,7 +2149,7 @@ type LanguageORMWithAfterDelete_ interface {
 
 func DefaultDeleteLanguageSet(ctx context.Context, in []*Language, db *gorm1.DB) error {
 	if in == nil {
-		return errors.New("Nil argument to DefaultDeleteLanguageSet")
+		return errors1.NilArgumentError
 	}
 	var err error
 	keys := []int64{}
@@ -2159,7 +2159,7 @@ func DefaultDeleteLanguageSet(ctx context.Context, in []*Language, db *gorm1.DB)
 			return err
 		}
 		if ormObj.Id == 0 {
-			return errors.New("A non-zero ID value is required for a delete call")
+			return errors1.EmptyIdError
 		}
 		keys = append(keys, ormObj.Id)
 	}
@@ -2243,7 +2243,7 @@ type LanguageORMWithAfterStrictUpdateSave interface {
 // DefaultPatchLanguage executes a basic gorm update call with patch behavior
 func DefaultPatchLanguage(ctx context.Context, in *Language, updateMask *field_mask1.FieldMask, db *gorm1.DB) (*Language, error) {
 	if in == nil {
-		return nil, errors.New("Nil argument to DefaultPatchLanguage")
+		return nil, errors1.NilArgumentError
 	}
 	var pbObj Language
 	var err error
@@ -2300,7 +2300,7 @@ func DefaultApplyFieldMaskLanguage(ctx context.Context, patchee *Language, patch
 	if patcher == nil {
 		return nil, nil
 	} else if patchee == nil {
-		return nil, errors.New("Patchee inputs to DefaultApplyFieldMaskLanguage must be non-nil")
+		return nil, errors1.NilArgumentError
 	}
 	var err error
 	for _, f := range updateMask.Paths {
@@ -2383,7 +2383,7 @@ type LanguageORMWithAfterListFind interface {
 // DefaultCreateCreditCard executes a basic gorm create call
 func DefaultCreateCreditCard(ctx context.Context, in *CreditCard, db *gorm1.DB) (*CreditCard, error) {
 	if in == nil {
-		return nil, errors.New("Nil argument to DefaultCreateCreditCard")
+		return nil, errors1.NilArgumentError
 	}
 	ormObj, err := in.ToORM(ctx)
 	if err != nil {
@@ -2416,14 +2416,14 @@ type CreditCardORMWithAfterCreate_ interface {
 // DefaultReadCreditCard executes a basic gorm read call
 func DefaultReadCreditCard(ctx context.Context, in *CreditCard, db *gorm1.DB) (*CreditCard, error) {
 	if in == nil {
-		return nil, errors.New("Nil argument to DefaultReadCreditCard")
+		return nil, errors1.NilArgumentError
 	}
 	ormObj, err := in.ToORM(ctx)
 	if err != nil {
 		return nil, err
 	}
 	if ormObj.Id == 0 {
-		return nil, errors.New("DefaultReadCreditCard requires a non-zero primary key")
+		return nil, errors1.EmptyIdError
 	}
 	if hook, ok := interface{}(&ormObj).(CreditCardORMWithBeforeReadApplyQuery); ok {
 		if db, err = hook.BeforeReadApplyQuery(ctx, db); err != nil {
@@ -2463,14 +2463,14 @@ type CreditCardORMWithAfterReadFind interface {
 
 func DefaultDeleteCreditCard(ctx context.Context, in *CreditCard, db *gorm1.DB) error {
 	if in == nil {
-		return errors.New("Nil argument to DefaultDeleteCreditCard")
+		return errors1.NilArgumentError
 	}
 	ormObj, err := in.ToORM(ctx)
 	if err != nil {
 		return err
 	}
 	if ormObj.Id == 0 {
-		return errors.New("A non-zero ID value is required for a delete call")
+		return errors1.EmptyIdError
 	}
 	if hook, ok := interface{}(&ormObj).(CreditCardORMWithBeforeDelete_); ok {
 		if db, err = hook.BeforeDelete_(ctx, db); err != nil {
@@ -2496,7 +2496,7 @@ type CreditCardORMWithAfterDelete_ interface {
 
 func DefaultDeleteCreditCardSet(ctx context.Context, in []*CreditCard, db *gorm1.DB) error {
 	if in == nil {
-		return errors.New("Nil argument to DefaultDeleteCreditCardSet")
+		return errors1.NilArgumentError
 	}
 	var err error
 	keys := []int64{}
@@ -2506,7 +2506,7 @@ func DefaultDeleteCreditCardSet(ctx context.Context, in []*CreditCard, db *gorm1
 			return err
 		}
 		if ormObj.Id == 0 {
-			return errors.New("A non-zero ID value is required for a delete call")
+			return errors1.EmptyIdError
 		}
 		keys = append(keys, ormObj.Id)
 	}
@@ -2590,7 +2590,7 @@ type CreditCardORMWithAfterStrictUpdateSave interface {
 // DefaultPatchCreditCard executes a basic gorm update call with patch behavior
 func DefaultPatchCreditCard(ctx context.Context, in *CreditCard, updateMask *field_mask1.FieldMask, db *gorm1.DB) (*CreditCard, error) {
 	if in == nil {
-		return nil, errors.New("Nil argument to DefaultPatchCreditCard")
+		return nil, errors1.NilArgumentError
 	}
 	var pbObj CreditCard
 	var err error
@@ -2647,7 +2647,7 @@ func DefaultApplyFieldMaskCreditCard(ctx context.Context, patchee *CreditCard, p
 	if patcher == nil {
 		return nil, nil
 	} else if patchee == nil {
-		return nil, errors.New("Patchee inputs to DefaultApplyFieldMaskCreditCard must be non-nil")
+		return nil, errors1.NilArgumentError
 	}
 	var err error
 	for _, f := range updateMask.Paths {
@@ -2734,7 +2734,7 @@ type CreditCardORMWithAfterListFind interface {
 // DefaultCreateTask executes a basic gorm create call
 func DefaultCreateTask(ctx context.Context, in *Task, db *gorm1.DB) (*Task, error) {
 	if in == nil {
-		return nil, errors.New("Nil argument to DefaultCreateTask")
+		return nil, errors1.NilArgumentError
 	}
 	ormObj, err := in.ToORM(ctx)
 	if err != nil {
@@ -2769,7 +2769,7 @@ func DefaultApplyFieldMaskTask(ctx context.Context, patchee *Task, patcher *Task
 	if patcher == nil {
 		return nil, nil
 	} else if patchee == nil {
-		return nil, errors.New("Patchee inputs to DefaultApplyFieldMaskTask must be non-nil")
+		return nil, errors1.NilArgumentError
 	}
 	var err error
 	for _, f := range updateMask.Paths {
