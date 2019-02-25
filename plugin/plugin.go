@@ -789,8 +789,6 @@ func (p *OrmPlugin) generateFieldConversion(message *generator.Descriptor, field
 				var pointer string
 				if fieldName == "DeletedAt" {
 					pointer = "*"
-				}
-				if pointer != "" {
 					p.P(`if m.`, fieldName, ` != nil {`)
 				}
 				p.P(`if to.`, fieldName, `, err = `, p.Import(ptypesImport), `.TimestampProto(`, pointer, `m.`, fieldName, `); err != nil {`)
