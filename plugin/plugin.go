@@ -274,6 +274,9 @@ func (p *OrmPlugin) parseBasicFields(msg *generator.Descriptor) {
 				}
 			} else if rawType == protoTypeTimestamp {
 				fieldType = "time.Time"
+				if fieldName == "DeletedAt" {
+					fieldType = "*" + fieldType
+				}
 				typePackage = "time"
 				p.UsingGoImports("time")
 			} else if rawType == protoTypeJSON {
@@ -772,14 +775,28 @@ func (p *OrmPlugin) generateFieldConversion(message *generator.Descriptor, field
 		} else if coreType == protoTypeTimestamp { // Singular WKT Timestamp ---
 			if toORM {
 				p.P(`if m.`, fieldName, ` != nil {`)
-				p.P(`if to.`, fieldName, `, err = `, p.Import(ptypesImport), `.Timestamp(m.`, fieldName, `); err != nil {`)
+				p.P(`var t time.Time`)
+				p.P(`if t, err = `, p.Import(ptypesImport), `.Timestamp(m.`, fieldName, `); err != nil {`)
 				p.P(`return to, err`)
 				p.P(`}`)
+				var pointer string
+				if fieldName == "DeletedAt" {
+					pointer = "&"
+				}
+				p.P(`to.`, fieldName, ` = `, pointer, `t`)
 				p.P(`}`)
 			} else {
-				p.P(`if to.`, fieldName, `, err = `, p.Import(ptypesImport), `.TimestampProto(m.`, fieldName, `); err != nil {`)
+				var pointer string
+				if fieldName == "DeletedAt" {
+					pointer = "*"
+					p.P(`if m.`, fieldName, ` != nil {`)
+				}
+				p.P(`if to.`, fieldName, `, err = `, p.Import(ptypesImport), `.TimestampProto(`, pointer, `m.`, fieldName, `); err != nil {`)
 				p.P(`return to, err`)
 				p.P(`}`)
+				if pointer != "" {
+					p.P(`}`)
+				}
 			}
 		} else if coreType == protoTypeJSON {
 			if p.dbEngine == ENGINE_POSTGRES {
