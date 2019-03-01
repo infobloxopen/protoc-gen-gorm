@@ -11,7 +11,7 @@ import (
 func (p *OrmPlugin) generateDefaultHandlers(file *generator.FileDescriptor) {
 	for _, message := range file.Messages() {
 		if getMessageOptions(message).GetOrmable() {
-			p.UsingGoImports("context", "errors")
+			p.UsingGoImports("context")
 
 			p.generateCreateHandler(message)
 			// FIXME: Temporary fix for Ormable objects that have no ID field but
@@ -72,7 +72,7 @@ func (p *OrmPlugin) generateCreateHandler(message *generator.Descriptor) {
 	p.P(`func DefaultCreate`, typeName, `(ctx context.Context, in *`,
 		typeName, `, db *`, p.Import(gormImport), `.DB) (*`, typeName, `, error) {`)
 	p.P(`if in == nil {`)
-	p.P(`return nil, errors.New("Nil argument to DefaultCreate`, typeName, `")`)
+	p.P(`return nil, `, p.Import(gerrorsImport), `.NilArgumentError`)
 	p.P(`}`)
 	p.P(`ormObj, err := in.ToORM(ctx)`)
 	p.P(`if err != nil {`)
@@ -104,7 +104,7 @@ func (p *OrmPlugin) generateReadHandler(message *generator.Descriptor) {
 			typeName, `, db *`, p.Import(gormImport), `.DB) (*`, typeName, `, error) {`)
 	}
 	p.P(`if in == nil {`)
-	p.P(`return nil, errors.New("Nil argument to DefaultRead`, typeName, `")`)
+	p.P(`return nil, `, p.Import(gerrorsImport), `.NilArgumentError`)
 	p.P(`}`)
 
 	p.P(`ormObj, err := in.ToORM(ctx)`)
@@ -117,7 +117,7 @@ func (p *OrmPlugin) generateReadHandler(message *generator.Descriptor) {
 	} else {
 		p.P(`if ormObj.`, k, ` == `, p.guessZeroValue(f.Type), ` {`)
 	}
-	p.P(`return nil, errors.New("DefaultRead`, typeName, ` requires a non-zero primary key")`)
+	p.P(`return nil, `, p.Import(gerrorsImport), `.EmptyIdError`)
 	p.P(`}`)
 
 	var fs string
@@ -204,8 +204,7 @@ func (p *OrmPlugin) generateApplyFieldMask(message *generator.Descriptor) {
 	p.P(`if patcher == nil {`)
 	p.P(`return nil, nil`)
 	p.P(`} else if patchee == nil {`)
-	p.P(`return nil, errors.New("Patchee inputs to DefaultApplyFieldMask`,
-		typeName, ` must be non-nil")`)
+	p.P(`return nil, `, p.Import(gerrorsImport), `.NilArgumentError`)
 	p.P(`}`)
 	p.P(`var err error`)
 	hasNested := false
@@ -335,7 +334,7 @@ func (p *OrmPlugin) generatePatchHandler(message *generator.Descriptor) {
 		typeName, `, updateMask *`, p.Import(fmImport), `.FieldMask, db *`, p.Import(gormImport), `.DB) (*`, typeName, `, error) {`)
 
 	p.P(`if in == nil {`)
-	p.P(`return nil, errors.New("Nil argument to DefaultPatch`, typeName, `")`)
+	p.P(`return nil, `, p.Import(gerrorsImport), `.NilArgumentError`)
 	p.P(`}`)
 	p.P(`var pbObj `, typeName)
 	p.P(`var err error`)
@@ -408,7 +407,7 @@ func (p *OrmPlugin) generateDeleteHandler(message *generator.Descriptor) {
 	p.P(`func DefaultDelete`, typeName, `(ctx context.Context, in *`,
 		typeName, `, db *`, p.Import(gormImport), `.DB) error {`)
 	p.P(`if in == nil {`)
-	p.P(`return errors.New("Nil argument to DefaultDelete`, typeName, `")`)
+	p.P(`return `, p.Import(gerrorsImport), `.NilArgumentError`)
 	p.P(`}`)
 	p.P(`ormObj, err := in.ToORM(ctx)`)
 	p.P(`if err != nil {`)
@@ -421,7 +420,7 @@ func (p *OrmPlugin) generateDeleteHandler(message *generator.Descriptor) {
 	} else {
 		p.P(`if ormObj.`, pkName, ` == `, p.guessZeroValue(pk.Type), `{`)
 	}
-	p.P(`return errors.New("A non-zero ID value is required for a delete call")`)
+	p.P(`return `, p.Import(gerrorsImport), `.EmptyIdError`)
 	p.P(`}`)
 	p.generateBeforeDeleteHookCall(ormable)
 	p.P(`err = db.Where(&ormObj).Delete(&`, ormable.Name, `{}).Error`)
@@ -455,7 +454,7 @@ func (p *OrmPlugin) generateDeleteSetHandler(message *generator.Descriptor) {
 	p.P(`func DefaultDelete`, typeName, `Set(ctx context.Context, in []*`,
 		typeName, `, db *`, p.Import(gormImport), `.DB) error {`)
 	p.P(`if in == nil {`)
-	p.P(`return errors.New("Nil argument to DefaultDelete`, typeName, `Set")`)
+	p.P(`return `, p.Import(gerrorsImport), `.NilArgumentError`)
 	p.P(`}`)
 	p.P(`var err error`)
 	ormable := p.getOrmable(typeName)
@@ -475,7 +474,7 @@ func (p *OrmPlugin) generateDeleteSetHandler(message *generator.Descriptor) {
 	} else {
 		p.P(`if ormObj.`, pkName, ` == `, p.guessZeroValue(pk.Type), `{`)
 	}
-	p.P(`return errors.New("A non-zero ID value is required for a delete call")`)
+	p.P(`return `, p.Import(gerrorsImport), `.EmptyIdError`)
 	p.P(`}`)
 	p.P(`keys = append(keys, ormObj.`, pkName, `)`)
 	p.P(`}`)
@@ -776,7 +775,7 @@ func (p *OrmPlugin) removeChildAssociationsByName(message *generator.Descriptor,
 		} else {
 			p.P(`if ormObj.`, assocKeyName, ` == `, zeroValue, `{`)
 		}
-		p.P(`return nil, errors.New("Can't do overwriting update with no `, assocKeyName, ` value for `, ormable.Name, `")`)
+		p.P(`return nil, `, p.Import(gerrorsImport), `.EmptyIdError`)
 		p.P(`}`)
 		filterDesc := "filter" + fieldName + "." + foreignKeyName
 		ormDesc := "ormObj." + assocKeyName

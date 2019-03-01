@@ -510,8 +510,7 @@ func (p *OrmPlugin) generateDBSetup(service autogenService) error {
 	if service.usesTxnMiddleware {
 		p.P(`txn, ok := `, p.Import(tkgormImport), `.FromContext(ctx)`)
 		p.P(`if !ok {`)
-		p.UsingGoImports("errors")
-		p.P(`return nil, errors.New("Database Transaction For Request Missing")`)
+		p.P(`return nil, `, p.Import(gerrorsImport), `.NoTransactionError`)
 		p.P(`}`)
 		p.P(`db := txn.Begin()`)
 		p.P(`if db.Error != nil {`)
