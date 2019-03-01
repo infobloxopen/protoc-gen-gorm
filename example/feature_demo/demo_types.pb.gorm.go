@@ -8,7 +8,7 @@ import strings "strings"
 import time "time"
 
 import auth1 "github.com/infobloxopen/atlas-app-toolkit/auth"
-import errors1 "github.com/infobloxopen/protoc-gen-gorm/plugin/errors"
+import errors1 "github.com/infobloxopen/protoc-gen-gorm/errors"
 import field_mask1 "google.golang.org/genproto/protobuf/field_mask"
 import gateway1 "github.com/infobloxopen/atlas-app-toolkit/gateway"
 import go_uuid1 "github.com/satori/go.uuid"

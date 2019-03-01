@@ -48,7 +48,7 @@ var (
 	queryImport    = "github.com/infobloxopen/atlas-app-toolkit/query"
 	gatewayImport  = "github.com/infobloxopen/atlas-app-toolkit/gateway"
 	pqImport       = "github.com/lib/pq"
-	gerrorsImport  = "github.com/infobloxopen/protoc-gen-gorm/plugin/errors"
+	gerrorsImport  = "github.com/infobloxopen/protoc-gen-gorm/errors"
 )
 
 type pkgImport struct {
