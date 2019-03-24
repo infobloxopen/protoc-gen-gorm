@@ -741,8 +741,8 @@ func (p *OrmPlugin) isFieldOrmable(message *generator.Descriptor, fieldName stri
 }
 
 func (p *OrmPlugin) removeChildAssociations(message *generator.Descriptor) {
-	ormable := p.getOrmable(p.TypeName(message))
-	for _, fieldName := range p.getSortedFieldNames(ormable.Fields) {
+	for _, field := range message.Field {
+		fieldName := *field.Name
 		p.removeChildAssociationsByName(message, fieldName)
 	}
 }

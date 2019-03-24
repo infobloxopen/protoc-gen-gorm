@@ -422,20 +422,17 @@ func (p *OrmPlugin) getOrmable(typeName string) *OrmableType {
 	}
 }
 
-func (p *OrmPlugin) getSortedFieldNames(fields map[string]*Field) []string {
-	var keys []string
-	for k := range fields {
-		keys = append(keys, k)
-	}
-	sort.Strings(keys)
-	return keys
-}
-
 func (p *OrmPlugin) generateOrmable(message *generator.Descriptor) {
 	ormable := p.getOrmable(p.TypeName(message))
 	p.P(`type `, ormable.Name, ` struct {`)
-	for _, fieldName := range p.getSortedFieldNames(ormable.Fields) {
-		field := ormable.Fields[fieldName]
+	for _, f := range message.Field {
+		fieldName := generator.CamelCase(*f.Name)
+		field, ok := ormable.Fields[fieldName]
+		if !ok {
+			fieldOpts := &gorm.GormFieldOptions{}
+			fieldType, _ := p.GoType(message, f)
+			field = &Field{Type: fieldType, GormFieldOptions: fieldOpts}
+		}
 		p.P(fieldName, ` `, field.Type, p.renderGormTag(field))
 
 	}
@@ -943,8 +940,8 @@ func (p *OrmPlugin) generateHookInterfaces(message *generator.Descriptor) {
 }
 
 func (p *OrmPlugin) setupOrderedHasMany(message *generator.Descriptor) {
-	ormable := p.getOrmable(p.TypeName(message))
-	for _, fieldName := range p.getSortedFieldNames(ormable.Fields) {
+	for _, field := range message.Field {
+		fieldName := *field.Name
 		p.setupOrderedHasManyByName(message, fieldName)
 	}
 }
