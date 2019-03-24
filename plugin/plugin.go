@@ -2,7 +2,6 @@ package plugin
 
 import (
 	"fmt"
-	"sort"
 	"strconv"
 	"strings"
 
