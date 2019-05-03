@@ -35,7 +35,7 @@ type TestTypesORM struct {
 	Array                     pq1.StringArray
 	Array2                    pq1.StringArray
 	BecomesInt                string
-	CreatedAt                 time.Time
+	CreatedAt                 *time.Time
 	JsonField                 *postgres1.Jsonb `gorm:"type:jsonb"`
 	NullableUuid              *go_uuid1.UUID   `gorm:"type:uuid"`
 	OptionalString            *string
@@ -79,7 +79,7 @@ func (m *TestTypes) ToORM(ctx context.Context) (TestTypesORM, error) {
 		if t, err = ptypes1.Timestamp(m.CreatedAt); err != nil {
 			return to, err
 		}
-		to.CreatedAt = t
+		to.CreatedAt = &t
 	}
 	to.TypeWithIdId = m.TypeWithIdId
 	if m.JsonField != nil {
@@ -119,8 +119,10 @@ func (m *TestTypesORM) ToPB(ctx context.Context) (TestTypes, error) {
 	}
 	to.BecomesInt = TestTypesStatus(TestTypesStatus_value[m.BecomesInt])
 	to.Uuid = &types1.UUID{Value: m.Uuid.String()}
-	if to.CreatedAt, err = ptypes1.TimestampProto(m.CreatedAt); err != nil {
-		return to, err
+	if m.CreatedAt != nil {
+		if to.CreatedAt, err = ptypes1.TimestampProto(*m.CreatedAt); err != nil {
+			return to, err
+		}
 	}
 	to.TypeWithIdId = m.TypeWithIdId
 	if m.JsonField != nil {
