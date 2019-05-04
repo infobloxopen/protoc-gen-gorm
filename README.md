@@ -275,3 +275,17 @@ Currently only proto3 is supported.
 
 This project is currently in development, and is expected to undergo "breaking"
 (and fixing) changes
+
+## Contributing
+
+Pull requests are welcome!
+
+Any new feature should include tests for that feature.
+
+Before pushing changes, run the tests with:
+```
+make gentool-test
+```
+This will run the tests in a docker container with specific known versions of dependencies.
+
+Before the tests run, they generate code. Commit any new and modified generated code as part of your pull request.
