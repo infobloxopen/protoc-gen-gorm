@@ -284,6 +284,7 @@ func (p *OrmPlugin) generateApplyFieldMask(message *generator.Descriptor) {
 			p.P(`}`)
 		} else if strings.HasSuffix(fieldType, protoTypeJSON) && !field.IsRepeated() {
 			p.P(`if !updated`, ccName, ` && strings.HasPrefix(f, prefix+"`, ccName, `") {`)
+			p.UsingGoImports("strings")
 			p.P(`patchee.`, ccName, ` = patcher.`, ccName)
 			p.P(`updated`, ccName, ` = true`)
 			p.P(`continue`)
