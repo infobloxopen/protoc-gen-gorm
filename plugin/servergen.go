@@ -13,6 +13,7 @@ const (
 	createService    = "Create"
 	readService      = "Read"
 	updateService    = "Update"
+	updateSetService = "UpdateSet"
 	deleteService    = "Delete"
 	deleteSetService = "DeleteSet"
 	listService      = "List"
@@ -66,6 +67,9 @@ func (p *OrmPlugin) parseServices(file *generator.FileDescriptor) {
 			} else if methodName == updateService {
 				verb = updateService
 				follows, baseType, fmName = p.followsUpdateConventions(inType, outType, methodName)
+			} else if methodName == updateSetService {
+				verb = updateSetService
+				follows, baseType, fmName = p.followsUpdateSetConventions(inType, outType, methodName)
 			} else if methodName == deleteService {
 				verb = deleteService
 				follows, baseType = p.followsDeleteConventions(inType, outType, method)
@@ -116,6 +120,8 @@ func (p *OrmPlugin) generateDefaultServer(file *generator.FileDescriptor) {
 				p.generateReadServerMethod(service, method)
 			case updateService:
 				p.generateUpdateServerMethod(service, method)
+			case updateSetService:
+				p.generateUpdateSetServerMethod(service, method)
 			case deleteService:
 				p.generateDeleteServerMethod(service, method)
 			case deleteSetService:
@@ -323,6 +329,102 @@ func (p *OrmPlugin) followsUpdateConventions(inType generator.Object, outType ge
 		return false, "", ""
 	}
 	return true, inTypeName, generator.CamelCase(updateMask)
+}
+
+func (p *OrmPlugin) generateUpdateSetServerMethod(service autogenService, method autogenMethod) {
+	p.generateMethodSignature(service, method)
+	if method.followsConvention {
+		typeName := method.baseType
+		typeName = strings.TrimPrefix(typeName, "[]*")
+		p.P(`if in == nil {`)
+		p.P(`return nil,`, p.Import(gerrorsImport), `.NilArgumentError`)
+		p.P(`}`)
+		p.P(``)
+		p.generateDBSetup(service)
+		p.P(``)
+		p.generatePreserviceCall(service.ccName, typeName, method.ccName)
+
+		p.P(``)
+		p.P(`res, err := DefaultPatchSet`, typeName, `(ctx, in.GetObjects(), in.Get`, method.fieldMaskName, `(), db)`)
+		p.P(`if err != nil {`)
+		p.P(`return nil, err`)
+		p.P(`}`)
+		p.P(``)
+		p.P(`out := &`, p.TypeName(method.outType), `{Results: res}`)
+
+		p.P(``)
+		p.generatePostserviceCall(service.ccName, typeName, method.ccName)
+		p.P(``)
+
+		p.P(`return out, nil`)
+		p.P(`}`)
+
+		p.generatePreserviceHook(service.ccName, typeName, method.ccName)
+		p.generatePostserviceHook(service.ccName, typeName, p.TypeName(method.outType), method.ccName)
+	} else {
+		p.generateEmptyBody(method.outType)
+	}
+}
+
+func (p *OrmPlugin) followsUpdateSetConventions(inType generator.Object, outType generator.Object, methodName string) (bool, string, string) {
+
+	inMsg, outMsg := inType.(*generator.Descriptor), outType.(*generator.Descriptor)
+
+	var (
+		inEntity    *descriptor.FieldDescriptorProto
+		inFieldMask *descriptor.FieldDescriptorProto
+	)
+	for _, f := range inMsg.Field {
+		if f.GetName() == "objects" {
+			inEntity = f
+		}
+
+		if f.GetTypeName() == ".google.protobuf.FieldMask" {
+			if inFieldMask != nil {
+				p.warning("message must not contains double field mask, prev on field name %s, after on field %s", inFieldMask.GetName(), f.GetName())
+				return false, "", ""
+			}
+
+			inFieldMask = f
+		}
+	}
+
+	var outEntity *descriptor.FieldDescriptorProto
+	for _, f := range outMsg.Field {
+		if f.GetName() == "results" {
+			outEntity = f
+		}
+	}
+
+	if inFieldMask == nil || !inFieldMask.IsRepeated() {
+		p.warning("repeated field mask should exist in request for method %q", methodName)
+		return false, "", ""
+	}
+
+	if inEntity == nil || outEntity == nil {
+		p.warning(`method: %q, request should has repeated field 'objects' in request and repeated field 'results' in response`, methodName)
+		return false, "", ""
+	}
+
+	if !inEntity.IsRepeated() || !outEntity.IsRepeated() {
+		p.warning(`method: %q, field 'objects' in request and field 'results' in response should be repeated`, methodName)
+		return false, "", ""
+	}
+
+	inGoType, _ := p.GoType(inMsg, inEntity)
+	outGoType, _ := p.GoType(outMsg, outEntity)
+	inTypeName, outTypeName := strings.TrimPrefix(inGoType, "*"), strings.TrimPrefix(outGoType, "*")
+	if !p.isOrmable(inTypeName) {
+		p.warning("method: %q, type %q must be ormable", methodName, inTypeName)
+		return false, "", ""
+	}
+
+	if inTypeName != outTypeName {
+		p.warning("method: %q, field 'objects' in request has type: %q but field 'results' in response has: %q", methodName, inTypeName, outTypeName)
+		return false, "", ""
+	}
+
+	return true, inTypeName, generator.CamelCase(inFieldMask.GetName())
 }
 
 func (p *OrmPlugin) generateDeleteServerMethod(service autogenService, method autogenMethod) {

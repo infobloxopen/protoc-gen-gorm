@@ -22,7 +22,9 @@ func (p *OrmPlugin) generateDefaultHandlers(file *generator.FileDescriptor) {
 				p.generateDeleteSetHandler(message)
 				p.generateStrictUpdateHandler(message)
 				p.generatePatchHandler(message)
+				p.generatePatchSetHandler(message)
 			}
+
 			p.generateApplyFieldMask(message)
 			p.generateListHandler(message)
 		}
@@ -400,6 +402,40 @@ func (p *OrmPlugin) generateAfterPatchHookCall(orm *OrmableType, suffix string) 
 	p.P(`if err = hook.AfterPatch`, suffix, `(ctx, in, updateMask, db); err != nil {`)
 	p.P(`return nil, err`)
 	p.P(`}`)
+	p.P(`}`)
+}
+
+func (p *OrmPlugin) generatePatchSetHandler(message *generator.Descriptor) {
+	var isMultiAccount bool
+
+	typeName := p.TypeName(message)
+	if getMessageOptions(message).GetMultiAccount() {
+		isMultiAccount = true
+	}
+
+	if isMultiAccount && !p.hasIDField(message) {
+		p.P(fmt.Sprintf("// Cannot autogen DefaultPatchSet%s: this is a multi-account table without an \"id\" field in the message.\n", typeName))
+		return
+	}
+
+	p.P(`// DefaultPatchSet`, typeName, ` executes a bulk gorm update call with patch behavior`)
+	p.P(`func DefaultPatchSet`, typeName, `(ctx context.Context, objects []*`,
+		typeName, `, updateMasks []*`, p.Import(fmImport), `.FieldMask, db *`, p.Import(gormImport), `.DB) ([]*`, typeName, `, error) {`)
+	p.P(`if len(objects) != len(updateMasks) {`)
+	p.P(`return nil, fmt.Errorf(`, p.Import(gerrorsImport), `.BadRepeatedFieldMaskTpl, len(updateMasks), len(objects))`)
+	p.P(`}`)
+	p.P(``)
+	p.P(`results := make([]*`, typeName, `, 0, len(objects))`)
+	p.P(`for i, patcher := range objects {`)
+	p.P(`pbResponse, err := DefaultPatch`, typeName, `(ctx, patcher, updateMasks[i], db)`)
+	p.P(`if err != nil {`)
+	p.P(`return nil, err`)
+	p.P(`}`)
+	p.P(``)
+	p.P(`results = append(results, pbResponse)`)
+	p.P(`}`)
+	p.P(``)
+	p.P(`return results, nil`)
 	p.P(`}`)
 }
 
