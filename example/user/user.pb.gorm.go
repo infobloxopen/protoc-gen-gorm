@@ -1154,6 +1154,25 @@ type UserWithAfterPatchSave interface {
 	AfterPatchSave(context.Context, *User, *field_mask1.FieldMask, *gorm1.DB) error
 }
 
+// DefaultPatchSetUser executes a bulk gorm update call with patch behavior
+func DefaultPatchSetUser(ctx context.Context, objects []*User, updateMasks []*field_mask1.FieldMask, db *gorm1.DB) ([]*User, error) {
+	if len(objects) != len(updateMasks) {
+		return nil, fmt.Errorf(errors1.BadRepeatedFieldMaskTpl, len(updateMasks), len(objects))
+	}
+
+	results := make([]*User, 0, len(objects))
+	for i, patcher := range objects {
+		pbResponse, err := DefaultPatchUser(ctx, patcher, updateMasks[i], db)
+		if err != nil {
+			return nil, err
+		}
+
+		results = append(results, pbResponse)
+	}
+
+	return results, nil
+}
+
 // DefaultApplyFieldMaskUser patches an pbObject with patcher according to a field mask.
 func DefaultApplyFieldMaskUser(ctx context.Context, patchee *User, patcher *User, updateMask *field_mask1.FieldMask, prefix string, db *gorm1.DB) (*User, error) {
 	if patcher == nil {
@@ -1599,6 +1618,25 @@ type EmailWithAfterPatchSave interface {
 	AfterPatchSave(context.Context, *Email, *field_mask1.FieldMask, *gorm1.DB) error
 }
 
+// DefaultPatchSetEmail executes a bulk gorm update call with patch behavior
+func DefaultPatchSetEmail(ctx context.Context, objects []*Email, updateMasks []*field_mask1.FieldMask, db *gorm1.DB) ([]*Email, error) {
+	if len(objects) != len(updateMasks) {
+		return nil, fmt.Errorf(errors1.BadRepeatedFieldMaskTpl, len(updateMasks), len(objects))
+	}
+
+	results := make([]*Email, 0, len(objects))
+	for i, patcher := range objects {
+		pbResponse, err := DefaultPatchEmail(ctx, patcher, updateMasks[i], db)
+		if err != nil {
+			return nil, err
+		}
+
+		results = append(results, pbResponse)
+	}
+
+	return results, nil
+}
+
 // DefaultApplyFieldMaskEmail patches an pbObject with patcher according to a field mask.
 func DefaultApplyFieldMaskEmail(ctx context.Context, patchee *Email, patcher *Email, updateMask *field_mask1.FieldMask, prefix string, db *gorm1.DB) (*Email, error) {
 	if patcher == nil {
@@ -1948,6 +1986,25 @@ type AddressWithBeforePatchSave interface {
 }
 type AddressWithAfterPatchSave interface {
 	AfterPatchSave(context.Context, *Address, *field_mask1.FieldMask, *gorm1.DB) error
+}
+
+// DefaultPatchSetAddress executes a bulk gorm update call with patch behavior
+func DefaultPatchSetAddress(ctx context.Context, objects []*Address, updateMasks []*field_mask1.FieldMask, db *gorm1.DB) ([]*Address, error) {
+	if len(objects) != len(updateMasks) {
+		return nil, fmt.Errorf(errors1.BadRepeatedFieldMaskTpl, len(updateMasks), len(objects))
+	}
+
+	results := make([]*Address, 0, len(objects))
+	for i, patcher := range objects {
+		pbResponse, err := DefaultPatchAddress(ctx, patcher, updateMasks[i], db)
+		if err != nil {
+			return nil, err
+		}
+
+		results = append(results, pbResponse)
+	}
+
+	return results, nil
 }
 
 // DefaultApplyFieldMaskAddress patches an pbObject with patcher according to a field mask.
@@ -2305,6 +2362,25 @@ type LanguageWithAfterPatchSave interface {
 	AfterPatchSave(context.Context, *Language, *field_mask1.FieldMask, *gorm1.DB) error
 }
 
+// DefaultPatchSetLanguage executes a bulk gorm update call with patch behavior
+func DefaultPatchSetLanguage(ctx context.Context, objects []*Language, updateMasks []*field_mask1.FieldMask, db *gorm1.DB) ([]*Language, error) {
+	if len(objects) != len(updateMasks) {
+		return nil, fmt.Errorf(errors1.BadRepeatedFieldMaskTpl, len(updateMasks), len(objects))
+	}
+
+	results := make([]*Language, 0, len(objects))
+	for i, patcher := range objects {
+		pbResponse, err := DefaultPatchLanguage(ctx, patcher, updateMasks[i], db)
+		if err != nil {
+			return nil, err
+		}
+
+		results = append(results, pbResponse)
+	}
+
+	return results, nil
+}
+
 // DefaultApplyFieldMaskLanguage patches an pbObject with patcher according to a field mask.
 func DefaultApplyFieldMaskLanguage(ctx context.Context, patchee *Language, patcher *Language, updateMask *field_mask1.FieldMask, prefix string, db *gorm1.DB) (*Language, error) {
 	if patcher == nil {
@@ -2650,6 +2726,25 @@ type CreditCardWithBeforePatchSave interface {
 }
 type CreditCardWithAfterPatchSave interface {
 	AfterPatchSave(context.Context, *CreditCard, *field_mask1.FieldMask, *gorm1.DB) error
+}
+
+// DefaultPatchSetCreditCard executes a bulk gorm update call with patch behavior
+func DefaultPatchSetCreditCard(ctx context.Context, objects []*CreditCard, updateMasks []*field_mask1.FieldMask, db *gorm1.DB) ([]*CreditCard, error) {
+	if len(objects) != len(updateMasks) {
+		return nil, fmt.Errorf(errors1.BadRepeatedFieldMaskTpl, len(updateMasks), len(objects))
+	}
+
+	results := make([]*CreditCard, 0, len(objects))
+	for i, patcher := range objects {
+		pbResponse, err := DefaultPatchCreditCard(ctx, patcher, updateMasks[i], db)
+		if err != nil {
+			return nil, err
+		}
+
+		results = append(results, pbResponse)
+	}
+
+	return results, nil
 }
 
 // DefaultApplyFieldMaskCreditCard patches an pbObject with patcher according to a field mask.
