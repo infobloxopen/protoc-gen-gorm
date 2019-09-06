@@ -483,6 +483,25 @@ type IntPointWithAfterPatchSave interface {
 	AfterPatchSave(context.Context, *IntPoint, *field_mask1.FieldMask, *gorm1.DB) error
 }
 
+// DefaultPatchSetIntPoint executes a bulk gorm update call with patch behavior
+func DefaultPatchSetIntPoint(ctx context.Context, objects []*IntPoint, updateMasks []*field_mask1.FieldMask, db *gorm1.DB) ([]*IntPoint, error) {
+	if len(objects) != len(updateMasks) {
+		return nil, fmt.Errorf(errors1.BadRepeatedFieldMaskTpl, len(updateMasks), len(objects))
+	}
+
+	results := make([]*IntPoint, 0, len(objects))
+	for i, patcher := range objects {
+		pbResponse, err := DefaultPatchIntPoint(ctx, patcher, updateMasks[i], db)
+		if err != nil {
+			return nil, err
+		}
+
+		results = append(results, pbResponse)
+	}
+
+	return results, nil
+}
+
 // DefaultApplyFieldMaskIntPoint patches an pbObject with patcher according to a field mask.
 func DefaultApplyFieldMaskIntPoint(ctx context.Context, patchee *IntPoint, patcher *IntPoint, updateMask *field_mask1.FieldMask, prefix string, db *gorm1.DB) (*IntPoint, error) {
 	if patcher == nil {
@@ -884,6 +903,48 @@ type IntPointServiceIntPointWithBeforeUpdate interface {
 // IntPointServiceIntPointWithAfterUpdate called before DefaultUpdateIntPoint in the default Update handler
 type IntPointServiceIntPointWithAfterUpdate interface {
 	AfterUpdate(context.Context, *UpdateIntPointResponse, *gorm1.DB) error
+}
+
+// UpdateSet ...
+func (m *IntPointServiceDefaultServer) UpdateSet(ctx context.Context, in *UpdateSetIntPointRequest) (*UpdateSetIntPointResponse, error) {
+	if in == nil {
+		return nil, errors1.NilArgumentError
+	}
+
+	db := m.DB
+
+	if custom, ok := interface{}(in).(IntPointServiceIntPointWithBeforeUpdateSet); ok {
+		var err error
+		if db, err = custom.BeforeUpdateSet(ctx, db); err != nil {
+			return nil, err
+		}
+	}
+
+	res, err := DefaultPatchSetIntPoint(ctx, in.GetObjects(), in.GetMasks(), db)
+	if err != nil {
+		return nil, err
+	}
+
+	out := &UpdateSetIntPointResponse{Results: res}
+
+	if custom, ok := interface{}(in).(IntPointServiceIntPointWithAfterUpdateSet); ok {
+		var err error
+		if err = custom.AfterUpdateSet(ctx, out, db); err != nil {
+			return nil, err
+		}
+	}
+
+	return out, nil
+}
+
+// IntPointServiceIntPointWithBeforeUpdateSet called before DefaultUpdateSetIntPoint in the default UpdateSet handler
+type IntPointServiceIntPointWithBeforeUpdateSet interface {
+	BeforeUpdateSet(context.Context, *gorm1.DB) (*gorm1.DB, error)
+}
+
+// IntPointServiceIntPointWithAfterUpdateSet called before DefaultUpdateSetIntPoint in the default UpdateSet handler
+type IntPointServiceIntPointWithAfterUpdateSet interface {
+	AfterUpdateSet(context.Context, *UpdateSetIntPointResponse, *gorm1.DB) error
 }
 
 // List ...

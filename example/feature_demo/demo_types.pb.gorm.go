@@ -1327,6 +1327,25 @@ type TypeWithIDWithAfterPatchSave interface {
 	AfterPatchSave(context.Context, *TypeWithID, *field_mask1.FieldMask, *gorm1.DB) error
 }
 
+// DefaultPatchSetTypeWithID executes a bulk gorm update call with patch behavior
+func DefaultPatchSetTypeWithID(ctx context.Context, objects []*TypeWithID, updateMasks []*field_mask1.FieldMask, db *gorm1.DB) ([]*TypeWithID, error) {
+	if len(objects) != len(updateMasks) {
+		return nil, fmt.Errorf(errors1.BadRepeatedFieldMaskTpl, len(updateMasks), len(objects))
+	}
+
+	results := make([]*TypeWithID, 0, len(objects))
+	for i, patcher := range objects {
+		pbResponse, err := DefaultPatchTypeWithID(ctx, patcher, updateMasks[i], db)
+		if err != nil {
+			return nil, err
+		}
+
+		results = append(results, pbResponse)
+	}
+
+	return results, nil
+}
+
 // DefaultApplyFieldMaskTypeWithID patches an pbObject with patcher according to a field mask.
 func DefaultApplyFieldMaskTypeWithID(ctx context.Context, patchee *TypeWithID, patcher *TypeWithID, updateMask *field_mask1.FieldMask, prefix string, db *gorm1.DB) (*TypeWithID, error) {
 	if patcher == nil {
@@ -1796,6 +1815,25 @@ type MultiaccountTypeWithIDWithAfterPatchSave interface {
 	AfterPatchSave(context.Context, *MultiaccountTypeWithID, *field_mask1.FieldMask, *gorm1.DB) error
 }
 
+// DefaultPatchSetMultiaccountTypeWithID executes a bulk gorm update call with patch behavior
+func DefaultPatchSetMultiaccountTypeWithID(ctx context.Context, objects []*MultiaccountTypeWithID, updateMasks []*field_mask1.FieldMask, db *gorm1.DB) ([]*MultiaccountTypeWithID, error) {
+	if len(objects) != len(updateMasks) {
+		return nil, fmt.Errorf(errors1.BadRepeatedFieldMaskTpl, len(updateMasks), len(objects))
+	}
+
+	results := make([]*MultiaccountTypeWithID, 0, len(objects))
+	for i, patcher := range objects {
+		pbResponse, err := DefaultPatchMultiaccountTypeWithID(ctx, patcher, updateMasks[i], db)
+		if err != nil {
+			return nil, err
+		}
+
+		results = append(results, pbResponse)
+	}
+
+	return results, nil
+}
+
 // DefaultApplyFieldMaskMultiaccountTypeWithID patches an pbObject with patcher according to a field mask.
 func DefaultApplyFieldMaskMultiaccountTypeWithID(ctx context.Context, patchee *MultiaccountTypeWithID, patcher *MultiaccountTypeWithID, updateMask *field_mask1.FieldMask, prefix string, db *gorm1.DB) (*MultiaccountTypeWithID, error) {
 	if patcher == nil {
@@ -2244,6 +2282,25 @@ type PrimaryUUIDTypeWithAfterPatchSave interface {
 	AfterPatchSave(context.Context, *PrimaryUUIDType, *field_mask1.FieldMask, *gorm1.DB) error
 }
 
+// DefaultPatchSetPrimaryUUIDType executes a bulk gorm update call with patch behavior
+func DefaultPatchSetPrimaryUUIDType(ctx context.Context, objects []*PrimaryUUIDType, updateMasks []*field_mask1.FieldMask, db *gorm1.DB) ([]*PrimaryUUIDType, error) {
+	if len(objects) != len(updateMasks) {
+		return nil, fmt.Errorf(errors1.BadRepeatedFieldMaskTpl, len(updateMasks), len(objects))
+	}
+
+	results := make([]*PrimaryUUIDType, 0, len(objects))
+	for i, patcher := range objects {
+		pbResponse, err := DefaultPatchPrimaryUUIDType(ctx, patcher, updateMasks[i], db)
+		if err != nil {
+			return nil, err
+		}
+
+		results = append(results, pbResponse)
+	}
+
+	return results, nil
+}
+
 // DefaultApplyFieldMaskPrimaryUUIDType patches an pbObject with patcher according to a field mask.
 func DefaultApplyFieldMaskPrimaryUUIDType(ctx context.Context, patchee *PrimaryUUIDType, patcher *PrimaryUUIDType, updateMask *field_mask1.FieldMask, prefix string, db *gorm1.DB) (*PrimaryUUIDType, error) {
 	if patcher == nil {
@@ -2605,6 +2662,25 @@ type PrimaryStringTypeWithAfterPatchSave interface {
 	AfterPatchSave(context.Context, *PrimaryStringType, *field_mask1.FieldMask, *gorm1.DB) error
 }
 
+// DefaultPatchSetPrimaryStringType executes a bulk gorm update call with patch behavior
+func DefaultPatchSetPrimaryStringType(ctx context.Context, objects []*PrimaryStringType, updateMasks []*field_mask1.FieldMask, db *gorm1.DB) ([]*PrimaryStringType, error) {
+	if len(objects) != len(updateMasks) {
+		return nil, fmt.Errorf(errors1.BadRepeatedFieldMaskTpl, len(updateMasks), len(objects))
+	}
+
+	results := make([]*PrimaryStringType, 0, len(objects))
+	for i, patcher := range objects {
+		pbResponse, err := DefaultPatchPrimaryStringType(ctx, patcher, updateMasks[i], db)
+		if err != nil {
+			return nil, err
+		}
+
+		results = append(results, pbResponse)
+	}
+
+	return results, nil
+}
+
 // DefaultApplyFieldMaskPrimaryStringType patches an pbObject with patcher according to a field mask.
 func DefaultApplyFieldMaskPrimaryStringType(ctx context.Context, patchee *PrimaryStringType, patcher *PrimaryStringType, updateMask *field_mask1.FieldMask, prefix string, db *gorm1.DB) (*PrimaryStringType, error) {
 	if patcher == nil {
@@ -2964,6 +3040,25 @@ type TestTagWithBeforePatchSave interface {
 }
 type TestTagWithAfterPatchSave interface {
 	AfterPatchSave(context.Context, *TestTag, *field_mask1.FieldMask, *gorm1.DB) error
+}
+
+// DefaultPatchSetTestTag executes a bulk gorm update call with patch behavior
+func DefaultPatchSetTestTag(ctx context.Context, objects []*TestTag, updateMasks []*field_mask1.FieldMask, db *gorm1.DB) ([]*TestTag, error) {
+	if len(objects) != len(updateMasks) {
+		return nil, fmt.Errorf(errors1.BadRepeatedFieldMaskTpl, len(updateMasks), len(objects))
+	}
+
+	results := make([]*TestTag, 0, len(objects))
+	for i, patcher := range objects {
+		pbResponse, err := DefaultPatchTestTag(ctx, patcher, updateMasks[i], db)
+		if err != nil {
+			return nil, err
+		}
+
+		results = append(results, pbResponse)
+	}
+
+	return results, nil
 }
 
 // DefaultApplyFieldMaskTestTag patches an pbObject with patcher according to a field mask.

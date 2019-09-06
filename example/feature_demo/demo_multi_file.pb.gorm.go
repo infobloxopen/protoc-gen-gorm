@@ -30,6 +30,8 @@ It has these top-level messages:
 	ReadIntPointResponse
 	UpdateIntPointRequest
 	UpdateIntPointResponse
+	UpdateSetIntPointRequest
+	UpdateSetIntPointResponse
 	DeleteIntPointRequest
 	DeleteIntPointsRequest
 	DeleteIntPointResponse
@@ -459,6 +461,25 @@ type ExternalChildWithAfterPatchSave interface {
 	AfterPatchSave(context.Context, *ExternalChild, *field_mask1.FieldMask, *gorm1.DB) error
 }
 
+// DefaultPatchSetExternalChild executes a bulk gorm update call with patch behavior
+func DefaultPatchSetExternalChild(ctx context.Context, objects []*ExternalChild, updateMasks []*field_mask1.FieldMask, db *gorm1.DB) ([]*ExternalChild, error) {
+	if len(objects) != len(updateMasks) {
+		return nil, fmt.Errorf(errors1.BadRepeatedFieldMaskTpl, len(updateMasks), len(objects))
+	}
+
+	results := make([]*ExternalChild, 0, len(objects))
+	for i, patcher := range objects {
+		pbResponse, err := DefaultPatchExternalChild(ctx, patcher, updateMasks[i], db)
+		if err != nil {
+			return nil, err
+		}
+
+		results = append(results, pbResponse)
+	}
+
+	return results, nil
+}
+
 // DefaultApplyFieldMaskExternalChild patches an pbObject with patcher according to a field mask.
 func DefaultApplyFieldMaskExternalChild(ctx context.Context, patchee *ExternalChild, patcher *ExternalChild, updateMask *field_mask1.FieldMask, prefix string, db *gorm1.DB) (*ExternalChild, error) {
 	if patcher == nil {
@@ -787,6 +808,25 @@ type BlogPostWithBeforePatchSave interface {
 }
 type BlogPostWithAfterPatchSave interface {
 	AfterPatchSave(context.Context, *BlogPost, *field_mask1.FieldMask, *gorm1.DB) error
+}
+
+// DefaultPatchSetBlogPost executes a bulk gorm update call with patch behavior
+func DefaultPatchSetBlogPost(ctx context.Context, objects []*BlogPost, updateMasks []*field_mask1.FieldMask, db *gorm1.DB) ([]*BlogPost, error) {
+	if len(objects) != len(updateMasks) {
+		return nil, fmt.Errorf(errors1.BadRepeatedFieldMaskTpl, len(updateMasks), len(objects))
+	}
+
+	results := make([]*BlogPost, 0, len(objects))
+	for i, patcher := range objects {
+		pbResponse, err := DefaultPatchBlogPost(ctx, patcher, updateMasks[i], db)
+		if err != nil {
+			return nil, err
+		}
+
+		results = append(results, pbResponse)
+	}
+
+	return results, nil
 }
 
 // DefaultApplyFieldMaskBlogPost patches an pbObject with patcher according to a field mask.
