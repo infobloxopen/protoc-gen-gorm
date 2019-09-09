@@ -4,6 +4,7 @@
 package example
 
 import context "context"
+import fmt "fmt"
 import strings "strings"
 import time "time"
 
@@ -19,7 +20,6 @@ import pq1 "github.com/lib/pq"
 import ptypes1 "github.com/golang/protobuf/ptypes"
 import types1 "github.com/infobloxopen/protoc-gen-gorm/types"
 
-import fmt "fmt"
 import math "math"
 import google_protobuf1 "github.com/golang/protobuf/ptypes/wrappers"
 import _ "github.com/golang/protobuf/ptypes/empty"

@@ -18,6 +18,7 @@ It has these top-level messages:
 package user
 
 import context "context"
+import fmt "fmt"
 import strings "strings"
 import time "time"
 
@@ -29,7 +30,6 @@ import gorm2 "github.com/infobloxopen/atlas-app-toolkit/gorm"
 import ptypes1 "github.com/golang/protobuf/ptypes"
 import resource1 "github.com/infobloxopen/atlas-app-toolkit/gorm/resource"
 
-import fmt "fmt"
 import math "math"
 import _ "github.com/golang/protobuf/ptypes/timestamp"
 import _ "github.com/infobloxopen/atlas-app-toolkit/rpc/resource"

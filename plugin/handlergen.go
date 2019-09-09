@@ -11,7 +11,8 @@ import (
 func (p *OrmPlugin) generateDefaultHandlers(file *generator.FileDescriptor) {
 	for _, message := range file.Messages() {
 		if getMessageOptions(message).GetOrmable() {
-			p.UsingGoImports("context")
+			//context package is a global import because it used in function parameters
+			p.UsingGoImports(stdCtxImport)
 
 			p.generateCreateHandler(message)
 			// FIXME: Temporary fix for Ormable objects that have no ID field but
@@ -221,7 +222,6 @@ func (p *OrmPlugin) generateApplyFieldMask(message *generator.Descriptor) {
 	}
 	// Patch pbObj with input according to a field mask.
 	if hasNested {
-		p.UsingGoImports("strings")
 		p.P(`for i, f := range updateMask.Paths {`)
 	} else {
 		p.P(`for _, f := range updateMask.Paths {`)
@@ -231,6 +231,7 @@ func (p *OrmPlugin) generateApplyFieldMask(message *generator.Descriptor) {
 		fieldType, _ := p.GoType(message, field)
 		//  for ormable message, do recursive patching
 		if field.IsMessage() && p.isOrmable(fieldType) && !field.IsRepeated() {
+			p.UsingGoImports(stdStringsImport)
 			p.P(`if !updated`, ccName, ` && strings.HasPrefix(f, prefix+"`, ccName, `.") {`)
 			p.P(`updated`, ccName, ` = true`)
 			p.P(`if patcher.`, ccName, ` == nil {`)
@@ -261,6 +262,7 @@ func (p *OrmPlugin) generateApplyFieldMask(message *generator.Descriptor) {
 			p.P(`continue`)
 			p.P(`}`)
 		} else if field.IsMessage() && !isSpecialType(fieldType) && !field.IsRepeated() {
+			p.UsingGoImports(stdStringsImport)
 			p.P(`if !updated`, ccName, ` && strings.HasPrefix(f, prefix+"`, ccName, `.") {`)
 			p.P(`if patcher.`, ccName, ` == nil {`)
 			p.P(`patchee.`, ccName, ` = nil`)
@@ -285,8 +287,8 @@ func (p *OrmPlugin) generateApplyFieldMask(message *generator.Descriptor) {
 			p.P(`continue`)
 			p.P(`}`)
 		} else if strings.HasSuffix(fieldType, protoTypeJSON) && !field.IsRepeated() {
+			p.UsingGoImports(stdStringsImport)
 			p.P(`if !updated`, ccName, ` && strings.HasPrefix(f, prefix+"`, ccName, `") {`)
-			p.UsingGoImports("strings")
 			p.P(`patchee.`, ccName, ` = patcher.`, ccName)
 			p.P(`updated`, ccName, ` = true`)
 			p.P(`continue`)
@@ -418,6 +420,7 @@ func (p *OrmPlugin) generatePatchSetHandler(message *generator.Descriptor) {
 		return
 	}
 
+	p.UsingGoImports(stdFmtImport)
 	p.P(`// DefaultPatchSet`, typeName, ` executes a bulk gorm update call with patch behavior`)
 	p.P(`func DefaultPatchSet`, typeName, `(ctx context.Context, objects []*`,
 		typeName, `, updateMasks []*`, p.Import(fmImport), `.FieldMask, db *`, p.Import(gormImport), `.DB) ([]*`, typeName, `, error) {`)
@@ -714,6 +717,7 @@ func (p *OrmPlugin) generateAfterListHookCall(orm *OrmableType) {
 }
 
 func (p *OrmPlugin) generateStrictUpdateHandler(message *generator.Descriptor) {
+	p.UsingGoImports(stdFmtImport)
 	typeName := p.TypeName(message)
 	p.P(`// DefaultStrictUpdate`, typeName, ` clears first level 1:many children and then executes a gorm update call`)
 	p.P(`func DefaultStrictUpdate`, typeName, `(ctx context.Context, in *`,

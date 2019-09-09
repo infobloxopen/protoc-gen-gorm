@@ -112,7 +112,8 @@ func (p *OrmPlugin) generateDefaultServer(file *generator.FileDescriptor) {
 		}
 		p.P(`}`)
 		for _, method := range service.methods {
-			p.UsingGoImports("context")
+			//Import context there because it have used in functions parameters
+			p.UsingGoImports(stdCtxImport)
 			switch method.verb {
 			case createService:
 				p.generateCreateServerMethod(service, method)
