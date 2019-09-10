@@ -14,7 +14,7 @@ import (
 
 	"log"
 
-	"github.com/infobloxopen/protoc-gen-gorm/options"
+	gorm "github.com/infobloxopen/protoc-gen-gorm/options"
 )
 
 const (
@@ -273,9 +273,9 @@ func (p *OrmPlugin) parseBasicFields(msg *generator.Descriptor) {
 					fieldOpts.Tag = tagWithType(tag, "uuid")
 				}
 			} else if rawType == protoTypeTimestamp {
-				fieldType = "*time.Time"
-				typePackage = "time"
-				p.UsingGoImports("time")
+				p.UsingGoImports(stdTimeImport)
+				typePackage = stdTimeImport
+				fieldType = fmt.Sprintf("*%s.Time", typePackage)
 			} else if rawType == protoTypeJSON {
 				if p.dbEngine == ENGINE_POSTGRES {
 					fieldType = fmt.Sprintf("*%s.Jsonb", p.Import(gormpqImport))
@@ -380,9 +380,9 @@ func (p *OrmPlugin) addIncludedField(ormable *OrmableType, field *gorm.ExtraFiel
 		if _, ok := builtinTypes[rawType]; ok {
 			// basic type, 100% okay, no imports or changes needed
 		} else if rawType == "Time" {
-			p.UsingGoImports("time")
-			rawType = "time.Time"
-			typePackage = "time"
+			p.UsingGoImports(stdTimeImport)
+			typePackage = stdTimeImport
+			rawType = fmt.Sprintf("%s.Time", typePackage)
 		} else if rawType == "UUID" {
 			rawType = fmt.Sprintf("%s.UUID", p.Import(uuidImport))
 			typePackage = uuidImport
