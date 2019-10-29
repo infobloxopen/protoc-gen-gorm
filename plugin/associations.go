@@ -36,6 +36,8 @@ func (p *OrmPlugin) parseAssociations(msg *generator.Descriptor) {
 					p.parseHasMany(msg, ormable, fieldName, fieldTypeShort, assocOrmable, fieldOpts)
 				}
 				fieldType = fmt.Sprintf("[]*%sORM", fieldType)
+			} else if fieldOpts.GetTag().GetEmbedded() {
+				fieldType = fmt.Sprintf("*%sORM", fieldType)
 			} else {
 				if fieldOpts.GetBelongsTo() != nil {
 					p.parseBelongsTo(msg, ormable, fieldName, fieldTypeShort, assocOrmable, fieldOpts)
