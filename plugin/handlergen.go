@@ -752,7 +752,6 @@ func (p *OrmPlugin) generateStrictUpdateHandler(message *generator.Descriptor) {
 		p.P(count+`db.Model(&ormObj).Set("gorm:query_option", "FOR UPDATE").Where("`, column, `=?", ormObj.`, pkName, `).First(lockedRow)`+rowsAffected)
 	}
 	p.generateBeforeHookCall(ormable, "StrictUpdateCleanup")
-	p.removeChildAssociations(message)
 	p.generateBeforeHookCall(ormable, "StrictUpdateSave")
 	p.P(`if err = db.Save(&ormObj).Error; err != nil {`)
 	p.P(`return nil, err`)
@@ -779,59 +778,6 @@ func (p *OrmPlugin) generateStrictUpdateHandler(message *generator.Descriptor) {
 func (p *OrmPlugin) isFieldOrmable(message *generator.Descriptor, fieldName string) bool {
 	_, ok := p.getOrmable(p.TypeName(message)).Fields[fieldName]
 	return ok
-}
-
-func (p *OrmPlugin) removeChildAssociations(message *generator.Descriptor) {
-	ormable := p.getOrmable(p.TypeName(message))
-	for _, fieldName := range p.getSortedFieldNames(ormable.Fields) {
-		p.removeChildAssociationsByName(message, fieldName)
-	}
-}
-
-func (p *OrmPlugin) removeChildAssociationsByName(message *generator.Descriptor, fieldName string) {
-	ormable := p.getOrmable(p.TypeName(message))
-	field := ormable.Fields[fieldName]
-
-	if field == nil {
-		return
-	}
-
-	if field.GetHasMany() != nil || field.GetHasOne() != nil {
-		var assocKeyName, foreignKeyName string
-		switch {
-		case field.GetHasMany() != nil:
-			assocKeyName = field.GetHasMany().GetAssociationForeignkey()
-			foreignKeyName = field.GetHasMany().GetForeignkey()
-		case field.GetHasOne() != nil:
-			assocKeyName = field.GetHasOne().GetAssociationForeignkey()
-			foreignKeyName = field.GetHasOne().GetForeignkey()
-		}
-		assocKeyType := ormable.Fields[assocKeyName].Type
-		assocOrmable := p.getOrmable(field.Type)
-		foreignKeyType := assocOrmable.Fields[foreignKeyName].Type
-		p.P(`filter`, fieldName, ` := `, strings.Trim(field.Type, "[]*"), `{}`)
-		zeroValue := p.guessZeroValue(assocKeyType)
-		if strings.Contains(assocKeyType, "*") {
-			p.P(`if ormObj.`, assocKeyName, ` == nil || *ormObj.`, assocKeyName, ` == `, zeroValue, `{`)
-		} else {
-			p.P(`if ormObj.`, assocKeyName, ` == `, zeroValue, `{`)
-		}
-		p.P(`return nil, `, p.Import(gerrorsImport), `.EmptyIdError`)
-		p.P(`}`)
-		filterDesc := "filter" + fieldName + "." + foreignKeyName
-		ormDesc := "ormObj." + assocKeyName
-		if strings.HasPrefix(foreignKeyType, "*") {
-			p.P(filterDesc, ` = new(`, strings.TrimPrefix(foreignKeyType, "*"), `)`)
-			filterDesc = "*" + filterDesc
-		}
-		if strings.HasPrefix(assocKeyType, "*") {
-			ormDesc = "*" + ormDesc
-		}
-		p.P(filterDesc, " = ", ormDesc)
-		p.P(`if err = db.Where(filter`, fieldName, `).Delete(`, strings.Trim(field.Type, "[]*"), `{}).Error; err != nil {`)
-		p.P(`return nil, err`)
-		p.P(`}`)
-	}
 }
 
 // guessZeroValue of the input type, so that we can check if a (key) value is set or not
