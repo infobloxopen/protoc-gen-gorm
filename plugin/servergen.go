@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"fmt"
+	"regexp"
 
 	"github.com/gogo/protobuf/protoc-gen-gogo/descriptor"
 	"github.com/gogo/protobuf/protoc-gen-gogo/generator"
@@ -58,27 +59,27 @@ func (p *OrmPlugin) parseServices(file *generator.FileDescriptor) {
 			inType, outType, methodName := p.getMethodProps(method)
 			var verb, fmName, baseType string
 			var follows bool
-			if methodName == createService {
+			if ok, _ := regexp.MatchString(fmt.Sprintf("^(%s)+(?:[A-Z].+)?", createService), methodName); ok {
 				verb = createService
-				follows, baseType = p.followsCreateConventions(inType, outType, methodName)
-			} else if methodName == readService {
+				follows, baseType = p.followsCreateConventions(inType, outType, createService)
+			} else if ok, _ := regexp.MatchString(fmt.Sprintf("^(%s)+(?:[A-Z].+)?", readService), methodName); ok {
 				verb = readService
-				follows, baseType = p.followsReadConventions(inType, outType, methodName)
-			} else if methodName == updateService {
-				verb = updateService
-				follows, baseType, fmName = p.followsUpdateConventions(inType, outType, methodName)
-			} else if methodName == updateSetService {
+				follows, baseType = p.followsReadConventions(inType, outType, readService)
+			} else if ok, _ := regexp.MatchString(fmt.Sprintf("^(%s)+(?:[A-Z].+)?", updateSetService), methodName); ok {
 				verb = updateSetService
-				follows, baseType, fmName = p.followsUpdateSetConventions(inType, outType, methodName)
-			} else if methodName == deleteService {
-				verb = deleteService
-				follows, baseType = p.followsDeleteConventions(inType, outType, method)
-			} else if methodName == deleteSetService {
+				follows, baseType, fmName = p.followsUpdateSetConventions(inType, outType, updateSetService)
+			} else if ok, _ := regexp.MatchString(fmt.Sprintf("^(%s)+(?:[A-Z].+)?", updateService), methodName); ok {
+				verb = updateService
+				follows, baseType, fmName = p.followsUpdateConventions(inType, outType, updateService)
+			} else if ok, _ := regexp.MatchString(fmt.Sprintf("^(%s)+(?:[A-Z].+)?", deleteSetService), methodName); ok {
 				verb = deleteSetService
 				follows, baseType = p.followsDeleteSetConventions(inType, outType, method)
-			} else if methodName == listService {
+			} else if ok, _ := regexp.MatchString(fmt.Sprintf("^(%s)+(?:[A-Z].+)?", deleteService), methodName); ok {
+				verb = deleteService
+				follows, baseType = p.followsDeleteConventions(inType, outType, method)
+			} else if ok, _ := regexp.MatchString(fmt.Sprintf("^(%s)+(?:[A-Z].+)?", listService), methodName); ok {
 				verb = listService
-				follows, baseType = p.followsListConventions(inType, outType, methodName)
+				follows, baseType = p.followsListConventions(inType, outType, listService)
 			}
 			genMethod := autogenMethod{
 				MethodDescriptorProto: method,
@@ -152,9 +153,11 @@ func (p *OrmPlugin) generateCreateServerMethod(service autogenService, method au
 			p.P(`return nil, err`)
 			p.P(`}`)
 		}
-		p.generatePostserviceCall(service.ccName, method.baseType, createService)
+		p.generatePostserviceCall(service.ccName, method.baseType, method.ccName)
 		p.P(`return out, nil`)
 		p.P(`}`)
+		// todo: investigate why this wants to stay "createService" when all other usage of
+		// generatePreserviceHook uses "ccName"
 		p.generatePreserviceHook(service.ccName, method.baseType, createService)
 		p.generatePostserviceHook(service.ccName, method.baseType, p.TypeName(method.outType), method.ccName)
 	} else {
