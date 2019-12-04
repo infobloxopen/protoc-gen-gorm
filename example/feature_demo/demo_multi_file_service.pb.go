@@ -10,8 +10,6 @@ import (
 	query "github.com/infobloxopen/atlas-app-toolkit/query"
 	_ "github.com/infobloxopen/protoc-gen-gorm/options"
 	grpc "google.golang.org/grpc"
-	codes "google.golang.org/grpc/codes"
-	status "google.golang.org/grpc/status"
 	math "math"
 )
 
@@ -182,14 +180,6 @@ func (c *blogPostServiceClient) Read(ctx context.Context, in *ReadAccountRequest
 // BlogPostServiceServer is the server API for BlogPostService service.
 type BlogPostServiceServer interface {
 	Read(context.Context, *ReadAccountRequest) (*ReadBlogPostsResponse, error)
-}
-
-// UnimplementedBlogPostServiceServer can be embedded to have forward compatible implementations.
-type UnimplementedBlogPostServiceServer struct {
-}
-
-func (*UnimplementedBlogPostServiceServer) Read(ctx context.Context, req *ReadAccountRequest) (*ReadBlogPostsResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Read not implemented")
 }
 
 func RegisterBlogPostServiceServer(s *grpc.Server, srv BlogPostServiceServer) {

@@ -12,8 +12,6 @@ import (
 	_ "github.com/infobloxopen/protoc-gen-gorm/options"
 	field_mask "google.golang.org/genproto/protobuf/field_mask"
 	grpc "google.golang.org/grpc"
-	codes "google.golang.org/grpc/codes"
-	status "google.golang.org/grpc/status"
 	math "math"
 )
 
@@ -1077,38 +1075,6 @@ type IntPointServiceServer interface {
 	CreateSomething(context.Context, *Something) (*Something, error)
 }
 
-// UnimplementedIntPointServiceServer can be embedded to have forward compatible implementations.
-type UnimplementedIntPointServiceServer struct {
-}
-
-func (*UnimplementedIntPointServiceServer) Create(ctx context.Context, req *CreateIntPointRequest) (*CreateIntPointResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Create not implemented")
-}
-func (*UnimplementedIntPointServiceServer) Read(ctx context.Context, req *ReadIntPointRequest) (*ReadIntPointResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Read not implemented")
-}
-func (*UnimplementedIntPointServiceServer) Update(ctx context.Context, req *UpdateIntPointRequest) (*UpdateIntPointResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Update not implemented")
-}
-func (*UnimplementedIntPointServiceServer) UpdateSet(ctx context.Context, req *UpdateSetIntPointRequest) (*UpdateSetIntPointResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method UpdateSet not implemented")
-}
-func (*UnimplementedIntPointServiceServer) List(ctx context.Context, req *ListIntPointRequest) (*ListIntPointResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method List not implemented")
-}
-func (*UnimplementedIntPointServiceServer) ListSomething(ctx context.Context, req *empty.Empty) (*ListSomethingResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ListSomething not implemented")
-}
-func (*UnimplementedIntPointServiceServer) Delete(ctx context.Context, req *DeleteIntPointRequest) (*DeleteIntPointResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Delete not implemented")
-}
-func (*UnimplementedIntPointServiceServer) CustomMethod(ctx context.Context, req *empty.Empty) (*empty.Empty, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method CustomMethod not implemented")
-}
-func (*UnimplementedIntPointServiceServer) CreateSomething(ctx context.Context, req *Something) (*Something, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method CreateSomething not implemented")
-}
-
 func RegisterIntPointServiceServer(s *grpc.Server, srv IntPointServiceServer) {
 	s.RegisterService(&_IntPointService_serviceDesc, srv)
 }
@@ -1440,35 +1406,6 @@ type IntPointTxnServer interface {
 	CreateSomething(context.Context, *Something) (*Something, error)
 }
 
-// UnimplementedIntPointTxnServer can be embedded to have forward compatible implementations.
-type UnimplementedIntPointTxnServer struct {
-}
-
-func (*UnimplementedIntPointTxnServer) Create(ctx context.Context, req *CreateIntPointRequest) (*CreateIntPointResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Create not implemented")
-}
-func (*UnimplementedIntPointTxnServer) Read(ctx context.Context, req *ReadIntPointRequest) (*ReadIntPointResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Read not implemented")
-}
-func (*UnimplementedIntPointTxnServer) Update(ctx context.Context, req *UpdateIntPointRequest) (*UpdateIntPointResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Update not implemented")
-}
-func (*UnimplementedIntPointTxnServer) List(ctx context.Context, req *ListIntPointRequest) (*ListIntPointResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method List not implemented")
-}
-func (*UnimplementedIntPointTxnServer) Delete(ctx context.Context, req *DeleteIntPointRequest) (*DeleteIntPointResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Delete not implemented")
-}
-func (*UnimplementedIntPointTxnServer) DeleteSet(ctx context.Context, req *DeleteIntPointsRequest) (*DeleteIntPointResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method DeleteSet not implemented")
-}
-func (*UnimplementedIntPointTxnServer) CustomMethod(ctx context.Context, req *empty.Empty) (*empty.Empty, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method CustomMethod not implemented")
-}
-func (*UnimplementedIntPointTxnServer) CreateSomething(ctx context.Context, req *Something) (*Something, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method CreateSomething not implemented")
-}
-
 func RegisterIntPointTxnServer(s *grpc.Server, srv IntPointTxnServer) {
 	s.RegisterService(&_IntPointTxn_serviceDesc, srv)
 }
@@ -1685,14 +1622,6 @@ func (c *circleServiceClient) List(ctx context.Context, in *ListCircleRequest, o
 // CircleServiceServer is the server API for CircleService service.
 type CircleServiceServer interface {
 	List(context.Context, *ListCircleRequest) (*ListCircleResponse, error)
-}
-
-// UnimplementedCircleServiceServer can be embedded to have forward compatible implementations.
-type UnimplementedCircleServiceServer struct {
-}
-
-func (*UnimplementedCircleServiceServer) List(ctx context.Context, req *ListCircleRequest) (*ListCircleResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method List not implemented")
 }
 
 func RegisterCircleServiceServer(s *grpc.Server, srv CircleServiceServer) {
