@@ -12,6 +12,7 @@ import gateway1 "github.com/infobloxopen/atlas-app-toolkit/gateway"
 import gorm1 "github.com/jinzhu/gorm"
 import gorm2 "github.com/infobloxopen/atlas-app-toolkit/gorm"
 import query1 "github.com/infobloxopen/atlas-app-toolkit/query"
+import trace1 "go.opencensus.io/trace"
 
 import math "math"
 import google_protobuf2 "github.com/golang/protobuf/ptypes/empty"
@@ -798,6 +799,8 @@ type IntPointServiceDefaultServer struct {
 
 // Create ...
 func (m *IntPointServiceDefaultServer) Create(ctx context.Context, in *CreateIntPointRequest) (*CreateIntPointResponse, error) {
+	_, span := trace1.StartSpan(ctx, "Create")
+	defer span.End()
 	db := m.DB
 	if custom, ok := interface{}(in).(IntPointServiceIntPointWithBeforeCreate); ok {
 		var err error
@@ -835,6 +838,8 @@ type IntPointServiceIntPointWithAfterCreate interface {
 
 // Read ...
 func (m *IntPointServiceDefaultServer) Read(ctx context.Context, in *ReadIntPointRequest) (*ReadIntPointResponse, error) {
+	_, span := trace1.StartSpan(ctx, "Read")
+	defer span.End()
 	db := m.DB
 	if custom, ok := interface{}(in).(IntPointServiceIntPointWithBeforeRead); ok {
 		var err error
@@ -868,6 +873,8 @@ type IntPointServiceIntPointWithAfterRead interface {
 
 // Update ...
 func (m *IntPointServiceDefaultServer) Update(ctx context.Context, in *UpdateIntPointRequest) (*UpdateIntPointResponse, error) {
+	_, span := trace1.StartSpan(ctx, "Update")
+	defer span.End()
 	var err error
 	var res *IntPoint
 	db := m.DB
@@ -907,6 +914,8 @@ type IntPointServiceIntPointWithAfterUpdate interface {
 
 // UpdateSet ...
 func (m *IntPointServiceDefaultServer) UpdateSet(ctx context.Context, in *UpdateSetIntPointRequest) (*UpdateSetIntPointResponse, error) {
+	_, span := trace1.StartSpan(ctx, "UpdateSet")
+	defer span.End()
 	if in == nil {
 		return nil, errors1.NilArgumentError
 	}
@@ -949,6 +958,8 @@ type IntPointServiceIntPointWithAfterUpdateSet interface {
 
 // List ...
 func (m *IntPointServiceDefaultServer) List(ctx context.Context, in *ListIntPointRequest) (*ListIntPointResponse, error) {
+	_, span := trace1.StartSpan(ctx, "List")
+	defer span.End()
 	db := m.DB
 	if custom, ok := interface{}(in).(IntPointServiceIntPointWithBeforeList); ok {
 		var err error
@@ -998,11 +1009,15 @@ type IntPointServiceIntPointWithAfterList interface {
 
 // ListSomething ...
 func (m *IntPointServiceDefaultServer) ListSomething(ctx context.Context, in *google_protobuf2.Empty) (*ListSomethingResponse, error) {
+	_, span := trace1.StartSpan(ctx, "ListSomething")
+	defer span.End()
 	return &ListSomethingResponse{}, nil
 }
 
 // Delete ...
 func (m *IntPointServiceDefaultServer) Delete(ctx context.Context, in *DeleteIntPointRequest) (*DeleteIntPointResponse, error) {
+	_, span := trace1.StartSpan(ctx, "Delete")
+	defer span.End()
 	db := m.DB
 	if custom, ok := interface{}(in).(IntPointServiceIntPointWithBeforeDelete); ok {
 		var err error
@@ -1036,11 +1051,15 @@ type IntPointServiceIntPointWithAfterDelete interface {
 
 // CustomMethod ...
 func (m *IntPointServiceDefaultServer) CustomMethod(ctx context.Context, in *google_protobuf2.Empty) (*google_protobuf2.Empty, error) {
+	_, span := trace1.StartSpan(ctx, "CustomMethod")
+	defer span.End()
 	return &google_protobuf2.Empty{}, nil
 }
 
 // CreateSomething ...
 func (m *IntPointServiceDefaultServer) CreateSomething(ctx context.Context, in *Something) (*Something, error) {
+	_, span := trace1.StartSpan(ctx, "CreateSomething")
+	defer span.End()
 	return &Something{}, nil
 }
 
@@ -1049,6 +1068,8 @@ type IntPointTxnDefaultServer struct {
 
 // Create ...
 func (m *IntPointTxnDefaultServer) Create(ctx context.Context, in *CreateIntPointRequest) (*CreateIntPointResponse, error) {
+	_, span := trace1.StartSpan(ctx, "Create")
+	defer span.End()
 	txn, ok := gorm2.FromContext(ctx)
 	if !ok {
 		return nil, errors1.NoTransactionError
@@ -1093,6 +1114,8 @@ type IntPointTxnIntPointWithAfterCreate interface {
 
 // Read ...
 func (m *IntPointTxnDefaultServer) Read(ctx context.Context, in *ReadIntPointRequest) (*ReadIntPointResponse, error) {
+	_, span := trace1.StartSpan(ctx, "Read")
+	defer span.End()
 	txn, ok := gorm2.FromContext(ctx)
 	if !ok {
 		return nil, errors1.NoTransactionError
@@ -1133,6 +1156,8 @@ type IntPointTxnIntPointWithAfterRead interface {
 
 // Update ...
 func (m *IntPointTxnDefaultServer) Update(ctx context.Context, in *UpdateIntPointRequest) (*UpdateIntPointResponse, error) {
+	_, span := trace1.StartSpan(ctx, "Update")
+	defer span.End()
 	var err error
 	var res *IntPoint
 	txn, ok := gorm2.FromContext(ctx)
@@ -1179,6 +1204,8 @@ type IntPointTxnIntPointWithAfterUpdate interface {
 
 // List ...
 func (m *IntPointTxnDefaultServer) List(ctx context.Context, in *ListIntPointRequest) (*ListIntPointResponse, error) {
+	_, span := trace1.StartSpan(ctx, "List")
+	defer span.End()
 	txn, ok := gorm2.FromContext(ctx)
 	if !ok {
 		return nil, errors1.NoTransactionError
@@ -1235,6 +1262,8 @@ type IntPointTxnIntPointWithAfterList interface {
 
 // Delete ...
 func (m *IntPointTxnDefaultServer) Delete(ctx context.Context, in *DeleteIntPointRequest) (*DeleteIntPointResponse, error) {
+	_, span := trace1.StartSpan(ctx, "Delete")
+	defer span.End()
 	txn, ok := gorm2.FromContext(ctx)
 	if !ok {
 		return nil, errors1.NoTransactionError
@@ -1275,6 +1304,8 @@ type IntPointTxnIntPointWithAfterDelete interface {
 
 // DeleteSet ...
 func (m *IntPointTxnDefaultServer) DeleteSet(ctx context.Context, in *DeleteIntPointsRequest) (*DeleteIntPointResponse, error) {
+	_, span := trace1.StartSpan(ctx, "DeleteSet")
+	defer span.End()
 	txn, ok := gorm2.FromContext(ctx)
 	if !ok {
 		return nil, errors1.NoTransactionError
@@ -1319,11 +1350,15 @@ type IntPointTxnIntPointWithAfterDeleteSet interface {
 
 // CustomMethod ...
 func (m *IntPointTxnDefaultServer) CustomMethod(ctx context.Context, in *google_protobuf2.Empty) (*google_protobuf2.Empty, error) {
+	_, span := trace1.StartSpan(ctx, "CustomMethod")
+	defer span.End()
 	return &google_protobuf2.Empty{}, nil
 }
 
 // CreateSomething ...
 func (m *IntPointTxnDefaultServer) CreateSomething(ctx context.Context, in *Something) (*Something, error) {
+	_, span := trace1.StartSpan(ctx, "CreateSomething")
+	defer span.End()
 	return &Something{}, nil
 }
 
@@ -1333,6 +1368,8 @@ type CircleServiceDefaultServer struct {
 
 // List ...
 func (m *CircleServiceDefaultServer) List(ctx context.Context, in *ListCircleRequest) (*ListCircleResponse, error) {
+	_, span := trace1.StartSpan(ctx, "List")
+	defer span.End()
 	db := m.DB
 	if custom, ok := interface{}(in).(CircleServiceCircleWithBeforeList); ok {
 		var err error

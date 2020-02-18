@@ -6,6 +6,7 @@ package example
 import context "context"
 
 import gorm1 "github.com/jinzhu/gorm"
+import trace1 "go.opencensus.io/trace"
 
 import fmt "fmt"
 import math "math"
@@ -21,5 +22,7 @@ type BlogPostServiceDefaultServer struct {
 
 // Read ...
 func (m *BlogPostServiceDefaultServer) Read(ctx context.Context, in *ReadAccountRequest) (*ReadBlogPostsResponse, error) {
+	_, span := trace1.StartSpan(ctx, "Read")
+	defer span.End()
 	return &ReadBlogPostsResponse{}, nil
 }

@@ -607,6 +607,8 @@ func (p *OrmPlugin) generateMethodSignature(service autogenService, method autog
 		p.TypeName(method.inType), `) (*`, p.TypeName(method.outType), `, error) {`)
 	p.RecordTypeUse(method.GetInputType())
 	p.RecordTypeUse(method.GetOutputType())
+	p.P(`_, span := `, p.Import(ocTraceImport), `.StartSpan(ctx, "`, method.ccName, `")`)
+	p.P(`defer span.End()`)
 }
 
 func (p *OrmPlugin) generateDBSetup(service autogenService) error {

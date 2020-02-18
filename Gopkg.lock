@@ -333,9 +333,10 @@
     "github.com/jinzhu/inflection",
     "github.com/lib/pq",
     "github.com/satori/go.uuid",
-    "golang.org/x/net/context",
     "google.golang.org/genproto/protobuf/field_mask",
     "google.golang.org/grpc",
+    "google.golang.org/grpc/codes",
+    "google.golang.org/grpc/status",
   ]
   solver-name = "gps-cdcl"
   solver-version = 1

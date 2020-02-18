@@ -46,6 +46,7 @@ var (
 	resourceImport   = "github.com/infobloxopen/atlas-app-toolkit/gorm/resource"
 	fmImport         = "google.golang.org/genproto/protobuf/field_mask"
 	queryImport      = "github.com/infobloxopen/atlas-app-toolkit/query"
+	ocTraceImport    = "go.opencensus.io/trace"
 	gatewayImport    = "github.com/infobloxopen/atlas-app-toolkit/gateway"
 	pqImport         = "github.com/lib/pq"
 	gerrorsImport    = "github.com/infobloxopen/protoc-gen-gorm/errors"
