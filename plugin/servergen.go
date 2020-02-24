@@ -141,10 +141,10 @@ func (p *OrmPlugin) spanAnnotate(key, value, message string) {
 	errVarName := fmt.Sprint("errMarshaling", strings.Title(key))
 	p.P(rawVarName, `, `, errVarName, ` := `, p.Import(encodingJsonImport), `.Marshal(`, value, `)`)
 	p.P(`if `, errVarName, ` != nil {`)
-	p.P(`span.Annotate([]`, p.Import(ocTraceImport), `.Attribute{`, p.Import(ocTraceImport), `.StringAttribute("`, key, `", nil)}, "`, message, `")`)
+	p.P(`span.Annotate([]`, p.Import(ocTraceImport), `.Attribute{`, p.Import(ocTraceImport), `.StringAttribute("`, key, `", "")}, "`, message, `")`)
 	p.P(`return nil, `, errVarName)
 	p.P(`}`)
-	p.P(`span.Annotate([]`, p.Import(ocTraceImport), `.Attribute{`, p.Import(ocTraceImport), `.StringAttribute("`, key, `", `, rawVarName, `)}, "`, message, `")`)
+	p.P(`span.Annotate([]`, p.Import(ocTraceImport), `.Attribute{`, p.Import(ocTraceImport), `.StringAttribute("`, key, `", string(`, rawVarName, `))}, "`, message, `")`)
 }
 
 func (p *OrmPlugin) generateCreateServerMethod(service autogenService, method autogenMethod) {
