@@ -137,7 +137,14 @@ func (p *OrmPlugin) generateDefaultServer(file *generator.FileDescriptor) {
 }
 
 func (p *OrmPlugin) spanAnnotate(key, value, message string) {
-	p.P(`span.Annotate([]`, p.Import(ocTraceImport), `.Annotation{"`, key, `": `, value, `}, "`, message, `")`)
+	rawVarName := fmt.Sprint("rawParameter", strings.Title(key))
+	errVarName := fmt.Sprint("errMarshaling", strings.Title(key))
+	p.P(rawVarName, `, `, errVarName, ` := `, p.Import(encodingJsonImport), `.Marshal(`, value, `)`)
+	p.P(`if `, errVarName, ` != nil {`)
+	p.P(`span.Annotate([]`, p.Import(ocTraceImport), `.Attribute{`, p.Import(ocTraceImport), `.StringAttribute("`, key, `", nil)}, "`, message, `")`)
+	p.P(`return nil, `, errVarName)
+	p.P(`}`)
+	p.P(`span.Annotate([]`, p.Import(ocTraceImport), `.Attribute{`, p.Import(ocTraceImport), `.StringAttribute("`, key, `", `, rawVarName, `)}, "`, message, `")`)
 }
 
 func (p *OrmPlugin) generateCreateServerMethod(service autogenService, method autogenMethod) {
@@ -627,7 +634,7 @@ func (p *OrmPlugin) generateMethodSignature(service autogenService, method autog
 	p.RecordTypeUse(method.GetOutputType())
 	p.P(`_, span := `, p.Import(ocTraceImport), `.StartSpan(ctx, "`, method.ccName, `")`)
 	p.P(`defer span.End()`)
-	p.P(`span.Annotate([]`, p.Import(ocTraceImport), `.Annotation{"in": in}, "in parameter")`)
+	p.spanAnnotate("in", "in", "in parameter")
 }
 
 func (p *OrmPlugin) generateDBSetup(service autogenService) error {
