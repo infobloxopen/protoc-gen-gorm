@@ -19,7 +19,7 @@ require (
 	github.com/opentracing/opentracing-go v1.0.2
 	github.com/satori/go.uuid v1.2.0
 	github.com/sirupsen/logrus v1.0.5
-	go.opencensus.io v0.22.3 // indirect
+	go.opencensus.io v0.22.3
 	golang.org/x/crypto v0.0.0-20190308221718-c2843e01d9a2
 	golang.org/x/net v0.0.0-20190620200207-3b0461eec859
 	golang.org/x/sys v0.0.0-20190502145724-3ef323f4f1fd

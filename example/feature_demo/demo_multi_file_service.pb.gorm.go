@@ -24,5 +24,8 @@ type BlogPostServiceDefaultServer struct {
 func (m *BlogPostServiceDefaultServer) Read(ctx context.Context, in *ReadAccountRequest) (*ReadBlogPostsResponse, error) {
 	_, span := trace1.StartSpan(ctx, "Read")
 	defer span.End()
-	return &ReadBlogPostsResponse{}, nil
+	span.Annotate([]trace1.Annotation{"in": in})
+	out := &ReadBlogPostsResponse{}
+	span.Annotate([]trace1.Annotation{"out": out})
+	return out, nil
 }

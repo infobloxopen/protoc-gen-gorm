@@ -149,10 +149,12 @@ func (p *OrmPlugin) generateCreateServerMethod(service autogenService, method au
 		if p.gateway {
 			p.P(`err = `, p.Import(gatewayImport), `.SetCreated(ctx, "")`)
 			p.P(`if err != nil {`)
+			p.P(`span.Annotate([]`, p.Import(ocTraceImport), `.Annotation{"out": nil})`)
 			p.P(`return nil, err`)
 			p.P(`}`)
 		}
 		p.generatePostserviceCall(service.ccName, method.baseType, createService)
+		p.P(`span.Annotate([]`, p.Import(ocTraceImport), `.Annotation{"out": out})`)
 		p.P(`return out, nil`)
 		p.P(`}`)
 		p.generatePreserviceHook(service.ccName, method.baseType, createService)
@@ -206,10 +208,12 @@ func (p *OrmPlugin) generateReadServerMethod(service autogenService, method auto
 			p.P(`res, err := DefaultRead`, typeName, `(ctx, &`, typeName, `{Id: in.GetId()}, db)`)
 		}
 		p.P(`if err != nil {`)
+		p.P(`span.Annotate([]`, p.Import(ocTraceImport), `.Annotation{"out": nil})`)
 		p.P(`return nil, err`)
 		p.P(`}`)
 		p.P(`out := &`, p.TypeName(method.outType), `{Result: res}`)
 		p.generatePostserviceCall(service.ccName, method.baseType, method.ccName)
+		p.P(`span.Annotate([]`, p.Import(ocTraceImport), `.Annotation{"out": out})`)
 		p.P(`return out, nil`)
 		p.P(`}`)
 		p.generatePreserviceHook(service.ccName, method.baseType, method.ccName)
@@ -272,10 +276,12 @@ func (p *OrmPlugin) generateUpdateServerMethod(service autogenService, method au
 			p.P(`res, err = DefaultStrictUpdate`, typeName, `(ctx, in.GetPayload(), db)`)
 		}
 		p.P(`if err != nil {`)
+		p.P(`span.Annotate([]`, p.Import(ocTraceImport), `.Annotation{"out": nil})`)
 		p.P(`return nil, err`)
 		p.P(`}`)
 		p.P(`out := &`, p.TypeName(method.outType), `{Result: res}`)
 		p.generatePostserviceCall(service.ccName, method.baseType, method.ccName)
+		p.P(`span.Annotate([]`, p.Import(ocTraceImport), `.Annotation{"out": out})`)
 		p.P(`return out, nil`)
 		p.P(`}`)
 		p.generatePreserviceHook(service.ccName, method.baseType, method.ccName)
@@ -348,6 +354,7 @@ func (p *OrmPlugin) generateUpdateSetServerMethod(service autogenService, method
 		p.P(``)
 		p.P(`res, err := DefaultPatchSet`, typeName, `(ctx, in.GetObjects(), in.Get`, method.fieldMaskName, `(), db)`)
 		p.P(`if err != nil {`)
+		p.P(`span.Annotate([]`, p.Import(ocTraceImport), `.Annotation{"out": nil})`)
 		p.P(`return nil, err`)
 		p.P(`}`)
 		p.P(``)
@@ -357,6 +364,7 @@ func (p *OrmPlugin) generateUpdateSetServerMethod(service autogenService, method
 		p.generatePostserviceCall(service.ccName, typeName, method.ccName)
 		p.P(``)
 
+		p.P(`span.Annotate([]`, p.Import(ocTraceImport), `.Annotation{"out": out})`)
 		p.P(`return out, nil`)
 		p.P(`}`)
 
@@ -436,10 +444,12 @@ func (p *OrmPlugin) generateDeleteServerMethod(service autogenService, method au
 		p.generatePreserviceCall(service.ccName, method.baseType, method.ccName)
 		p.P(`err := DefaultDelete`, typeName, `(ctx, &`, typeName, `{Id: in.GetId()}, db)`)
 		p.P(`if err != nil {`)
+		p.P(`span.Annotate([]`, p.Import(ocTraceImport), `.Annotation{"out": nil})`)
 		p.P(`return nil, err`)
 		p.P(`}`)
 		p.P(`out := &`, p.TypeName(method.outType), `{}`)
 		p.generatePostserviceCall(service.ccName, method.baseType, method.ccName)
+		p.P(`span.Annotate([]`, p.Import(ocTraceImport), `.Annotation{"out": out})`)
 		p.P(`return out, nil`)
 		p.P(`}`)
 		p.generatePreserviceHook(service.ccName, method.baseType, method.ccName)
@@ -490,10 +500,12 @@ func (p *OrmPlugin) generateDeleteSetServerMethod(service autogenService, method
 		p.generatePreserviceCall(service.ccName, method.baseType, method.ccName)
 		p.P(`err := DefaultDelete`, typeName, `Set(ctx, objs, db)`)
 		p.P(`if err != nil {`)
+		p.P(`span.Annotate([]`, p.Import(ocTraceImport), `.Annotation{"out": nil})`)
 		p.P(`return nil, err`)
 		p.P(`}`)
 		p.P(`out := &`, p.TypeName(method.outType), `{}`)
 		p.generatePostserviceCall(service.ccName, method.baseType, method.ccName)
+		p.P(`span.Annotate([]`, p.Import(ocTraceImport), `.Annotation{"out": out})`)
 		p.P(`return out, nil`)
 		p.P(`}`)
 		p.generatePreserviceHook(service.ccName, method.baseType, method.ccName)
@@ -558,6 +570,7 @@ func (p *OrmPlugin) generateListServerMethod(service autogenService, method auto
 		handlerCall += ")"
 		p.P(handlerCall)
 		p.P(`if err != nil {`)
+		p.P(`span.Annotate([]`, p.Import(ocTraceImport), `.Annotation{"out": nil})`)
 		p.P(`return nil, err`)
 		p.P(`}`)
 		var pageInfoIfExist string
@@ -567,6 +580,7 @@ func (p *OrmPlugin) generateListServerMethod(service autogenService, method auto
 		}
 		p.P(`out := &`, p.TypeName(method.outType), `{Results: res`, pageInfoIfExist, ` }`)
 		p.generatePostserviceCall(service.ccName, method.baseType, method.ccName)
+		p.P(`span.Annotate([]`, p.Import(ocTraceImport), `.Annotation{"out": out})`)
 		p.P(`return out, nil`)
 		p.P(`}`)
 		p.generatePreserviceHook(service.ccName, method.baseType, method.ccName)
@@ -609,6 +623,7 @@ func (p *OrmPlugin) generateMethodSignature(service autogenService, method autog
 	p.RecordTypeUse(method.GetOutputType())
 	p.P(`_, span := `, p.Import(ocTraceImport), `.StartSpan(ctx, "`, method.ccName, `")`)
 	p.P(`defer span.End()`)
+	p.P(`span.Annotate([]`, p.Import(ocTraceImport), `.Annotation{"in": in})`)
 }
 
 func (p *OrmPlugin) generateDBSetup(service autogenService) error {
@@ -628,7 +643,9 @@ func (p *OrmPlugin) generateDBSetup(service autogenService) error {
 }
 
 func (p OrmPlugin) generateEmptyBody(outType generator.Object) {
-	p.P(`return &`, p.TypeName(outType), `{}, nil`)
+	p.P(`out:= &`, p.TypeName(outType), `{}`)
+	p.P(`span.Annotate([]`, p.Import(ocTraceImport), `.Annotation{"out": out})`)
+	p.P(`return out, nil`)
 	p.P(`}`)
 }
 
