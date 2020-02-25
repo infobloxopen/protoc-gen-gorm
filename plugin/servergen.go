@@ -136,15 +136,18 @@ func (p *OrmPlugin) generateDefaultServer(file *generator.FileDescriptor) {
 	}
 }
 
-func (p *OrmPlugin) spanAnnotate(key, value, message string) {
-	rawVarName := fmt.Sprint("rawParameter", strings.Title(key))
-	errVarName := fmt.Sprint("errMarshaling", strings.Title(key))
-	p.P(rawVarName, `, `, errVarName, ` := `, p.Import(encodingJsonImport), `.Marshal(`, value, `)`)
-	p.P(`if `, errVarName, ` != nil {`)
-	p.P(`span.Annotate([]`, p.Import(ocTraceImport), `.Attribute{`, p.Import(ocTraceImport), `.StringAttribute("`, key, `", "")}, "`, message, `")`)
-	p.P(`return nil, `, errVarName)
-	p.P(`}`)
-	p.P(`span.Annotate([]`, p.Import(ocTraceImport), `.Attribute{`, p.Import(ocTraceImport), `.StringAttribute("`, key, `", string(`, rawVarName, `))}, "`, message, `")`)
+func (p *OrmPlugin) spanAnnotate(service autogenService, key, value, message string) {
+	withSpan := getServiceOptions(service.ServiceDescriptorProto).WithSpan
+	if withSpan != nil && *withSpan {
+		rawVarName := fmt.Sprint("rawParameter", strings.Title(key))
+		errVarName := fmt.Sprint("errMarshaling", strings.Title(key))
+		p.P(rawVarName, `, `, errVarName, ` := `, p.Import(encodingJsonImport), `.Marshal(`, value, `)`)
+		p.P(`if `, errVarName, ` != nil {`)
+		p.P(`span.Annotate([]`, p.Import(ocTraceImport), `.Attribute{`, p.Import(ocTraceImport), `.StringAttribute("`, key, `", "")}, "`, message, `")`)
+		p.P(`return nil, `, errVarName)
+		p.P(`}`)
+		p.P(`span.Annotate([]`, p.Import(ocTraceImport), `.Attribute{`, p.Import(ocTraceImport), `.StringAttribute("`, key, `", string(`, rawVarName, `))}, "`, message, `")`)
+	}
 }
 
 func (p *OrmPlugin) generateCreateServerMethod(service autogenService, method autogenMethod) {
@@ -160,12 +163,12 @@ func (p *OrmPlugin) generateCreateServerMethod(service autogenService, method au
 		if p.gateway {
 			p.P(`err = `, p.Import(gatewayImport), `.SetCreated(ctx, "")`)
 			p.P(`if err != nil {`)
-			p.spanAnnotate("out", "nil", "out parameter")
+			p.spanAnnotate(service, "out", "nil", "out parameter")
 			p.P(`return nil, err`)
 			p.P(`}`)
 		}
 		p.generatePostserviceCall(service.ccName, method.baseType, createService)
-		p.spanAnnotate("out", "out", "out parameter")
+		p.spanAnnotate(service, "out", "out", "out parameter")
 		p.P(`return out, nil`)
 		p.P(`}`)
 		p.generatePreserviceHook(service.ccName, method.baseType, createService)
@@ -219,12 +222,12 @@ func (p *OrmPlugin) generateReadServerMethod(service autogenService, method auto
 			p.P(`res, err := DefaultRead`, typeName, `(ctx, &`, typeName, `{Id: in.GetId()}, db)`)
 		}
 		p.P(`if err != nil {`)
-		p.spanAnnotate("out", "nil", "out parameter")
+		p.spanAnnotate(service, "out", "nil", "out parameter")
 		p.P(`return nil, err`)
 		p.P(`}`)
 		p.P(`out := &`, p.TypeName(method.outType), `{Result: res}`)
 		p.generatePostserviceCall(service.ccName, method.baseType, method.ccName)
-		p.spanAnnotate("out", "out", "out parameter")
+		p.spanAnnotate(service, "out", "out", "out parameter")
 		p.P(`return out, nil`)
 		p.P(`}`)
 		p.generatePreserviceHook(service.ccName, method.baseType, method.ccName)
@@ -287,12 +290,12 @@ func (p *OrmPlugin) generateUpdateServerMethod(service autogenService, method au
 			p.P(`res, err = DefaultStrictUpdate`, typeName, `(ctx, in.GetPayload(), db)`)
 		}
 		p.P(`if err != nil {`)
-		p.spanAnnotate("out", "nil", "out parameter")
+		p.spanAnnotate(service, "out", "nil", "out parameter")
 		p.P(`return nil, err`)
 		p.P(`}`)
 		p.P(`out := &`, p.TypeName(method.outType), `{Result: res}`)
 		p.generatePostserviceCall(service.ccName, method.baseType, method.ccName)
-		p.spanAnnotate("out", "out", "out parameter")
+		p.spanAnnotate(service, "out", "out", "out parameter")
 		p.P(`return out, nil`)
 		p.P(`}`)
 		p.generatePreserviceHook(service.ccName, method.baseType, method.ccName)
@@ -365,7 +368,7 @@ func (p *OrmPlugin) generateUpdateSetServerMethod(service autogenService, method
 		p.P(``)
 		p.P(`res, err := DefaultPatchSet`, typeName, `(ctx, in.GetObjects(), in.Get`, method.fieldMaskName, `(), db)`)
 		p.P(`if err != nil {`)
-		p.spanAnnotate("out", "nil", "out parameter")
+		p.spanAnnotate(service, "out", "nil", "out parameter")
 		p.P(`return nil, err`)
 		p.P(`}`)
 		p.P(``)
@@ -375,7 +378,7 @@ func (p *OrmPlugin) generateUpdateSetServerMethod(service autogenService, method
 		p.generatePostserviceCall(service.ccName, typeName, method.ccName)
 		p.P(``)
 
-		p.spanAnnotate("out", "out", "out parameter")
+		p.spanAnnotate(service, "out", "out", "out parameter")
 		p.P(`return out, nil`)
 		p.P(`}`)
 
@@ -455,12 +458,12 @@ func (p *OrmPlugin) generateDeleteServerMethod(service autogenService, method au
 		p.generatePreserviceCall(service.ccName, method.baseType, method.ccName)
 		p.P(`err := DefaultDelete`, typeName, `(ctx, &`, typeName, `{Id: in.GetId()}, db)`)
 		p.P(`if err != nil {`)
-		p.spanAnnotate("out", "nil", "out parameter")
+		p.spanAnnotate(service, "out", "nil", "out parameter")
 		p.P(`return nil, err`)
 		p.P(`}`)
 		p.P(`out := &`, p.TypeName(method.outType), `{}`)
 		p.generatePostserviceCall(service.ccName, method.baseType, method.ccName)
-		p.spanAnnotate("out", "out", "out parameter")
+		p.spanAnnotate(service, "out", "out", "out parameter")
 		p.P(`return out, nil`)
 		p.P(`}`)
 		p.generatePreserviceHook(service.ccName, method.baseType, method.ccName)
@@ -511,12 +514,12 @@ func (p *OrmPlugin) generateDeleteSetServerMethod(service autogenService, method
 		p.generatePreserviceCall(service.ccName, method.baseType, method.ccName)
 		p.P(`err := DefaultDelete`, typeName, `Set(ctx, objs, db)`)
 		p.P(`if err != nil {`)
-		p.spanAnnotate("out", "nil", "out parameter")
+		p.spanAnnotate(service, "out", "nil", "out parameter")
 		p.P(`return nil, err`)
 		p.P(`}`)
 		p.P(`out := &`, p.TypeName(method.outType), `{}`)
 		p.generatePostserviceCall(service.ccName, method.baseType, method.ccName)
-		p.spanAnnotate("out", "out", "out parameter")
+		p.spanAnnotate(service, "out", "out", "out parameter")
 		p.P(`return out, nil`)
 		p.P(`}`)
 		p.generatePreserviceHook(service.ccName, method.baseType, method.ccName)
@@ -581,7 +584,7 @@ func (p *OrmPlugin) generateListServerMethod(service autogenService, method auto
 		handlerCall += ")"
 		p.P(handlerCall)
 		p.P(`if err != nil {`)
-		p.spanAnnotate("out", "nil", "out parameter")
+		p.spanAnnotate(service, "out", "nil", "out parameter")
 		p.P(`return nil, err`)
 		p.P(`}`)
 		var pageInfoIfExist string
@@ -591,7 +594,7 @@ func (p *OrmPlugin) generateListServerMethod(service autogenService, method auto
 		}
 		p.P(`out := &`, p.TypeName(method.outType), `{Results: res`, pageInfoIfExist, ` }`)
 		p.generatePostserviceCall(service.ccName, method.baseType, method.ccName)
-		p.spanAnnotate("out", "out", "out parameter")
+		p.spanAnnotate(service, "out", "out", "out parameter")
 		p.P(`return out, nil`)
 		p.P(`}`)
 		p.generatePreserviceHook(service.ccName, method.baseType, method.ccName)
@@ -632,9 +635,16 @@ func (p *OrmPlugin) generateMethodSignature(service autogenService, method autog
 		p.TypeName(method.inType), `) (*`, p.TypeName(method.outType), `, error) {`)
 	p.RecordTypeUse(method.GetInputType())
 	p.RecordTypeUse(method.GetOutputType())
-	p.P(`_, span := `, p.Import(ocTraceImport), `.StartSpan(ctx, "`, method.ccName, `")`)
-	p.P(`defer span.End()`)
-	p.spanAnnotate("in", "in", "in parameter")
+	p.generateStartSpan(service, method)
+}
+
+func (p *OrmPlugin) generateStartSpan(service autogenService, method autogenMethod) {
+	withSpan := getServiceOptions(service.ServiceDescriptorProto).WithSpan
+	if withSpan != nil && *withSpan {
+		p.P(`_, span := `, p.Import(ocTraceImport), `.StartSpan(ctx, "`, method.ccName, `")`)
+		p.P(`defer span.End()`)
+		p.spanAnnotate(service, "in", "in", "in parameter")
+	}
 }
 
 func (p *OrmPlugin) generateDBSetup(service autogenService) error {
@@ -655,7 +665,6 @@ func (p *OrmPlugin) generateDBSetup(service autogenService) error {
 
 func (p OrmPlugin) generateEmptyBody(outType generator.Object) {
 	p.P(`out:= &`, p.TypeName(outType), `{}`)
-	p.spanAnnotate("out", "out", "out parameter")
 	p.P(`return out, nil`)
 	p.P(`}`)
 }

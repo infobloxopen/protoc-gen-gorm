@@ -6,8 +6,6 @@ package example
 import context "context"
 
 import gorm1 "github.com/jinzhu/gorm"
-import json1 "encoding/json"
-import trace1 "go.opencensus.io/trace"
 
 import fmt "fmt"
 import math "math"
@@ -23,20 +21,6 @@ type BlogPostServiceDefaultServer struct {
 
 // Read ...
 func (m *BlogPostServiceDefaultServer) Read(ctx context.Context, in *ReadAccountRequest) (*ReadBlogPostsResponse, error) {
-	_, span := trace1.StartSpan(ctx, "Read")
-	defer span.End()
-	rawParameterIn, errMarshalingIn := json1.Marshal(in)
-	if errMarshalingIn != nil {
-		span.Annotate([]trace1.Attribute{trace1.StringAttribute("in", nil)}, "in parameter")
-		return nil, errMarshalingIn
-	}
-	span.Annotate([]trace1.Attribute{trace1.StringAttribute("in", rawParameterIn)}, "in parameter")
 	out := &ReadBlogPostsResponse{}
-	rawParameterOut, errMarshalingOut := json1.Marshal(out)
-	if errMarshalingOut != nil {
-		span.Annotate([]trace1.Attribute{trace1.StringAttribute("out", nil)}, "out parameter")
-		return nil, errMarshalingOut
-	}
-	span.Annotate([]trace1.Attribute{trace1.StringAttribute("out", rawParameterOut)}, "out parameter")
 	return out, nil
 }
