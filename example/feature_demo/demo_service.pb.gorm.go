@@ -1054,7 +1054,7 @@ type IntPointTxnDefaultServer struct {
 
 // spanCreate ...
 func (m *IntPointTxnDefaultServer) spanCreate(ctx context.Context, in interface{}, methodName string) (*trace1.Span, error) {
-	_, span := trace1.StartSpan(ctx, field_mask1Sprint("IntPointTxnDefaultServer.", methodName))
+	_, span := trace1.StartSpan(ctx, fmt.Sprint("IntPointTxnDefaultServer.", methodName))
 	rawParameter, errMarshaling := json1.Marshal(in)
 	if errMarshaling != nil {
 		return nil, errMarshaling
@@ -1064,8 +1064,8 @@ func (m *IntPointTxnDefaultServer) spanCreate(ctx context.Context, in interface{
 }
 
 // spanError ...
-func (m *IntPointTxnDefaultServer) spanError(span *trace1Span, err error) error {
-	span.SetStatus(trace.Status{
+func (m *IntPointTxnDefaultServer) spanError(span *trace1.Span, err error) error {
+	span.SetStatus(trace1.Status{
 		Code:    trace1.StatusCodeUnknown,
 		Message: err.Error(),
 	})
@@ -1073,12 +1073,13 @@ func (m *IntPointTxnDefaultServer) spanError(span *trace1Span, err error) error 
 }
 
 // spanResult ...
-func (m *IntPointTxnDefaultServer) spanResult(span *trace1Span, out interface{}) error {
+func (m *IntPointTxnDefaultServer) spanResult(span *trace1.Span, out interface{}) error {
 	rawParameter, errMarshaling := json1.Marshal(out)
 	if errMarshaling != nil {
 		return errMarshaling
 	}
 	span.Annotate([]trace1.Attribute{trace1.StringAttribute("out", string(rawParameter))}, "out parameter")
+	return nil
 }
 
 // Create ...
@@ -1117,9 +1118,9 @@ func (m *IntPointTxnDefaultServer) Create(ctx context.Context, in *CreateIntPoin
 			return nil, err
 		}
 	}
-	err = m.spanResult(span, out)
-	if err != nil {
-		return nil, m.spanError(span, err)
+	errSpanResult := m.spanResult(span, out)
+	if errSpanResult != nil {
+		return nil, m.spanError(span, errSpanResult)
 	}
 	return out, nil
 }
@@ -1166,9 +1167,9 @@ func (m *IntPointTxnDefaultServer) Read(ctx context.Context, in *ReadIntPointReq
 			return nil, err
 		}
 	}
-	err = m.spanResult(span, out)
-	if err != nil {
-		return nil, m.spanError(span, err)
+	errSpanResult := m.spanResult(span, out)
+	if errSpanResult != nil {
+		return nil, m.spanError(span, errSpanResult)
 	}
 	return out, nil
 }
@@ -1221,9 +1222,9 @@ func (m *IntPointTxnDefaultServer) Update(ctx context.Context, in *UpdateIntPoin
 			return nil, err
 		}
 	}
-	err = m.spanResult(span, out)
-	if err != nil {
-		return nil, m.spanError(span, err)
+	errSpanResult := m.spanResult(span, out)
+	if errSpanResult != nil {
+		return nil, m.spanError(span, errSpanResult)
 	}
 	return out, nil
 }
@@ -1286,9 +1287,9 @@ func (m *IntPointTxnDefaultServer) List(ctx context.Context, in *ListIntPointReq
 			return nil, err
 		}
 	}
-	err = m.spanResult(span, out)
-	if err != nil {
-		return nil, m.spanError(span, err)
+	errSpanResult := m.spanResult(span, out)
+	if errSpanResult != nil {
+		return nil, m.spanError(span, errSpanResult)
 	}
 	return out, nil
 }
@@ -1335,9 +1336,9 @@ func (m *IntPointTxnDefaultServer) Delete(ctx context.Context, in *DeleteIntPoin
 			return nil, err
 		}
 	}
-	err = m.spanResult(span, out)
-	if err != nil {
-		return nil, m.spanError(span, err)
+	errSpanResult := m.spanResult(span, out)
+	if errSpanResult != nil {
+		return nil, m.spanError(span, errSpanResult)
 	}
 	return out, nil
 }
@@ -1388,9 +1389,9 @@ func (m *IntPointTxnDefaultServer) DeleteSet(ctx context.Context, in *DeleteIntP
 			return nil, err
 		}
 	}
-	err = m.spanResult(span, out)
-	if err != nil {
-		return nil, m.spanError(span, err)
+	errSpanResult := m.spanResult(span, out)
+	if errSpanResult != nil {
+		return nil, m.spanError(span, errSpanResult)
 	}
 	return out, nil
 }
@@ -1413,9 +1414,9 @@ func (m *IntPointTxnDefaultServer) CustomMethod(ctx context.Context, in *google_
 	}
 	defer span.End()
 	out := &google_protobuf2.Empty{}
-	err = m.spanResult(span, out)
-	if err != nil {
-		return nil, m.spanError(span, err)
+	errSpanResult := m.spanResult(span, out)
+	if errSpanResult != nil {
+		return nil, m.spanError(span, errSpanResult)
 	}
 	return out, nil
 }
@@ -1428,9 +1429,9 @@ func (m *IntPointTxnDefaultServer) CreateSomething(ctx context.Context, in *Some
 	}
 	defer span.End()
 	out := &Something{}
-	err = m.spanResult(span, out)
-	if err != nil {
-		return nil, m.spanError(span, err)
+	errSpanResult := m.spanResult(span, out)
+	if errSpanResult != nil {
+		return nil, m.spanError(span, errSpanResult)
 	}
 	return out, nil
 }

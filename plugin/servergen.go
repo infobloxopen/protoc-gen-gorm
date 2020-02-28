@@ -143,8 +143,9 @@ func (p *OrmPlugin) generateSpanInstantiationMethod(service autogenService) {
 	withSpan := getServiceOptions(service.ServiceDescriptorProto).WithTracing
 	if withSpan != nil && *withSpan {
 		p.P(`// spanCreate ...`)
+		p.UsingGoImports(stdFmtImport)
 		p.P(`func (m *`, service.GetName(), `DefaultServer) spanCreate(ctx context.Context, in interface{}, methodName string) (*`, p.Import(ocTraceImport), `.Span, error) {`)
-		p.P(`_, span := `, p.Import(ocTraceImport), `.StartSpan(ctx, `, p.Import(fmImport), `Sprint("`, service.GetName(), `DefaultServer.", methodName))`)
+		p.P(`_, span := `, p.Import(ocTraceImport), `.StartSpan(ctx, fmt.Sprint("`, service.GetName(), `DefaultServer.", methodName))`)
 		p.P(`rawParameter, errMarshaling := `, p.Import(encodingJsonImport), `.Marshal(in)`)
 		p.P(`if errMarshaling != nil {`)
 		p.P(`return nil, errMarshaling`)
@@ -159,8 +160,8 @@ func (p *OrmPlugin) generateSpanErrorMethod(service autogenService) {
 	withSpan := getServiceOptions(service.ServiceDescriptorProto).WithTracing
 	if withSpan != nil && *withSpan {
 		p.P(`// spanError ...`)
-		p.P(`func (m *`, service.GetName(), `DefaultServer) spanError(span *`, p.Import(ocTraceImport), `Span, err error) error {`)
-		p.P(`span.SetStatus(trace.Status{`)
+		p.P(`func (m *`, service.GetName(), `DefaultServer) spanError(span *`, p.Import(ocTraceImport), `.Span, err error) error {`)
+		p.P(`span.SetStatus(`, p.Import(ocTraceImport), `.Status{`)
 		p.P(`Code: `, p.Import(ocTraceImport), `.StatusCodeUnknown,`)
 		p.P(`Message: err.Error(),`)
 		p.P(`})`)
@@ -173,12 +174,13 @@ func (p *OrmPlugin) generateSpanResultMethod(service autogenService) {
 	withSpan := getServiceOptions(service.ServiceDescriptorProto).WithTracing
 	if withSpan != nil && *withSpan {
 		p.P(`// spanResult ...`)
-		p.P(`func (m *`, service.GetName(), `DefaultServer) spanResult(span *`, p.Import(ocTraceImport), `Span, out interface{}) error {`)
+		p.P(`func (m *`, service.GetName(), `DefaultServer) spanResult(span *`, p.Import(ocTraceImport), `.Span, out interface{}) error {`)
 		p.P(`rawParameter, errMarshaling := `, p.Import(encodingJsonImport), `.Marshal(out)`)
 		p.P(`if errMarshaling != nil {`)
 		p.P(`return errMarshaling`)
 		p.P(`}`)
 		p.P(`span.Annotate([]`, p.Import(ocTraceImport), `.Attribute{`, p.Import(ocTraceImport), `.StringAttribute("out", string(rawParameter))}, "out parameter")`)
+		p.P(`return nil`)
 		p.P(`}`)
 	}
 }
@@ -703,9 +705,9 @@ func (p *OrmPlugin) generateDBSetup(service autogenService) error {
 func (p *OrmPlugin) spanResultHandling(service autogenService) {
 	withSpan := getServiceOptions(service.ServiceDescriptorProto).WithTracing
 	if withSpan != nil && *withSpan {
-		p.P(`err = m.spanResult(span, out)`)
-		p.P(`if err != nil {`)
-		p.P(`return nil, `, p.wrapSpanError(service, "err"))
+		p.P(`errSpanResult := m.spanResult(span, out)`)
+		p.P(`if errSpanResult != nil {`)
+		p.P(`return nil, `, p.wrapSpanError(service, "errSpanResult"))
 		p.P(`}`)
 	}
 }
