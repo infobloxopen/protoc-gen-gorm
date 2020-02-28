@@ -1052,16 +1052,42 @@ func (m *IntPointServiceDefaultServer) CreateSomething(ctx context.Context, in *
 type IntPointTxnDefaultServer struct {
 }
 
+// spanCreate ...
+func (m *IntPointTxnDefaultServer) spanCreate(ctx context.Context, in interface{}, methodName string) (*trace1.Span, error) {
+	_, span := trace1.StartSpan(ctx, field_mask1Sprint("IntPointTxnDefaultServer.", methodName))
+	rawParameter, errMarshaling := json1.Marshal(in)
+	if errMarshaling != nil {
+		return nil, errMarshaling
+	}
+	span.Annotate([]trace1.Attribute{trace1.StringAttribute("in", string(rawParameter))}, "in parameter")
+	return span, nil
+}
+
+// spanError ...
+func (m *IntPointTxnDefaultServer) spanError(span *trace1Span, err error) error {
+	span.SetStatus(trace.Status{
+		Code:    trace1.StatusCodeUnknown,
+		Message: err.Error(),
+	})
+	return err
+}
+
+// spanResult ...
+func (m *IntPointTxnDefaultServer) spanResult(span *trace1Span, out interface{}) error {
+	rawParameter, errMarshaling := json1.Marshal(out)
+	if errMarshaling != nil {
+		return errMarshaling
+	}
+	span.Annotate([]trace1.Attribute{trace1.StringAttribute("out", string(rawParameter))}, "out parameter")
+}
+
 // Create ...
 func (m *IntPointTxnDefaultServer) Create(ctx context.Context, in *CreateIntPointRequest) (*CreateIntPointResponse, error) {
-	_, span := trace1.StartSpan(ctx, "Create")
-	defer span.End()
-	rawParameterIn, errMarshalingIn := json1.Marshal(in)
-	if errMarshalingIn != nil {
-		span.Annotate([]trace1.Attribute{trace1.StringAttribute("in", "")}, "in parameter")
-		return nil, errMarshalingIn
+	span, errSpanCreate := m.spanCreate(ctx, in, "Create")
+	if errSpanCreate != nil {
+		return nil, errSpanCreate
 	}
-	span.Annotate([]trace1.Attribute{trace1.StringAttribute("in", string(rawParameterIn))}, "in parameter")
+	defer span.End()
 	txn, ok := gorm2.FromContext(ctx)
 	if !ok {
 		return nil, errors1.NoTransactionError
@@ -1078,18 +1104,12 @@ func (m *IntPointTxnDefaultServer) Create(ctx context.Context, in *CreateIntPoin
 	}
 	res, err := DefaultCreateIntPoint(ctx, in.GetPayload(), db)
 	if err != nil {
-		return nil, err
+		return nil, m.spanError(span, err)
 	}
 	out := &CreateIntPointResponse{Result: res}
 	err = gateway1.SetCreated(ctx, "")
 	if err != nil {
-		rawParameterOut, errMarshalingOut := json1.Marshal(nil)
-		if errMarshalingOut != nil {
-			span.Annotate([]trace1.Attribute{trace1.StringAttribute("out", "")}, "out parameter")
-			return nil, errMarshalingOut
-		}
-		span.Annotate([]trace1.Attribute{trace1.StringAttribute("out", string(rawParameterOut))}, "out parameter")
-		return nil, err
+		return nil, m.spanError(span, err)
 	}
 	if custom, ok := interface{}(in).(IntPointTxnIntPointWithAfterCreate); ok {
 		var err error
@@ -1097,12 +1117,10 @@ func (m *IntPointTxnDefaultServer) Create(ctx context.Context, in *CreateIntPoin
 			return nil, err
 		}
 	}
-	rawParameterOut, errMarshalingOut := json1.Marshal(out)
-	if errMarshalingOut != nil {
-		span.Annotate([]trace1.Attribute{trace1.StringAttribute("out", "")}, "out parameter")
-		return nil, errMarshalingOut
+	err = m.spanResult(span, out)
+	if err != nil {
+		return nil, m.spanError(span, err)
 	}
-	span.Annotate([]trace1.Attribute{trace1.StringAttribute("out", string(rawParameterOut))}, "out parameter")
 	return out, nil
 }
 
@@ -1118,14 +1136,11 @@ type IntPointTxnIntPointWithAfterCreate interface {
 
 // Read ...
 func (m *IntPointTxnDefaultServer) Read(ctx context.Context, in *ReadIntPointRequest) (*ReadIntPointResponse, error) {
-	_, span := trace1.StartSpan(ctx, "Read")
-	defer span.End()
-	rawParameterIn, errMarshalingIn := json1.Marshal(in)
-	if errMarshalingIn != nil {
-		span.Annotate([]trace1.Attribute{trace1.StringAttribute("in", "")}, "in parameter")
-		return nil, errMarshalingIn
+	span, errSpanCreate := m.spanCreate(ctx, in, "Read")
+	if errSpanCreate != nil {
+		return nil, errSpanCreate
 	}
-	span.Annotate([]trace1.Attribute{trace1.StringAttribute("in", string(rawParameterIn))}, "in parameter")
+	defer span.End()
 	txn, ok := gorm2.FromContext(ctx)
 	if !ok {
 		return nil, errors1.NoTransactionError
@@ -1142,13 +1157,7 @@ func (m *IntPointTxnDefaultServer) Read(ctx context.Context, in *ReadIntPointReq
 	}
 	res, err := DefaultReadIntPoint(ctx, &IntPoint{Id: in.GetId()}, db, in.Fields)
 	if err != nil {
-		rawParameterOut, errMarshalingOut := json1.Marshal(nil)
-		if errMarshalingOut != nil {
-			span.Annotate([]trace1.Attribute{trace1.StringAttribute("out", "")}, "out parameter")
-			return nil, errMarshalingOut
-		}
-		span.Annotate([]trace1.Attribute{trace1.StringAttribute("out", string(rawParameterOut))}, "out parameter")
-		return nil, err
+		return nil, m.spanError(span, err)
 	}
 	out := &ReadIntPointResponse{Result: res}
 	if custom, ok := interface{}(in).(IntPointTxnIntPointWithAfterRead); ok {
@@ -1157,12 +1166,10 @@ func (m *IntPointTxnDefaultServer) Read(ctx context.Context, in *ReadIntPointReq
 			return nil, err
 		}
 	}
-	rawParameterOut, errMarshalingOut := json1.Marshal(out)
-	if errMarshalingOut != nil {
-		span.Annotate([]trace1.Attribute{trace1.StringAttribute("out", "")}, "out parameter")
-		return nil, errMarshalingOut
+	err = m.spanResult(span, out)
+	if err != nil {
+		return nil, m.spanError(span, err)
 	}
-	span.Annotate([]trace1.Attribute{trace1.StringAttribute("out", string(rawParameterOut))}, "out parameter")
 	return out, nil
 }
 
@@ -1178,14 +1185,11 @@ type IntPointTxnIntPointWithAfterRead interface {
 
 // Update ...
 func (m *IntPointTxnDefaultServer) Update(ctx context.Context, in *UpdateIntPointRequest) (*UpdateIntPointResponse, error) {
-	_, span := trace1.StartSpan(ctx, "Update")
-	defer span.End()
-	rawParameterIn, errMarshalingIn := json1.Marshal(in)
-	if errMarshalingIn != nil {
-		span.Annotate([]trace1.Attribute{trace1.StringAttribute("in", "")}, "in parameter")
-		return nil, errMarshalingIn
+	span, errSpanCreate := m.spanCreate(ctx, in, "Update")
+	if errSpanCreate != nil {
+		return nil, errSpanCreate
 	}
-	span.Annotate([]trace1.Attribute{trace1.StringAttribute("in", string(rawParameterIn))}, "in parameter")
+	defer span.End()
 	var err error
 	var res *IntPoint
 	txn, ok := gorm2.FromContext(ctx)
@@ -1208,13 +1212,7 @@ func (m *IntPointTxnDefaultServer) Update(ctx context.Context, in *UpdateIntPoin
 		res, err = DefaultPatchIntPoint(ctx, in.GetPayload(), in.GetGerogeriGegege(), db)
 	}
 	if err != nil {
-		rawParameterOut, errMarshalingOut := json1.Marshal(nil)
-		if errMarshalingOut != nil {
-			span.Annotate([]trace1.Attribute{trace1.StringAttribute("out", "")}, "out parameter")
-			return nil, errMarshalingOut
-		}
-		span.Annotate([]trace1.Attribute{trace1.StringAttribute("out", string(rawParameterOut))}, "out parameter")
-		return nil, err
+		return nil, m.spanError(span, err)
 	}
 	out := &UpdateIntPointResponse{Result: res}
 	if custom, ok := interface{}(in).(IntPointTxnIntPointWithAfterUpdate); ok {
@@ -1223,12 +1221,10 @@ func (m *IntPointTxnDefaultServer) Update(ctx context.Context, in *UpdateIntPoin
 			return nil, err
 		}
 	}
-	rawParameterOut, errMarshalingOut := json1.Marshal(out)
-	if errMarshalingOut != nil {
-		span.Annotate([]trace1.Attribute{trace1.StringAttribute("out", "")}, "out parameter")
-		return nil, errMarshalingOut
+	err = m.spanResult(span, out)
+	if err != nil {
+		return nil, m.spanError(span, err)
 	}
-	span.Annotate([]trace1.Attribute{trace1.StringAttribute("out", string(rawParameterOut))}, "out parameter")
 	return out, nil
 }
 
@@ -1244,14 +1240,11 @@ type IntPointTxnIntPointWithAfterUpdate interface {
 
 // List ...
 func (m *IntPointTxnDefaultServer) List(ctx context.Context, in *ListIntPointRequest) (*ListIntPointResponse, error) {
-	_, span := trace1.StartSpan(ctx, "List")
-	defer span.End()
-	rawParameterIn, errMarshalingIn := json1.Marshal(in)
-	if errMarshalingIn != nil {
-		span.Annotate([]trace1.Attribute{trace1.StringAttribute("in", "")}, "in parameter")
-		return nil, errMarshalingIn
+	span, errSpanCreate := m.spanCreate(ctx, in, "List")
+	if errSpanCreate != nil {
+		return nil, errSpanCreate
 	}
-	span.Annotate([]trace1.Attribute{trace1.StringAttribute("in", string(rawParameterIn))}, "in parameter")
+	defer span.End()
 	txn, ok := gorm2.FromContext(ctx)
 	if !ok {
 		return nil, errors1.NoTransactionError
@@ -1273,13 +1266,7 @@ func (m *IntPointTxnDefaultServer) List(ctx context.Context, in *ListIntPointReq
 	}
 	res, err := DefaultListIntPoint(ctx, db, in.Filter, in.OrderBy, in.Paging, in.Fields)
 	if err != nil {
-		rawParameterOut, errMarshalingOut := json1.Marshal(nil)
-		if errMarshalingOut != nil {
-			span.Annotate([]trace1.Attribute{trace1.StringAttribute("out", "")}, "out parameter")
-			return nil, errMarshalingOut
-		}
-		span.Annotate([]trace1.Attribute{trace1.StringAttribute("out", string(rawParameterOut))}, "out parameter")
-		return nil, err
+		return nil, m.spanError(span, err)
 	}
 	var resPaging *query1.PageInfo
 	if pagedRequest {
@@ -1299,12 +1286,10 @@ func (m *IntPointTxnDefaultServer) List(ctx context.Context, in *ListIntPointReq
 			return nil, err
 		}
 	}
-	rawParameterOut, errMarshalingOut := json1.Marshal(out)
-	if errMarshalingOut != nil {
-		span.Annotate([]trace1.Attribute{trace1.StringAttribute("out", "")}, "out parameter")
-		return nil, errMarshalingOut
+	err = m.spanResult(span, out)
+	if err != nil {
+		return nil, m.spanError(span, err)
 	}
-	span.Annotate([]trace1.Attribute{trace1.StringAttribute("out", string(rawParameterOut))}, "out parameter")
 	return out, nil
 }
 
@@ -1320,14 +1305,11 @@ type IntPointTxnIntPointWithAfterList interface {
 
 // Delete ...
 func (m *IntPointTxnDefaultServer) Delete(ctx context.Context, in *DeleteIntPointRequest) (*DeleteIntPointResponse, error) {
-	_, span := trace1.StartSpan(ctx, "Delete")
-	defer span.End()
-	rawParameterIn, errMarshalingIn := json1.Marshal(in)
-	if errMarshalingIn != nil {
-		span.Annotate([]trace1.Attribute{trace1.StringAttribute("in", "")}, "in parameter")
-		return nil, errMarshalingIn
+	span, errSpanCreate := m.spanCreate(ctx, in, "Delete")
+	if errSpanCreate != nil {
+		return nil, errSpanCreate
 	}
-	span.Annotate([]trace1.Attribute{trace1.StringAttribute("in", string(rawParameterIn))}, "in parameter")
+	defer span.End()
 	txn, ok := gorm2.FromContext(ctx)
 	if !ok {
 		return nil, errors1.NoTransactionError
@@ -1344,13 +1326,7 @@ func (m *IntPointTxnDefaultServer) Delete(ctx context.Context, in *DeleteIntPoin
 	}
 	err := DefaultDeleteIntPoint(ctx, &IntPoint{Id: in.GetId()}, db)
 	if err != nil {
-		rawParameterOut, errMarshalingOut := json1.Marshal(nil)
-		if errMarshalingOut != nil {
-			span.Annotate([]trace1.Attribute{trace1.StringAttribute("out", "")}, "out parameter")
-			return nil, errMarshalingOut
-		}
-		span.Annotate([]trace1.Attribute{trace1.StringAttribute("out", string(rawParameterOut))}, "out parameter")
-		return nil, err
+		return nil, m.spanError(span, err)
 	}
 	out := &DeleteIntPointResponse{}
 	if custom, ok := interface{}(in).(IntPointTxnIntPointWithAfterDelete); ok {
@@ -1359,12 +1335,10 @@ func (m *IntPointTxnDefaultServer) Delete(ctx context.Context, in *DeleteIntPoin
 			return nil, err
 		}
 	}
-	rawParameterOut, errMarshalingOut := json1.Marshal(out)
-	if errMarshalingOut != nil {
-		span.Annotate([]trace1.Attribute{trace1.StringAttribute("out", "")}, "out parameter")
-		return nil, errMarshalingOut
+	err = m.spanResult(span, out)
+	if err != nil {
+		return nil, m.spanError(span, err)
 	}
-	span.Annotate([]trace1.Attribute{trace1.StringAttribute("out", string(rawParameterOut))}, "out parameter")
 	return out, nil
 }
 
@@ -1380,14 +1354,11 @@ type IntPointTxnIntPointWithAfterDelete interface {
 
 // DeleteSet ...
 func (m *IntPointTxnDefaultServer) DeleteSet(ctx context.Context, in *DeleteIntPointsRequest) (*DeleteIntPointResponse, error) {
-	_, span := trace1.StartSpan(ctx, "DeleteSet")
-	defer span.End()
-	rawParameterIn, errMarshalingIn := json1.Marshal(in)
-	if errMarshalingIn != nil {
-		span.Annotate([]trace1.Attribute{trace1.StringAttribute("in", "")}, "in parameter")
-		return nil, errMarshalingIn
+	span, errSpanCreate := m.spanCreate(ctx, in, "DeleteSet")
+	if errSpanCreate != nil {
+		return nil, errSpanCreate
 	}
-	span.Annotate([]trace1.Attribute{trace1.StringAttribute("in", string(rawParameterIn))}, "in parameter")
+	defer span.End()
 	txn, ok := gorm2.FromContext(ctx)
 	if !ok {
 		return nil, errors1.NoTransactionError
@@ -1408,13 +1379,7 @@ func (m *IntPointTxnDefaultServer) DeleteSet(ctx context.Context, in *DeleteIntP
 	}
 	err := DefaultDeleteIntPointSet(ctx, objs, db)
 	if err != nil {
-		rawParameterOut, errMarshalingOut := json1.Marshal(nil)
-		if errMarshalingOut != nil {
-			span.Annotate([]trace1.Attribute{trace1.StringAttribute("out", "")}, "out parameter")
-			return nil, errMarshalingOut
-		}
-		span.Annotate([]trace1.Attribute{trace1.StringAttribute("out", string(rawParameterOut))}, "out parameter")
-		return nil, err
+		return nil, m.spanError(span, err)
 	}
 	out := &DeleteIntPointResponse{}
 	if custom, ok := interface{}(in).(IntPointTxnIntPointWithAfterDeleteSet); ok {
@@ -1423,12 +1388,10 @@ func (m *IntPointTxnDefaultServer) DeleteSet(ctx context.Context, in *DeleteIntP
 			return nil, err
 		}
 	}
-	rawParameterOut, errMarshalingOut := json1.Marshal(out)
-	if errMarshalingOut != nil {
-		span.Annotate([]trace1.Attribute{trace1.StringAttribute("out", "")}, "out parameter")
-		return nil, errMarshalingOut
+	err = m.spanResult(span, out)
+	if err != nil {
+		return nil, m.spanError(span, err)
 	}
-	span.Annotate([]trace1.Attribute{trace1.StringAttribute("out", string(rawParameterOut))}, "out parameter")
 	return out, nil
 }
 
@@ -1444,29 +1407,31 @@ type IntPointTxnIntPointWithAfterDeleteSet interface {
 
 // CustomMethod ...
 func (m *IntPointTxnDefaultServer) CustomMethod(ctx context.Context, in *google_protobuf2.Empty) (*google_protobuf2.Empty, error) {
-	_, span := trace1.StartSpan(ctx, "CustomMethod")
-	defer span.End()
-	rawParameterIn, errMarshalingIn := json1.Marshal(in)
-	if errMarshalingIn != nil {
-		span.Annotate([]trace1.Attribute{trace1.StringAttribute("in", "")}, "in parameter")
-		return nil, errMarshalingIn
+	span, errSpanCreate := m.spanCreate(ctx, in, "CustomMethod")
+	if errSpanCreate != nil {
+		return nil, errSpanCreate
 	}
-	span.Annotate([]trace1.Attribute{trace1.StringAttribute("in", string(rawParameterIn))}, "in parameter")
+	defer span.End()
 	out := &google_protobuf2.Empty{}
+	err = m.spanResult(span, out)
+	if err != nil {
+		return nil, m.spanError(span, err)
+	}
 	return out, nil
 }
 
 // CreateSomething ...
 func (m *IntPointTxnDefaultServer) CreateSomething(ctx context.Context, in *Something) (*Something, error) {
-	_, span := trace1.StartSpan(ctx, "CreateSomething")
-	defer span.End()
-	rawParameterIn, errMarshalingIn := json1.Marshal(in)
-	if errMarshalingIn != nil {
-		span.Annotate([]trace1.Attribute{trace1.StringAttribute("in", "")}, "in parameter")
-		return nil, errMarshalingIn
+	span, errSpanCreate := m.spanCreate(ctx, in, "CreateSomething")
+	if errSpanCreate != nil {
+		return nil, errSpanCreate
 	}
-	span.Annotate([]trace1.Attribute{trace1.StringAttribute("in", string(rawParameterIn))}, "in parameter")
+	defer span.End()
 	out := &Something{}
+	err = m.spanResult(span, out)
+	if err != nil {
+		return nil, m.spanError(span, err)
+	}
 	return out, nil
 }
 
