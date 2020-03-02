@@ -1100,7 +1100,7 @@ func (m *IntPointTxnDefaultServer) Create(ctx context.Context, in *CreateIntPoin
 	if custom, ok := interface{}(in).(IntPointTxnIntPointWithBeforeCreate); ok {
 		var err error
 		if db, err = custom.BeforeCreate(ctx, db); err != nil {
-			return nil, err
+			return nil, m.spanError(span, err)
 		}
 	}
 	res, err := DefaultCreateIntPoint(ctx, in.GetPayload(), db)
@@ -1115,7 +1115,7 @@ func (m *IntPointTxnDefaultServer) Create(ctx context.Context, in *CreateIntPoin
 	if custom, ok := interface{}(in).(IntPointTxnIntPointWithAfterCreate); ok {
 		var err error
 		if err = custom.AfterCreate(ctx, out, db); err != nil {
-			return nil, err
+			return nil, m.spanError(span, err)
 		}
 	}
 	errSpanResult := m.spanResult(span, out)
@@ -1153,7 +1153,7 @@ func (m *IntPointTxnDefaultServer) Read(ctx context.Context, in *ReadIntPointReq
 	if custom, ok := interface{}(in).(IntPointTxnIntPointWithBeforeRead); ok {
 		var err error
 		if db, err = custom.BeforeRead(ctx, db); err != nil {
-			return nil, err
+			return nil, m.spanError(span, err)
 		}
 	}
 	res, err := DefaultReadIntPoint(ctx, &IntPoint{Id: in.GetId()}, db, in.Fields)
@@ -1164,7 +1164,7 @@ func (m *IntPointTxnDefaultServer) Read(ctx context.Context, in *ReadIntPointReq
 	if custom, ok := interface{}(in).(IntPointTxnIntPointWithAfterRead); ok {
 		var err error
 		if err = custom.AfterRead(ctx, out, db); err != nil {
-			return nil, err
+			return nil, m.spanError(span, err)
 		}
 	}
 	errSpanResult := m.spanResult(span, out)
@@ -1204,7 +1204,7 @@ func (m *IntPointTxnDefaultServer) Update(ctx context.Context, in *UpdateIntPoin
 	if custom, ok := interface{}(in).(IntPointTxnIntPointWithBeforeUpdate); ok {
 		var err error
 		if db, err = custom.BeforeUpdate(ctx, db); err != nil {
-			return nil, err
+			return nil, m.spanError(span, err)
 		}
 	}
 	if in.GetGerogeriGegege() == nil {
@@ -1219,7 +1219,7 @@ func (m *IntPointTxnDefaultServer) Update(ctx context.Context, in *UpdateIntPoin
 	if custom, ok := interface{}(in).(IntPointTxnIntPointWithAfterUpdate); ok {
 		var err error
 		if err = custom.AfterUpdate(ctx, out, db); err != nil {
-			return nil, err
+			return nil, m.spanError(span, err)
 		}
 	}
 	errSpanResult := m.spanResult(span, out)
@@ -1257,7 +1257,7 @@ func (m *IntPointTxnDefaultServer) List(ctx context.Context, in *ListIntPointReq
 	if custom, ok := interface{}(in).(IntPointTxnIntPointWithBeforeList); ok {
 		var err error
 		if db, err = custom.BeforeList(ctx, db); err != nil {
-			return nil, err
+			return nil, m.spanError(span, err)
 		}
 	}
 	pagedRequest := false
@@ -1284,7 +1284,7 @@ func (m *IntPointTxnDefaultServer) List(ctx context.Context, in *ListIntPointReq
 	if custom, ok := interface{}(in).(IntPointTxnIntPointWithAfterList); ok {
 		var err error
 		if err = custom.AfterList(ctx, out, db); err != nil {
-			return nil, err
+			return nil, m.spanError(span, err)
 		}
 	}
 	errSpanResult := m.spanResult(span, out)
@@ -1322,7 +1322,7 @@ func (m *IntPointTxnDefaultServer) Delete(ctx context.Context, in *DeleteIntPoin
 	if custom, ok := interface{}(in).(IntPointTxnIntPointWithBeforeDelete); ok {
 		var err error
 		if db, err = custom.BeforeDelete(ctx, db); err != nil {
-			return nil, err
+			return nil, m.spanError(span, err)
 		}
 	}
 	err := DefaultDeleteIntPoint(ctx, &IntPoint{Id: in.GetId()}, db)
@@ -1333,7 +1333,7 @@ func (m *IntPointTxnDefaultServer) Delete(ctx context.Context, in *DeleteIntPoin
 	if custom, ok := interface{}(in).(IntPointTxnIntPointWithAfterDelete); ok {
 		var err error
 		if err = custom.AfterDelete(ctx, out, db); err != nil {
-			return nil, err
+			return nil, m.spanError(span, err)
 		}
 	}
 	errSpanResult := m.spanResult(span, out)
@@ -1375,7 +1375,7 @@ func (m *IntPointTxnDefaultServer) DeleteSet(ctx context.Context, in *DeleteIntP
 	if custom, ok := interface{}(in).(IntPointTxnIntPointWithBeforeDeleteSet); ok {
 		var err error
 		if db, err = custom.BeforeDeleteSet(ctx, db); err != nil {
-			return nil, err
+			return nil, m.spanError(span, err)
 		}
 	}
 	err := DefaultDeleteIntPointSet(ctx, objs, db)
@@ -1386,7 +1386,7 @@ func (m *IntPointTxnDefaultServer) DeleteSet(ctx context.Context, in *DeleteIntP
 	if custom, ok := interface{}(in).(IntPointTxnIntPointWithAfterDeleteSet); ok {
 		var err error
 		if err = custom.AfterDeleteSet(ctx, out, db); err != nil {
-			return nil, err
+			return nil, m.spanError(span, err)
 		}
 	}
 	errSpanResult := m.spanResult(span, out)
