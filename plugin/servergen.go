@@ -111,9 +111,12 @@ func (p *OrmPlugin) generateDefaultServer(file *generator.FileDescriptor) {
 			p.P(`DB *`, p.Import(gormImport), `.DB`)
 		}
 		p.P(`}`)
-		p.generateSpanInstantiationMethod(service)
-		p.generateSpanErrorMethod(service)
-		p.generateSpanResultMethod(service)
+		withSpan := getServiceOptions(service.ServiceDescriptorProto).WithTracing
+		if withSpan != nil && *withSpan {
+			p.generateSpanInstantiationMethod(service)
+			p.generateSpanErrorMethod(service)
+			p.generateSpanResultMethod(service)
+		}
 		for _, method := range service.methods {
 			//Import context there because it have used in functions parameters
 			p.UsingGoImports(stdCtxImport)
@@ -140,49 +143,39 @@ func (p *OrmPlugin) generateDefaultServer(file *generator.FileDescriptor) {
 }
 
 func (p *OrmPlugin) generateSpanInstantiationMethod(service autogenService) {
-	withSpan := getServiceOptions(service.ServiceDescriptorProto).WithTracing
-	if withSpan != nil && *withSpan {
-		p.P(`// spanCreate ...`)
-		p.UsingGoImports(stdFmtImport)
-		p.P(`func (m *`, service.GetName(), `DefaultServer) spanCreate(ctx context.Context, in interface{}, methodName string) (*`, p.Import(ocTraceImport), `.Span, error) {`)
-		p.P(`_, span := `, p.Import(ocTraceImport), `.StartSpan(ctx, fmt.Sprint("`, service.GetName(), `DefaultServer.", methodName))`)
-		p.P(`rawParameter, errMarshaling := `, p.Import(encodingJsonImport), `.Marshal(in)`)
-		p.P(`if errMarshaling != nil {`)
-		p.P(`return nil, errMarshaling`)
-		p.P(`}`)
-		p.P(`span.Annotate([]`, p.Import(ocTraceImport), `.Attribute{`, p.Import(ocTraceImport), `.StringAttribute("in", string(rawParameter))}, "in parameter")`)
-		p.P(`return span, nil`)
-		p.P(`}`)
-	}
+	p.UsingGoImports(stdFmtImport)
+	p.P(`func (m *`, service.GetName(), `DefaultServer) spanCreate(ctx context.Context, in interface{}, methodName string) (*`, p.Import(ocTraceImport), `.Span, error) {`)
+	p.P(`_, span := `, p.Import(ocTraceImport), `.StartSpan(ctx, fmt.Sprint("`, service.GetName(), `DefaultServer.", methodName))`)
+	p.P(`raw, err := `, p.Import(encodingJsonImport), `.Marshal(in)`)
+	p.P(`if err != nil {`)
+	p.P(`return nil, err`)
+	p.P(`}`)
+	p.P(`span.Annotate([]`, p.Import(ocTraceImport), `.Attribute{`, p.Import(ocTraceImport), `.StringAttribute("in", string(raw))}, "in parameter")`)
+	p.P(`return span, nil`)
+	p.P(`}`)
 }
 
 func (p *OrmPlugin) generateSpanErrorMethod(service autogenService) {
-	withSpan := getServiceOptions(service.ServiceDescriptorProto).WithTracing
-	if withSpan != nil && *withSpan {
-		p.P(`// spanError ...`)
-		p.P(`func (m *`, service.GetName(), `DefaultServer) spanError(span *`, p.Import(ocTraceImport), `.Span, err error) error {`)
-		p.P(`span.SetStatus(`, p.Import(ocTraceImport), `.Status{`)
-		p.P(`Code: `, p.Import(ocTraceImport), `.StatusCodeUnknown,`)
-		p.P(`Message: err.Error(),`)
-		p.P(`})`)
-		p.P(`return err`)
-		p.P(`}`)
-	}
+	p.P(`// spanError ...`)
+	p.P(`func (m *`, service.GetName(), `DefaultServer) spanError(span *`, p.Import(ocTraceImport), `.Span, err error) error {`)
+	p.P(`span.SetStatus(`, p.Import(ocTraceImport), `.Status{`)
+	p.P(`Code: `, p.Import(ocTraceImport), `.StatusCodeUnknown,`)
+	p.P(`Message: err.Error(),`)
+	p.P(`})`)
+	p.P(`return err`)
+	p.P(`}`)
 }
 
 func (p *OrmPlugin) generateSpanResultMethod(service autogenService) {
-	withSpan := getServiceOptions(service.ServiceDescriptorProto).WithTracing
-	if withSpan != nil && *withSpan {
-		p.P(`// spanResult ...`)
-		p.P(`func (m *`, service.GetName(), `DefaultServer) spanResult(span *`, p.Import(ocTraceImport), `.Span, out interface{}) error {`)
-		p.P(`rawParameter, errMarshaling := `, p.Import(encodingJsonImport), `.Marshal(out)`)
-		p.P(`if errMarshaling != nil {`)
-		p.P(`return errMarshaling`)
-		p.P(`}`)
-		p.P(`span.Annotate([]`, p.Import(ocTraceImport), `.Attribute{`, p.Import(ocTraceImport), `.StringAttribute("out", string(rawParameter))}, "out parameter")`)
-		p.P(`return nil`)
-		p.P(`}`)
-	}
+	p.P(`// spanResult ...`)
+	p.P(`func (m *`, service.GetName(), `DefaultServer) spanResult(span *`, p.Import(ocTraceImport), `.Span, out interface{}) error {`)
+	p.P(`raw, err := `, p.Import(encodingJsonImport), `.Marshal(out)`)
+	p.P(`if err != nil {`)
+	p.P(`return err`)
+	p.P(`}`)
+	p.P(`span.Annotate([]`, p.Import(ocTraceImport), `.Attribute{`, p.Import(ocTraceImport), `.StringAttribute("out", string(raw))}, "out parameter")`)
+	p.P(`return nil`)
+	p.P(`}`)
 }
 
 func (p *OrmPlugin) wrapSpanError(service autogenService, errVarName string) string {

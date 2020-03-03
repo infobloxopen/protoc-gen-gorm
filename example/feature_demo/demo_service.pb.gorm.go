@@ -1052,14 +1052,13 @@ func (m *IntPointServiceDefaultServer) CreateSomething(ctx context.Context, in *
 type IntPointTxnDefaultServer struct {
 }
 
-// spanCreate ...
 func (m *IntPointTxnDefaultServer) spanCreate(ctx context.Context, in interface{}, methodName string) (*trace1.Span, error) {
 	_, span := trace1.StartSpan(ctx, fmt.Sprint("IntPointTxnDefaultServer.", methodName))
-	rawParameter, errMarshaling := json1.Marshal(in)
-	if errMarshaling != nil {
-		return nil, errMarshaling
+	raw, err := json1.Marshal(in)
+	if err != nil {
+		return nil, err
 	}
-	span.Annotate([]trace1.Attribute{trace1.StringAttribute("in", string(rawParameter))}, "in parameter")
+	span.Annotate([]trace1.Attribute{trace1.StringAttribute("in", string(raw))}, "in parameter")
 	return span, nil
 }
 
@@ -1074,11 +1073,11 @@ func (m *IntPointTxnDefaultServer) spanError(span *trace1.Span, err error) error
 
 // spanResult ...
 func (m *IntPointTxnDefaultServer) spanResult(span *trace1.Span, out interface{}) error {
-	rawParameter, errMarshaling := json1.Marshal(out)
-	if errMarshaling != nil {
-		return errMarshaling
+	raw, err := json1.Marshal(out)
+	if err != nil {
+		return err
 	}
-	span.Annotate([]trace1.Attribute{trace1.StringAttribute("out", string(rawParameter))}, "out parameter")
+	span.Annotate([]trace1.Attribute{trace1.StringAttribute("out", string(raw))}, "out parameter")
 	return nil
 }
 
