@@ -131,6 +131,7 @@ extend google.protobuf.ServiceOptions {
 message AutoServerOptions {
   optional bool autogen = 1;
   optional bool txn_middleware = 2;
+  optional bool with_tracing = 3;
 }
 
 extend google.protobuf.MethodOptions {

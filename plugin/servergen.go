@@ -111,6 +111,12 @@ func (p *OrmPlugin) generateDefaultServer(file *generator.FileDescriptor) {
 			p.P(`DB *`, p.Import(gormImport), `.DB`)
 		}
 		p.P(`}`)
+		withSpan := getServiceOptions(service.ServiceDescriptorProto).WithTracing
+		if withSpan != nil && *withSpan {
+			p.generateSpanInstantiationMethod(service)
+			p.generateSpanErrorMethod(service)
+			p.generateSpanResultMethod(service)
+		}
 		for _, method := range service.methods {
 			//Import context there because it have used in functions parameters
 			p.UsingGoImports(stdCtxImport)
@@ -136,29 +142,74 @@ func (p *OrmPlugin) generateDefaultServer(file *generator.FileDescriptor) {
 	}
 }
 
+func (p *OrmPlugin) generateSpanInstantiationMethod(service autogenService) {
+	p.UsingGoImports(stdFmtImport)
+	p.P(`func (m *`, service.GetName(), `DefaultServer) spanCreate(ctx context.Context, in interface{}, methodName string) (*`, p.Import(ocTraceImport), `.Span, error) {`)
+	p.P(`_, span := `, p.Import(ocTraceImport), `.StartSpan(ctx, fmt.Sprint("`, service.GetName(), `DefaultServer.", methodName))`)
+	p.P(`raw, err := `, p.Import(encodingJsonImport), `.Marshal(in)`)
+	p.P(`if err != nil {`)
+	p.P(`return nil, err`)
+	p.P(`}`)
+	p.P(`span.Annotate([]`, p.Import(ocTraceImport), `.Attribute{`, p.Import(ocTraceImport), `.StringAttribute("in", string(raw))}, "in parameter")`)
+	p.P(`return span, nil`)
+	p.P(`}`)
+}
+
+func (p *OrmPlugin) generateSpanErrorMethod(service autogenService) {
+	p.P(`// spanError ...`)
+	p.P(`func (m *`, service.GetName(), `DefaultServer) spanError(span *`, p.Import(ocTraceImport), `.Span, err error) error {`)
+	p.P(`span.SetStatus(`, p.Import(ocTraceImport), `.Status{`)
+	p.P(`Code: `, p.Import(ocTraceImport), `.StatusCodeUnknown,`)
+	p.P(`Message: err.Error(),`)
+	p.P(`})`)
+	p.P(`return err`)
+	p.P(`}`)
+}
+
+func (p *OrmPlugin) generateSpanResultMethod(service autogenService) {
+	p.P(`// spanResult ...`)
+	p.P(`func (m *`, service.GetName(), `DefaultServer) spanResult(span *`, p.Import(ocTraceImport), `.Span, out interface{}) error {`)
+	p.P(`raw, err := `, p.Import(encodingJsonImport), `.Marshal(out)`)
+	p.P(`if err != nil {`)
+	p.P(`return err`)
+	p.P(`}`)
+	p.P(`span.Annotate([]`, p.Import(ocTraceImport), `.Attribute{`, p.Import(ocTraceImport), `.StringAttribute("out", string(raw))}, "out parameter")`)
+	p.P(`return nil`)
+	p.P(`}`)
+}
+
+func (p *OrmPlugin) wrapSpanError(service autogenService, errVarName string) string {
+	withSpan := getServiceOptions(service.ServiceDescriptorProto).WithTracing
+	if withSpan != nil && *withSpan {
+		return fmt.Sprint(`m.spanError(span, `, errVarName, `)`)
+	}
+	return errVarName
+}
+
 func (p *OrmPlugin) generateCreateServerMethod(service autogenService, method autogenMethod) {
 	p.generateMethodSignature(service, method)
 	if method.followsConvention {
 		p.generateDBSetup(service)
-		p.generatePreserviceCall(service.ccName, method.baseType, createService)
+		p.generatePreserviceCall(service, method.baseType, createService)
 		p.P(`res, err := DefaultCreate`, method.baseType, `(ctx, in.GetPayload(), db)`)
 		p.P(`if err != nil {`)
-		p.P(`return nil, err`)
+		p.P(`return nil, `, p.wrapSpanError(service, "err"))
 		p.P(`}`)
 		p.P(`out := &`, p.TypeName(method.outType), `{Result: res}`)
 		if p.gateway {
 			p.P(`err = `, p.Import(gatewayImport), `.SetCreated(ctx, "")`)
 			p.P(`if err != nil {`)
-			p.P(`return nil, err`)
+			p.P(`return nil, `, p.wrapSpanError(service, "err"))
 			p.P(`}`)
 		}
-		p.generatePostserviceCall(service.ccName, method.baseType, createService)
+		p.generatePostserviceCall(service, method.baseType, createService)
+		p.spanResultHandling(service)
 		p.P(`return out, nil`)
 		p.P(`}`)
 		p.generatePreserviceHook(service.ccName, method.baseType, createService)
 		p.generatePostserviceHook(service.ccName, method.baseType, p.TypeName(method.outType), method.ccName)
 	} else {
-		p.generateEmptyBody(method.outType)
+		p.generateEmptyBody(service, method.outType)
 	}
 }
 
@@ -198,7 +249,7 @@ func (p *OrmPlugin) generateReadServerMethod(service autogenService, method auto
 	p.generateMethodSignature(service, method)
 	if method.followsConvention {
 		p.generateDBSetup(service)
-		p.generatePreserviceCall(service.ccName, method.baseType, method.ccName)
+		p.generatePreserviceCall(service, method.baseType, method.ccName)
 		typeName := method.baseType
 		if fields := p.getFieldSelection(method.inType); fields != "" {
 			p.P(`res, err := DefaultRead`, typeName, `(ctx, &`, typeName, `{Id: in.GetId()}, db, in.`, fields, `)`)
@@ -206,16 +257,17 @@ func (p *OrmPlugin) generateReadServerMethod(service autogenService, method auto
 			p.P(`res, err := DefaultRead`, typeName, `(ctx, &`, typeName, `{Id: in.GetId()}, db)`)
 		}
 		p.P(`if err != nil {`)
-		p.P(`return nil, err`)
+		p.P(`return nil, `, p.wrapSpanError(service, "err"))
 		p.P(`}`)
 		p.P(`out := &`, p.TypeName(method.outType), `{Result: res}`)
-		p.generatePostserviceCall(service.ccName, method.baseType, method.ccName)
+		p.generatePostserviceCall(service, method.baseType, method.ccName)
+		p.spanResultHandling(service)
 		p.P(`return out, nil`)
 		p.P(`}`)
 		p.generatePreserviceHook(service.ccName, method.baseType, method.ccName)
 		p.generatePostserviceHook(service.ccName, method.baseType, p.TypeName(method.outType), method.ccName)
 	} else {
-		p.generateEmptyBody(method.outType)
+		p.generateEmptyBody(service, method.outType)
 	}
 }
 
@@ -261,7 +313,7 @@ func (p *OrmPlugin) generateUpdateServerMethod(service autogenService, method au
 		typeName := method.baseType
 		p.P(`var res *`, typeName)
 		p.generateDBSetup(service)
-		p.generatePreserviceCall(service.ccName, method.baseType, method.ccName)
+		p.generatePreserviceCall(service, method.baseType, method.ccName)
 		if method.fieldMaskName != "" {
 			p.P(`if in.Get`, method.fieldMaskName, `() == nil {`)
 			p.P(`res, err = DefaultStrictUpdate`, typeName, `(ctx, in.GetPayload(), db)`)
@@ -272,16 +324,17 @@ func (p *OrmPlugin) generateUpdateServerMethod(service autogenService, method au
 			p.P(`res, err = DefaultStrictUpdate`, typeName, `(ctx, in.GetPayload(), db)`)
 		}
 		p.P(`if err != nil {`)
-		p.P(`return nil, err`)
+		p.P(`return nil, `, p.wrapSpanError(service, "err"))
 		p.P(`}`)
 		p.P(`out := &`, p.TypeName(method.outType), `{Result: res}`)
-		p.generatePostserviceCall(service.ccName, method.baseType, method.ccName)
+		p.generatePostserviceCall(service, method.baseType, method.ccName)
+		p.spanResultHandling(service)
 		p.P(`return out, nil`)
 		p.P(`}`)
 		p.generatePreserviceHook(service.ccName, method.baseType, method.ccName)
 		p.generatePostserviceHook(service.ccName, method.baseType, p.TypeName(method.outType), method.ccName)
 	} else {
-		p.generateEmptyBody(method.outType)
+		p.generateEmptyBody(service, method.outType)
 	}
 }
 
@@ -343,27 +396,33 @@ func (p *OrmPlugin) generateUpdateSetServerMethod(service autogenService, method
 		p.P(``)
 		p.generateDBSetup(service)
 		p.P(``)
-		p.generatePreserviceCall(service.ccName, typeName, method.ccName)
+		p.generatePreserviceCall(service, typeName, method.ccName)
 
 		p.P(``)
 		p.P(`res, err := DefaultPatchSet`, typeName, `(ctx, in.GetObjects(), in.Get`, method.fieldMaskName, `(), db)`)
 		p.P(`if err != nil {`)
-		p.P(`return nil, err`)
+		p.P(`return nil, `, p.wrapSpanError(service, "err"))
 		p.P(`}`)
 		p.P(``)
 		p.P(`out := &`, p.TypeName(method.outType), `{Results: res}`)
 
 		p.P(``)
-		p.generatePostserviceCall(service.ccName, typeName, method.ccName)
+		p.generatePostserviceCall(service, typeName, method.ccName)
 		p.P(``)
-
+		withSpan := getServiceOptions(service.ServiceDescriptorProto).WithTracing
+		if withSpan != nil && *withSpan {
+			p.P(`err = m.spanResult(span, out)`)
+			p.P(`if err != nil {`)
+			p.P(`return nil,`, p.wrapSpanError(service, "err"))
+			p.P(`}`)
+		}
 		p.P(`return out, nil`)
 		p.P(`}`)
 
 		p.generatePreserviceHook(service.ccName, typeName, method.ccName)
 		p.generatePostserviceHook(service.ccName, typeName, p.TypeName(method.outType), method.ccName)
 	} else {
-		p.generateEmptyBody(method.outType)
+		p.generateEmptyBody(service, method.outType)
 	}
 }
 
@@ -433,19 +492,20 @@ func (p *OrmPlugin) generateDeleteServerMethod(service autogenService, method au
 	if method.followsConvention {
 		typeName := method.baseType
 		p.generateDBSetup(service)
-		p.generatePreserviceCall(service.ccName, method.baseType, method.ccName)
+		p.generatePreserviceCall(service, method.baseType, method.ccName)
 		p.P(`err := DefaultDelete`, typeName, `(ctx, &`, typeName, `{Id: in.GetId()}, db)`)
 		p.P(`if err != nil {`)
-		p.P(`return nil, err`)
+		p.P(`return nil, `, p.wrapSpanError(service, "err"))
 		p.P(`}`)
 		p.P(`out := &`, p.TypeName(method.outType), `{}`)
-		p.generatePostserviceCall(service.ccName, method.baseType, method.ccName)
+		p.generatePostserviceCall(service, method.baseType, method.ccName)
+		p.spanResultHandling(service)
 		p.P(`return out, nil`)
 		p.P(`}`)
 		p.generatePreserviceHook(service.ccName, method.baseType, method.ccName)
 		p.generatePostserviceHook(service.ccName, method.baseType, p.TypeName(method.outType), method.ccName)
 	} else {
-		p.generateEmptyBody(method.outType)
+		p.generateEmptyBody(service, method.outType)
 	}
 }
 
@@ -487,19 +547,20 @@ func (p *OrmPlugin) generateDeleteSetServerMethod(service autogenService, method
 		p.P(`for _, id := range in.Ids {`)
 		p.P(`objs = append(objs, &`, typeName, `{Id: id})`)
 		p.P(`}`)
-		p.generatePreserviceCall(service.ccName, method.baseType, method.ccName)
+		p.generatePreserviceCall(service, method.baseType, method.ccName)
 		p.P(`err := DefaultDelete`, typeName, `Set(ctx, objs, db)`)
 		p.P(`if err != nil {`)
-		p.P(`return nil, err`)
+		p.P(`return nil, `, p.wrapSpanError(service, "err"))
 		p.P(`}`)
 		p.P(`out := &`, p.TypeName(method.outType), `{}`)
-		p.generatePostserviceCall(service.ccName, method.baseType, method.ccName)
+		p.generatePostserviceCall(service, method.baseType, method.ccName)
+		p.spanResultHandling(service)
 		p.P(`return out, nil`)
 		p.P(`}`)
 		p.generatePreserviceHook(service.ccName, method.baseType, method.ccName)
 		p.generatePostserviceHook(service.ccName, method.baseType, p.TypeName(method.outType), method.ccName)
 	} else {
-		p.generateEmptyBody(method.outType)
+		p.generateEmptyBody(service, method.outType)
 	}
 }
 
@@ -536,7 +597,7 @@ func (p *OrmPlugin) generateListServerMethod(service autogenService, method auto
 	p.generateMethodSignature(service, method)
 	if method.followsConvention {
 		p.generateDBSetup(service)
-		p.generatePreserviceCall(service.ccName, method.baseType, method.ccName)
+		p.generatePreserviceCall(service, method.baseType, method.ccName)
 		pg := p.getPagination(method.inType)
 		pi := p.getPageInfo(method.outType)
 		if pg != "" && pi != "" {
@@ -558,7 +619,7 @@ func (p *OrmPlugin) generateListServerMethod(service autogenService, method auto
 		handlerCall += ")"
 		p.P(handlerCall)
 		p.P(`if err != nil {`)
-		p.P(`return nil, err`)
+		p.P(`return nil, `, p.wrapSpanError(service, "err"))
 		p.P(`}`)
 		var pageInfoIfExist string
 		if pg != "" && pi != "" {
@@ -566,13 +627,14 @@ func (p *OrmPlugin) generateListServerMethod(service autogenService, method auto
 			pageInfoIfExist = ", " + pi + ": resPaging"
 		}
 		p.P(`out := &`, p.TypeName(method.outType), `{Results: res`, pageInfoIfExist, ` }`)
-		p.generatePostserviceCall(service.ccName, method.baseType, method.ccName)
+		p.generatePostserviceCall(service, method.baseType, method.ccName)
+		p.spanResultHandling(service)
 		p.P(`return out, nil`)
 		p.P(`}`)
 		p.generatePreserviceHook(service.ccName, method.baseType, method.ccName)
 		p.generatePostserviceHook(service.ccName, method.baseType, p.TypeName(method.outType), method.ccName)
 	} else {
-		p.generateEmptyBody(method.outType)
+		p.generateEmptyBody(service, method.outType)
 	}
 }
 
@@ -598,7 +660,7 @@ func (p *OrmPlugin) followsListConventions(inType generator.Object, outType gene
 
 func (p *OrmPlugin) generateMethodStub(service autogenService, method autogenMethod) {
 	p.generateMethodSignature(service, method)
-	p.generateEmptyBody(method.outType)
+	p.generateEmptyBody(service, method.outType)
 }
 
 func (p *OrmPlugin) generateMethodSignature(service autogenService, method autogenMethod) {
@@ -607,6 +669,14 @@ func (p *OrmPlugin) generateMethodSignature(service autogenService, method autog
 		p.TypeName(method.inType), `) (*`, p.TypeName(method.outType), `, error) {`)
 	p.RecordTypeUse(method.GetInputType())
 	p.RecordTypeUse(method.GetOutputType())
+	withSpan := getServiceOptions(service.ServiceDescriptorProto).WithTracing
+	if withSpan != nil && *withSpan {
+		p.P(`span, errSpanCreate := m.spanCreate(ctx, in, "`, method.ccName, `")`)
+		p.P(`if errSpanCreate != nil {`)
+		p.P(`return nil, errSpanCreate`)
+		p.P(`}`)
+		p.P(`defer span.End()`)
+	}
 }
 
 func (p *OrmPlugin) generateDBSetup(service autogenService) error {
@@ -625,8 +695,20 @@ func (p *OrmPlugin) generateDBSetup(service autogenService) error {
 	return nil
 }
 
-func (p OrmPlugin) generateEmptyBody(outType generator.Object) {
-	p.P(`return &`, p.TypeName(outType), `{}, nil`)
+func (p *OrmPlugin) spanResultHandling(service autogenService) {
+	withSpan := getServiceOptions(service.ServiceDescriptorProto).WithTracing
+	if withSpan != nil && *withSpan {
+		p.P(`errSpanResult := m.spanResult(span, out)`)
+		p.P(`if errSpanResult != nil {`)
+		p.P(`return nil, `, p.wrapSpanError(service, "errSpanResult"))
+		p.P(`}`)
+	}
+}
+
+func (p OrmPlugin) generateEmptyBody(service autogenService, outType generator.Object) {
+	p.P(`out:= &`, p.TypeName(outType), `{}`)
+	p.spanResultHandling(service)
+	p.P(`return out, nil`)
 	p.P(`}`)
 }
 
@@ -637,11 +719,11 @@ func (p *OrmPlugin) getMethodProps(method *descriptor.MethodDescriptorProto) (ge
 	return inType, outType, methodName
 }
 
-func (p *OrmPlugin) generatePreserviceCall(svc, typeName, mthd string) {
-	p.P(`if custom, ok := interface{}(in).(`, svc, typeName, `WithBefore`, mthd, `); ok {`)
+func (p *OrmPlugin) generatePreserviceCall(service autogenService, typeName, mthd string) {
+	p.P(`if custom, ok := interface{}(in).(`, service.ccName, typeName, `WithBefore`, mthd, `); ok {`)
 	p.P(`var err error`)
 	p.P(`if db, err = custom.Before`, mthd, `(ctx, db); err != nil {`)
-	p.P(`return nil, err`)
+	p.P(`return nil, `, p.wrapSpanError(service, "err"))
 	p.P(`}`)
 	p.P(`}`)
 }
@@ -675,11 +757,11 @@ func (p *OrmPlugin) generatePreserviceHook(svc, typeName, mthd string) {
 	p.P(`}`)
 }
 
-func (p *OrmPlugin) generatePostserviceCall(svc, typeName, mthd string) {
-	p.P(`if custom, ok := interface{}(in).(`, svc, typeName, `WithAfter`, mthd, `); ok {`)
+func (p *OrmPlugin) generatePostserviceCall(service autogenService, typeName, mthd string) {
+	p.P(`if custom, ok := interface{}(in).(`, service.ccName, typeName, `WithAfter`, mthd, `); ok {`)
 	p.P(`var err error`)
 	p.P(`if err = custom.After`, mthd, `(ctx, out, db); err != nil {`)
-	p.P(`return nil, err`)
+	p.P(`return nil, `, p.wrapSpanError(service, "err"))
 	p.P(`}`)
 	p.P(`}`)
 }
