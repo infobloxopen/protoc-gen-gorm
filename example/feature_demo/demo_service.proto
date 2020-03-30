@@ -173,9 +173,34 @@ service CircleService {
     rpc List ( ListCircleRequest ) returns ( ListCircleResponse ) {}
 }
 
-service MultipleCreates {
+service MultipleMethodsAutoGen {
     option (gorm.server).autogen = true;
     rpc CreateA ( CreateIntPointRequest ) returns ( CreateIntPointResponse ) {}
     rpc CreateB ( CreateIntPointRequest ) returns ( CreateIntPointResponse ) {}
-    rpc CreateC ( CreateIntPointRequest ) returns ( CreateIntPointResponse ) {}
+    rpc ReadA ( ReadIntPointRequest ) returns ( ReadIntPointResponse ) {}
+    rpc ReadB ( ReadIntPointRequest ) returns ( ReadIntPointResponse ) {}
+    rpc UpdateA ( UpdateIntPointRequest ) returns ( UpdateIntPointResponse ) {}
+    rpc UpdateB ( UpdateIntPointRequest ) returns ( UpdateIntPointResponse ) {}
+    rpc ListA ( ListIntPointRequest ) returns ( ListIntPointResponse ) {}
+    rpc ListB ( ListIntPointRequest ) returns ( ListIntPointResponse ) {}
+    rpc DeleteA ( DeleteIntPointRequest ) returns  ( DeleteIntPointResponse ) {
+        // This option is required because the type/table can't be inferred
+        // by the return type
+        option (gorm.method).object_type = "int_point";
+    }
+    rpc DeleteB ( DeleteIntPointRequest ) returns  ( DeleteIntPointResponse ) {
+        // This option is required because the type/table can't be inferred
+        // by the return type
+        option (gorm.method).object_type = "int_point";
+    }
+    rpc DeleteSetA ( DeleteIntPointsRequest ) returns  ( DeleteIntPointResponse ) {
+        // This option is required because the type/table can't be inferred
+        // by the return type
+        option (gorm.method).object_type = "int_point";
+    }
+    rpc DeleteSetB ( DeleteIntPointsRequest ) returns  ( DeleteIntPointResponse ) {
+        // This option is required because the type/table can't be inferred
+        // by the return type
+        option (gorm.method).object_type = "int_point";
+    }
 }

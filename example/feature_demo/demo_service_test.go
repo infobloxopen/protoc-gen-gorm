@@ -1,28 +1,27 @@
 package example
 
 import (
+	fmt "fmt"
 	"reflect"
 	"testing"
 )
 
 func TestMultipleCreate(t *testing.T) {
 	t.Run("... multi ", func(t *testing.T) {
-		service := NewMultipleCreatesClient(nil)
+		service := NewMultipleMethodsAutoGenClient(nil)
 		ref := reflect.TypeOf(service)
-		method1 := "CreateA"
-		method2 := "CreateB"
-		method3 := "CreateC"
-		_, ok := ref.MethodByName(method1)
-		if !ok {
-			t.Errorf("Method %s doesn't exist", method1)
-		}
-		_, ok = ref.MethodByName(method2)
-		if !ok {
-			t.Errorf("Method %s doesn't exist", method2)
-		}
-		_, ok = ref.MethodByName(method3)
-		if !ok {
-			t.Errorf("Method %s doesn't exist", method3)
+
+		methods := []string{"Create", "Read", "Update", "List", "Delete", "DeleteSet"}
+		repeated := []string{"A", "B"}
+
+		for idx := 0; idx < len(methods); idx++ {
+			for i := 0; i < len(repeated); i++ {
+				methodName := fmt.Sprintf("%s%s", methods[idx], repeated[i])
+				_, ok := ref.MethodByName(methodName)
+				if !ok {
+					t.Errorf("Method %s doesn't exist", methodName)
+				}
+			}
 		}
 	})
 }
