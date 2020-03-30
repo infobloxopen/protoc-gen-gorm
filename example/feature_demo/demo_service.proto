@@ -130,7 +130,7 @@ service IntPointService {
 service IntPointTxn {
   // This option tells protoc-gen-gorm to generate the calls and stubs, and
   // the transaction middleware will be used
-  option (gorm.server) = {autogen: true, txn_middleware: true};
+  option (gorm.server) = {autogen: true, txn_middleware: true, with_tracing: true};
   // The convention requires the rpc names have Create/Read/Update/List/Delete
   // as a prefix. The type is inferred from the response (except for delete),
   // so multiple objects can have CURDL handlers in the same service, provided
