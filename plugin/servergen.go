@@ -191,7 +191,7 @@ func (p *OrmPlugin) generateCreateServerMethod(service autogenService, method au
 	p.generateMethodSignature(service, method)
 	if method.followsConvention {
 		p.generateDBSetup(service)
-		p.generatePreserviceCall(service, method.baseType, createService)
+		p.generatePreserviceCall(service, method.baseType, method.ccName)
 		p.P(`res, err := DefaultCreate`, method.baseType, `(ctx, in.GetPayload(), db)`)
 		p.P(`if err != nil {`)
 		p.P(`return nil, `, p.wrapSpanError(service, "err"))
@@ -203,13 +203,12 @@ func (p *OrmPlugin) generateCreateServerMethod(service autogenService, method au
 			p.P(`return nil, `, p.wrapSpanError(service, "err"))
 			p.P(`}`)
 		}
-		p.generatePostserviceCall(service, method.baseType, createService)
+
+		p.generatePostserviceCall(service, method.baseType, method.ccName)
 		p.spanResultHandling(service)
 		p.P(`return out, nil`)
 		p.P(`}`)
-		// todo: investigate why this wants to stay "createService" when all other usage of
-		// generatePreserviceHook uses "ccName"
-		p.generatePreserviceHook(service.ccName, method.baseType, createService)
+		p.generatePreserviceHook(service.ccName, method.baseType, method.ccName)
 		p.generatePostserviceHook(service.ccName, method.baseType, p.TypeName(method.outType), method.ccName)
 	} else {
 		p.generateEmptyBody(service, method.outType)
