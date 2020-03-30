@@ -172,3 +172,10 @@ service CircleService {
     option (gorm.server).autogen = true;
     rpc List ( ListCircleRequest ) returns ( ListCircleResponse ) {}
 }
+
+service MultipleCreates {
+    option (gorm.server).autogen = true;
+    rpc CreateA ( CreateIntPointRequest ) returns ( CreateIntPointResponse ) {}
+    rpc CreateB ( CreateIntPointRequest ) returns ( CreateIntPointResponse ) {}
+    rpc CreateC ( CreateIntPointRequest ) returns ( CreateIntPointResponse ) {}
+}

@@ -1000,8 +1000,35 @@ type IntPointServiceIntPointWithAfterList interface {
 
 // ListSomething ...
 func (m *IntPointServiceDefaultServer) ListSomething(ctx context.Context, in *google_protobuf2.Empty) (*ListSomethingResponse, error) {
-	out := &ListSomethingResponse{}
+	db := m.DB
+	if custom, ok := interface{}(in).(IntPointServiceSomethingWithBeforeListSomething); ok {
+		var err error
+		if db, err = custom.BeforeListSomething(ctx, db); err != nil {
+			return nil, err
+		}
+	}
+	res, err := DefaultListSomething(ctx, db)
+	if err != nil {
+		return nil, err
+	}
+	out := &ListSomethingResponse{Results: res}
+	if custom, ok := interface{}(in).(IntPointServiceSomethingWithAfterListSomething); ok {
+		var err error
+		if err = custom.AfterListSomething(ctx, out, db); err != nil {
+			return nil, err
+		}
+	}
 	return out, nil
+}
+
+// IntPointServiceSomethingWithBeforeListSomething called before DefaultListSomethingSomething in the default ListSomething handler
+type IntPointServiceSomethingWithBeforeListSomething interface {
+	BeforeListSomething(context.Context, *gorm1.DB) (*gorm1.DB, error)
+}
+
+// IntPointServiceSomethingWithAfterListSomething called before DefaultListSomethingSomething in the default ListSomething handler
+type IntPointServiceSomethingWithAfterListSomething interface {
+	AfterListSomething(context.Context, *ListSomethingResponse, *gorm1.DB) error
 }
 
 // Delete ...
@@ -1470,4 +1497,118 @@ type CircleServiceCircleWithBeforeList interface {
 // CircleServiceCircleWithAfterList called before DefaultListCircle in the default List handler
 type CircleServiceCircleWithAfterList interface {
 	AfterList(context.Context, *ListCircleResponse, *gorm1.DB) error
+}
+type MultipleCreatesDefaultServer struct {
+	DB *gorm1.DB
+}
+
+// CreateA ...
+func (m *MultipleCreatesDefaultServer) CreateA(ctx context.Context, in *CreateIntPointRequest) (*CreateIntPointResponse, error) {
+	db := m.DB
+	if custom, ok := interface{}(in).(MultipleCreatesIntPointWithBeforeCreateA); ok {
+		var err error
+		if db, err = custom.BeforeCreateA(ctx, db); err != nil {
+			return nil, err
+		}
+	}
+	res, err := DefaultCreateIntPoint(ctx, in.GetPayload(), db)
+	if err != nil {
+		return nil, err
+	}
+	out := &CreateIntPointResponse{Result: res}
+	err = gateway1.SetCreated(ctx, "")
+	if err != nil {
+		return nil, err
+	}
+	if custom, ok := interface{}(in).(MultipleCreatesIntPointWithAfterCreateA); ok {
+		var err error
+		if err = custom.AfterCreateA(ctx, out, db); err != nil {
+			return nil, err
+		}
+	}
+	return out, nil
+}
+
+// MultipleCreatesIntPointWithBeforeCreateA called before DefaultCreateAIntPoint in the default CreateA handler
+type MultipleCreatesIntPointWithBeforeCreateA interface {
+	BeforeCreateA(context.Context, *gorm1.DB) (*gorm1.DB, error)
+}
+
+// MultipleCreatesIntPointWithAfterCreateA called before DefaultCreateAIntPoint in the default CreateA handler
+type MultipleCreatesIntPointWithAfterCreateA interface {
+	AfterCreateA(context.Context, *CreateIntPointResponse, *gorm1.DB) error
+}
+
+// CreateB ...
+func (m *MultipleCreatesDefaultServer) CreateB(ctx context.Context, in *CreateIntPointRequest) (*CreateIntPointResponse, error) {
+	db := m.DB
+	if custom, ok := interface{}(in).(MultipleCreatesIntPointWithBeforeCreateB); ok {
+		var err error
+		if db, err = custom.BeforeCreateB(ctx, db); err != nil {
+			return nil, err
+		}
+	}
+	res, err := DefaultCreateIntPoint(ctx, in.GetPayload(), db)
+	if err != nil {
+		return nil, err
+	}
+	out := &CreateIntPointResponse{Result: res}
+	err = gateway1.SetCreated(ctx, "")
+	if err != nil {
+		return nil, err
+	}
+	if custom, ok := interface{}(in).(MultipleCreatesIntPointWithAfterCreateB); ok {
+		var err error
+		if err = custom.AfterCreateB(ctx, out, db); err != nil {
+			return nil, err
+		}
+	}
+	return out, nil
+}
+
+// MultipleCreatesIntPointWithBeforeCreateB called before DefaultCreateBIntPoint in the default CreateB handler
+type MultipleCreatesIntPointWithBeforeCreateB interface {
+	BeforeCreateB(context.Context, *gorm1.DB) (*gorm1.DB, error)
+}
+
+// MultipleCreatesIntPointWithAfterCreateB called before DefaultCreateBIntPoint in the default CreateB handler
+type MultipleCreatesIntPointWithAfterCreateB interface {
+	AfterCreateB(context.Context, *CreateIntPointResponse, *gorm1.DB) error
+}
+
+// CreateC ...
+func (m *MultipleCreatesDefaultServer) CreateC(ctx context.Context, in *CreateIntPointRequest) (*CreateIntPointResponse, error) {
+	db := m.DB
+	if custom, ok := interface{}(in).(MultipleCreatesIntPointWithBeforeCreateC); ok {
+		var err error
+		if db, err = custom.BeforeCreateC(ctx, db); err != nil {
+			return nil, err
+		}
+	}
+	res, err := DefaultCreateIntPoint(ctx, in.GetPayload(), db)
+	if err != nil {
+		return nil, err
+	}
+	out := &CreateIntPointResponse{Result: res}
+	err = gateway1.SetCreated(ctx, "")
+	if err != nil {
+		return nil, err
+	}
+	if custom, ok := interface{}(in).(MultipleCreatesIntPointWithAfterCreateC); ok {
+		var err error
+		if err = custom.AfterCreateC(ctx, out, db); err != nil {
+			return nil, err
+		}
+	}
+	return out, nil
+}
+
+// MultipleCreatesIntPointWithBeforeCreateC called before DefaultCreateCIntPoint in the default CreateC handler
+type MultipleCreatesIntPointWithBeforeCreateC interface {
+	BeforeCreateC(context.Context, *gorm1.DB) (*gorm1.DB, error)
+}
+
+// MultipleCreatesIntPointWithAfterCreateC called before DefaultCreateCIntPoint in the default CreateC handler
+type MultipleCreatesIntPointWithAfterCreateC interface {
+	AfterCreateC(context.Context, *CreateIntPointResponse, *gorm1.DB) error
 }
