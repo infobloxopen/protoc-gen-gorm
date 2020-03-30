@@ -5,7 +5,7 @@ require (
 	github.com/ghodss/yaml v1.0.0
 	github.com/gogo/protobuf v1.0.0
 	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
-	github.com/golang/protobuf v1.3.1
+	github.com/golang/protobuf v1.3.2
 	github.com/google/uuid v0.0.0-20161128191214-064e2069ce9c
 	github.com/grpc-ecosystem/go-grpc-middleware v0.0.0-20180522105215-e9c5d9645c43
 	github.com/grpc-ecosystem/grpc-gateway v1.4.1
