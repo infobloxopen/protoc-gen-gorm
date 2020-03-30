@@ -1576,43 +1576,6 @@ type MultipleMethodsAutoGenIntPointWithAfterCreateB interface {
 	AfterCreateB(context.Context, *CreateIntPointResponse, *gorm1.DB) error
 }
 
-// CreateC ...
-func (m *MultipleMethodsAutoGenDefaultServer) CreateC(ctx context.Context, in *CreateIntPointRequest) (*CreateIntPointResponse, error) {
-	db := m.DB
-	if custom, ok := interface{}(in).(MultipleMethodsAutoGenIntPointWithBeforeCreateC); ok {
-		var err error
-		if db, err = custom.BeforeCreateC(ctx, db); err != nil {
-			return nil, err
-		}
-	}
-	res, err := DefaultCreateIntPoint(ctx, in.GetPayload(), db)
-	if err != nil {
-		return nil, err
-	}
-	out := &CreateIntPointResponse{Result: res}
-	err = gateway1.SetCreated(ctx, "")
-	if err != nil {
-		return nil, err
-	}
-	if custom, ok := interface{}(in).(MultipleMethodsAutoGenIntPointWithAfterCreateC); ok {
-		var err error
-		if err = custom.AfterCreateC(ctx, out, db); err != nil {
-			return nil, err
-		}
-	}
-	return out, nil
-}
-
-// MultipleMethodsAutoGenIntPointWithBeforeCreateC called before DefaultCreateCIntPoint in the default CreateC handler
-type MultipleMethodsAutoGenIntPointWithBeforeCreateC interface {
-	BeforeCreateC(context.Context, *gorm1.DB) (*gorm1.DB, error)
-}
-
-// MultipleMethodsAutoGenIntPointWithAfterCreateC called before DefaultCreateCIntPoint in the default CreateC handler
-type MultipleMethodsAutoGenIntPointWithAfterCreateC interface {
-	AfterCreateC(context.Context, *CreateIntPointResponse, *gorm1.DB) error
-}
-
 // ReadA ...
 func (m *MultipleMethodsAutoGenDefaultServer) ReadA(ctx context.Context, in *ReadIntPointRequest) (*ReadIntPointResponse, error) {
 	db := m.DB

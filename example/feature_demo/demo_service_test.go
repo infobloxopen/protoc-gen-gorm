@@ -6,8 +6,8 @@ import (
 	"testing"
 )
 
-func TestMultipleCreate(t *testing.T) {
-	t.Run("... multi ", func(t *testing.T) {
+func TestMultipleCrud(t *testing.T) {
+	t.Run("Multi crud methods", func(t *testing.T) {
 		service := NewMultipleMethodsAutoGenClient(nil)
 		ref := reflect.TypeOf(service)
 
