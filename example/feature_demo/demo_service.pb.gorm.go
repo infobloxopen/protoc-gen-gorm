@@ -11,7 +11,9 @@ import field_mask1 "google.golang.org/genproto/protobuf/field_mask"
 import gateway1 "github.com/infobloxopen/atlas-app-toolkit/gateway"
 import gorm1 "github.com/jinzhu/gorm"
 import gorm2 "github.com/infobloxopen/atlas-app-toolkit/gorm"
+import json1 "encoding/json"
 import query1 "github.com/infobloxopen/atlas-app-toolkit/query"
+import trace1 "go.opencensus.io/trace"
 
 import math "math"
 import google_protobuf2 "github.com/golang/protobuf/ptypes/empty"
@@ -998,7 +1000,8 @@ type IntPointServiceIntPointWithAfterList interface {
 
 // ListSomething ...
 func (m *IntPointServiceDefaultServer) ListSomething(ctx context.Context, in *google_protobuf2.Empty) (*ListSomethingResponse, error) {
-	return &ListSomethingResponse{}, nil
+	out := &ListSomethingResponse{}
+	return out, nil
 }
 
 // Delete ...
@@ -1036,19 +1039,55 @@ type IntPointServiceIntPointWithAfterDelete interface {
 
 // CustomMethod ...
 func (m *IntPointServiceDefaultServer) CustomMethod(ctx context.Context, in *google_protobuf2.Empty) (*google_protobuf2.Empty, error) {
-	return &google_protobuf2.Empty{}, nil
+	out := &google_protobuf2.Empty{}
+	return out, nil
 }
 
 // CreateSomething ...
 func (m *IntPointServiceDefaultServer) CreateSomething(ctx context.Context, in *Something) (*Something, error) {
-	return &Something{}, nil
+	out := &Something{}
+	return out, nil
 }
 
 type IntPointTxnDefaultServer struct {
 }
 
+func (m *IntPointTxnDefaultServer) spanCreate(ctx context.Context, in interface{}, methodName string) (*trace1.Span, error) {
+	_, span := trace1.StartSpan(ctx, fmt.Sprint("IntPointTxnDefaultServer.", methodName))
+	raw, err := json1.Marshal(in)
+	if err != nil {
+		return nil, err
+	}
+	span.Annotate([]trace1.Attribute{trace1.StringAttribute("in", string(raw))}, "in parameter")
+	return span, nil
+}
+
+// spanError ...
+func (m *IntPointTxnDefaultServer) spanError(span *trace1.Span, err error) error {
+	span.SetStatus(trace1.Status{
+		Code:    trace1.StatusCodeUnknown,
+		Message: err.Error(),
+	})
+	return err
+}
+
+// spanResult ...
+func (m *IntPointTxnDefaultServer) spanResult(span *trace1.Span, out interface{}) error {
+	raw, err := json1.Marshal(out)
+	if err != nil {
+		return err
+	}
+	span.Annotate([]trace1.Attribute{trace1.StringAttribute("out", string(raw))}, "out parameter")
+	return nil
+}
+
 // Create ...
 func (m *IntPointTxnDefaultServer) Create(ctx context.Context, in *CreateIntPointRequest) (*CreateIntPointResponse, error) {
+	span, errSpanCreate := m.spanCreate(ctx, in, "Create")
+	if errSpanCreate != nil {
+		return nil, errSpanCreate
+	}
+	defer span.End()
 	txn, ok := gorm2.FromContext(ctx)
 	if !ok {
 		return nil, errors1.NoTransactionError
@@ -1060,23 +1099,27 @@ func (m *IntPointTxnDefaultServer) Create(ctx context.Context, in *CreateIntPoin
 	if custom, ok := interface{}(in).(IntPointTxnIntPointWithBeforeCreate); ok {
 		var err error
 		if db, err = custom.BeforeCreate(ctx, db); err != nil {
-			return nil, err
+			return nil, m.spanError(span, err)
 		}
 	}
 	res, err := DefaultCreateIntPoint(ctx, in.GetPayload(), db)
 	if err != nil {
-		return nil, err
+		return nil, m.spanError(span, err)
 	}
 	out := &CreateIntPointResponse{Result: res}
 	err = gateway1.SetCreated(ctx, "")
 	if err != nil {
-		return nil, err
+		return nil, m.spanError(span, err)
 	}
 	if custom, ok := interface{}(in).(IntPointTxnIntPointWithAfterCreate); ok {
 		var err error
 		if err = custom.AfterCreate(ctx, out, db); err != nil {
-			return nil, err
+			return nil, m.spanError(span, err)
 		}
+	}
+	errSpanResult := m.spanResult(span, out)
+	if errSpanResult != nil {
+		return nil, m.spanError(span, errSpanResult)
 	}
 	return out, nil
 }
@@ -1093,6 +1136,11 @@ type IntPointTxnIntPointWithAfterCreate interface {
 
 // Read ...
 func (m *IntPointTxnDefaultServer) Read(ctx context.Context, in *ReadIntPointRequest) (*ReadIntPointResponse, error) {
+	span, errSpanCreate := m.spanCreate(ctx, in, "Read")
+	if errSpanCreate != nil {
+		return nil, errSpanCreate
+	}
+	defer span.End()
 	txn, ok := gorm2.FromContext(ctx)
 	if !ok {
 		return nil, errors1.NoTransactionError
@@ -1104,19 +1152,23 @@ func (m *IntPointTxnDefaultServer) Read(ctx context.Context, in *ReadIntPointReq
 	if custom, ok := interface{}(in).(IntPointTxnIntPointWithBeforeRead); ok {
 		var err error
 		if db, err = custom.BeforeRead(ctx, db); err != nil {
-			return nil, err
+			return nil, m.spanError(span, err)
 		}
 	}
 	res, err := DefaultReadIntPoint(ctx, &IntPoint{Id: in.GetId()}, db, in.Fields)
 	if err != nil {
-		return nil, err
+		return nil, m.spanError(span, err)
 	}
 	out := &ReadIntPointResponse{Result: res}
 	if custom, ok := interface{}(in).(IntPointTxnIntPointWithAfterRead); ok {
 		var err error
 		if err = custom.AfterRead(ctx, out, db); err != nil {
-			return nil, err
+			return nil, m.spanError(span, err)
 		}
+	}
+	errSpanResult := m.spanResult(span, out)
+	if errSpanResult != nil {
+		return nil, m.spanError(span, errSpanResult)
 	}
 	return out, nil
 }
@@ -1133,6 +1185,11 @@ type IntPointTxnIntPointWithAfterRead interface {
 
 // Update ...
 func (m *IntPointTxnDefaultServer) Update(ctx context.Context, in *UpdateIntPointRequest) (*UpdateIntPointResponse, error) {
+	span, errSpanCreate := m.spanCreate(ctx, in, "Update")
+	if errSpanCreate != nil {
+		return nil, errSpanCreate
+	}
+	defer span.End()
 	var err error
 	var res *IntPoint
 	txn, ok := gorm2.FromContext(ctx)
@@ -1146,7 +1203,7 @@ func (m *IntPointTxnDefaultServer) Update(ctx context.Context, in *UpdateIntPoin
 	if custom, ok := interface{}(in).(IntPointTxnIntPointWithBeforeUpdate); ok {
 		var err error
 		if db, err = custom.BeforeUpdate(ctx, db); err != nil {
-			return nil, err
+			return nil, m.spanError(span, err)
 		}
 	}
 	if in.GetGerogeriGegege() == nil {
@@ -1155,14 +1212,18 @@ func (m *IntPointTxnDefaultServer) Update(ctx context.Context, in *UpdateIntPoin
 		res, err = DefaultPatchIntPoint(ctx, in.GetPayload(), in.GetGerogeriGegege(), db)
 	}
 	if err != nil {
-		return nil, err
+		return nil, m.spanError(span, err)
 	}
 	out := &UpdateIntPointResponse{Result: res}
 	if custom, ok := interface{}(in).(IntPointTxnIntPointWithAfterUpdate); ok {
 		var err error
 		if err = custom.AfterUpdate(ctx, out, db); err != nil {
-			return nil, err
+			return nil, m.spanError(span, err)
 		}
+	}
+	errSpanResult := m.spanResult(span, out)
+	if errSpanResult != nil {
+		return nil, m.spanError(span, errSpanResult)
 	}
 	return out, nil
 }
@@ -1179,6 +1240,11 @@ type IntPointTxnIntPointWithAfterUpdate interface {
 
 // List ...
 func (m *IntPointTxnDefaultServer) List(ctx context.Context, in *ListIntPointRequest) (*ListIntPointResponse, error) {
+	span, errSpanCreate := m.spanCreate(ctx, in, "List")
+	if errSpanCreate != nil {
+		return nil, errSpanCreate
+	}
+	defer span.End()
 	txn, ok := gorm2.FromContext(ctx)
 	if !ok {
 		return nil, errors1.NoTransactionError
@@ -1190,7 +1256,7 @@ func (m *IntPointTxnDefaultServer) List(ctx context.Context, in *ListIntPointReq
 	if custom, ok := interface{}(in).(IntPointTxnIntPointWithBeforeList); ok {
 		var err error
 		if db, err = custom.BeforeList(ctx, db); err != nil {
-			return nil, err
+			return nil, m.spanError(span, err)
 		}
 	}
 	pagedRequest := false
@@ -1200,7 +1266,7 @@ func (m *IntPointTxnDefaultServer) List(ctx context.Context, in *ListIntPointReq
 	}
 	res, err := DefaultListIntPoint(ctx, db, in.Filter, in.OrderBy, in.Paging, in.Fields)
 	if err != nil {
-		return nil, err
+		return nil, m.spanError(span, err)
 	}
 	var resPaging *query1.PageInfo
 	if pagedRequest {
@@ -1217,8 +1283,12 @@ func (m *IntPointTxnDefaultServer) List(ctx context.Context, in *ListIntPointReq
 	if custom, ok := interface{}(in).(IntPointTxnIntPointWithAfterList); ok {
 		var err error
 		if err = custom.AfterList(ctx, out, db); err != nil {
-			return nil, err
+			return nil, m.spanError(span, err)
 		}
+	}
+	errSpanResult := m.spanResult(span, out)
+	if errSpanResult != nil {
+		return nil, m.spanError(span, errSpanResult)
 	}
 	return out, nil
 }
@@ -1235,6 +1305,11 @@ type IntPointTxnIntPointWithAfterList interface {
 
 // Delete ...
 func (m *IntPointTxnDefaultServer) Delete(ctx context.Context, in *DeleteIntPointRequest) (*DeleteIntPointResponse, error) {
+	span, errSpanCreate := m.spanCreate(ctx, in, "Delete")
+	if errSpanCreate != nil {
+		return nil, errSpanCreate
+	}
+	defer span.End()
 	txn, ok := gorm2.FromContext(ctx)
 	if !ok {
 		return nil, errors1.NoTransactionError
@@ -1246,19 +1321,23 @@ func (m *IntPointTxnDefaultServer) Delete(ctx context.Context, in *DeleteIntPoin
 	if custom, ok := interface{}(in).(IntPointTxnIntPointWithBeforeDelete); ok {
 		var err error
 		if db, err = custom.BeforeDelete(ctx, db); err != nil {
-			return nil, err
+			return nil, m.spanError(span, err)
 		}
 	}
 	err := DefaultDeleteIntPoint(ctx, &IntPoint{Id: in.GetId()}, db)
 	if err != nil {
-		return nil, err
+		return nil, m.spanError(span, err)
 	}
 	out := &DeleteIntPointResponse{}
 	if custom, ok := interface{}(in).(IntPointTxnIntPointWithAfterDelete); ok {
 		var err error
 		if err = custom.AfterDelete(ctx, out, db); err != nil {
-			return nil, err
+			return nil, m.spanError(span, err)
 		}
+	}
+	errSpanResult := m.spanResult(span, out)
+	if errSpanResult != nil {
+		return nil, m.spanError(span, errSpanResult)
 	}
 	return out, nil
 }
@@ -1275,6 +1354,11 @@ type IntPointTxnIntPointWithAfterDelete interface {
 
 // DeleteSet ...
 func (m *IntPointTxnDefaultServer) DeleteSet(ctx context.Context, in *DeleteIntPointsRequest) (*DeleteIntPointResponse, error) {
+	span, errSpanCreate := m.spanCreate(ctx, in, "DeleteSet")
+	if errSpanCreate != nil {
+		return nil, errSpanCreate
+	}
+	defer span.End()
 	txn, ok := gorm2.FromContext(ctx)
 	if !ok {
 		return nil, errors1.NoTransactionError
@@ -1290,19 +1374,23 @@ func (m *IntPointTxnDefaultServer) DeleteSet(ctx context.Context, in *DeleteIntP
 	if custom, ok := interface{}(in).(IntPointTxnIntPointWithBeforeDeleteSet); ok {
 		var err error
 		if db, err = custom.BeforeDeleteSet(ctx, db); err != nil {
-			return nil, err
+			return nil, m.spanError(span, err)
 		}
 	}
 	err := DefaultDeleteIntPointSet(ctx, objs, db)
 	if err != nil {
-		return nil, err
+		return nil, m.spanError(span, err)
 	}
 	out := &DeleteIntPointResponse{}
 	if custom, ok := interface{}(in).(IntPointTxnIntPointWithAfterDeleteSet); ok {
 		var err error
 		if err = custom.AfterDeleteSet(ctx, out, db); err != nil {
-			return nil, err
+			return nil, m.spanError(span, err)
 		}
+	}
+	errSpanResult := m.spanResult(span, out)
+	if errSpanResult != nil {
+		return nil, m.spanError(span, errSpanResult)
 	}
 	return out, nil
 }
@@ -1319,12 +1407,32 @@ type IntPointTxnIntPointWithAfterDeleteSet interface {
 
 // CustomMethod ...
 func (m *IntPointTxnDefaultServer) CustomMethod(ctx context.Context, in *google_protobuf2.Empty) (*google_protobuf2.Empty, error) {
-	return &google_protobuf2.Empty{}, nil
+	span, errSpanCreate := m.spanCreate(ctx, in, "CustomMethod")
+	if errSpanCreate != nil {
+		return nil, errSpanCreate
+	}
+	defer span.End()
+	out := &google_protobuf2.Empty{}
+	errSpanResult := m.spanResult(span, out)
+	if errSpanResult != nil {
+		return nil, m.spanError(span, errSpanResult)
+	}
+	return out, nil
 }
 
 // CreateSomething ...
 func (m *IntPointTxnDefaultServer) CreateSomething(ctx context.Context, in *Something) (*Something, error) {
-	return &Something{}, nil
+	span, errSpanCreate := m.spanCreate(ctx, in, "CreateSomething")
+	if errSpanCreate != nil {
+		return nil, errSpanCreate
+	}
+	defer span.End()
+	out := &Something{}
+	errSpanResult := m.spanResult(span, out)
+	if errSpanResult != nil {
+		return nil, m.spanError(span, errSpanResult)
+	}
+	return out, nil
 }
 
 type CircleServiceDefaultServer struct {

@@ -21,6 +21,6 @@ service BlogPostService {
     rpc Read(ReadAccountRequest) returns (ReadBlogPostsResponse);
 
     option (gorm.server) = {
-        autogen: true
+        autogen: true,
     };
 }

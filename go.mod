@@ -5,7 +5,7 @@ require (
 	github.com/ghodss/yaml v1.0.0
 	github.com/gogo/protobuf v1.0.0
 	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
-	github.com/golang/protobuf v0.0.0-20180706225418-1325a051a275
+	github.com/golang/protobuf v1.3.1
 	github.com/google/uuid v0.0.0-20161128191214-064e2069ce9c
 	github.com/grpc-ecosystem/go-grpc-middleware v0.0.0-20180522105215-e9c5d9645c43
 	github.com/grpc-ecosystem/grpc-gateway v1.4.1
@@ -19,11 +19,14 @@ require (
 	github.com/opentracing/opentracing-go v1.0.2
 	github.com/satori/go.uuid v1.2.0
 	github.com/sirupsen/logrus v1.0.5
-	golang.org/x/crypto v0.0.0-20180621125126-a49355c7e3f8
-	golang.org/x/net v0.0.0-20180710023853-292b43bbf7cb
-	golang.org/x/sys v0.0.0-20180709060233-1b2967e3c290
-	golang.org/x/text v0.3.0
-	google.golang.org/genproto v0.0.0-20180709204101-e92b11657268
-	google.golang.org/grpc v1.13.0
-	gopkg.in/yaml.v2 v2.2.1
+	go.opencensus.io v0.22.3
+	golang.org/x/crypto v0.0.0-20190308221718-c2843e01d9a2
+	golang.org/x/net v0.0.0-20190620200207-3b0461eec859
+	golang.org/x/sys v0.0.0-20190502145724-3ef323f4f1fd
+	golang.org/x/text v0.3.2
+	google.golang.org/genproto v0.0.0-20190425155659-357c62f0e4bb
+	google.golang.org/grpc v1.20.1
+	gopkg.in/yaml.v2 v2.2.2
 )
+
+go 1.13
