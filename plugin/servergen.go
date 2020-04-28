@@ -4,7 +4,6 @@ import (
 	"strings"
 
 	"fmt"
-	"regexp"
 
 	"github.com/gogo/protobuf/protoc-gen-gogo/descriptor"
 	"github.com/gogo/protobuf/protoc-gen-gogo/generator"
@@ -59,25 +58,25 @@ func (p *OrmPlugin) parseServices(file *generator.FileDescriptor) {
 			inType, outType, methodName := p.getMethodProps(method)
 			var verb, fmName, baseType string
 			var follows bool
-			if ok, _ := regexp.MatchString(fmt.Sprintf("^(%s)+(?:[A-Z].+)?", createService), methodName); ok {
+			if strings.HasPrefix(methodName, createService) {
 				verb = createService
 				follows, baseType = p.followsCreateConventions(inType, outType, createService)
-			} else if ok, _ := regexp.MatchString(fmt.Sprintf("^(%s)+(?:[A-Z].+)?", readService), methodName); ok {
+			} else if strings.HasPrefix(methodName, readService) {
 				verb = readService
 				follows, baseType = p.followsReadConventions(inType, outType, readService)
-			} else if ok, _ := regexp.MatchString(fmt.Sprintf("^(%s)+(?:[A-Z].+)?", updateSetService), methodName); ok {
+			} else if strings.HasPrefix(methodName, updateSetService) {
 				verb = updateSetService
 				follows, baseType, fmName = p.followsUpdateSetConventions(inType, outType, updateSetService)
-			} else if ok, _ := regexp.MatchString(fmt.Sprintf("^(%s)+(?:[A-Z].+)?", updateService), methodName); ok {
+			} else if strings.HasPrefix(methodName, updateService) {
 				verb = updateService
 				follows, baseType, fmName = p.followsUpdateConventions(inType, outType, updateService)
-			} else if ok, _ := regexp.MatchString(fmt.Sprintf("^(%s)+(?:[A-Z].+)?", deleteSetService), methodName); ok {
+			} else if strings.HasPrefix(methodName, deleteSetService) {
 				verb = deleteSetService
 				follows, baseType = p.followsDeleteSetConventions(inType, outType, method)
-			} else if ok, _ := regexp.MatchString(fmt.Sprintf("^(%s)+(?:[A-Z].+)?", deleteService), methodName); ok {
+			} else if strings.HasPrefix(methodName, deleteService) {
 				verb = deleteService
 				follows, baseType = p.followsDeleteConventions(inType, outType, method)
-			} else if ok, _ := regexp.MatchString(fmt.Sprintf("^(%s)+(?:[A-Z].+)?", listService), methodName); ok {
+			} else if strings.HasPrefix(methodName, listService) {
 				verb = listService
 				follows, baseType = p.followsListConventions(inType, outType, listService)
 			}
