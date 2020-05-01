@@ -58,27 +58,27 @@ func (p *OrmPlugin) parseServices(file *generator.FileDescriptor) {
 			inType, outType, methodName := p.getMethodProps(method)
 			var verb, fmName, baseType string
 			var follows bool
-			if methodName == createService {
+			if strings.HasPrefix(methodName, createService) {
 				verb = createService
-				follows, baseType = p.followsCreateConventions(inType, outType, methodName)
-			} else if methodName == readService {
+				follows, baseType = p.followsCreateConventions(inType, outType, createService)
+			} else if strings.HasPrefix(methodName, readService) {
 				verb = readService
-				follows, baseType = p.followsReadConventions(inType, outType, methodName)
-			} else if methodName == updateService {
-				verb = updateService
-				follows, baseType, fmName = p.followsUpdateConventions(inType, outType, methodName)
-			} else if methodName == updateSetService {
+				follows, baseType = p.followsReadConventions(inType, outType, readService)
+			} else if strings.HasPrefix(methodName, updateSetService) {
 				verb = updateSetService
-				follows, baseType, fmName = p.followsUpdateSetConventions(inType, outType, methodName)
-			} else if methodName == deleteService {
-				verb = deleteService
-				follows, baseType = p.followsDeleteConventions(inType, outType, method)
-			} else if methodName == deleteSetService {
+				follows, baseType, fmName = p.followsUpdateSetConventions(inType, outType, updateSetService)
+			} else if strings.HasPrefix(methodName, updateService) {
+				verb = updateService
+				follows, baseType, fmName = p.followsUpdateConventions(inType, outType, updateService)
+			} else if strings.HasPrefix(methodName, deleteSetService) {
 				verb = deleteSetService
 				follows, baseType = p.followsDeleteSetConventions(inType, outType, method)
-			} else if methodName == listService {
+			} else if strings.HasPrefix(methodName, deleteService) {
+				verb = deleteService
+				follows, baseType = p.followsDeleteConventions(inType, outType, method)
+			} else if strings.HasPrefix(methodName, listService) {
 				verb = listService
-				follows, baseType = p.followsListConventions(inType, outType, methodName)
+				follows, baseType = p.followsListConventions(inType, outType, listService)
 			}
 			genMethod := autogenMethod{
 				MethodDescriptorProto: method,
@@ -190,7 +190,7 @@ func (p *OrmPlugin) generateCreateServerMethod(service autogenService, method au
 	p.generateMethodSignature(service, method)
 	if method.followsConvention {
 		p.generateDBSetup(service)
-		p.generatePreserviceCall(service, method.baseType, createService)
+		p.generatePreserviceCall(service, method.baseType, method.ccName)
 		p.P(`res, err := DefaultCreate`, method.baseType, `(ctx, in.GetPayload(), db)`)
 		p.P(`if err != nil {`)
 		p.P(`return nil, `, p.wrapSpanError(service, "err"))
@@ -202,11 +202,12 @@ func (p *OrmPlugin) generateCreateServerMethod(service autogenService, method au
 			p.P(`return nil, `, p.wrapSpanError(service, "err"))
 			p.P(`}`)
 		}
-		p.generatePostserviceCall(service, method.baseType, createService)
+
+		p.generatePostserviceCall(service, method.baseType, method.ccName)
 		p.spanResultHandling(service)
 		p.P(`return out, nil`)
 		p.P(`}`)
-		p.generatePreserviceHook(service.ccName, method.baseType, createService)
+		p.generatePreserviceHook(service.ccName, method.baseType, method.ccName)
 		p.generatePostserviceHook(service.ccName, method.baseType, p.TypeName(method.outType), method.ccName)
 	} else {
 		p.generateEmptyBody(service, method.outType)
