@@ -719,7 +719,7 @@ func (p *OrmPlugin) generateAfterListHookCall(orm *OrmableType) {
 func (p *OrmPlugin) generateStrictUpdateHandler(message *generator.Descriptor) {
 	p.UsingGoImports(stdFmtImport)
 	typeName := p.TypeName(message)
-	p.P(`// DefaultStrictUpdate`, typeName, ` clears first level 1:many children and then executes a gorm update call`)
+	p.P(`// DefaultStrictUpdate`, typeName, ` clears / replaces / appends first level 1:many children and then executes a gorm update call`)
 	p.P(`func DefaultStrictUpdate`, typeName, `(ctx context.Context, in *`,
 		typeName, `, db *`, p.Import(gormImport), `.DB) (*`, typeName, `, error) {`)
 	p.P(`if in == nil {`)
@@ -752,7 +752,7 @@ func (p *OrmPlugin) generateStrictUpdateHandler(message *generator.Descriptor) {
 		p.P(count+`db.Model(&ormObj).Set("gorm:query_option", "FOR UPDATE").Where("`, column, `=?", ormObj.`, pkName, `).First(lockedRow)`+rowsAffected)
 	}
 	p.generateBeforeHookCall(ormable, "StrictUpdateCleanup")
-	p.removeChildAssociations(message)
+	p.handleChildAssociations(message)
 	p.generateBeforeHookCall(ormable, "StrictUpdateSave")
 	p.P(`if err = db.Save(&ormObj).Error; err != nil {`)
 	p.P(`return nil, err`)
@@ -781,14 +781,14 @@ func (p *OrmPlugin) isFieldOrmable(message *generator.Descriptor, fieldName stri
 	return ok
 }
 
-func (p *OrmPlugin) removeChildAssociations(message *generator.Descriptor) {
+func (p *OrmPlugin) handleChildAssociations(message *generator.Descriptor) {
 	ormable := p.getOrmable(p.TypeName(message))
 	for _, fieldName := range p.getSortedFieldNames(ormable.Fields) {
-		p.removeChildAssociationsByName(message, fieldName)
+		p.handleChildAssociationsByName(message, fieldName)
 	}
 }
 
-func (p *OrmPlugin) removeChildAssociationsByName(message *generator.Descriptor, fieldName string) {
+func (p *OrmPlugin) handleChildAssociationsByName(message *generator.Descriptor, fieldName string) {
 	ormable := p.getOrmable(p.TypeName(message))
 	field := ormable.Fields[fieldName]
 
@@ -796,41 +796,49 @@ func (p *OrmPlugin) removeChildAssociationsByName(message *generator.Descriptor,
 		return
 	}
 
-	if field.GetHasMany() != nil || field.GetHasOne() != nil {
-		var assocKeyName, foreignKeyName string
+	if field.GetHasMany() != nil || field.GetHasOne() != nil || field.GetManyToMany() != nil {
+
+		var assocHandler string
+
 		switch {
 		case field.GetHasMany() != nil:
-			assocKeyName = field.GetHasMany().GetAssociationForeignkey()
-			foreignKeyName = field.GetHasMany().GetForeignkey()
+			switch {
+			case field.GetHasMany().GetReplace():
+				assocHandler = "Replace"
+			case field.GetHasMany().GetAppend():
+				assocHandler = "Append"
+			default:
+				assocHandler = "Clear"
+			}
 		case field.GetHasOne() != nil:
-			assocKeyName = field.GetHasOne().GetAssociationForeignkey()
-			foreignKeyName = field.GetHasOne().GetForeignkey()
+			switch {
+			case field.GetHasOne().GetReplace():
+				assocHandler = "Replace"
+			case field.GetHasOne().GetAppend():
+				assocHandler = "Append"
+			default:
+				assocHandler = "Clear"
+			}
+		case field.GetManyToMany() != nil:
+			switch {
+			case field.GetManyToMany().GetReplace():
+				assocHandler = "Replace"
+			case field.GetManyToMany().GetAppend():
+				assocHandler = "Append"
+			default:
+				assocHandler = "Replace" // many to many you dont want to clear by default
+			}
 		}
-		assocKeyType := ormable.Fields[assocKeyName].Type
-		assocOrmable := p.getOrmable(field.Type)
-		foreignKeyType := assocOrmable.Fields[foreignKeyName].Type
-		p.P(`filter`, fieldName, ` := `, strings.Trim(field.Type, "[]*"), `{}`)
-		zeroValue := p.guessZeroValue(assocKeyType)
-		if strings.Contains(assocKeyType, "*") {
-			p.P(`if ormObj.`, assocKeyName, ` == nil || *ormObj.`, assocKeyName, ` == `, zeroValue, `{`)
-		} else {
-			p.P(`if ormObj.`, assocKeyName, ` == `, zeroValue, `{`)
+
+		action := fmt.Sprintf("%s(ormObj.%s)", assocHandler, fieldName)
+		if assocHandler == "Clear" {
+			action = fmt.Sprintf("%s()", assocHandler)
 		}
-		p.P(`return nil, `, p.Import(gerrorsImport), `.EmptyIdError`)
-		p.P(`}`)
-		filterDesc := "filter" + fieldName + "." + foreignKeyName
-		ormDesc := "ormObj." + assocKeyName
-		if strings.HasPrefix(foreignKeyType, "*") {
-			p.P(filterDesc, ` = new(`, strings.TrimPrefix(foreignKeyType, "*"), `)`)
-			filterDesc = "*" + filterDesc
-		}
-		if strings.HasPrefix(assocKeyType, "*") {
-			ormDesc = "*" + ormDesc
-		}
-		p.P(filterDesc, " = ", ormDesc)
-		p.P(`if err = db.Where(filter`, fieldName, `).Delete(`, strings.Trim(field.Type, "[]*"), `{}).Error; err != nil {`)
+
+		p.P(`if err = db.Model(&ormObj).Association("`, fieldName, `").`, action, `.Error; err != nil {`)
 		p.P(`return nil, err`)
 		p.P(`}`)
+
 	}
 }
 

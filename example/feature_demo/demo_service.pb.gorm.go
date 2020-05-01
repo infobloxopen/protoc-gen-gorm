@@ -380,7 +380,7 @@ type IntPointORMWithAfterDeleteSet interface {
 	AfterDeleteSet(context.Context, []*IntPoint, *gorm1.DB) error
 }
 
-// DefaultStrictUpdateIntPoint clears first level 1:many children and then executes a gorm update call
+// DefaultStrictUpdateIntPoint clears / replaces / appends first level 1:many children and then executes a gorm update call
 func DefaultStrictUpdateIntPoint(ctx context.Context, in *IntPoint, db *gorm1.DB) (*IntPoint, error) {
 	if in == nil {
 		return nil, fmt.Errorf("Nil argument to DefaultStrictUpdateIntPoint")

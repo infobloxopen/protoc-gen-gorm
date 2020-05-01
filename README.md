@@ -261,6 +261,8 @@ GORM association tags are also automatically inserted.
 [official association docs](http://gorm.io/docs/associations.html) for more information.
 - For each association type you are able to set `preload` option. Check out
 [GORM](http://gorm.io/docs/preload.html#Auto-Preloading) docs.
+- For each association you can define how gorm handles this association, the options are `append` and `replace`, see [GORM]https://gorm.io/docs/associations.html#Append-Associations
+and [GORM]https://gorm.io/docs/associations.html#Replace-Associations, if not set it will default to `clear` [GORM]https://gorm.io/docs/associations.html#Clear-Associations
 - For Has-Many you are able to set `position_field` so additional field is created if it doesn't exist in proto message to maintain association ordering.
 Corresponding CRUDL handlers do all the necessary work to maintain the ordering.
 - For automatically created foreign key and position field you're able to assign GORM tags by setting `foreignkey_tag` and `position_field_tag` options.
