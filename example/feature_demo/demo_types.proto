@@ -162,13 +162,44 @@ message TestTag {
   TestTagAssociation testTagAssoc = 2 [(gorm.field).has_one.preload = false];
 }
 
-message TestAssocHandler {
+// replace by default
+message TestAssocHandlerDefault {
+  option (gorm.opts) = {
+    ormable: true,
+  };
+  string id = 1;
+  repeated TestTagAssociation testReplaceAssoc = 2 [(gorm.field).has_many = {
+    preload: false
+  }];
+}
+message TestAssocHandlerReplace {
   option (gorm.opts) = {
     ormable: true,
   };
   string id = 1;
   repeated TestTagAssociation testReplaceAssoc = 2 [(gorm.field).has_many = {
     replace: true,
+    preload: false
+  }];
+}
+
+message TestAssocHandlerClear {
+  option (gorm.opts) = {
+    ormable: true,
+  };
+  string id = 1;
+  repeated TestTagAssociation testReplaceAssoc = 2 [(gorm.field).has_many = {
+    clear: true
+    preload: false
+  }];
+}
+message TestAssocHandlerAppend {
+  option (gorm.opts) = {
+    ormable: true,
+  };
+  string id = 1;
+  repeated TestTagAssociation testReplaceAssoc = 2 [(gorm.field).has_many = {
+    append: true,
     preload: false
   }];
 }

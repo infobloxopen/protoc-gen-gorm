@@ -78,6 +78,7 @@ message GormTag {
     optional bool preload = 23;
     optional bool replace = 24;
     optional bool append = 25;
+    optional bool clear = 26;
 }
 
 message HasOneOptions {
@@ -90,6 +91,7 @@ message HasOneOptions {
     optional bool preload = 7;
     optional bool replace = 8;
     optional bool append = 9;
+    optional bool clear = 10;
 }
 
 message BelongsToOptions {
@@ -114,6 +116,7 @@ message HasManyOptions {
     optional bool preload = 9;
     optional bool replace = 10;
     optional bool append = 11;
+    optional bool clear = 12;
 }
 
 message ManyToManyOptions {
@@ -128,6 +131,7 @@ message ManyToManyOptions {
     optional bool preload = 9;
     optional bool replace = 10;
     optional bool append = 11;
+    optional bool clear = 13;
 }
 
 

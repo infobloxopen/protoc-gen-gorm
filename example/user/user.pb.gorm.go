@@ -1043,21 +1043,26 @@ func DefaultStrictUpdateUser(ctx context.Context, in *User, db *gorm1.DB) (*User
 			return nil, err
 		}
 	}
-	if err = db.Model(&ormObj).Association("CreditCard").Clear().Error; err != nil {
+	if err = db.Model(&ormObj).Association("CreditCard").Replace(ormObj.CreditCard).Error; err != nil {
 		return nil, err
 	}
-	if err = db.Model(&ormObj).Association("Emails").Clear().Error; err != nil {
+	ormObj.CreditCard = nil
+	if err = db.Model(&ormObj).Association("Emails").Replace(ormObj.Emails).Error; err != nil {
 		return nil, err
 	}
+	ormObj.Emails = nil
 	if err = db.Model(&ormObj).Association("Friends").Replace(ormObj.Friends).Error; err != nil {
 		return nil, err
 	}
+	ormObj.Friends = nil
 	if err = db.Model(&ormObj).Association("Languages").Replace(ormObj.Languages).Error; err != nil {
 		return nil, err
 	}
-	if err = db.Model(&ormObj).Association("Tasks").Clear().Error; err != nil {
+	ormObj.Languages = nil
+	if err = db.Model(&ormObj).Association("Tasks").Replace(ormObj.Tasks).Error; err != nil {
 		return nil, err
 	}
+	ormObj.Tasks = nil
 	if hook, ok := interface{}(&ormObj).(UserORMWithBeforeStrictUpdateSave); ok {
 		if db, err = hook.BeforeStrictUpdateSave(ctx, db); err != nil {
 			return nil, err

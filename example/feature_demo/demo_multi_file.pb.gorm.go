@@ -21,7 +21,10 @@ It has these top-level messages:
 	PrimaryUUIDType
 	PrimaryStringType
 	TestTag
-	TestAssocHandler
+	TestAssocHandlerDefault
+	TestAssocHandlerReplace
+	TestAssocHandlerClear
+	TestAssocHandlerAppend
 	TestTagAssociation
 	PrimaryIncluded
 	IntPoint

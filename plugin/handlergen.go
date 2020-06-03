@@ -803,30 +803,36 @@ func (p *OrmPlugin) handleChildAssociationsByName(message *generator.Descriptor,
 		switch {
 		case field.GetHasMany() != nil:
 			switch {
-			case field.GetHasMany().GetReplace():
-				assocHandler = "Replace"
 			case field.GetHasMany().GetAppend():
 				assocHandler = "Append"
-			default:
+			case field.GetHasMany().GetClear():
 				assocHandler = "Clear"
+			case field.GetHasMany().GetReplace():
+				assocHandler = "Replace"
+			default:
+				assocHandler = "Replace"
 			}
 		case field.GetHasOne() != nil:
 			switch {
-			case field.GetHasOne().GetReplace():
-				assocHandler = "Replace"
+			case field.GetHasOne().GetClear():
+				assocHandler = "Clear"
 			case field.GetHasOne().GetAppend():
 				assocHandler = "Append"
+			case field.GetHasOne().GetReplace():
+				assocHandler = "Replace"
 			default:
-				assocHandler = "Clear"
+				assocHandler = "Replace"
 			}
 		case field.GetManyToMany() != nil:
 			switch {
-			case field.GetManyToMany().GetReplace():
-				assocHandler = "Replace"
+			case field.GetHasOne().GetClear():
+				assocHandler = "Clear"
 			case field.GetManyToMany().GetAppend():
 				assocHandler = "Append"
+			case field.GetManyToMany().GetReplace():
+				assocHandler = "Replace"
 			default:
-				assocHandler = "Replace" // many to many you dont want to clear by default
+				assocHandler = "Replace"
 			}
 		}
 
@@ -838,6 +844,7 @@ func (p *OrmPlugin) handleChildAssociationsByName(message *generator.Descriptor,
 		p.P(`if err = db.Model(&ormObj).Association("`, fieldName, `").`, action, `.Error; err != nil {`)
 		p.P(`return nil, err`)
 		p.P(`}`)
+		p.P(`ormObj.`, fieldName, ` = nil`)
 
 	}
 }
