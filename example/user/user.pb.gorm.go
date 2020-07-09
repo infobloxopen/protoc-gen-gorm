@@ -1043,26 +1043,32 @@ func DefaultStrictUpdateUser(ctx context.Context, in *User, db *gorm1.DB) (*User
 			return nil, err
 		}
 	}
-	if err = db.Model(&ormObj).Association("CreditCard").Replace(ormObj.CreditCard).Error; err != nil {
+	filterCreditCard := CreditCardORM{}
+	if ormObj.Id == "" {
+		return nil, errors1.EmptyIdError
+	}
+	filterCreditCard.UserId = new(string)
+	*filterCreditCard.UserId = ormObj.Id
+	if err = db.Where(filterCreditCard).Delete(CreditCardORM{}).Error; err != nil {
 		return nil, err
 	}
-	ormObj.CreditCard = nil
-	if err = db.Model(&ormObj).Association("Emails").Replace(ormObj.Emails).Error; err != nil {
+	filterEmails := EmailORM{}
+	if ormObj.Id == "" {
+		return nil, errors1.EmptyIdError
+	}
+	filterEmails.UserId = new(string)
+	*filterEmails.UserId = ormObj.Id
+	if err = db.Where(filterEmails).Delete(EmailORM{}).Error; err != nil {
 		return nil, err
 	}
-	ormObj.Emails = nil
-	if err = db.Model(&ormObj).Association("Friends").Replace(ormObj.Friends).Error; err != nil {
+	filterTasks := TaskORM{}
+	if ormObj.Id == "" {
+		return nil, errors1.EmptyIdError
+	}
+	filterTasks.UserId = ormObj.Id
+	if err = db.Where(filterTasks).Delete(TaskORM{}).Error; err != nil {
 		return nil, err
 	}
-	ormObj.Friends = nil
-	if err = db.Model(&ormObj).Association("Languages").Replace(ormObj.Languages).Error; err != nil {
-		return nil, err
-	}
-	ormObj.Languages = nil
-	if err = db.Model(&ormObj).Association("Tasks").Replace(ormObj.Tasks).Error; err != nil {
-		return nil, err
-	}
-	ormObj.Tasks = nil
 	if hook, ok := interface{}(&ormObj).(UserORMWithBeforeStrictUpdateSave); ok {
 		if db, err = hook.BeforeStrictUpdateSave(ctx, db); err != nil {
 			return nil, err

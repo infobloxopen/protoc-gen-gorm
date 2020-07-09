@@ -168,7 +168,7 @@ message TestAssocHandlerDefault {
     ormable: true,
   };
   string id = 1;
-  repeated TestTagAssociation testReplaceAssoc = 2 [(gorm.field).has_many = {
+  repeated TestTagAssociation testTagAssoc = 2 [(gorm.field).has_many = {
     preload: false
   }];
 }
@@ -177,9 +177,10 @@ message TestAssocHandlerReplace {
     ormable: true,
   };
   string id = 1;
-  repeated TestTagAssociation testReplaceAssoc = 2 [(gorm.field).has_many = {
-    replace: true,
+  repeated TestTagAssociation testTagAssoc = 2 [(gorm.field).has_many = {
+    replace: true
     preload: false
+    gorm_association_defaults: true,
   }];
 }
 
@@ -188,9 +189,10 @@ message TestAssocHandlerClear {
     ormable: true,
   };
   string id = 1;
-  repeated TestTagAssociation testReplaceAssoc = 2 [(gorm.field).has_many = {
+  repeated TestTagAssociation testTagAssoc = 2 [(gorm.field).has_many = {
     clear: true
     preload: false
+    gorm_association_defaults: true,
   }];
 }
 message TestAssocHandlerAppend {
@@ -198,9 +200,10 @@ message TestAssocHandlerAppend {
     ormable: true,
   };
   string id = 1;
-  repeated TestTagAssociation testReplaceAssoc = 2 [(gorm.field).has_many = {
-    append: true,
+  repeated TestTagAssociation testTagAssoc = 2 [(gorm.field).has_many = {
+    append: true
     preload: false
+    gorm_association_defaults: true
   }];
 }
 

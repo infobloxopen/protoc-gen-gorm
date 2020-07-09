@@ -498,7 +498,7 @@ func (p *OrmPlugin) renderGormTag(field *Field) string {
 	}
 
 	var foreignKey, associationForeignKey, joinTable, joinTableForeignKey, associationJoinTableForeignKey *string
-	var associationAutoupdate, associationAutocreate, associationSaveReference, preload, replace, append, clear *bool
+	var associationAutoupdate, associationAutocreate, associationSaveReference, preload, replace, append, clear, gormAssociationDefaults *bool
 	if hasOne := field.GetHasOne(); hasOne != nil {
 		foreignKey = hasOne.Foreignkey
 		associationForeignKey = hasOne.AssociationForeignkey
@@ -509,6 +509,7 @@ func (p *OrmPlugin) renderGormTag(field *Field) string {
 		clear = hasOne.Clear
 		replace = hasOne.Replace
 		append = hasOne.Append
+		gormAssociationDefaults = hasOne.GormAssociationDefaults
 	} else if belongsTo := field.GetBelongsTo(); belongsTo != nil {
 		foreignKey = belongsTo.Foreignkey
 		associationForeignKey = belongsTo.AssociationForeignkey
@@ -526,6 +527,7 @@ func (p *OrmPlugin) renderGormTag(field *Field) string {
 		preload = hasMany.Preload
 		replace = hasMany.Replace
 		append = hasMany.Append
+		gormAssociationDefaults = hasMany.GormAssociationDefaults
 		if hasMany.PositionField != nil {
 			atlasRes += fmt.Sprintf("position:%s;", hasMany.GetPositionField())
 		}
@@ -542,6 +544,7 @@ func (p *OrmPlugin) renderGormTag(field *Field) string {
 		clear = mtm.Clear
 		replace = mtm.Replace
 		append = mtm.Append
+		gormAssociationDefaults = mtm.GormAssociationDefaults
 	} else {
 		foreignKey = tag.Foreignkey
 		associationForeignKey = tag.AssociationForeignkey
@@ -589,6 +592,9 @@ func (p *OrmPlugin) renderGormTag(field *Field) string {
 	}
 	if append != nil {
 		gormRes += fmt.Sprintf("append:%s;", strconv.FormatBool(*append))
+	}
+	if gormAssociationDefaults != nil {
+		gormRes += fmt.Sprintf("gorm_association_defaults:%s;", strconv.FormatBool(*gormAssociationDefaults))
 	}
 
 	var gormTag, atlasTag string

@@ -798,10 +798,24 @@ func (p *OrmPlugin) handleChildAssociationsByName(message *generator.Descriptor,
 
 	if field.GetHasMany() != nil || field.GetHasOne() != nil || field.GetManyToMany() != nil {
 
-		var assocHandler string
+		// if field.GetHasMany().GetGormAssociationDefaults() {
+		// 	if !field.GetHasMany().GetGormAssociationDefaults() && !field.GetHasOne().GetGormAssociationDefaults() && !field.GetManyToMany().GetGormAssociationDefaults() {
+		// 		fmt.Println("here")
+		// 	}
+		// }
 
+		// // if not set to use gorm assosication defaut settings then we remove child association and recreate
+		// if !field.GetHasMany().GetGormAssociationDefaults() && !field.GetHasOne().GetGormAssociationDefaults() && !field.GetManyToMany().GetGormAssociationDefaults() {
+		// 	p.removeChildAssociationsByName(message, fieldName)
+		// 	return
+		// }
+		var assocHandler string
+		remove := true
 		switch {
 		case field.GetHasMany() != nil:
+			if field.GetHasMany().GetGormAssociationDefaults() {
+				remove = false
+			}
 			switch {
 			case field.GetHasMany().GetAppend():
 				assocHandler = "Append"
@@ -813,6 +827,9 @@ func (p *OrmPlugin) handleChildAssociationsByName(message *generator.Descriptor,
 				assocHandler = "Replace"
 			}
 		case field.GetHasOne() != nil:
+			if field.GetHasOne().GetGormAssociationDefaults() {
+				remove = false
+			}
 			switch {
 			case field.GetHasOne().GetClear():
 				assocHandler = "Clear"
@@ -825,7 +842,7 @@ func (p *OrmPlugin) handleChildAssociationsByName(message *generator.Descriptor,
 			}
 		case field.GetManyToMany() != nil:
 			switch {
-			case field.GetHasOne().GetClear():
+			case field.GetManyToMany().GetClear():
 				assocHandler = "Clear"
 			case field.GetManyToMany().GetAppend():
 				assocHandler = "Append"
@@ -834,6 +851,11 @@ func (p *OrmPlugin) handleChildAssociationsByName(message *generator.Descriptor,
 			default:
 				assocHandler = "Replace"
 			}
+		}
+
+		if remove {
+			p.removeChildAssociationsByName(message, fieldName)
+			return
 		}
 
 		action := fmt.Sprintf("%s(ormObj.%s)", assocHandler, fieldName)
@@ -845,7 +867,52 @@ func (p *OrmPlugin) handleChildAssociationsByName(message *generator.Descriptor,
 		p.P(`return nil, err`)
 		p.P(`}`)
 		p.P(`ormObj.`, fieldName, ` = nil`)
+	}
+}
 
+func (p *OrmPlugin) removeChildAssociationsByName(message *generator.Descriptor, fieldName string) {
+	ormable := p.getOrmable(p.TypeName(message))
+	field := ormable.Fields[fieldName]
+
+	if field == nil {
+		return
+	}
+
+	if field.GetHasMany() != nil || field.GetHasOne() != nil {
+		var assocKeyName, foreignKeyName string
+		switch {
+		case field.GetHasMany() != nil:
+			assocKeyName = field.GetHasMany().GetAssociationForeignkey()
+			foreignKeyName = field.GetHasMany().GetForeignkey()
+		case field.GetHasOne() != nil:
+			assocKeyName = field.GetHasOne().GetAssociationForeignkey()
+			foreignKeyName = field.GetHasOne().GetForeignkey()
+		}
+		assocKeyType := ormable.Fields[assocKeyName].Type
+		assocOrmable := p.getOrmable(field.Type)
+		foreignKeyType := assocOrmable.Fields[foreignKeyName].Type
+		p.P(`filter`, fieldName, ` := `, strings.Trim(field.Type, "[]*"), `{}`)
+		zeroValue := p.guessZeroValue(assocKeyType)
+		if strings.Contains(assocKeyType, "*") {
+			p.P(`if ormObj.`, assocKeyName, ` == nil || *ormObj.`, assocKeyName, ` == `, zeroValue, `{`)
+		} else {
+			p.P(`if ormObj.`, assocKeyName, ` == `, zeroValue, `{`)
+		}
+		p.P(`return nil, `, p.Import(gerrorsImport), `.EmptyIdError`)
+		p.P(`}`)
+		filterDesc := "filter" + fieldName + "." + foreignKeyName
+		ormDesc := "ormObj." + assocKeyName
+		if strings.HasPrefix(foreignKeyType, "*") {
+			p.P(filterDesc, ` = new(`, strings.TrimPrefix(foreignKeyType, "*"), `)`)
+			filterDesc = "*" + filterDesc
+		}
+		if strings.HasPrefix(assocKeyType, "*") {
+			ormDesc = "*" + ormDesc
+		}
+		p.P(filterDesc, " = ", ormDesc)
+		p.P(`if err = db.Where(filter`, fieldName, `).Delete(`, strings.Trim(field.Type, "[]*"), `{}).Error; err != nil {`)
+		p.P(`return nil, err`)
+		p.P(`}`)
 	}
 }
 
