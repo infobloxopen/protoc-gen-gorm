@@ -1061,6 +1061,14 @@ func DefaultStrictUpdateUser(ctx context.Context, in *User, db *gorm1.DB) (*User
 	if err = db.Where(filterEmails).Delete(EmailORM{}).Error; err != nil {
 		return nil, err
 	}
+	if err = db.Model(&ormObj).Association("Friends").Replace(ormObj.Friends).Error; err != nil {
+		return nil, err
+	}
+	ormObj.Friends = nil
+	if err = db.Model(&ormObj).Association("Languages").Replace(ormObj.Languages).Error; err != nil {
+		return nil, err
+	}
+	ormObj.Languages = nil
 	filterTasks := TaskORM{}
 	if ormObj.Id == "" {
 		return nil, errors1.EmptyIdError

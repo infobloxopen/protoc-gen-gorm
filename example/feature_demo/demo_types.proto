@@ -180,7 +180,6 @@ message TestAssocHandlerReplace {
   repeated TestTagAssociation testTagAssoc = 2 [(gorm.field).has_many = {
     replace: true
     preload: false
-    gorm_association_defaults: true,
   }];
 }
 
@@ -192,7 +191,6 @@ message TestAssocHandlerClear {
   repeated TestTagAssociation testTagAssoc = 2 [(gorm.field).has_many = {
     clear: true
     preload: false
-    gorm_association_defaults: true,
   }];
 }
 message TestAssocHandlerAppend {
@@ -203,7 +201,6 @@ message TestAssocHandlerAppend {
   repeated TestTagAssociation testTagAssoc = 2 [(gorm.field).has_many = {
     append: true
     preload: false
-    gorm_association_defaults: true
   }];
 }
 

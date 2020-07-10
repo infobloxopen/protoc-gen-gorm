@@ -797,25 +797,9 @@ func (p *OrmPlugin) handleChildAssociationsByName(message *generator.Descriptor,
 	}
 
 	if field.GetHasMany() != nil || field.GetHasOne() != nil || field.GetManyToMany() != nil {
-
-		// if field.GetHasMany().GetGormAssociationDefaults() {
-		// 	if !field.GetHasMany().GetGormAssociationDefaults() && !field.GetHasOne().GetGormAssociationDefaults() && !field.GetManyToMany().GetGormAssociationDefaults() {
-		// 		fmt.Println("here")
-		// 	}
-		// }
-
-		// // if not set to use gorm assosication defaut settings then we remove child association and recreate
-		// if !field.GetHasMany().GetGormAssociationDefaults() && !field.GetHasOne().GetGormAssociationDefaults() && !field.GetManyToMany().GetGormAssociationDefaults() {
-		// 	p.removeChildAssociationsByName(message, fieldName)
-		// 	return
-		// }
 		var assocHandler string
-		remove := true
 		switch {
 		case field.GetHasMany() != nil:
-			if field.GetHasMany().GetGormAssociationDefaults() {
-				remove = false
-			}
 			switch {
 			case field.GetHasMany().GetAppend():
 				assocHandler = "Append"
@@ -824,12 +808,9 @@ func (p *OrmPlugin) handleChildAssociationsByName(message *generator.Descriptor,
 			case field.GetHasMany().GetReplace():
 				assocHandler = "Replace"
 			default:
-				assocHandler = "Replace"
+				assocHandler = "Remove"
 			}
 		case field.GetHasOne() != nil:
-			if field.GetHasOne().GetGormAssociationDefaults() {
-				remove = false
-			}
 			switch {
 			case field.GetHasOne().GetClear():
 				assocHandler = "Clear"
@@ -838,7 +819,7 @@ func (p *OrmPlugin) handleChildAssociationsByName(message *generator.Descriptor,
 			case field.GetHasOne().GetReplace():
 				assocHandler = "Replace"
 			default:
-				assocHandler = "Replace"
+				assocHandler = "Remove"
 			}
 		case field.GetManyToMany() != nil:
 			switch {
@@ -853,7 +834,7 @@ func (p *OrmPlugin) handleChildAssociationsByName(message *generator.Descriptor,
 			}
 		}
 
-		if remove {
+		if assocHandler == "Remove" {
 			p.removeChildAssociationsByName(message, fieldName)
 			return
 		}

@@ -79,7 +79,6 @@ message GormTag {
     optional bool replace = 24;
     optional bool append = 25;
     optional bool clear = 26;
-    optional bool gorm_association_defaults = 27;
 }
 
 message HasOneOptions {
@@ -93,7 +92,6 @@ message HasOneOptions {
     optional bool replace = 8;
     optional bool append = 9;
     optional bool clear = 10;
-    optional bool gorm_association_defaults = 11;
 }
 
 message BelongsToOptions {
@@ -119,7 +117,6 @@ message HasManyOptions {
     optional bool replace = 10;
     optional bool append = 11;
     optional bool clear = 12;
-    optional bool gorm_association_defaults = 13;
 }
 
 message ManyToManyOptions {
@@ -135,7 +132,6 @@ message ManyToManyOptions {
     optional bool replace = 10;
     optional bool append = 11;
     optional bool clear = 13;
-    optional bool gorm_association_defaults = 14;
 }
 
 
