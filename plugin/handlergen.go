@@ -801,10 +801,10 @@ func (p *OrmPlugin) handleChildAssociationsByName(message *generator.Descriptor,
 		switch {
 		case field.GetHasMany() != nil:
 			switch {
-			case field.GetHasMany().GetAppend():
-				assocHandler = "Append"
 			case field.GetHasMany().GetClear():
 				assocHandler = "Clear"
+			case field.GetHasMany().GetAppend():
+				assocHandler = "Append"
 			case field.GetHasMany().GetReplace():
 				assocHandler = "Replace"
 			default:
