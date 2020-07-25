@@ -583,11 +583,9 @@ func (p *OrmPlugin) renderGormTag(field *Field) string {
 	}
 	if clear != nil {
 		gormRes += fmt.Sprintf("clear:%s;", strconv.FormatBool(*clear))
-	}
-	if replace != nil {
+	} else if replace != nil {
 		gormRes += fmt.Sprintf("replace:%s;", strconv.FormatBool(*replace))
-	}
-	if append != nil {
+	} else if append != nil {
 		gormRes += fmt.Sprintf("append:%s;", strconv.FormatBool(*append))
 	}
 
