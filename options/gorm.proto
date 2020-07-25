@@ -76,9 +76,6 @@ message GormTag {
     optional bool association_autocreate = 21;
     optional bool association_save_reference = 22;
     optional bool preload = 23;
-    optional bool replace = 24;
-    optional bool append = 25;
-    optional bool clear = 26;
 }
 
 message HasOneOptions {
