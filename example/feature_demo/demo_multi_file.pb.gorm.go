@@ -21,6 +21,10 @@ It has these top-level messages:
 	PrimaryUUIDType
 	PrimaryStringType
 	TestTag
+	TestAssocHandlerDefault
+	TestAssocHandlerReplace
+	TestAssocHandlerClear
+	TestAssocHandlerAppend
 	TestTagAssociation
 	PrimaryIncluded
 	IntPoint
@@ -356,7 +360,7 @@ type ExternalChildORMWithAfterDeleteSet interface {
 	AfterDeleteSet(context.Context, []*ExternalChild, *gorm1.DB) error
 }
 
-// DefaultStrictUpdateExternalChild clears first level 1:many children and then executes a gorm update call
+// DefaultStrictUpdateExternalChild clears / replaces / appends first level 1:many children and then executes a gorm update call
 func DefaultStrictUpdateExternalChild(ctx context.Context, in *ExternalChild, db *gorm1.DB) (*ExternalChild, error) {
 	if in == nil {
 		return nil, fmt.Errorf("Nil argument to DefaultStrictUpdateExternalChild")
@@ -705,7 +709,7 @@ type BlogPostORMWithAfterDeleteSet interface {
 	AfterDeleteSet(context.Context, []*BlogPost, *gorm1.DB) error
 }
 
-// DefaultStrictUpdateBlogPost clears first level 1:many children and then executes a gorm update call
+// DefaultStrictUpdateBlogPost clears / replaces / appends first level 1:many children and then executes a gorm update call
 func DefaultStrictUpdateBlogPost(ctx context.Context, in *BlogPost, db *gorm1.DB) (*BlogPost, error) {
 	if in == nil {
 		return nil, fmt.Errorf("Nil argument to DefaultStrictUpdateBlogPost")

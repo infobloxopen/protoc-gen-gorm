@@ -1022,7 +1022,7 @@ type UserORMWithAfterDeleteSet interface {
 	AfterDeleteSet(context.Context, []*User, *gorm1.DB) error
 }
 
-// DefaultStrictUpdateUser clears first level 1:many children and then executes a gorm update call
+// DefaultStrictUpdateUser clears / replaces / appends first level 1:many children and then executes a gorm update call
 func DefaultStrictUpdateUser(ctx context.Context, in *User, db *gorm1.DB) (*User, error) {
 	if in == nil {
 		return nil, fmt.Errorf("Nil argument to DefaultStrictUpdateUser")
@@ -1061,6 +1061,14 @@ func DefaultStrictUpdateUser(ctx context.Context, in *User, db *gorm1.DB) (*User
 	if err = db.Where(filterEmails).Delete(EmailORM{}).Error; err != nil {
 		return nil, err
 	}
+	if err = db.Model(&ormObj).Association("Friends").Replace(ormObj.Friends).Error; err != nil {
+		return nil, err
+	}
+	ormObj.Friends = nil
+	if err = db.Model(&ormObj).Association("Languages").Replace(ormObj.Languages).Error; err != nil {
+		return nil, err
+	}
+	ormObj.Languages = nil
 	filterTasks := TaskORM{}
 	if ormObj.Id == "" {
 		return nil, errors1.EmptyIdError
@@ -1512,7 +1520,7 @@ type EmailORMWithAfterDeleteSet interface {
 	AfterDeleteSet(context.Context, []*Email, *gorm1.DB) error
 }
 
-// DefaultStrictUpdateEmail clears first level 1:many children and then executes a gorm update call
+// DefaultStrictUpdateEmail clears / replaces / appends first level 1:many children and then executes a gorm update call
 func DefaultStrictUpdateEmail(ctx context.Context, in *Email, db *gorm1.DB) (*Email, error) {
 	if in == nil {
 		return nil, fmt.Errorf("Nil argument to DefaultStrictUpdateEmail")
@@ -1882,7 +1890,7 @@ type AddressORMWithAfterDeleteSet interface {
 	AfterDeleteSet(context.Context, []*Address, *gorm1.DB) error
 }
 
-// DefaultStrictUpdateAddress clears first level 1:many children and then executes a gorm update call
+// DefaultStrictUpdateAddress clears / replaces / appends first level 1:many children and then executes a gorm update call
 func DefaultStrictUpdateAddress(ctx context.Context, in *Address, db *gorm1.DB) (*Address, error) {
 	if in == nil {
 		return nil, fmt.Errorf("Nil argument to DefaultStrictUpdateAddress")
@@ -2256,7 +2264,7 @@ type LanguageORMWithAfterDeleteSet interface {
 	AfterDeleteSet(context.Context, []*Language, *gorm1.DB) error
 }
 
-// DefaultStrictUpdateLanguage clears first level 1:many children and then executes a gorm update call
+// DefaultStrictUpdateLanguage clears / replaces / appends first level 1:many children and then executes a gorm update call
 func DefaultStrictUpdateLanguage(ctx context.Context, in *Language, db *gorm1.DB) (*Language, error) {
 	if in == nil {
 		return nil, fmt.Errorf("Nil argument to DefaultStrictUpdateLanguage")
@@ -2622,7 +2630,7 @@ type CreditCardORMWithAfterDeleteSet interface {
 	AfterDeleteSet(context.Context, []*CreditCard, *gorm1.DB) error
 }
 
-// DefaultStrictUpdateCreditCard clears first level 1:many children and then executes a gorm update call
+// DefaultStrictUpdateCreditCard clears / replaces / appends first level 1:many children and then executes a gorm update call
 func DefaultStrictUpdateCreditCard(ctx context.Context, in *CreditCard, db *gorm1.DB) (*CreditCard, error) {
 	if in == nil {
 		return nil, fmt.Errorf("Nil argument to DefaultStrictUpdateCreditCard")

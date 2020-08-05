@@ -719,7 +719,7 @@ func (p *OrmPlugin) generateAfterListHookCall(orm *OrmableType) {
 func (p *OrmPlugin) generateStrictUpdateHandler(message *generator.Descriptor) {
 	p.UsingGoImports(stdFmtImport)
 	typeName := p.TypeName(message)
-	p.P(`// DefaultStrictUpdate`, typeName, ` clears first level 1:many children and then executes a gorm update call`)
+	p.P(`// DefaultStrictUpdate`, typeName, ` clears / replaces / appends first level 1:many children and then executes a gorm update call`)
 	p.P(`func DefaultStrictUpdate`, typeName, `(ctx context.Context, in *`,
 		typeName, `, db *`, p.Import(gormImport), `.DB) (*`, typeName, `, error) {`)
 	p.P(`if in == nil {`)
@@ -752,7 +752,7 @@ func (p *OrmPlugin) generateStrictUpdateHandler(message *generator.Descriptor) {
 		p.P(count+`db.Model(&ormObj).Set("gorm:query_option", "FOR UPDATE").Where("`, column, `=?", ormObj.`, pkName, `).First(lockedRow)`+rowsAffected)
 	}
 	p.generateBeforeHookCall(ormable, "StrictUpdateCleanup")
-	p.removeChildAssociations(message)
+	p.handleChildAssociations(message)
 	p.generateBeforeHookCall(ormable, "StrictUpdateSave")
 	p.P(`if err = db.Save(&ormObj).Error; err != nil {`)
 	p.P(`return nil, err`)
@@ -781,10 +781,73 @@ func (p *OrmPlugin) isFieldOrmable(message *generator.Descriptor, fieldName stri
 	return ok
 }
 
-func (p *OrmPlugin) removeChildAssociations(message *generator.Descriptor) {
+func (p *OrmPlugin) handleChildAssociations(message *generator.Descriptor) {
 	ormable := p.getOrmable(p.TypeName(message))
 	for _, fieldName := range p.getSortedFieldNames(ormable.Fields) {
-		p.removeChildAssociationsByName(message, fieldName)
+		p.handleChildAssociationsByName(message, fieldName)
+	}
+}
+
+func (p *OrmPlugin) handleChildAssociationsByName(message *generator.Descriptor, fieldName string) {
+	ormable := p.getOrmable(p.TypeName(message))
+	field := ormable.Fields[fieldName]
+
+	if field == nil {
+		return
+	}
+
+	if field.GetHasMany() != nil || field.GetHasOne() != nil || field.GetManyToMany() != nil {
+		var assocHandler string
+		switch {
+		case field.GetHasMany() != nil:
+			switch {
+			case field.GetHasMany().GetClear():
+				assocHandler = "Clear"
+			case field.GetHasMany().GetAppend():
+				assocHandler = "Append"
+			case field.GetHasMany().GetReplace():
+				assocHandler = "Replace"
+			default:
+				assocHandler = "Remove"
+			}
+		case field.GetHasOne() != nil:
+			switch {
+			case field.GetHasOne().GetClear():
+				assocHandler = "Clear"
+			case field.GetHasOne().GetAppend():
+				assocHandler = "Append"
+			case field.GetHasOne().GetReplace():
+				assocHandler = "Replace"
+			default:
+				assocHandler = "Remove"
+			}
+		case field.GetManyToMany() != nil:
+			switch {
+			case field.GetManyToMany().GetClear():
+				assocHandler = "Clear"
+			case field.GetManyToMany().GetAppend():
+				assocHandler = "Append"
+			case field.GetManyToMany().GetReplace():
+				assocHandler = "Replace"
+			default:
+				assocHandler = "Replace"
+			}
+		}
+
+		if assocHandler == "Remove" {
+			p.removeChildAssociationsByName(message, fieldName)
+			return
+		}
+
+		action := fmt.Sprintf("%s(ormObj.%s)", assocHandler, fieldName)
+		if assocHandler == "Clear" {
+			action = fmt.Sprintf("%s()", assocHandler)
+		}
+
+		p.P(`if err = db.Model(&ormObj).Association("`, fieldName, `").`, action, `.Error; err != nil {`)
+		p.P(`return nil, err`)
+		p.P(`}`)
+		p.P(`ormObj.`, fieldName, ` = nil`)
 	}
 }
 
