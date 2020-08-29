@@ -1,5 +1,7 @@
 # protoc-gen-gorm
 
+### [Chinese Documentation](./README-zh_CN.md)
+
 ### Purpose
 
 A protobuf (https://developers.google.com/protocol-buffers/) compiler plugin
