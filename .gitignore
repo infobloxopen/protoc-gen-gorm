@@ -1,4 +1,5 @@
 vendor
+trigger-travis.sh
 
 # Binaries for programs and plugins
 *.exe
