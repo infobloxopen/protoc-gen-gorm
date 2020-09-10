@@ -555,31 +555,31 @@ func (p *OrmPlugin) renderGormTag(field *Field) string {
 	}
 
 	if foreignKey != nil {
-		gormRes += fmt.Sprintf("foreignkey:%s;", *foreignKey)
+		gormRes += fmt.Sprintf("foreignkey:%s;", tag.GetForeignkey())
 	}
 	if associationForeignKey != nil {
-		gormRes += fmt.Sprintf("association_foreignkey:%s;", *associationForeignKey)
+		gormRes += fmt.Sprintf("association_foreignkey:%s;", tag.GetAssociationForeignkey())
 	}
 	if joinTable != nil {
-		gormRes += fmt.Sprintf("many2many:%s;", *joinTable)
+		gormRes += fmt.Sprintf("many2many:%s;", tag.GetJointableForeignkey())
 	}
 	if joinTableForeignKey != nil {
-		gormRes += fmt.Sprintf("jointable_foreignkey:%s;", *joinTableForeignKey)
+		gormRes += fmt.Sprintf("jointable_foreignkey:%s;", tag.GetJointableForeignkey())
 	}
 	if associationJoinTableForeignKey != nil {
-		gormRes += fmt.Sprintf("association_jointable_foreignkey:%s;", *associationJoinTableForeignKey)
+		gormRes += fmt.Sprintf("association_jointable_foreignkey:%s;", tag.GetAssociationJointableForeignkey())
 	}
 	if associationAutoupdate != nil {
-		gormRes += fmt.Sprintf("association_autoupdate:%s;", strconv.FormatBool(*associationAutoupdate))
+		gormRes += fmt.Sprintf("association_autoupdate:%s;", strconv.FormatBool(tag.GetAssociationAutoupdate()))
 	}
 	if associationAutocreate != nil {
-		gormRes += fmt.Sprintf("association_autocreate:%s;", strconv.FormatBool(*associationAutocreate))
+		gormRes += fmt.Sprintf("association_autocreate:%s;", strconv.FormatBool(tag.GetAssociationAutocreate()))
 	}
 	if associationSaveReference != nil {
-		gormRes += fmt.Sprintf("association_save_reference:%s;", strconv.FormatBool(*associationSaveReference))
+		gormRes += fmt.Sprintf("association_save_reference:%s;", strconv.FormatBool(tag.GetAssociationSaveReference()))
 	}
 	if preload != nil {
-		gormRes += fmt.Sprintf("preload:%s;", strconv.FormatBool(*preload))
+		gormRes += fmt.Sprintf("preload:%s;", strconv.FormatBool(tag.GetPreload()))
 	}
 	if clear != nil {
 		gormRes += fmt.Sprintf("clear:%s;", strconv.FormatBool(*clear))
