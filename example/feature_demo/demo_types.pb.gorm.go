@@ -4047,7 +4047,7 @@ func DefaultStrictUpdateTestAssocHandlerReplace(ctx context.Context, in *TestAss
 			return nil, err
 		}
 	}
-	if err = db.Model(&ormObj).Association("TestTagAssoc").Replace(ormObj.TestTagAssoc).Error; err != nil {
+	if err = db.Model(&TestAssocHandlerReplaceORM{Id: ormObj.Id}).Association("TestTagAssoc").Replace(ormObj.TestTagAssoc).Error; err != nil {
 		return nil, err
 	}
 	ormObj.TestTagAssoc = nil
@@ -4404,7 +4404,7 @@ func DefaultStrictUpdateTestAssocHandlerClear(ctx context.Context, in *TestAssoc
 			return nil, err
 		}
 	}
-	if err = db.Model(&ormObj).Association("TestTagAssoc").Clear().Error; err != nil {
+	if err = db.Model(&TestAssocHandlerClearORM{Id: ormObj.Id}).Association("TestTagAssoc").Clear().Error; err != nil {
 		return nil, err
 	}
 	ormObj.TestTagAssoc = nil
@@ -4761,7 +4761,7 @@ func DefaultStrictUpdateTestAssocHandlerAppend(ctx context.Context, in *TestAsso
 			return nil, err
 		}
 	}
-	if err = db.Model(&ormObj).Association("TestTagAssoc").Append(ormObj.TestTagAssoc).Error; err != nil {
+	if err = db.Model(&TestAssocHandlerAppendORM{Id: ormObj.Id}).Association("TestTagAssoc").Append(ormObj.TestTagAssoc).Error; err != nil {
 		return nil, err
 	}
 	ormObj.TestTagAssoc = nil

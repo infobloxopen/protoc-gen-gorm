@@ -796,43 +796,8 @@ func (p *OrmPlugin) handleChildAssociationsByName(message *generator.Descriptor,
 		return
 	}
 
-	if field.GetHasMany() != nil || field.GetHasOne() != nil || field.GetManyToMany() != nil {
-		var assocHandler string
-		switch {
-		case field.GetHasMany() != nil:
-			switch {
-			case field.GetHasMany().GetClear():
-				assocHandler = "Clear"
-			case field.GetHasMany().GetAppend():
-				assocHandler = "Append"
-			case field.GetHasMany().GetReplace():
-				assocHandler = "Replace"
-			default:
-				assocHandler = "Remove"
-			}
-		case field.GetHasOne() != nil:
-			switch {
-			case field.GetHasOne().GetClear():
-				assocHandler = "Clear"
-			case field.GetHasOne().GetAppend():
-				assocHandler = "Append"
-			case field.GetHasOne().GetReplace():
-				assocHandler = "Replace"
-			default:
-				assocHandler = "Remove"
-			}
-		case field.GetManyToMany() != nil:
-			switch {
-			case field.GetManyToMany().GetClear():
-				assocHandler = "Clear"
-			case field.GetManyToMany().GetAppend():
-				assocHandler = "Append"
-			case field.GetManyToMany().GetReplace():
-				assocHandler = "Replace"
-			default:
-				assocHandler = "Replace"
-			}
-		}
+	if getHasOneMany(field) {
+		assocHandler := getAssociationHandlerType(field)
 
 		if assocHandler == "Remove" {
 			p.removeChildAssociationsByName(message, fieldName)
@@ -844,11 +809,55 @@ func (p *OrmPlugin) handleChildAssociationsByName(message *generator.Descriptor,
 			action = fmt.Sprintf("%s()", assocHandler)
 		}
 
-		p.P(`if err = db.Model(&ormObj).Association("`, fieldName, `").`, action, `.Error; err != nil {`)
+		k, _ := p.findPrimaryKey(ormable)
+		p.P(`if err = db.Model(&`, ormable.Name, `{`, k, ` : ormObj.`, k, `}).Association("`, fieldName, `").`, action, `.Error; err != nil {`)
 		p.P(`return nil, err`)
 		p.P(`}`)
 		p.P(`ormObj.`, fieldName, ` = nil`)
 	}
+}
+
+func getHasOneMany(field *Field) bool {
+	return field.GetHasMany() != nil || field.GetHasOne() != nil || field.GetManyToMany() != nil
+}
+
+func getAssociationHandlerType(field *Field) (assocHandler string) {
+	switch {
+	case field.GetHasMany() != nil:
+		switch {
+		case field.GetHasMany().GetClear():
+			assocHandler = "Clear"
+		case field.GetHasMany().GetAppend():
+			assocHandler = "Append"
+		case field.GetHasMany().GetReplace():
+			assocHandler = "Replace"
+		default:
+			assocHandler = "Remove"
+		}
+	case field.GetHasOne() != nil:
+		switch {
+		case field.GetHasOne().GetClear():
+			assocHandler = "Clear"
+		case field.GetHasOne().GetAppend():
+			assocHandler = "Append"
+		case field.GetHasOne().GetReplace():
+			assocHandler = "Replace"
+		default:
+			assocHandler = "Remove"
+		}
+	case field.GetManyToMany() != nil:
+		switch {
+		case field.GetManyToMany().GetClear():
+			assocHandler = "Clear"
+		case field.GetManyToMany().GetAppend():
+			assocHandler = "Append"
+		case field.GetManyToMany().GetReplace():
+			assocHandler = "Replace"
+		default:
+			assocHandler = "Replace"
+		}
+	}
+	return
 }
 
 func (p *OrmPlugin) removeChildAssociationsByName(message *generator.Descriptor, fieldName string) {
