@@ -496,7 +496,9 @@ func (p *OrmPlugin) renderGormTag(field *Field) string {
 	if tag.GetIgnore() {
 		gormRes += "-;"
 	}
-
+	if tag.GetEmbedded() {
+		return genFinalTag(gormRes, atlasRes)
+	}
 	var foreignKey, associationForeignKey, joinTable, joinTableForeignKey, associationJoinTableForeignKey *string
 	var associationAutoupdate, associationAutocreate, associationSaveReference, preload, replace, append, clear *bool
 	if hasOne := field.GetHasOne(); hasOne != nil {
@@ -589,6 +591,10 @@ func (p *OrmPlugin) renderGormTag(field *Field) string {
 		gormRes += fmt.Sprintf("append:%s;", strconv.FormatBool(*append))
 	}
 
+	return genFinalTag(gormRes, atlasRes)
+}
+
+func genFinalTag(gormRes, atlasRes string) string {
 	var gormTag, atlasTag string
 	if gormRes != "" {
 		gormTag = fmt.Sprintf("gorm:\"%s\"", strings.TrimRight(gormRes, ";"))
@@ -599,9 +605,8 @@ func (p *OrmPlugin) renderGormTag(field *Field) string {
 	finalTag := strings.TrimSpace(strings.Join([]string{gormTag, atlasTag}, " "))
 	if finalTag == "" {
 		return ""
-	} else {
-		return fmt.Sprintf("`%s`", finalTag)
 	}
+	return fmt.Sprintf("`%s`", finalTag)
 }
 
 // generateTableNameFunction the function to set the gorm table name
