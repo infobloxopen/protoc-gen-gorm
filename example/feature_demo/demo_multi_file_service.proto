@@ -1,7 +1,7 @@
 syntax = "proto3";
 
 package example;
-import "github.com/infobloxopen/protoc-gen-gorm/options/gorm.proto";
+import "options/gorm.proto";
 import "github.com/infobloxopen/atlas-app-toolkit/query/collection_operators.proto";
 import "example/feature_demo/demo_multi_file.proto";
 

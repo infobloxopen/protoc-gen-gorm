@@ -4,7 +4,7 @@ syntax = "proto3";
 
 package user;
 
-import "github.com/infobloxopen/protoc-gen-gorm/options/gorm.proto";
+import "options/gorm.proto";
 import "google/protobuf/timestamp.proto";
 import "github.com/infobloxopen/atlas-app-toolkit/rpc/resource/resource.proto";
 
