@@ -6,7 +6,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/protoc-gen-gogo/descriptor"
 	"github.com/gogo/protobuf/protoc-gen-gogo/generator"
 	jgorm "github.com/jinzhu/gorm"
@@ -98,17 +97,17 @@ type OrmPlugin struct {
 	ormableTypes    map[string]*OrmableType
 	EmptyFiles      []string
 	currentPackage  string
-	currentFile     *generator.FileDescriptor
-	fileImports     map[*generator.FileDescriptor]*fileImports
+	currentFile     string
+	fileImports     map[string]*fileImports
 	messages        map[string]struct{}
 	ormableServices []autogenService
 	suppressWarn    bool
 }
 
-func (p *OrmPlugin) setFile(file *generator.FileDescriptor) {
+func (p *OrmPlugin) setFile(file string, pkg string) {
 	p.currentFile = file
-	p.currentPackage = file.GetPackage()
-	p.Generator.SetFile(file.FileDescriptorProto)
+	p.currentPackage = pkg
+	p.Generator.SetFile(file)
 }
 
 // Name identifies the plugin
@@ -120,7 +119,7 @@ func (p *OrmPlugin) Name() string {
 // code generation begins.
 func (p *OrmPlugin) Init(g *generator.Generator) {
 	p.Generator = g
-	p.fileImports = make(map[*generator.FileDescriptor]*fileImports)
+	p.fileImports = make(map[string]*fileImports)
 	p.messages = make(map[string]struct{})
 	if strings.EqualFold(g.Param["engine"], "postgres") {
 		p.dbEngine = ENGINE_POSTGRES
@@ -146,9 +145,8 @@ func (p *OrmPlugin) Generate(file *generator.FileDescriptor) {
 	if p.ormableTypes == nil {
 		p.ormableTypes = make(map[string]*OrmableType)
 		for _, fileProto := range p.AllFiles().GetFile() {
-			file := p.FileOf(fileProto)
-			p.fileImports[file] = newFileImports()
-			p.setFile(file)
+			p.fileImports[*fileProto.Name] = newFileImports()
+			p.setFile(*fileProto.Name, *file.Package)
 			// Preload just the types we'll be creating
 			for _, msg := range file.Messages() {
 				// We don't want to bother with the MapEntry stuff
@@ -184,13 +182,12 @@ func (p *OrmPlugin) Generate(file *generator.FileDescriptor) {
 			}
 		}
 		for _, fileProto := range p.AllFiles().GetFile() {
-			file := p.FileOf(fileProto)
-			p.setFile(file)
+			p.setFile(*fileProto.Name, *fileProto.Package)
 			p.parseServices(file)
 		}
 	}
 	// Return to the file at hand and then generate anything needed
-	p.setFile(file)
+	p.setFile(*file.Name, *file.Package)
 	empty := true
 	for _, msg := range file.Messages() {
 		typeName := p.getMsgName(msg)
@@ -359,7 +356,7 @@ func tagWithType(tag *gorm.GormTag, typename string) *gorm.GormTag {
 	if tag == nil {
 		tag = &gorm.GormTag{}
 	}
-	tag.Type = proto.String(typename)
+	tag.Type = &typename
 	return tag
 }
 
@@ -452,8 +449,8 @@ func (p *OrmPlugin) renderGormTag(field *Field) string {
 	if tag.Type != nil {
 		gormRes += fmt.Sprintf("type:%s;", tag.GetType())
 	}
-	if tag.Size_ != nil {
-		gormRes += fmt.Sprintf("size:%d;", tag.GetSize_())
+	if tag.Size != nil {
+		gormRes += fmt.Sprintf("size:%d;", tag.GetSize())
 	}
 	if tag.Precision != nil {
 		gormRes += fmt.Sprintf("precision:%d;", tag.GetPrecision())
@@ -473,20 +470,19 @@ func (p *OrmPlugin) renderGormTag(field *Field) string {
 	if tag.GetAutoIncrement() {
 		gormRes += "auto_increment;"
 	}
-	if tag.Index != nil {
-		if tag.GetIndex() == "" {
-			gormRes += "index;"
-		} else {
-			gormRes += fmt.Sprintf("index:%s;", tag.GetIndex())
-		}
+
+	if tag.GetIndex() == "" {
+		gormRes += "index;"
+	} else {
+		gormRes += fmt.Sprintf("index:%s;", tag.GetIndex())
 	}
-	if tag.UniqueIndex != nil {
-		if tag.GetUniqueIndex() == "" {
-			gormRes += "unique_index;"
-		} else {
-			gormRes += fmt.Sprintf("unique_index:%s;", tag.GetUniqueIndex())
-		}
+
+	if tag.GetUniqueIndex() == "" {
+		gormRes += "unique_index;"
+	} else {
+		gormRes += fmt.Sprintf("unique_index:%s;", tag.GetUniqueIndex())
 	}
+
 	if tag.GetEmbedded() {
 		gormRes += "embedded;"
 	}
@@ -554,12 +550,10 @@ func (p *OrmPlugin) renderGormTag(field *Field) string {
 		preload = tag.Preload
 	}
 
-	if foreignKey != nil {
-		gormRes += fmt.Sprintf("foreignkey:%s;", *foreignKey)
-	}
-	if associationForeignKey != nil {
-		gormRes += fmt.Sprintf("association_foreignkey:%s;", *associationForeignKey)
-	}
+	gormRes += fmt.Sprintf("foreignkey:%s;", *foreignKey)
+
+	gormRes += fmt.Sprintf("association_foreignkey:%s;", *associationForeignKey)
+
 	if joinTable != nil {
 		gormRes += fmt.Sprintf("many2many:%s;", *joinTable)
 	}
@@ -569,23 +563,20 @@ func (p *OrmPlugin) renderGormTag(field *Field) string {
 	if associationJoinTableForeignKey != nil {
 		gormRes += fmt.Sprintf("association_jointable_foreignkey:%s;", *associationJoinTableForeignKey)
 	}
-	if associationAutoupdate != nil {
-		gormRes += fmt.Sprintf("association_autoupdate:%s;", strconv.FormatBool(*associationAutoupdate))
-	}
-	if associationAutocreate != nil {
-		gormRes += fmt.Sprintf("association_autocreate:%s;", strconv.FormatBool(*associationAutocreate))
-	}
-	if associationSaveReference != nil {
-		gormRes += fmt.Sprintf("association_save_reference:%s;", strconv.FormatBool(*associationSaveReference))
-	}
-	if preload != nil {
-		gormRes += fmt.Sprintf("preload:%s;", strconv.FormatBool(*preload))
-	}
-	if clear != nil {
+
+	gormRes += fmt.Sprintf("association_autoupdate:%s;", strconv.FormatBool(*associationAutoupdate))
+
+	gormRes += fmt.Sprintf("association_autocreate:%s;", strconv.FormatBool(*associationAutocreate))
+
+	gormRes += fmt.Sprintf("association_save_reference:%s;", strconv.FormatBool(*associationSaveReference))
+
+	gormRes += fmt.Sprintf("preload:%s;", strconv.FormatBool(*preload))
+
+	if *clear {
 		gormRes += fmt.Sprintf("clear:%s;", strconv.FormatBool(*clear))
-	} else if replace != nil {
+	} else if *replace {
 		gormRes += fmt.Sprintf("replace:%s;", strconv.FormatBool(*replace))
-	} else if append != nil {
+	} else if *append {
 		gormRes += fmt.Sprintf("append:%s;", strconv.FormatBool(*append))
 	}
 
@@ -613,7 +604,7 @@ func (p *OrmPlugin) generateTableNameFunction(message *generator.Descriptor) {
 	p.P(`func (`, typeName, `ORM) TableName() string {`)
 
 	tableName := inflection.Plural(jgorm.ToDBName(message.GetName()))
-	if opts := getMessageOptions(message); opts != nil && opts.Table != nil {
+	if opts := getMessageOptions(message); opts != nil && len(*opts.Table) > 0 {
 		tableName = opts.GetTable()
 	}
 	p.P(`return "`, tableName, `"`)
