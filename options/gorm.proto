@@ -1,4 +1,5 @@
 syntax = "proto3";
+
 package gorm;
 
 option go_package = "github.com/infobloxopen/protoc-gen-gorm/options;gorm";

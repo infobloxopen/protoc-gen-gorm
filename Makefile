@@ -16,8 +16,13 @@ DOCKER_RUNNER        += -v $(SRCROOT_ON_HOST):$(SRCROOT_IN_CONTAINER) -w $(SRCRO
 DOCKER_GENERATOR     := infoblox/docker-protobuf:latest
 PROTOC_FLAGS         := -Ivendor -Iexample -Iproto \
 		-Ivendor/github.com/grpc-ecosystem/grpc-gateway/v2 \
-		--gorm_out="engine=postgres,enums=string,gateway,Mgoogle/protobuf/descriptor.proto=github.com/golang/protobuf/protoc-gen-go/descriptor,Mprotoc-gen-openapiv2/options/annotations.proto=github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-openapiv2/options:/go/src" \
-		--go_out="Mgoogle/protobuf/descriptor.proto=github.com/golang/protobuf/protoc-gen-go/descriptor,Mprotoc-gen-openapiv2/options/annotations.proto=github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-openapiv2/options:/go/src"
+		--gorm_out="engine=postgres,enums=string,gateway,Mgoogle/protobuf/descriptor.proto=github.com/golang/protobuf/protoc-gen-go/descriptor,Mprotoc-gen-openapiv2/options/annotations.proto=github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-openapiv2/options:$(shell go env GOPATH)/src" \
+		--go_out="Mgoogle/protobuf/descriptor.proto=github.com/golang/protobuf/protoc-gen-go/descriptor,Mprotoc-gen-openapiv2/options/annotations.proto=github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-openapiv2/options:$(shell go env GOPATH)/src"
+
+GENTOOL_FLAGS         := -Ivendor -Iexample -Iproto \
+		-Ivendor/github.com/grpc-ecosystem/grpc-gateway/v2 \
+		--gorm_out="engine=postgres,enums=string,gateway,Mgoogle/protobuf/descriptor.proto=github.com/golang/protobuf/protoc-gen-go/descriptor,Mprotoc-gen-openapiv2/options/annotations.proto=github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-openapiv2/options:/go" \
+		--go_out="Mgoogle/protobuf/descriptor.proto=github.com/golang/protobuf/protoc-gen-go/descriptor,Mprotoc-gen-openapiv2/options/annotations.proto=github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-openapiv2/options:/go"
 GENERATOR            := $(DOCKER_RUNNER) $(DOCKER_GENERATOR) $(PROTOC_FLAGS)
 
 .PHONY: default
@@ -29,7 +34,7 @@ vendor:
 
 .PHONY: options
 options-proto:
-	protoc $(PROTOC_FLAGS) \
+	protoc -I. $(PROTOC_FLAGS) \
 		options/gorm.proto
 
 options: options-proto
