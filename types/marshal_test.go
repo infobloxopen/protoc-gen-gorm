@@ -1,11 +1,12 @@
 package types
 
 import (
-	"reflect"
 	"strings"
 	"testing"
 
 	"github.com/golang/protobuf/jsonpb"
+	"github.com/google/go-cmp/cmp"
+	"google.golang.org/protobuf/testing/protocmp"
 )
 
 // WrapperMessage implements protobuf.Message but is not a normal generated message type.
@@ -30,27 +31,26 @@ func (m *WrapperMessage) ProtoMessage() {
 func TestSuccessfulUnmarshalTypes(t *testing.T) {
 	unmarshaler := &jsonpb.Unmarshaler{}
 	for in, expected := range map[string]WrapperMessage{
-		`{}`: {JSON: nil, UUID: nil},
+		`{}`: {JSON: nil, UUID: nil, Inet: nil},
 		// Can't unmarshal 'null' to nil like a WKT, only an invalid, empty state
 		// which will be remarshalled to 'null'
 		`{"json":null}`:       {JSON: &JSONValue{}},
 		`{"uuid_value":null}`: {UUIDValue: &UUIDValue{}},
 		// Still can't unmarshal 'null' to nil, but will initialize to zero-UUID
-		`{"uuid":null}`:                                            {UUID: &UUID{Value: "00000000-0000-0000-0000-000000000000"}},
-		`{"json":    {"key": "value"}}`:                            {JSON: &JSONValue{Value: `{"key": "value"}`}},
+		`{"uuid":null}`:                 {UUID: &UUID{Value: "00000000-0000-0000-0000-000000000000"}},
+		`{"json":    {"key": "value"}}`: {JSON: &JSONValue{Value: `{"key": "value"}`}},
 		`{"uuid_value":  "6ba7b810-9dad-11d1-80b4-00c04fd430c8" }`: {UUIDValue: &UUIDValue{Value: `6ba7b810-9dad-11d1-80b4-00c04fd430c8`}},
 		`{"uuid_value":  "6ba7b8109dad11d180b400c04fd430c8" }`:     {UUIDValue: &UUIDValue{Value: `6ba7b8109dad11d180b400c04fd430c8`}},
-		`{"inet":  "1.2.3.4"}`:                                     {Inet: &InetValue{Value: `1.2.3.4`}},
-		`{"inet":null}`:                                            {Inet: &InetValue{Value: ""}},
+		`{"inet":  "1.2.3.4"}`: {Inet: &InetValue{Value: `1.2.3.4`}},
+		`{"inet":null}`:        {Inet: &InetValue{Value: ""}},
 	} {
-		jv := &WrapperMessage{}
-		err := unmarshaler.Unmarshal(strings.NewReader(in), jv)
+		jv := WrapperMessage{}
+		err := unmarshaler.Unmarshal(strings.NewReader(in), &jv)
 		if err != nil {
 			t.Error(err.Error())
 		}
-		if !reflect.DeepEqual(*jv, expected) {
-			t.Errorf("Expected unmarshaled output '%+v' did not match actual output '%+v'",
-				expected, *jv)
+		if !cmp.Equal(jv, expected, protocmp.Transform()) {
+			t.Errorf("in: %s\ngot:    '%+v'\nwanted: '%+v'", in, jv, expected)
 		}
 	}
 }
@@ -60,7 +60,7 @@ func TestBrokenUnmarshalTypes(t *testing.T) {
 	for in, expected := range map[string]string{
 		// A couple cases to demo standard json unmarshaling handling
 		`{"}`: "unexpected EOF",
-		`{"uuid":"6ba7b810-9dad-11d1-80b4-00c04fd430c8}`:        "unexpected EOF",
+		`{"uuid":"6ba7b810-9dad-11d1-80b4-00c04fd430c8}`: "unexpected EOF",
 		`{"json":[1,2,3,4,`:                                     "unexpected EOF",
 		`{"json":}`:                                             "invalid character '}' looking for beginning of value",
 		`{"json":[1,2,3,4,]}`:                                   "invalid character ']' looking for beginning of value",
@@ -106,10 +106,10 @@ func TestMarshalTypes(t *testing.T) {
 func TestMarshalTypesOmitEmpty(t *testing.T) {
 	marshaller := &jsonpb.Marshaler{OrigName: true}
 	for expected, in := range map[string]WrapperMessage{
-		`{}`:                                                                            {},
-		`{"json":null}`:                                                                 {JSON: &JSONValue{}},
-		`{"uuid_value":null}`:                                                           {UUIDValue: &UUIDValue{}},
-		`{"json":{"key": "value"}}`:                                                     {JSON: &JSONValue{Value: `{"key": "value"}`}},
+		`{}`:                        {},
+		`{"json":null}`:             {JSON: &JSONValue{}},
+		`{"uuid_value":null}`:       {UUIDValue: &UUIDValue{}},
+		`{"json":{"key": "value"}}`: {JSON: &JSONValue{Value: `{"key": "value"}`}},
 		`{"uuid_value":"6ba7b810-9dad-11d1-80b4-00c04fd430c8"}`:                         {UUIDValue: &UUIDValue{Value: `6ba7b810-9dad-11d1-80b4-00c04fd430c8`}},
 		`{"json":{"key": "value"},"uuid_value":"6ba7b810-9dad-11d1-80b4-00c04fd430c8"}`: {JSON: &JSONValue{Value: `{"key": "value"}`}, UUIDValue: &UUIDValue{Value: `6ba7b810-9dad-11d1-80b4-00c04fd430c8`}},
 		`{"inet":null}`: {Inet: &InetValue{}},

@@ -1,5 +1,8 @@
-vendor
+/vendor
+/bin
 trigger-travis.sh
+/*.tgz
+/*.zip
 
 # Binaries for programs and plugins
 *.exe
@@ -13,8 +16,7 @@ trigger-travis.sh
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
 
-# Project-local glide cache, RE: https://github.com/Masterminds/glide/issues/736
-.glide/
-
 # IDE-specific settings files
 .idea
+
+/protoc-gen-gorm

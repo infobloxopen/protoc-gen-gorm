@@ -25,6 +25,7 @@ func getMessageOptions(message *generator.Descriptor) *gorm.GormMessageOptions {
 	if err != nil {
 		return nil
 	}
+
 	opts, ok := v.(*gorm.GormMessageOptions)
 	if !ok {
 		return nil
@@ -36,6 +37,7 @@ func getFieldOptions(field *descriptor.FieldDescriptorProto) *gorm.GormFieldOpti
 	if field.Options == nil {
 		return nil
 	}
+
 	v, err := proto.GetExtension(field.Options, gorm.E_Field)
 	if err != nil {
 		return nil

@@ -12,7 +12,8 @@ import (
 
 // Imports that are added by default but unneeded in GORM code
 var unneededImports = []string{
-	"import proto \"github.com/gogo/protobuf/proto\"\n",
+	"proto \"github.com/gogo/protobuf/proto\"",
+	"import proto \"github.com/golang.org/protobuf/proto\"\n",
 	"import _ \"github.com/infobloxopen/protoc-gen-gorm/options\"\n",
 	// if needed will be imported with an alias
 	"import _ \"github.com/infobloxopen/protoc-gen-gorm/types\"\n",
@@ -50,6 +51,7 @@ var (
 	gatewayImport      = "github.com/infobloxopen/atlas-app-toolkit/gateway"
 	pqImport           = "github.com/lib/pq"
 	gerrorsImport      = "github.com/infobloxopen/protoc-gen-gorm/errors"
+	timestampImport    = "github.com/golang/protobuf/ptypes/timestamp"
 	stdFmtImport       = "fmt"
 	stdCtxImport       = "context"
 	stdStringsImport   = "strings"
@@ -106,14 +108,14 @@ func (p *OrmPlugin) GetFileImports() *fileImports {
 
 // GenerateImports writes out required imports for the generated files
 func (p *OrmPlugin) GenerateImports(file *generator.FileDescriptor) {
-	imports := p.fileImports[file]
+	imports := p.fileImports[*file.Name]
 	for _, typeName := range imports.typesToRegister {
 		p.RecordTypeUse(typeName)
 	}
 	githubImports := imports.packages
 	sort.Strings(imports.stdImports)
 	for _, dep := range imports.stdImports {
-		p.PrintImport(dep, dep)
+		p.PrintImport(generator.GoPackageName(dep), generator.GoImportPath(dep))
 	}
 	p.P()
 	aliases := []string{}
@@ -122,7 +124,7 @@ func (p *OrmPlugin) GenerateImports(file *generator.FileDescriptor) {
 	}
 	sort.Strings(aliases)
 	for _, a := range aliases {
-		p.PrintImport(a, githubImports[a].packagePath)
+		p.PrintImport(generator.GoPackageName(a), generator.GoImportPath(githubImports[a].packagePath))
 	}
 	p.P()
 }

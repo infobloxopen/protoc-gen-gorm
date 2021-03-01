@@ -1,0 +1,154 @@
+syntax = "proto3";
+
+package gorm;
+
+option go_package = "github.com/infobloxopen/protoc-gen-gorm/options;gorm";
+
+import "google/protobuf/descriptor.proto";
+
+// TODO: The option number 52119 lies within the internally reserved extension
+// range. I believe a publicly unique number should be requested.
+
+// Currently no file options
+extend google.protobuf.FileOptions {
+  GormFileOptions file_opts = 52119;
+}
+
+message GormFileOptions {
+}
+
+// Validation rules applied at the message level
+extend google.protobuf.MessageOptions {
+    // ormable will cause orm code to be generated for this message/object
+    GormMessageOptions opts = 52119;
+}
+
+message GormMessageOptions {
+  bool ormable = 1;
+  repeated ExtraField include = 2;
+  string table = 3;
+  bool multi_account = 4;
+}
+
+message ExtraField {
+  string type = 1;
+  string name = 2;
+  GormTag tag = 3;
+  string package = 4;
+}
+
+// Field level specifications
+extend google.protobuf.FieldOptions {
+    GormFieldOptions field = 52119;
+}
+
+message GormFieldOptions {
+    GormTag tag = 1;
+    bool drop = 2;
+    oneof association {
+        HasOneOptions has_one = 3;
+        BelongsToOptions belongs_to = 4;
+        HasManyOptions has_many = 5;
+        ManyToManyOptions many_to_many = 6;
+    }
+    string reference_of = 7;
+}
+
+message GormTag {
+    string column = 1;
+    string type = 2;
+    int32 size = 3;
+    int32 precision = 4;
+    bool primary_key = 5;
+    bool unique = 6;
+    string default = 7;
+    bool not_null = 8;
+    bool auto_increment = 9;
+    string index = 10;
+    string unique_index = 11;
+    bool embedded = 12;
+    string embedded_prefix = 13;
+    bool ignore = 14;
+    string foreignkey = 15;
+    string association_foreignkey = 16;
+    string many_to_many = 17;
+    string jointable_foreignkey = 18;
+    string association_jointable_foreignkey = 19;
+    bool association_autoupdate = 20;
+    bool association_autocreate = 21;
+    bool association_save_reference = 22;
+    bool preload = 23;
+}
+
+message HasOneOptions {
+    string foreignkey = 1;
+    GormTag foreignkey_tag = 2;
+    string association_foreignkey = 3;
+    bool association_autoupdate = 4;
+    bool association_autocreate = 5;
+    bool association_save_reference = 6;
+    bool preload = 7;
+    bool replace = 8;
+    bool append = 9;
+    bool clear = 10;
+}
+
+message BelongsToOptions {
+    string foreignkey = 1;
+    GormTag foreignkey_tag = 2;
+    string association_foreignkey = 3;
+    bool association_autoupdate = 4;
+    bool association_autocreate = 5;
+    bool association_save_reference = 6;
+    bool preload = 7;
+}
+
+message HasManyOptions {
+    string foreignkey = 1;
+    GormTag foreignkey_tag = 2;
+    string association_foreignkey = 3;
+    string position_field = 4;
+    GormTag position_field_tag = 5;
+    bool association_autoupdate = 6;
+    bool association_autocreate = 7;
+    bool association_save_reference = 8;
+    bool preload = 9;
+    bool replace = 10;
+    bool append = 11;
+    bool clear = 12;
+}
+
+message ManyToManyOptions {
+    string jointable = 1;
+    string foreignkey = 2;
+    string jointable_foreignkey = 3;
+    string association_foreignkey = 4;
+    string association_jointable_foreignkey = 5;
+    bool association_autoupdate = 6;
+    bool association_autocreate = 7;
+    bool association_save_reference = 8;
+    bool preload = 9;
+    bool replace = 10;
+    bool append = 11;
+    bool clear = 13;
+}
+
+
+// To be used in (leiu of) the interceptor
+extend google.protobuf.ServiceOptions {
+  AutoServerOptions server = 52119;
+}
+
+message AutoServerOptions {
+  bool autogen = 1;
+  bool txn_middleware = 2;
+  bool with_tracing = 3;
+}
+
+extend google.protobuf.MethodOptions {
+  MethodOptions method = 52119;
+}
+
+message MethodOptions {
+  string object_type = 1;
+}

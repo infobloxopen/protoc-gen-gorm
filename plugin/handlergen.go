@@ -232,6 +232,7 @@ func (p *OrmPlugin) generateApplyFieldMask(message *generator.Descriptor) {
 		//  for ormable message, do recursive patching
 		if field.IsMessage() && p.isOrmable(fieldType) && !field.IsRepeated() {
 			p.UsingGoImports(stdStringsImport)
+
 			p.P(`if !updated`, ccName, ` && strings.HasPrefix(f, prefix+"`, ccName, `.") {`)
 			p.P(`updated`, ccName, ` = true`)
 			p.P(`if patcher.`, ccName, ` == nil {`)
