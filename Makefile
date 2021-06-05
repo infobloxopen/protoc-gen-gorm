@@ -24,11 +24,11 @@ default: vendor install
 
 .PHONY: vendor
 vendor:
-	@dep ensure -vendor-only
+	go mod vendor
 
 .PHONY: vendor-update
 vendor-update:
-	@dep ensure
+	go mod vendor -v
 
 .PHONY: options
 options:
