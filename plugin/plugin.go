@@ -1,6 +1,7 @@
 package plugin
 
 import (
+	"errors"
 	"fmt"
 	"sort"
 	"strconv"
@@ -403,19 +404,31 @@ func (p *OrmPlugin) addIncludedField(ormable *OrmableType, field *gorm.ExtraFiel
 }
 
 func (p *OrmPlugin) isOrmable(typeName string) bool {
-	parts := strings.Split(typeName, ".")
-	_, ok := p.ormableTypes[strings.Trim(parts[len(parts)-1], "[]*")]
-	return ok
+	_, err := GetOrmable(p.ormableTypes, typeName)
+	return err == nil
 }
 
 func (p *OrmPlugin) getOrmable(typeName string) *OrmableType {
-	parts := strings.Split(typeName, ".")
-	if ormable, ok := p.ormableTypes[strings.TrimSuffix(strings.Trim(parts[len(parts)-1], "[]*"), "ORM")]; ok {
-		return ormable
-	} else {
-		p.Fail(typeName, "is not ormable.")
+	orm, err := GetOrmable(p.ormableTypes, typeName)
+	if err != nil {
+		p.Fail(typeName, ErrNotOrmable.Error())
 		return nil
 	}
+	return orm
+}
+
+var (
+	ErrNotOrmable = errors.New("type is not ormable")
+)
+
+func GetOrmable(ormableTypes map[string]*OrmableType, typeName string) (*OrmableType, error) {
+	parts := strings.Split(typeName, ".")
+	ormable, ok := ormableTypes[strings.TrimSuffix(strings.Trim(parts[len(parts)-1], "[]*"), "ORM")]
+	var err error
+	if !ok {
+		err = ErrNotOrmable
+	}
+	return ormable, err
 }
 
 func (p *OrmPlugin) getSortedFieldNames(fields map[string]*Field) []string {
