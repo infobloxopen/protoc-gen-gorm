@@ -112,7 +112,7 @@ func (p *OrmPlugin) generateDefaultServer(file *generator.FileDescriptor) {
 		}
 		p.P(`}`)
 		withSpan := getServiceOptions(service.ServiceDescriptorProto).WithTracing
-		if withSpan != nil && *withSpan {
+		if withSpan {
 			p.generateSpanInstantiationMethod(service)
 			p.generateSpanErrorMethod(service)
 			p.generateSpanResultMethod(service)
@@ -180,7 +180,7 @@ func (p *OrmPlugin) generateSpanResultMethod(service autogenService) {
 
 func (p *OrmPlugin) wrapSpanError(service autogenService, errVarName string) string {
 	withSpan := getServiceOptions(service.ServiceDescriptorProto).WithTracing
-	if withSpan != nil && *withSpan {
+	if withSpan {
 		return fmt.Sprint(`m.spanError(span, `, errVarName, `)`)
 	}
 	return errVarName
@@ -411,7 +411,7 @@ func (p *OrmPlugin) generateUpdateSetServerMethod(service autogenService, method
 		p.generatePostserviceCall(service, typeName, method.ccName)
 		p.P(``)
 		withSpan := getServiceOptions(service.ServiceDescriptorProto).WithTracing
-		if withSpan != nil && *withSpan {
+		if withSpan {
 			p.P(`err = m.spanResult(span, out)`)
 			p.P(`if err != nil {`)
 			p.P(`return nil,`, p.wrapSpanError(service, "err"))
@@ -671,7 +671,7 @@ func (p *OrmPlugin) generateMethodSignature(service autogenService, method autog
 	p.RecordTypeUse(method.GetInputType())
 	p.RecordTypeUse(method.GetOutputType())
 	withSpan := getServiceOptions(service.ServiceDescriptorProto).WithTracing
-	if withSpan != nil && *withSpan {
+	if withSpan {
 		p.P(`span, errSpanCreate := m.spanCreate(ctx, in, "`, method.ccName, `")`)
 		p.P(`if errSpanCreate != nil {`)
 		p.P(`return nil, errSpanCreate`)
@@ -698,7 +698,7 @@ func (p *OrmPlugin) generateDBSetup(service autogenService) error {
 
 func (p *OrmPlugin) spanResultHandling(service autogenService) {
 	withSpan := getServiceOptions(service.ServiceDescriptorProto).WithTracing
-	if withSpan != nil && *withSpan {
+	if withSpan {
 		p.P(`errSpanResult := m.spanResult(span, out)`)
 		p.P(`if errSpanResult != nil {`)
 		p.P(`return nil, `, p.wrapSpanError(service, "errSpanResult"))

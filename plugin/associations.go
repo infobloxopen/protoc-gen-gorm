@@ -104,7 +104,7 @@ func (p *OrmPlugin) countManyToManyAssociationDimension(msg *generator.Descripto
 
 func (p *OrmPlugin) resolveAliasName(goType, goPackage string, file *generator.FileDescriptor) string {
 	originFile := p.currentFile
-	p.setFile(file)
+	p.setFile(*file.Name, goPackage)
 	isPointer := strings.HasPrefix(goType, "*")
 	typeParts := strings.Split(goType, ".")
 	if len(typeParts) == 2 {
@@ -121,7 +121,7 @@ func (p *OrmPlugin) resolveAliasName(goType, goPackage string, file *generator.F
 		}
 		return newType
 	}
-	p.setFile(originFile)
+	p.setFile(originFile, goPackage)
 	return goType
 }
 
@@ -157,7 +157,8 @@ func (p *OrmPlugin) parseHasMany(msg *generator.Descriptor, parent *OrmableType,
 			p.Fail("Missing", assocKeyName, "field in", parent.Name, ".")
 		}
 	}
-	hasMany.AssociationForeignkey = &assocKeyName
+
+	hasMany.AssociationForeignkey = assocKeyName
 	var foreignKeyType string
 	if hasMany.GetForeignkeyTag().GetNotNull() {
 		foreignKeyType = strings.TrimPrefix(assocKey.Type, "*")
@@ -178,7 +179,7 @@ func (p *OrmPlugin) parseHasMany(msg *generator.Descriptor, parent *OrmableType,
 			foreignKeyName = fmt.Sprintf(fieldName + typeName + assocKeyName)
 		}
 	}
-	hasMany.Foreignkey = &foreignKeyName
+	hasMany.Foreignkey = foreignKeyName
 	if _, ok := child.Fields[foreignKeyName]; child.Package != parent.Package && !ok {
 		p.Fail(`Object`, child.Name, `from package`, child.Package, `cannot be used for has-many in`, parent.Name, `since it`,
 			`does not have FK`, foreignKeyName, `defined. Manually define the key, or switch to many-to-many`)
@@ -203,7 +204,7 @@ func (p *OrmPlugin) parseHasMany(msg *generator.Descriptor, parent *OrmableType,
 				p.Fail("Cannot include", posField, "field into", child.Name, "as it already exists there with a different type.")
 			}
 		}
-		hasMany.PositionField = &posField
+		hasMany.PositionField = posField
 	}
 }
 
@@ -225,7 +226,7 @@ func (p *OrmPlugin) parseHasOne(msg *generator.Descriptor, parent *OrmableType, 
 			p.Fail("Missing", assocKeyName, "field in", parent.Name, ".")
 		}
 	}
-	hasOne.AssociationForeignkey = &assocKeyName
+	hasOne.AssociationForeignkey = assocKeyName
 	var foreignKeyType string
 	if hasOne.GetForeignkeyTag().GetNotNull() {
 		foreignKeyType = strings.TrimPrefix(assocKey.Type, "*")
@@ -246,7 +247,7 @@ func (p *OrmPlugin) parseHasOne(msg *generator.Descriptor, parent *OrmableType, 
 			foreignKeyName = fmt.Sprintf(fieldName + typeName + assocKeyName)
 		}
 	}
-	hasOne.Foreignkey = &foreignKeyName
+	hasOne.Foreignkey = foreignKeyName
 	if _, ok := child.Fields[foreignKeyName]; child.Package != parent.Package && !ok {
 		p.Fail(`Object`, child.Name, `from package`, child.Package, `cannot be used for has-one in`, parent.Name, `since it`,
 			`does not have FK field`, foreignKeyName, `defined. Manually define the key, or switch to belongs-to`)
@@ -280,7 +281,7 @@ func (p *OrmPlugin) parseBelongsTo(msg *generator.Descriptor, child *OrmableType
 			p.Fail("Missing", assocKeyName, "field in", parent.Name, ".")
 		}
 	}
-	belongsTo.AssociationForeignkey = &assocKeyName
+	belongsTo.AssociationForeignkey = assocKeyName
 	var foreignKeyType string
 	if belongsTo.GetForeignkeyTag().GetNotNull() {
 		foreignKeyType = strings.TrimPrefix(assocKey.Type, "*")
@@ -301,7 +302,7 @@ func (p *OrmPlugin) parseBelongsTo(msg *generator.Descriptor, child *OrmableType
 			foreignKeyName = fmt.Sprintf(fieldName + assocKeyName)
 		}
 	}
-	belongsTo.Foreignkey = &foreignKeyName
+	belongsTo.Foreignkey = foreignKeyName
 	if exField, ok := child.Fields[foreignKeyName]; !ok {
 		child.Fields[foreignKeyName] = foreignKey
 	} else {
@@ -332,7 +333,7 @@ func (p *OrmPlugin) parseManyToMany(msg *generator.Descriptor, ormable *OrmableT
 			p.Fail("Missing", foreignKeyName, "field in", ormable.Name, ".")
 		}
 	}
-	mtm.Foreignkey = &foreignKeyName
+	mtm.Foreignkey = foreignKeyName
 	var assocKeyName string
 	if assocKeyName = generator.CamelCase(mtm.GetAssociationForeignkey()); assocKeyName == "" {
 		assocKeyName, _ = p.findPrimaryKey(assoc)
@@ -343,7 +344,7 @@ func (p *OrmPlugin) parseManyToMany(msg *generator.Descriptor, ormable *OrmableT
 			p.Fail("Missing", assocKeyName, "field in", assoc.Name, ".")
 		}
 	}
-	mtm.AssociationForeignkey = &assocKeyName
+	mtm.AssociationForeignkey = assocKeyName
 	var jt string
 	if jt = jgorm.ToDBName(mtm.GetJointable()); jt == "" {
 		if p.countManyToManyAssociationDimension(msg, fieldType) == 1 && typeName != fieldType {
@@ -352,12 +353,12 @@ func (p *OrmPlugin) parseManyToMany(msg *generator.Descriptor, ormable *OrmableT
 			jt = jgorm.ToDBName(typeName + inflection.Plural(fieldName))
 		}
 	}
-	mtm.Jointable = &jt
+	mtm.Jointable = jt
 	var jtForeignKey string
 	if jtForeignKey = generator.CamelCase(mtm.GetJointableForeignkey()); jtForeignKey == "" {
 		jtForeignKey = jgorm.ToDBName(typeName + foreignKeyName)
 	}
-	mtm.JointableForeignkey = &jtForeignKey
+	mtm.JointableForeignkey = jtForeignKey
 	var jtAssocForeignKey string
 	if jtAssocForeignKey = generator.CamelCase(mtm.GetAssociationJointableForeignkey()); jtAssocForeignKey == "" {
 		if typeName == fieldType {
@@ -366,7 +367,7 @@ func (p *OrmPlugin) parseManyToMany(msg *generator.Descriptor, ormable *OrmableT
 			jtAssocForeignKey = jgorm.ToDBName(fieldType + assocKeyName)
 		}
 	}
-	mtm.AssociationJointableForeignkey = &jtAssocForeignKey
+	mtm.AssociationJointableForeignkey = jtAssocForeignKey
 }
 
 func (p *OrmPlugin) findPrimaryKey(ormable *OrmableType) (string, *Field) {

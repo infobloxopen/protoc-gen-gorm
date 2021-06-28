@@ -6,7 +6,7 @@ services:
 language: go
 
 go:
-- "1.10"
+- "1.16"
 
 env:
 - DEP_VERSION="0.4.1"
@@ -17,9 +17,4 @@ install:
 - chmod +x $GOPATH/bin/dep
 
 script:
-- make gentool-test
-
-# Trigger build/push of latest gentool
-deploy:
-  provider: script
-  script:  curl -LO --retry 3 https://raw.github.com/mernst/plume-lib/master/bin/trigger-travis.sh && sh trigger-travis.sh infobloxopen atlas-gentool $TRAVIS_ACCESS_TOKEN
+- make test

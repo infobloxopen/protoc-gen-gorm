@@ -2,9 +2,9 @@ syntax = "proto3";
 
 package example;
 import "google/protobuf/empty.proto";
-import "github.com/infobloxopen/protoc-gen-gorm/options/gorm.proto";
+import "options/gorm.proto";
 import "google/protobuf/field_mask.proto";
-import "github.com/infobloxopen/atlas-app-toolkit/query/collection_operators.proto";
+import "atlas/query/v1/collection_operators.proto";
 
 option go_package = "github.com/infobloxopen/protoc-gen-gorm/example/feature_demo;example";
 
@@ -35,7 +35,7 @@ message CreateIntPointResponse {
 message ReadIntPointRequest {
     // For a read request, the id field is the only to be specified
     uint32 id = 1;
-    infoblox.api.FieldSelection fields = 2;
+    atlas.query.v1.FieldSelection fields = 2;
 }
 
 message ReadIntPointResponse {
@@ -79,13 +79,13 @@ message DeleteIntPointResponse {
 message ListIntPointResponse {
     // Note repeated field and plural name 'results'
     repeated IntPoint results = 1;
-    infoblox.api.PageInfo page_info = 2;
+    atlas.query.v1.PageInfo page_info = 2;
 }
 
 message ListSomethingResponse {
     // Note repeated field and plural name 'results'
     repeated Something results = 1;
-    infoblox.api.PageInfo page_info = 2;
+    atlas.query.v1.PageInfo page_info = 2;
 }
 
 
@@ -96,10 +96,10 @@ message Something {
 }
 
 message ListIntPointRequest {
-    infoblox.api.Filtering filter = 1;
-    infoblox.api.Sorting order_by = 2;
-    infoblox.api.FieldSelection fields = 3;
-    infoblox.api.Pagination paging = 4;
+    atlas.query.v1.Filtering filter = 1;
+    atlas.query.v1.Sorting order_by = 2;
+    atlas.query.v1.FieldSelection fields = 3;
+    atlas.query.v1.Pagination paging = 4;
 }
 
 service IntPointService {
