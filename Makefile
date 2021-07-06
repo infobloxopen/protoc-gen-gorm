@@ -32,6 +32,8 @@ example/user/*.pb.go: example/user/*.proto
 example/postgres_arrays/*.pb.go: example/postgres_arrays/*.proto
 	buf generate --template example/postgres_arrays/buf.gen.yaml --path example/postgres_arrays
 
+install:
+	go install -v .
 
 gentool:
 	docker build -f docker/Dockerfile -t $(GENTOOL_IMAGE) .
