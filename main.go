@@ -8,6 +8,7 @@ import (
 )
 
 func main() {
+	log.Fatal("nope")
 	op := &plugin.OrmPlugin{}
 	response := command.GeneratePlugin(command.Read(), op, ".pb.gorm.go")
 	op.CleanFiles(response)
