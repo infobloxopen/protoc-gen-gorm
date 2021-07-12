@@ -33,8 +33,9 @@ example/postgres_arrays/*.pb.go: example/postgres_arrays/*.proto
 	buf generate --template example/postgres_arrays/buf.gen.yaml --path example/postgres_arrays
 
 manual:
+	# TODO: revert to --gorm_out
 	protoc -Iexample -Iproto -Ithird_party/proto --go-grpc_out="." \
-		--gorm_out="engine=postgres,enums=string,gateway:/home/drew/src" \
+		--go-gorm_out="engine=postgres,enums=string,gateway:$(shell go env GOPATH)/src" \
 		example/user/user.proto
 
 install:

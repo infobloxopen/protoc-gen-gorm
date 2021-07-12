@@ -13,6 +13,7 @@ import (
 const grpcDocURL = "https://pkg.go.dev/github.com/infobloxopen/protoc-gen-gorm"
 
 func main() {
+
 	if len(os.Args) == 2 && os.Args[1] == "--version" {
 		fmt.Fprintf(os.Stdout, "%v %v\n", filepath.Base(os.Args[0]), version.String())
 		os.Exit(0)
