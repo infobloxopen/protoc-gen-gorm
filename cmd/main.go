@@ -21,7 +21,13 @@ func main() {
 		os.Exit(0)
 	}
 
-	protogen.Options{}.Run(func(gen *protogen.Plugin) error {
+	// TODO: add options to plugins with this
+	// var flags flag.FlagSet
+	// font = flags.String("font", "doom", "font list available in github.com/common-nighthawk/go-figure")
+
+	protogen.Options{
+		// ParamFunc: flags.Set,
+	}.Run(func(gen *protogen.Plugin) error {
 		for _, f := range gen.Files {
 			if !f.Generate {
 				continue
