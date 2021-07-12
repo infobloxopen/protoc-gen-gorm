@@ -500,10 +500,6 @@ func (p *OrmPlugin) generateDeleteSetHandler(message *generator.Descriptor) {
 	p.P(`var err error`)
 	ormable := p.getOrmable(typeName)
 	pkName, pk := p.findPrimaryKey(ormable)
-	column := pk.GetTag().GetColumn()
-	if len(column) != 0 {
-		pkName = column
-	}
 	p.P(`keys := []`, pk.Type, `{}`)
 	p.P(`for _, obj := range in {`)
 	p.P(`ormObj, err := obj.ToORM(ctx)`)
