@@ -52,11 +52,6 @@ type goImportPath interface {
 	Ident(string) protogen.GoIdent
 }
 
-type Params struct {
-	Engine                string
-	Enums, Gateway, Quiet bool
-}
-
 func GenerateFile(gen *protogen.Plugin, file *protogen.File, params Params) *protogen.GeneratedFile {
 	filename := file.GeneratedFilenamePrefix + ".gorm.pb.go"
 	g := gen.NewGeneratedFile(filename, file.GoImportPath)
@@ -84,8 +79,10 @@ func GenerateFile(gen *protogen.Plugin, file *protogen.File, params Params) *pro
 	}
 
 	for i, imps := 0, f.Desc.Imports(); i < imps.Len(); i++ {
-		genImport(gen, g, f, imps.Get(i))
+		genImport(gen, g, f, imps.Get(i), params)
 	}
+
+	NewORM(gen, g, f, params)
 
 	return g
 
@@ -130,7 +127,7 @@ func genGeneratedHeader(gen *protogen.Plugin, g *protogen.GeneratedFile, f *file
 	g.P()
 }
 
-func genImport(gen *protogen.Plugin, g *protogen.GeneratedFile, f *fileInfo, imp protoreflect.FileImport) {
+func genImport(gen *protogen.Plugin, g *protogen.GeneratedFile, f *fileInfo, imp protoreflect.FileImport, params Params) {
 	impFile, ok := gen.FilesByPath[imp.Path()]
 	if !ok {
 		return
@@ -151,7 +148,7 @@ func genImport(gen *protogen.Plugin, g *protogen.GeneratedFile, f *fileInfo, imp
 
 	// Generate public imports by generating the imported file, parsing it,
 	// and extracting every symbol that should receive a forwarding declaration.
-	impGen := GenerateFile(gen, impFile)
+	impGen := GenerateFile(gen, impFile, params)
 	impGen.Skip()
 	b, err := impGen.Content()
 	if err != nil {

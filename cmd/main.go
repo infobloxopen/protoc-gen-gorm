@@ -8,6 +8,7 @@ import (
 
 	"github.com/infobloxopen/protoc-gen-gorm/internal/version"
 	gorm "github.com/infobloxopen/protoc-gen-gorm/internal_gorm"
+	"github.com/infobloxopen/protoc-gen-gorm/plugin"
 	"google.golang.org/protobuf/compiler/protogen"
 )
 
@@ -40,7 +41,7 @@ func main() {
 			if !f.Generate {
 				continue
 			}
-			gorm.GenerateFile(gen, f, gorm.Params{
+			gorm.GenerateFile(gen, f, plugin.Params{
 				Engine:  *engine,
 				Enums:   *enums,
 				Gateway: *gateway,
