@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -23,18 +24,28 @@ func main() {
 		os.Exit(0)
 	}
 
-	// TODO: add options to plugins with this
-	// var flags flag.FlagSet
-	// font = flags.String("font", "doom", "font list available in github.com/common-nighthawk/go-figure")
+	var flags flag.FlagSet
+	engine := flags.String("engine", "", "sql engine, only postgres supported")
+	enums := flags.Bool("enums", true, "treat enums as strings instead of ints")
+	gateway := flags.Bool("gateway", false, "")
+	quiet := flags.Bool("quiet", false, "suppress warnings")
+
+	_, _, _, _ = engine, enums, gateway, quiet
+	flag.Parse()
 
 	protogen.Options{
-		// ParamFunc: flags.Set,
+		ParamFunc: flags.Set,
 	}.Run(func(gen *protogen.Plugin) error {
 		for _, f := range gen.Files {
 			if !f.Generate {
 				continue
 			}
-			gorm.GenerateFile(gen, f)
+			gorm.GenerateFile(gen, f, gorm.Params{
+				Engine:  *engine,
+				Enums:   *enums,
+				Gateway: *gateway,
+				Quiet:   *quiet,
+			})
 		}
 		return nil
 	})
