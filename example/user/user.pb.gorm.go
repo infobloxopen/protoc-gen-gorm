@@ -1054,11 +1054,11 @@ func DefaultStrictUpdateUser(ctx context.Context, in *User, db *gorm1.DB) (*User
 	if err = db.Where(filterEmails).Delete(EmailORM{}).Error; err != nil {
 		return nil, err
 	}
-	if err = db.Model(&ormObj).Association("Friends").Replace(ormObj.Friends).Error; err != nil {
+	if err = db.Model(&UserORM{Id: ormObj.Id}).Association("Friends").Replace(ormObj.Friends).Error; err != nil {
 		return nil, err
 	}
 	ormObj.Friends = nil
-	if err = db.Model(&ormObj).Association("Languages").Replace(ormObj.Languages).Error; err != nil {
+	if err = db.Model(&UserORM{Id: ormObj.Id}).Association("Languages").Replace(ormObj.Languages).Error; err != nil {
 		return nil, err
 	}
 	ormObj.Languages = nil
