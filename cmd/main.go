@@ -30,9 +30,7 @@ func main() {
 	gateway := flags.Bool("gateway", false, "")
 	quiet := flags.Bool("quiet", false, "suppress warnings")
 
-	_, _, _, _ = engine, enums, gateway, quiet
 	flag.Parse()
-
 	protogen.Options{
 		ParamFunc: flags.Set,
 	}.Run(func(gen *protogen.Plugin) error {
@@ -40,6 +38,7 @@ func main() {
 			if !f.Generate {
 				continue
 			}
+
 			gorm.GenerateFile(gen, f, gorm.Params{
 				Engine:  *engine,
 				Enums:   *enums,

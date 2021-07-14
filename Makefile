@@ -35,7 +35,7 @@ example/postgres_arrays/*.pb.go: example/postgres_arrays/*.proto
 manual:
 	# TODO: revert to --gorm_out
 	protoc -Iexample -Iproto -Ithird_party/proto --go-grpc_out="." \
-		--go-gorm_out="engine=postgres,enums=string,gateway:$(shell go env GOPATH)/src" \
+		--go-gorm_out="engine=postgres,enums=true,gateway=true:$(shell go env GOPATH)/src" \
 		example/user/user.proto
 
 install:
