@@ -41,6 +41,7 @@ gentool:
 
 generate-gentool: SRCROOT_ON_HOST      := $(shell dirname $(abspath $(lastword $(MAKEFILE_LIST))))
 generate-gentool: SRCROOT_IN_CONTAINER := /go/src/$(PROJECT_ROOT)
+generate-gentool: DOCKERPATH           := /go/src
 generate-gentool: DOCKER_RUNNER        := docker run --rm
 generate-gentool: DOCKER_RUNNER        += -v $(SRCROOT_ON_HOST):$(SRCROOT_IN_CONTAINER)
 generate-gentool: DOCKER_GENERATOR     := infoblox/atlas-gentool:dev-gengorm
