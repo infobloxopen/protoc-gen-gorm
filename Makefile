@@ -57,6 +57,9 @@ generate-gentool: #gentool
 			feature_demo/demo_multi_file_service.proto
 
 build-local:
+	rm -rf example/feature_demo/github.com/
+	rm -rf example/feature_demo/google.golang.org
+	go install
 	protoc --proto_path . -I./proto/ -I=. example/feature_demo/demo_multi_file.proto --gorm_out=./example/feature_demo --go_out=./example/feature_demo
 
 diff-local:

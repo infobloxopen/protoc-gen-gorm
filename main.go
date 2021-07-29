@@ -1,20 +1,43 @@
 package main
 
 import (
-	"log"
-
-	"github.com/gogo/protobuf/vanity/command"
-	"github.com/infobloxopen/protoc-gen-gorm/plugin"
+	"fmt"
+	"github.com/infobloxopen/protoc-gen-gorm/pluginv2"
+	"google.golang.org/protobuf/compiler/protogen"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/pluginpb"
+	"io/ioutil"
+	"os"
 )
 
 func main() {
-	op := &plugin.OrmPlugin{}
-	response := command.GeneratePlugin(command.Read(), op, ".pb.gorm.go")
-	op.CleanFiles(response)
-
-	if len(response.String()) == 0 {
-		log.Printf("empty response")
+	input, err := ioutil.ReadAll(os.Stdin)
+	if err != nil {
+		panic(err)
 	}
-	command.Write(response)
 
+	var request pluginpb.CodeGeneratorRequest
+	err = proto.Unmarshal(input, &request)
+	if err != nil {
+		panic(err)
+	}
+
+	opts := protogen.Options{}
+
+	builder, err := pluginv2.New(opts, &request)
+	if err != nil {
+		panic(err)
+	}
+
+	response, err := builder.Generate()
+	if err != nil {
+		panic(err)
+	}
+
+	out, err := proto.Marshal(response)
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Fprintf(os.Stdout, string(out))
 }
