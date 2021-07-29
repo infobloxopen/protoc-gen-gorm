@@ -464,8 +464,8 @@ func (p *OrmPlugin) renderGormTag(field *Field) string {
 	if len(tag.Type) > 0 {
 		gormRes += fmt.Sprintf("type:%s;", tag.GetType())
 	}
-	if tag.GetSize_() > 0 {
-		gormRes += fmt.Sprintf("size:%d;", tag.GetSize_())
+	if tag.GetSize() > 0 {
+		gormRes += fmt.Sprintf("size:%d;", tag.GetSize())
 	}
 	if tag.Precision > 0 {
 		gormRes += fmt.Sprintf("precision:%d;", tag.GetPrecision())
