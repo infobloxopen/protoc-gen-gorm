@@ -2,7 +2,9 @@ package pluginv2
 
 import (
 	"fmt"
+	gorm "github.com/infobloxopen/protoc-gen-gorm/options"
 	"google.golang.org/protobuf/compiler/protogen"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/pluginpb"
 	"os"
 )
@@ -32,9 +34,7 @@ func (b *ORMBuilder) Generate() (*pluginpb.CodeGeneratorResponse, error) {
 
 		// 1. Collect all types that are ORMable
 		for _, message := range protoFile.Messages {
-			if message.Desc.Name() == "BlogPost" {
-				fmt.Fprintf(os.Stderr, "%s -> %t\n", message.Desc.Name(), isOrmable(message))
-			}
+			fmt.Fprintf(os.Stderr, "%s -> %t\n", message.Desc.Name(), isOrmable(message))
 		}
 	}
 
@@ -42,15 +42,13 @@ func (b *ORMBuilder) Generate() (*pluginpb.CodeGeneratorResponse, error) {
 }
 
 func isOrmable(message *protogen.Message) bool {
-	//fmt.Fprintf(os.Stderr, "ext: %+v\n", message.
-	option := message.Desc.Options()
-	if option == nil {
+	desc := message.Desc
+	options := desc.Options()
+
+	m, ok := proto.GetExtension(options, gorm.E_Opts).(*gorm.GormMessageOptions)
+	if !ok || m == nil {
 		return false
 	}
 
-	fmt.Fprintf(os.Stderr, "option: %+v\n", option)
-	for _, extension := range message.Extensions {
-		fmt.Fprintf(os.Stderr, "ext: %+v\n", extension)
-	}
-	return false
+	return m.Ormable
 }
