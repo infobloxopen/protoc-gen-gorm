@@ -55,3 +55,9 @@ generate-gentool: #gentool
 			feature_demo/demo_types.proto \
 			feature_demo/demo_service.proto \
 			feature_demo/demo_multi_file_service.proto
+
+build-local:
+	protoc --proto_path . -I./proto/ -I=. example/feature_demo/demo_multi_file.proto --gorm_out=./example/feature_demo --go_out=./example/feature_demo
+
+diff-local:
+	diff example/feature_demo/demo_multi_file.pb.gorm.go example/feature_demo/github.com/infobloxopen/protoc-gen-gorm/example/feature_demo/demo_multi_file.pb.gorm.go
