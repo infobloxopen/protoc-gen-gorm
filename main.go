@@ -23,8 +23,6 @@ func main() {
 		panic(err)
 	}
 
-	fmt.Fprintf(os.Stderr, "params: %+v\n", request)
-
 	opts := protogen.Options{}
 
 	builder, err := pluginv2.New(opts, &request)

@@ -3,6 +3,7 @@ package pluginv2
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	gorm "github.com/infobloxopen/protoc-gen-gorm/options"
 	"google.golang.org/protobuf/compiler/protogen"
@@ -11,9 +12,68 @@ import (
 	"google.golang.org/protobuf/types/pluginpb"
 )
 
+// DB Engine Enum
+const (
+	ENGINE_UNSET = iota
+	ENGINE_POSTGRES
+)
+
 type ORMBuilder struct {
-	plugin   *protogen.Plugin
-	dbEngine int
+	plugin       *protogen.Plugin
+	dbEngine     int
+	stringEnums  bool
+	gateway      bool
+	suppressWarn bool
+	ormableTypes map[string]*OrmableType
+}
+
+func New(opts protogen.Options, request *pluginpb.CodeGeneratorRequest) (*ORMBuilder, error) {
+	plugin, err := opts.New(request)
+	if err != nil {
+		return nil, err
+	}
+
+	builder := &ORMBuilder{
+		plugin: plugin,
+	}
+
+	params := parseParameter(request.GetParameter())
+
+	if strings.EqualFold(params["engine"], "postgres") {
+		builder.dbEngine = ENGINE_POSTGRES
+	} else {
+		builder.dbEngine = ENGINE_UNSET
+	}
+
+	if strings.EqualFold(params["enums"], "string") {
+		builder.stringEnums = true
+	}
+
+	if _, ok := params["gateway"]; ok {
+		builder.gateway = true
+	}
+
+	if _, ok := params["quiet"]; ok {
+		builder.suppressWarn = true
+	}
+
+	return builder, nil
+}
+
+func parseParameter(param string) map[string]string {
+	paramMap := make(map[string]string)
+
+	params := strings.Split(param, ",")
+	for _, param := range params {
+		if strings.Contains(param, "=") {
+			kv := strings.Split(param, "=")
+			paramMap[kv[0]] = kv[1]
+			continue
+		}
+		paramMap[param] = ""
+	}
+
+	return paramMap
 }
 
 type OrmableType struct {
@@ -44,17 +104,6 @@ type Field struct {
 }
 
 type autogenMethod struct {
-}
-
-func New(opts protogen.Options, request *pluginpb.CodeGeneratorRequest) (*ORMBuilder, error) {
-	plugin, err := opts.New(request)
-	if err != nil {
-		return nil, err
-	}
-
-	return &ORMBuilder{
-		plugin: plugin,
-	}, nil
 }
 
 func (b *ORMBuilder) Generate() (*pluginpb.CodeGeneratorResponse, error) {
