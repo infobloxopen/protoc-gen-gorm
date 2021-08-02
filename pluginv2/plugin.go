@@ -68,6 +68,12 @@ func (b *ORMBuilder) Generate() (*pluginpb.CodeGeneratorResponse, error) {
 				b.parseBasicField(message)
 			}
 		}
+
+		// dumb files
+		filename := protoFile.GeneratedFilenamePrefix + ".gorm.go"
+		gormFile := b.plugin.NewGeneratedFile(filename, ".")
+		gormFile.P("package ", protoFile.GoPackageName)
+		gormFile.P("// this file is generated")
 	}
 
 	return b.plugin.Response(), nil

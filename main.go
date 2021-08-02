@@ -2,12 +2,13 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
+	"os"
+
 	"github.com/infobloxopen/protoc-gen-gorm/pluginv2"
 	"google.golang.org/protobuf/compiler/protogen"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/pluginpb"
-	"io/ioutil"
-	"os"
 )
 
 func main() {
@@ -21,6 +22,8 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+
+	fmt.Fprintf(os.Stderr, "params: %+v\n", request)
 
 	opts := protogen.Options{}
 

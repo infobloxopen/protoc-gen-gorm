@@ -60,7 +60,7 @@ build-local:
 	rm -rf example/feature_demo/github.com/
 	rm -rf example/feature_demo/google.golang.org
 	go install
-	protoc --proto_path . -I./proto/ -I=. example/feature_demo/demo_multi_file.proto --gorm_out=./example/feature_demo --go_out=./example/feature_demo
+	protoc --proto_path . -I./proto/ -I=. example/feature_demo/demo_multi_file.proto --gorm_out="engine=postgres,enums=string,gateway:./example/feature_demo" --go_out=./example/feature_demo
 
 diff-local:
 	diff example/feature_demo/demo_multi_file.pb.gorm.go example/feature_demo/github.com/infobloxopen/protoc-gen-gorm/example/feature_demo/demo_multi_file.pb.gorm.go
