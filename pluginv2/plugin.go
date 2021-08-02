@@ -43,15 +43,16 @@ const (
 )
 
 type ORMBuilder struct {
-	plugin       *protogen.Plugin
-	dbEngine     int
-	stringEnums  bool
-	gateway      bool
-	suppressWarn bool
-	ormableTypes map[string]*OrmableType
-	messages     map[string]struct{}
-	fileImports  map[string]*fileImports // TODO: populate
-	currentFile  string                  // TODO populate
+	plugin         *protogen.Plugin
+	dbEngine       int
+	stringEnums    bool
+	gateway        bool
+	suppressWarn   bool
+	ormableTypes   map[string]*OrmableType
+	messages       map[string]struct{}
+	fileImports    map[string]*fileImports // TODO: populate
+	currentFile    string                  // TODO populate
+	currentPackage string
 }
 
 func New(opts protogen.Options, request *pluginpb.CodeGeneratorRequest) (*ORMBuilder, error) {
@@ -143,6 +144,10 @@ type fileImports struct {
 	packages        map[string]*pkgImport
 }
 
+func newFileImports() *fileImports {
+	return &fileImports{packages: make(map[string]*pkgImport)}
+}
+
 type pkgImport struct {
 	packagePath string
 	alias       string
@@ -151,6 +156,7 @@ type pkgImport struct {
 func (b *ORMBuilder) Generate() (*pluginpb.CodeGeneratorResponse, error) {
 	for _, protoFile := range b.plugin.Files {
 		// TODO: set current file and newFileImport
+		b.fileImports[*protoFile.Proto.Name] = newFileImports()
 
 		// first traverse: preload the messages
 		for _, message := range protoFile.Messages {
@@ -189,6 +195,12 @@ func (b *ORMBuilder) Generate() (*pluginpb.CodeGeneratorResponse, error) {
 	}
 
 	return b.plugin.Response(), nil
+}
+
+func (b *ORMBuilder) setFile(file string, pkg string) {
+	b.currentFile = file
+	b.currentPackage = pkg
+	// b.Generator.SetFile(file) // TODO: do we need know current file?
 }
 
 func (b *ORMBuilder) parseBasicFields(msg *protogen.Message) {
