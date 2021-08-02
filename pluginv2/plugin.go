@@ -12,6 +12,30 @@ import (
 	"google.golang.org/protobuf/types/pluginpb"
 )
 
+var (
+	gormImport         = "github.com/jinzhu/gorm"
+	tkgormImport       = "github.com/infobloxopen/atlas-app-toolkit/gorm"
+	uuidImport         = "github.com/satori/go.uuid"
+	authImport         = "github.com/infobloxopen/atlas-app-toolkit/auth"
+	gormpqImport       = "github.com/jinzhu/gorm/dialects/postgres"
+	gtypesImport       = "github.com/infobloxopen/protoc-gen-gorm/types"
+	ptypesImport       = "github.com/golang/protobuf/ptypes"
+	wktImport          = "github.com/golang/protobuf/ptypes/wrappers"
+	resourceImport     = "github.com/infobloxopen/atlas-app-toolkit/gorm/resource"
+	fmImport           = "google.golang.org/genproto/protobuf/field_mask"
+	queryImport        = "github.com/infobloxopen/atlas-app-toolkit/query"
+	ocTraceImport      = "go.opencensus.io/trace"
+	gatewayImport      = "github.com/infobloxopen/atlas-app-toolkit/gateway"
+	pqImport           = "github.com/lib/pq"
+	gerrorsImport      = "github.com/infobloxopen/protoc-gen-gorm/errors"
+	timestampImport    = "github.com/golang/protobuf/ptypes/timestamp"
+	stdFmtImport       = "fmt"
+	stdCtxImport       = "context"
+	stdStringsImport   = "strings"
+	stdTimeImport      = "time"
+	encodingJsonImport = "encoding/json"
+)
+
 // DB Engine Enum
 const (
 	ENGINE_UNSET = iota
@@ -25,6 +49,9 @@ type ORMBuilder struct {
 	gateway      bool
 	suppressWarn bool
 	ormableTypes map[string]*OrmableType
+	messages     map[string]struct{}
+	fileImports  map[string]*fileImports // TODO: populate
+	currentFile  string                  // TODO populate
 }
 
 func New(opts protogen.Options, request *pluginpb.CodeGeneratorRequest) (*ORMBuilder, error) {
@@ -34,7 +61,10 @@ func New(opts protogen.Options, request *pluginpb.CodeGeneratorRequest) (*ORMBui
 	}
 
 	builder := &ORMBuilder{
-		plugin: plugin,
+		plugin:       plugin,
+		ormableTypes: make(map[string]*OrmableType),
+		messages:     make(map[string]struct{}),
+		fileImports:  make(map[string]*fileImports),
 	}
 
 	params := parseParameter(request.GetParameter())
@@ -106,16 +136,49 @@ type Field struct {
 type autogenMethod struct {
 }
 
+type fileImports struct {
+	wktPkgName      string
+	typesToRegister []string
+	stdImports      []string
+	packages        map[string]*pkgImport
+}
+
+type pkgImport struct {
+	packagePath string
+	alias       string
+}
+
 func (b *ORMBuilder) Generate() (*pluginpb.CodeGeneratorResponse, error) {
 	for _, protoFile := range b.plugin.Files {
-		//fmt.Fprintf(os.Stderr, "%s\n", file.GeneratedFilenamePrefix)
+		// TODO: set current file and newFileImport
 
-		// 1. Collect all types that are ORMable
+		// first traverse: preload the messages
 		for _, message := range protoFile.Messages {
-			//fmt.Fprintf(os.Stderr, "%s -> %t\n", message.Desc.Name(), isOrmable(message))
-			if isOrmable(message) {
-				b.parseBasicField(message)
+			if message.Desc.IsMapEntry() {
+				continue
 			}
+
+			typeName := string(message.Desc.Name())
+			b.messages[typeName] = struct{}{}
+
+			if isOrmable(message) {
+				ormable := NewOrmableType(typeName, string(protoFile.GoPackageName), protoFile)
+				// TODO: for some reason pluginv1 thinks that we can
+				// override values in this map
+				b.ormableTypes[typeName] = ormable
+			}
+		}
+
+		// second traverse: parse basic fields
+		for _, message := range protoFile.Messages {
+			if isOrmable(message) {
+				b.parseBasicFields(message)
+			}
+		}
+
+		// third traverse: build associations
+		for _, _ = range protoFile.Messages {
+			// TODO: build assotiations
 		}
 
 		// dumb files
@@ -128,43 +191,67 @@ func (b *ORMBuilder) Generate() (*pluginpb.CodeGeneratorResponse, error) {
 	return b.plugin.Response(), nil
 }
 
-func (b *ORMBuilder) parseBasicField(msg *protogen.Message) {
-	typeName := msg.Desc.Name()
-	fmt.Fprintf(os.Stderr, "typeName: %s\n", typeName)
-	if isOrmable(msg) {
-		ormableName := fmt.Sprintf("%sORM", typeName)
-		fmt.Fprintf(os.Stderr, "ormName: %s\n", ormableName)
+func (b *ORMBuilder) parseBasicFields(msg *protogen.Message) {
+	typeName := string(msg.Desc.Name())
+	fmt.Fprintf(os.Stderr, "parseBasicFields -> : %s\n", typeName)
+
+	ormable, ok := b.ormableTypes[typeName]
+	if !ok {
+		panic("typeName should be found")
 	}
+	ormable.Name = fmt.Sprintf("%sORM", typeName) // TODO: there are no reason to do it here
 
 	for _, field := range msg.Fields {
 		fd := field.Desc
 		options := fd.Options().(*descriptorpb.FieldOptions)
-		fmt.Fprintf(os.Stderr, "field options: %+v\n", options)
-
-		// 1. get Field Options if not exists create default one
 		gormOptions := getFieldOptions(options)
 		if gormOptions == nil {
 			gormOptions = &gorm.GormFieldOptions{}
 		}
-
-		// 2. skip Field if option have drop flag
 		if gormOptions.GetDrop() {
-			fmt.Fprintf(os.Stderr, "field options: %+v -> %t\n",
-				gormOptions, gormOptions.GetDrop())
+			fmt.Fprintf(os.Stderr, "droping field: %s, %+v -> %t\n",
+				field.Desc.TextName(), gormOptions, gormOptions.GetDrop())
 			continue
 		}
 
-		// 3. get field Tag
 		tag := gormOptions.Tag
-		fmt.Fprintf(os.Stderr, "field tag: %+v\n", tag)
+		fieldName := string(fd.Name()) // TODO: move to camelCase
+		fieldType := fd.Kind().String()
 
-		// 4. get fieldName and fieldType
-		fieldName := fd.Name() // not CamelCase yet
-		fieldType := fd.Kind()
-		fmt.Fprintf(os.Stderr, "field name: %+v, type: %s\n", fieldName, fieldType)
+		fmt.Fprintf(os.Stderr, "field name: %s, type: %s, tag: %+v\n",
+			fieldName, fieldType, tag)
 
-		// next we need to know what kind of database engine we using
+		if b.dbEngine == ENGINE_POSTGRES && b.IsAbleToMakePQArray(fieldType) {
+			switch fieldType {
+			case "[]bool":
+				fieldType = fmt.Sprintf("%s.BoolArray", b.Import(pqImport))
+				gormOptions.Tag = tagWithType(tag, "bool[]")
+			case "[]float64":
+				fieldType = fmt.Sprintf("%s.Float64Array", b.Import(pqImport))
+				gormOptions.Tag = tagWithType(tag, "float[]")
+			case "[]int64":
+				fieldType = fmt.Sprintf("%s.Int64Array", b.Import(pqImport))
+				gormOptions.Tag = tagWithType(tag, "integer[]")
+			case "[]string":
+				fieldType = fmt.Sprintf("%s.StringArray", b.Import(pqImport))
+				gormOptions.Tag = tagWithType(tag, "text[]")
+			default:
+				continue
+			}
+		}
+
 	}
+
+	// 	// 3. get field Tag
+	// 	tag := gormOptions.Tag
+	// 	fmt.Fprintf(os.Stderr, "field tag: %+v\n", tag)
+
+	// 	// 4. get fieldName and fieldType
+	// 	fieldName := fd.Name() // not CamelCase yet
+	// 	fieldType := fd.Kind()
+
+	// 	// next we need to know what kind of database engine we using
+	// }
 }
 
 func getFieldOptions(options *descriptorpb.FieldOptions) *gorm.GormFieldOptions {
@@ -195,4 +282,51 @@ func isOrmable(message *protogen.Message) bool {
 	}
 
 	return m.Ormable
+}
+
+func (b *ORMBuilder) IsAbleToMakePQArray(fieldType string) bool {
+	switch fieldType {
+	case "[]bool":
+		return true
+	case "[]float64":
+		return true
+	case "[]int64":
+		return true
+	case "[]string":
+		return true
+	default:
+		return false
+	}
+}
+
+func (b *ORMBuilder) Import(packagePath string) string {
+	subpath := packagePath[strings.LastIndex(packagePath, "/")+1:]
+	// package will always be suffixed with an integer to prevent any collisions
+	// with standard package imports
+	for i := 1; ; i++ {
+		newAlias := fmt.Sprintf("%s%d", strings.Replace(subpath, ".", "_", -1), i)
+		if pkg, ok := b.GetFileImports().packages[newAlias]; ok {
+			if packagePath == pkg.packagePath {
+				return pkg.alias
+			}
+		} else {
+			b.GetFileImports().packages[newAlias] = &pkgImport{packagePath: packagePath, alias: newAlias}
+			return newAlias
+		}
+	}
+
+	panic("should never reach here")
+}
+
+func (b *ORMBuilder) GetFileImports() *fileImports {
+	return b.fileImports[b.currentFile]
+}
+
+func tagWithType(tag *gorm.GormTag, typename string) *gorm.GormTag {
+	if tag == nil {
+		tag = &gorm.GormTag{}
+	}
+
+	tag.Type = typename
+	return tag
 }
