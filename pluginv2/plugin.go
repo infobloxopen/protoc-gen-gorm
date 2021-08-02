@@ -12,11 +12,38 @@ import (
 )
 
 type ORMBuilder struct {
-	plugin *protogen.Plugin
+	plugin   *protogen.Plugin
+	dbEngine int
 }
 
 type OrmableType struct {
-	Name string
+	Name       string
+	OriginName string
+	Package    string
+	File       *protogen.File
+	Fields     map[string]*Field
+	Methods    map[string]*autogenMethod
+}
+
+func NewOrmableType(orignalName string, pkg string, file *protogen.File) *OrmableType {
+	return &OrmableType{
+		Name:    orignalName,
+		Package: pkg,
+		File:    file,
+		Fields:  make(map[string]*Field),
+		Methods: make(map[string]*autogenMethod),
+	}
+}
+
+type Field struct {
+	ParentGoType   string
+	Type           string
+	Package        string
+	ParentOrigName string
+	*gorm.GormFieldOptions
+}
+
+type autogenMethod struct {
 }
 
 func New(opts protogen.Options, request *pluginpb.CodeGeneratorRequest) (*ORMBuilder, error) {
