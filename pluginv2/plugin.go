@@ -197,6 +197,13 @@ func (b *ORMBuilder) Generate() (*pluginpb.CodeGeneratorResponse, error) {
 		// 	// TODO: build assotiations
 		// }
 
+		for _, ot := range b.ormableTypes {
+			fmt.Fprintf(os.Stderr, "ormable type: %+v\n", ot.Name)
+			for name, field := range ot.Fields {
+				fmt.Fprintf(os.Stderr, "name: %s, field: %+v\n", name, field.Type)
+			}
+		}
+
 		// dumb files
 		filename := protoFile.GeneratedFilenamePrefix + ".gorm.go"
 		gormFile := b.plugin.NewGeneratedFile(filename, ".")
