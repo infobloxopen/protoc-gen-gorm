@@ -20,4 +20,9 @@ message BlogPost {
   string title = 2;
   string author = 3;
   string magic = 4 [(gorm.field).drop = true];
+  enum Corpus {
+    UNIVERSAL = 0;
+    WEB = 1;
+  }
+  Corpus corpus = 5;
 }

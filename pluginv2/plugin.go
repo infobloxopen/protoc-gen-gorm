@@ -36,6 +36,16 @@ var (
 	encodingJsonImport = "encoding/json"
 )
 
+const (
+	protoTypeTimestamp = "Timestamp" // last segment, first will be *google_protobufX
+	protoTypeJSON      = "JSONValue"
+	protoTypeUUID      = "UUID"
+	protoTypeUUIDValue = "UUIDValue"
+	protoTypeResource  = "Identifier"
+	protoTypeInet      = "InetValue"
+	protoTimeOnly      = "TimeOnly"
+)
+
 // DB Engine Enum
 const (
 	ENGINE_UNSET = iota
@@ -250,6 +260,9 @@ func (b *ORMBuilder) parseBasicFields(msg *protogen.Message) {
 			default:
 				continue
 			}
+		} else if field.Enum != nil {
+			fmt.Fprintf(os.Stderr, "field: %s is enum\n", field.GoName)
+
 		}
 
 	}
