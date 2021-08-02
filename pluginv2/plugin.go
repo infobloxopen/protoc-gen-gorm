@@ -54,15 +54,15 @@ const (
 
 type ORMBuilder struct {
 	plugin         *protogen.Plugin
-	dbEngine       int
-	stringEnums    bool
-	gateway        bool
-	suppressWarn   bool
 	ormableTypes   map[string]*OrmableType
 	messages       map[string]struct{}
 	fileImports    map[string]*fileImports // TODO: populate
 	currentFile    string                  // TODO populate
 	currentPackage string
+	dbEngine       int
+	stringEnums    bool
+	gateway        bool
+	suppressWarn   bool
 }
 
 func New(opts protogen.Options, request *pluginpb.CodeGeneratorRequest) (*ORMBuilder, error) {
@@ -118,12 +118,12 @@ func parseParameter(param string) map[string]string {
 }
 
 type OrmableType struct {
-	Name       string
-	OriginName string
-	Package    string
 	File       *protogen.File
 	Fields     map[string]*Field
 	Methods    map[string]*autogenMethod
+	Name       string
+	OriginName string
+	Package    string
 }
 
 func NewOrmableType(orignalName string, pkg string, file *protogen.File) *OrmableType {
@@ -137,11 +137,11 @@ func NewOrmableType(orignalName string, pkg string, file *protogen.File) *Ormabl
 }
 
 type Field struct {
+	*gorm.GormFieldOptions
 	ParentGoType   string
 	Type           string
 	Package        string
 	ParentOrigName string
-	*gorm.GormFieldOptions
 }
 
 type autogenMethod struct {
@@ -149,9 +149,9 @@ type autogenMethod struct {
 
 type fileImports struct {
 	wktPkgName      string
+	packages        map[string]*pkgImport
 	typesToRegister []string
 	stdImports      []string
-	packages        map[string]*pkgImport
 }
 
 func newFileImports() *fileImports {
@@ -193,9 +193,9 @@ func (b *ORMBuilder) Generate() (*pluginpb.CodeGeneratorResponse, error) {
 		}
 
 		// third traverse: build associations
-		for _, _ = range protoFile.Messages {
-			// TODO: build assotiations
-		}
+		// for _, _ = range protoFile.Messages {
+		// 	// TODO: build assotiations
+		// }
 
 		// dumb files
 		filename := protoFile.GeneratedFilenamePrefix + ".gorm.go"
@@ -270,6 +270,7 @@ func (b *ORMBuilder) parseBasicFields(msg *protogen.Message) {
 			fmt.Fprintf(os.Stderr, "field: %s is a message\n", field.GoName)
 		}
 
+		fmt.Fprintf(os.Stderr, "detected field type is -> %s\n", fieldType)
 	}
 
 	// 	// 3. get field Tag
@@ -344,8 +345,6 @@ func (b *ORMBuilder) Import(packagePath string) string {
 			return newAlias
 		}
 	}
-
-	panic("should never reach here")
 }
 
 func (b *ORMBuilder) GetFileImports() *fileImports {
