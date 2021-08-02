@@ -237,11 +237,13 @@ func (b *ORMBuilder) parseBasicFields(msg *protogen.Message) {
 		}
 
 		tag := gormOptions.Tag
-		fieldName := string(fd.Name()) // TODO: move to camelCase
-		fieldType := fd.Kind().String()
+		fieldName := string(fd.Name())  // TODO: move to camelCase
+		fieldType := fd.Kind().String() // TODO: figure out GoType analog
 
 		fmt.Fprintf(os.Stderr, "field name: %s, type: %s, tag: %+v\n",
 			fieldName, fieldType, tag)
+
+		var typePackage string
 
 		if b.dbEngine == ENGINE_POSTGRES && b.IsAbleToMakePQArray(fieldType) {
 			switch fieldType {
@@ -271,6 +273,22 @@ func (b *ORMBuilder) parseBasicFields(msg *protogen.Message) {
 		}
 
 		fmt.Fprintf(os.Stderr, "detected field type is -> %s\n", fieldType)
+
+		if tName := gormOptions.GetReferenceOf(); tName != "" {
+			if _, ok := b.messages[tName]; !ok {
+				panic("unknow")
+			}
+		}
+
+		f := &Field{
+			GormFieldOptions: gormOptions,
+			ParentGoType:     "",
+			Type:             fieldType,
+			Package:          typePackage,
+			ParentOrigName:   typeName,
+		}
+
+		ormable.Fields[fieldName] = f
 	}
 
 	// 	// 3. get field Tag
