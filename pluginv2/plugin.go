@@ -261,8 +261,13 @@ func (b *ORMBuilder) parseBasicFields(msg *protogen.Message) {
 				continue
 			}
 		} else if field.Enum != nil {
-			fmt.Fprintf(os.Stderr, "field: %s is enum\n", field.GoName)
-
+			fmt.Fprintf(os.Stderr, "field: %s is a enum\n", field.GoName)
+			fieldType = "int32"
+			if b.stringEnums {
+				fieldType = "string"
+			}
+		} else if field.Message != nil {
+			fmt.Fprintf(os.Stderr, "field: %s is a message\n", field.GoName)
 		}
 
 	}
