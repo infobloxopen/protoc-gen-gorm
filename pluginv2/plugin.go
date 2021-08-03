@@ -8,6 +8,7 @@ import (
 	gorm "github.com/infobloxopen/protoc-gen-gorm/options"
 	"google.golang.org/protobuf/compiler/protogen"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/descriptorpb"
 	"google.golang.org/protobuf/types/pluginpb"
 )
@@ -212,9 +213,18 @@ func (b *ORMBuilder) Generate() (*pluginpb.CodeGeneratorResponse, error) {
 		}
 
 		// third traverse: build associations
-		// for _, _ = range protoFile.Messages {
-		// 	// TODO: build assotiations
-		// }
+		// TODO: implent functions
+		for _, message := range protoFile.Messages {
+			typeName := string(message.Desc.Name())
+			if isOrmable(message) {
+				b.parseAssociations(message)
+				o := b.getOrmable(typeName)
+				if b.hasPrimaryKey(o) {
+					_, fd := b.findPrimaryKey(o)
+					fd.ParentOrigName = o.OriginName
+				}
+			}
+		}
 
 		for _, ot := range b.ormableTypes {
 			fmt.Fprintf(os.Stderr, "ormable type: %+v\n", ot.Name)
@@ -233,10 +243,92 @@ func (b *ORMBuilder) Generate() (*pluginpb.CodeGeneratorResponse, error) {
 	return b.plugin.Response(), nil
 }
 
+func (b *ORMBuilder) parseAssociations(msg *protogen.Message) {
+	typeName := string(msg.Desc.Name()) // TODO: camelSnakeCase
+	ormable := b.getOrmable(typeName)
+
+	for _, field := range msg.Fields {
+		options := field.Desc.Options().(*descriptorpb.FieldOptions)
+		fieldOpts := getFieldOptions(options)
+		if fieldOpts.GetDrop() {
+			continue
+		}
+
+		fieldName := string(field.Desc.Name())  // TODO: camelCase
+		fieldType := field.Desc.Kind().String() // was GoType
+		fieldType = strings.Trim(fieldType, "[]*")
+		parts := strings.Split(fieldType, ".")
+		fieldTypeShort := parts[len(parts)-1]
+
+		if b.isOrmable(fieldType) {
+			if fieldOpts == nil {
+				fieldOpts = &gorm.GormFieldOptions{}
+			}
+			assocOrmable := b.getOrmable(fieldType)
+
+			if field.Desc.Cardinality() == protoreflect.Repeated {
+				if fieldOpts.GetManyToMany() != nil {
+					b.parseManyToMany(msg, ormable, fieldName, fieldTypeShort, assocOrmable, fieldOpts)
+				} else {
+					b.parseHasMany(msg, ormable, fieldName, fieldTypeShort, assocOrmable, fieldOpts)
+				}
+				fieldType = fmt.Sprintf("[]*%sORM", fieldType)
+			} else {
+				if fieldOpts.GetBelongsTo() != nil {
+					b.parseBelongsTo(msg, ormable, fieldName, fieldTypeShort, assocOrmable, fieldOpts)
+				} else {
+					b.parseHasOne(msg, ormable, fieldName, fieldTypeShort, assocOrmable, fieldOpts)
+				}
+				fieldType = fmt.Sprintf("*%sORM", fieldType)
+			}
+
+			// Register type used, in case it's an imported type from another package
+			b.GetFileImports().typesToRegister = append(b.GetFileImports().typesToRegister, fieldType) // maybe we need other fields type
+			ormable.Fields[fieldName] = &Field{Type: fieldType, GormFieldOptions: fieldOpts}
+		}
+	}
+}
+
+func (b *ORMBuilder) hasPrimaryKey(ormable *OrmableType) bool {
+	// TODO: implement me
+	return false
+}
+
+func (b *ORMBuilder) isOrmable(fieldType string) bool {
+	// TODO: implement me
+	return false
+}
+
+func (b *ORMBuilder) findPrimaryKey(ormable *OrmableType) (string, *Field) {
+	// TODO: implement me
+	return "", &Field{}
+}
+
+func (b *ORMBuilder) getOrmable(typeName string) *OrmableType {
+	// TODO: implement me
+	return &OrmableType{}
+}
+
 func (b *ORMBuilder) setFile(file string, pkg string) {
 	b.currentFile = file
 	b.currentPackage = pkg
 	// b.Generator.SetFile(file) // TODO: do we need know current file?
+}
+
+func (p *ORMBuilder) parseManyToMany(msg *protogen.Message, ormable *OrmableType, fieldName string, fieldType string, assoc *OrmableType, opts *gorm.GormFieldOptions) {
+	// TODO: implement me
+}
+
+func (p *ORMBuilder) parseHasOne(msg *protogen.Message, parent *OrmableType, fieldName string, fieldType string, child *OrmableType, opts *gorm.GormFieldOptions) {
+	// TODO: implement me
+}
+
+func (p *ORMBuilder) parseHasMany(msg *protogen.Message, parent *OrmableType, fieldName string, fieldType string, child *OrmableType, opts *gorm.GormFieldOptions) {
+	// TODO: implement me
+}
+
+func (p *ORMBuilder) parseBelongsTo(msg *protogen.Message, child *OrmableType, fieldName string, fieldType string, parent *OrmableType, opts *gorm.GormFieldOptions) {
+	// TODO: implement me
 }
 
 func (b *ORMBuilder) parseBasicFields(msg *protogen.Message) {
