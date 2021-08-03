@@ -36,6 +36,25 @@ var (
 	encodingJsonImport = "encoding/json"
 )
 
+var builtinTypes = map[string]struct{}{
+	"bool":    {},
+	"int":     {},
+	"int8":    {},
+	"int16":   {},
+	"int32":   {},
+	"int64":   {},
+	"uint":    {},
+	"uint8":   {},
+	"uint16":  {},
+	"uint32":  {},
+	"uint64":  {},
+	"uintptr": {},
+	"float32": {},
+	"float64": {},
+	"string":  {},
+	"[]byte":  {},
+}
+
 const (
 	protoTypeTimestamp = "Timestamp" // last segment, first will be *google_protobufX
 	protoTypeJSON      = "JSONValue"
@@ -298,16 +317,65 @@ func (b *ORMBuilder) parseBasicFields(msg *protogen.Message) {
 		ormable.Fields[fieldName] = f
 	}
 
-	// 	// 3. get field Tag
-	// 	tag := gormOptions.Tag
-	// 	fmt.Fprintf(os.Stderr, "field tag: %+v\n", tag)
+	gormMsgOptions := getMessageOptions(msg)
+	if gormMsgOptions.GetMultiAccount() {
+		if accID, ok := ormable.Fields["AccountID"]; !ok {
+			ormable.Fields["AccountID"] = &Field{Type: "string"}
+		} else if accID.Type != "string" {
+			panic("cannot include AccountID field")
+		}
+	}
 
-	// 	// 4. get fieldName and fieldType
-	// 	fieldName := fd.Name() // not CamelCase yet
-	// 	fieldType := fd.Kind()
+	// TODO: GetInclude
+	for _, field := range gormMsgOptions.GetInclude() {
+		fieldName := field.GetName() // TODO: camel case
+		if _, ok := ormable.Fields[fieldName]; !ok {
+			b.addIncludedField(ormable, field)
+		} else {
+			panic("cound not include")
+		}
+	}
+}
 
-	// 	// next we need to know what kind of database engine we using
-	// }
+func (b *ORMBuilder) addIncludedField(ormable *OrmableType, field *gorm.ExtraField) {
+	fieldName := field.GetName() // TODO: CamelCase
+	isPtr := strings.HasPrefix(field.GetType(), "*")
+	rawType := strings.TrimPrefix(field.GetType(), "*")
+	// cut off any package subpaths
+	rawType = rawType[strings.LastIndex(rawType, ".")+1:]
+	var typePackage string
+	// Handle types with a package defined
+	if field.GetPackage() != "" {
+		alias := b.Import(field.GetPackage())
+		rawType = fmt.Sprintf("%s.%s", alias, rawType)
+		typePackage = field.GetPackage()
+	} else {
+		// Handle types without a package defined
+		if _, ok := builtinTypes[rawType]; ok {
+			// basic type, 100% okay, no imports or changes needed
+		} else if rawType == "Time" {
+			// b.UsingGoImports(stdTimeImport) // TODO: missing UsingGoImports
+			typePackage = stdTimeImport
+			rawType = fmt.Sprintf("%s.Time", typePackage)
+		} else if rawType == "UUID" {
+			rawType = fmt.Sprintf("%s.UUID", b.Import(uuidImport))
+			typePackage = uuidImport
+		} else if field.GetType() == "Jsonb" && b.dbEngine == ENGINE_POSTGRES {
+			rawType = fmt.Sprintf("%s.Jsonb", b.Import(gormpqImport))
+			typePackage = gormpqImport
+		} else if rawType == "Inet" {
+			rawType = fmt.Sprintf("%s.Inet", b.Import(gtypesImport))
+			typePackage = gtypesImport
+		} else {
+			fmt.Fprintf(os.Stderr, "TODO: Warning")
+			// p.warning(`included field %q of type %q is not a recognized special type, and no package specified. This type is assumed to be in the same package as the generated code`,
+			// 	field.GetName(), field.GetType())
+		}
+	}
+	if isPtr {
+		rawType = fmt.Sprintf("*%s", rawType)
+	}
+	ormable.Fields[fieldName] = &Field{Type: rawType, Package: typePackage, GormFieldOptions: &gorm.GormFieldOptions{Tag: field.GetTag()}}
 }
 
 func getFieldOptions(options *descriptorpb.FieldOptions) *gorm.GormFieldOptions {
@@ -321,6 +389,25 @@ func getFieldOptions(options *descriptorpb.FieldOptions) *gorm.GormFieldOptions 
 	}
 
 	opts, ok := v.(*gorm.GormFieldOptions)
+	if !ok {
+		return nil
+	}
+
+	return opts
+}
+
+// retrieves the GormMessageOptions from a message
+func getMessageOptions(message *protogen.Message) *gorm.GormMessageOptions {
+	options := message.Desc.Options()
+	if options == nil {
+		return nil
+	}
+	v := proto.GetExtension(options, gorm.E_Opts)
+	if v != nil {
+		return nil
+	}
+
+	opts, ok := v.(*gorm.GormMessageOptions)
 	if !ok {
 		return nil
 	}
