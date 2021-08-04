@@ -3,6 +3,7 @@ package pluginv2
 import (
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 
 	gorm "github.com/infobloxopen/protoc-gen-gorm/options"
@@ -267,8 +268,8 @@ func (b *ORMBuilder) generateOrmable(genFile *protogen.GeneratedFile, message *p
 	ormable := b.getOrmable(message.GoIdent.GoName)
 	genFile.P(`type `, ormable.Name, ` struct {`)
 
-	for name, field := range ormable.Fields { // TODO: sorting
-		genFile.P(name, ` `, field.Type) // TODO: add go tag
+	for name, field := range ormable.Fields { // TODO: sorting, if it's required
+		genFile.P(name, ` `, field.Type, b.renderGormTag(field))
 	}
 
 	genFile.P(`}`)
@@ -647,4 +648,176 @@ func isASCIILower(c byte) bool {
 
 func isASCIIDigit(c byte) bool {
 	return '0' <= c && c <= '9'
+}
+
+func (p *ORMBuilder) renderGormTag(field *Field) string {
+	var gormRes, atlasRes string
+	tag := field.GetTag()
+	if tag == nil {
+		tag = &gorm.GormTag{}
+	}
+
+	if len(tag.Column) > 0 {
+		gormRes += fmt.Sprintf("column:%s;", tag.GetColumn())
+	}
+	if len(tag.Type) > 0 {
+		gormRes += fmt.Sprintf("type:%s;", tag.GetType())
+	}
+	if tag.GetSize() > 0 {
+		gormRes += fmt.Sprintf("size:%d;", tag.GetSize())
+	}
+	if tag.Precision > 0 {
+		gormRes += fmt.Sprintf("precision:%d;", tag.GetPrecision())
+	}
+	if tag.GetPrimaryKey() {
+		gormRes += "primary_key;"
+	}
+	if tag.GetUnique() {
+		gormRes += "unique;"
+	}
+	if len(tag.Default) > 0 {
+		gormRes += fmt.Sprintf("default:%s;", tag.GetDefault())
+	}
+	if tag.GetNotNull() {
+		gormRes += "not null;"
+	}
+	if tag.GetAutoIncrement() {
+		gormRes += "auto_increment;"
+	}
+	if len(tag.Index) > 0 {
+		if tag.GetIndex() == "" {
+			gormRes += "index;"
+		} else {
+			gormRes += fmt.Sprintf("index:%s;", tag.GetIndex())
+		}
+	}
+	if len(tag.UniqueIndex) > 0 {
+		if tag.GetUniqueIndex() == "" {
+			gormRes += "unique_index;"
+		} else {
+			gormRes += fmt.Sprintf("unique_index:%s;", tag.GetUniqueIndex())
+		}
+	}
+	if tag.GetEmbedded() {
+		gormRes += "embedded;"
+	}
+	if len(tag.EmbeddedPrefix) > 0 {
+		gormRes += fmt.Sprintf("embedded_prefix:%s;", tag.GetEmbeddedPrefix())
+	}
+	if tag.GetIgnore() {
+		gormRes += "-;"
+	}
+
+	var foreignKey, associationForeignKey, joinTable, joinTableForeignKey, associationJoinTableForeignKey string
+	var associationAutoupdate, associationAutocreate, associationSaveReference, preload, replace, append, clear bool
+	if hasOne := field.GetHasOne(); hasOne != nil {
+		foreignKey = hasOne.Foreignkey
+		associationForeignKey = hasOne.AssociationForeignkey
+		associationAutoupdate = hasOne.AssociationAutoupdate
+		associationAutocreate = hasOne.AssociationAutocreate
+		associationSaveReference = hasOne.AssociationSaveReference
+		preload = hasOne.Preload
+		clear = hasOne.Clear
+		replace = hasOne.Replace
+		append = hasOne.Append
+	} else if belongsTo := field.GetBelongsTo(); belongsTo != nil {
+		foreignKey = belongsTo.Foreignkey
+		associationForeignKey = belongsTo.AssociationForeignkey
+		associationAutoupdate = belongsTo.AssociationAutoupdate
+		associationAutocreate = belongsTo.AssociationAutocreate
+		associationSaveReference = belongsTo.AssociationSaveReference
+		preload = belongsTo.Preload
+	} else if hasMany := field.GetHasMany(); hasMany != nil {
+		foreignKey = hasMany.Foreignkey
+		associationForeignKey = hasMany.AssociationForeignkey
+		associationAutoupdate = hasMany.AssociationAutoupdate
+		associationAutocreate = hasMany.AssociationAutocreate
+		associationSaveReference = hasMany.AssociationSaveReference
+		clear = hasMany.Clear
+		preload = hasMany.Preload
+		replace = hasMany.Replace
+		append = hasMany.Append
+		if len(hasMany.PositionField) > 0 {
+			atlasRes += fmt.Sprintf("position:%s;", hasMany.GetPositionField())
+		}
+	} else if mtm := field.GetManyToMany(); mtm != nil {
+		foreignKey = mtm.Foreignkey
+		associationForeignKey = mtm.AssociationForeignkey
+		joinTable = mtm.Jointable
+		joinTableForeignKey = mtm.JointableForeignkey
+		associationJoinTableForeignKey = mtm.AssociationJointableForeignkey
+		associationAutoupdate = mtm.AssociationAutoupdate
+		associationAutocreate = mtm.AssociationAutocreate
+		associationSaveReference = mtm.AssociationSaveReference
+		preload = mtm.Preload
+		clear = mtm.Clear
+		replace = mtm.Replace
+		append = mtm.Append
+	} else {
+		foreignKey = tag.Foreignkey
+		associationForeignKey = tag.AssociationForeignkey
+		joinTable = tag.ManyToMany
+		joinTableForeignKey = tag.JointableForeignkey
+		associationJoinTableForeignKey = tag.AssociationJointableForeignkey
+		associationAutoupdate = tag.AssociationAutoupdate
+		associationAutocreate = tag.AssociationAutocreate
+		associationSaveReference = tag.AssociationSaveReference
+		preload = tag.Preload
+	}
+
+	if len(foreignKey) > 0 {
+		gormRes += fmt.Sprintf("foreignkey:%s;", foreignKey)
+	}
+
+	if len(associationForeignKey) > 0 {
+		gormRes += fmt.Sprintf("association_foreignkey:%s;", associationForeignKey)
+	}
+
+	if len(joinTable) > 0 {
+		gormRes += fmt.Sprintf("many2many:%s;", joinTable)
+	}
+	if len(joinTableForeignKey) > 0 {
+		gormRes += fmt.Sprintf("jointable_foreignkey:%s;", joinTableForeignKey)
+	}
+	if len(associationJoinTableForeignKey) > 0 {
+		gormRes += fmt.Sprintf("association_jointable_foreignkey:%s;", associationJoinTableForeignKey)
+	}
+
+	if associationAutoupdate {
+		gormRes += fmt.Sprintf("association_autoupdate:%s;", strconv.FormatBool(associationAutoupdate))
+	}
+
+	if associationAutocreate {
+		gormRes += fmt.Sprintf("association_autocreate:%s;", strconv.FormatBool(associationAutocreate))
+	}
+
+	if associationSaveReference {
+		gormRes += fmt.Sprintf("association_save_reference:%s;", strconv.FormatBool(associationSaveReference))
+	}
+
+	if preload {
+		gormRes += fmt.Sprintf("preload:%s;", strconv.FormatBool(preload))
+	}
+
+	if clear {
+		gormRes += fmt.Sprintf("clear:%s;", strconv.FormatBool(clear))
+	} else if replace {
+		gormRes += fmt.Sprintf("replace:%s;", strconv.FormatBool(replace))
+	} else if append {
+		gormRes += fmt.Sprintf("append:%s;", strconv.FormatBool(append))
+	}
+
+	var gormTag, atlasTag string
+	if gormRes != "" {
+		gormTag = fmt.Sprintf("gorm:\"%s\"", strings.TrimRight(gormRes, ";"))
+	}
+	if atlasRes != "" {
+		atlasTag = fmt.Sprintf("atlas:\"%s\"", strings.TrimRight(atlasRes, ";"))
+	}
+	finalTag := strings.TrimSpace(strings.Join([]string{gormTag, atlasTag}, " "))
+	if finalTag == "" {
+		return ""
+	} else {
+		return fmt.Sprintf("`%s`", finalTag)
+	}
 }
