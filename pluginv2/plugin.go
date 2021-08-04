@@ -213,7 +213,7 @@ func (b *ORMBuilder) Generate() (*pluginpb.CodeGeneratorResponse, error) {
 		}
 
 		// third traverse: build associations
-		// TODO: implent functions
+		// TODO: implement functions, simple example will not have any associations
 		for _, message := range protoFile.Messages {
 			typeName := string(message.Desc.Name())
 			if isOrmable(message) {
@@ -226,21 +226,53 @@ func (b *ORMBuilder) Generate() (*pluginpb.CodeGeneratorResponse, error) {
 			}
 		}
 
-		for _, ot := range b.ormableTypes {
-			fmt.Fprintf(os.Stderr, "ormable type: %+v\n", ot.Name)
-			for name, field := range ot.Fields {
-				fmt.Fprintf(os.Stderr, "name: %s, field: %+v\n", name, field.Type)
+		// Debug
+		// ---------------
+
+		// for _, ot := range b.ormableTypes {
+		// 	fmt.Fprintf(os.Stderr, "ormable type: %+v\n", ot.Name)
+		// 	for name, field := range ot.Fields {
+		// 		fmt.Fprintf(os.Stderr, "name: %s, field: %+v\n", name, field.Type)
+		// 	}
+		// }
+
+		// // dumb files
+		// filename := protoFile.GeneratedFilenamePrefix + ".gorm.go"
+		// gormFile := b.plugin.NewGeneratedFile(filename, ".")
+		// gormFile.P("// this file is generated")
+	}
+
+	// TODO: parse services
+	// for _, protoFile := range b.plugin.Files {
+	// 	fmt.Fprintf(os.Stderr, "TODO: generate services: %+v\n", protoFile)
+	// }
+
+	for _, protoFile := range b.plugin.Files {
+		// generate actual code
+		fileName := protoFile.GeneratedFilenamePrefix + ".gorm.go"
+		genFile := b.plugin.NewGeneratedFile(fileName, ".")
+		genFile.P("package ", protoFile.GoPackageName)
+
+		for _, message := range protoFile.Messages {
+			if isOrmable(message) {
+				b.generateOrmable(genFile, message)
 			}
 		}
-
-		// dumb files
-		filename := protoFile.GeneratedFilenamePrefix + ".gorm.go"
-		gormFile := b.plugin.NewGeneratedFile(filename, ".")
-		gormFile.P("package ", protoFile.GoPackageName)
-		gormFile.P("// this file is generated")
 	}
 
 	return b.plugin.Response(), nil
+}
+
+func (b *ORMBuilder) generateOrmable(genFile *protogen.GeneratedFile, message *protogen.Message) {
+	ormable := b.getOrmable(message.GoIdent.GoName)
+	genFile.P(`type `, ormable.Name, ` struct {`)
+
+	for name, field := range ormable.Fields { // TODO: sorting
+		genFile.P(name, ` `, field.Type) // TODO: add go tag
+	}
+
+	genFile.P(`}`)
+	genFile.P()
 }
 
 func (b *ORMBuilder) parseAssociations(msg *protogen.Message) {
@@ -254,7 +286,7 @@ func (b *ORMBuilder) parseAssociations(msg *protogen.Message) {
 			continue
 		}
 
-		fieldName := string(field.Desc.Name())  // TODO: camelCase
+		fieldName := camelCase(string(field.Desc.Name()))
 		fieldType := field.Desc.Kind().String() // was GoType
 		fieldType = strings.Trim(fieldType, "[]*")
 		parts := strings.Split(fieldType, ".")
@@ -306,7 +338,11 @@ func (b *ORMBuilder) findPrimaryKey(ormable *OrmableType) (string, *Field) {
 
 func (b *ORMBuilder) getOrmable(typeName string) *OrmableType {
 	// TODO: implement me
-	return &OrmableType{}
+	r, ok := b.ormableTypes[typeName]
+	if !ok {
+		panic("panic?")
+	}
+	return r
 }
 
 func (b *ORMBuilder) setFile(file string, pkg string) {
@@ -333,7 +369,7 @@ func (p *ORMBuilder) parseBelongsTo(msg *protogen.Message, child *OrmableType, f
 
 func (b *ORMBuilder) parseBasicFields(msg *protogen.Message) {
 	typeName := string(msg.Desc.Name())
-	fmt.Fprintf(os.Stderr, "parseBasicFields -> : %s\n", typeName)
+	fmt.Fprintf(os.Stderr, "parseBasicFields message Name: %s\n", typeName)
 
 	ormable, ok := b.ormableTypes[typeName]
 	if !ok {
@@ -355,8 +391,8 @@ func (b *ORMBuilder) parseBasicFields(msg *protogen.Message) {
 		}
 
 		tag := gormOptions.Tag
-		fieldName := string(fd.Name())  // TODO: move to camelCase
-		fieldType := fd.Kind().String() // TODO: figure out GoType analog
+		fieldName := camelCase(string(fd.Name())) // TODO: move to camelCase
+		fieldType := fd.Kind().String()           // TODO: figure out GoType analog
 
 		fmt.Fprintf(os.Stderr, "field name: %s, type: %s, tag: %+v\n",
 			fieldName, fieldType, tag)
@@ -427,6 +463,8 @@ func (b *ORMBuilder) parseBasicFields(msg *protogen.Message) {
 			panic("cound not include")
 		}
 	}
+
+	fmt.Fprintf(os.Stderr, "parseBasicFields end, ormable: %+v\n", ormable)
 }
 
 func (b *ORMBuilder) addIncludedField(ormable *OrmableType, field *gorm.ExtraField) {
@@ -562,4 +600,51 @@ func tagWithType(tag *gorm.GormTag, typename string) *gorm.GormTag {
 
 	tag.Type = typename
 	return tag
+}
+
+func camelCase(s string) string {
+	if s == "" {
+		return ""
+	}
+	t := make([]byte, 0, 32)
+	i := 0
+	if s[0] == '_' {
+		// Need a capital letter; drop the '_'.
+		t = append(t, 'X')
+		i++
+	}
+	// Invariant: if the next letter is lower case, it must be converted
+	// to upper case.
+	// That is, we process a word at a time, where words are marked by _ or
+	// upper case letter. Digits are treated as words.
+	for ; i < len(s); i++ {
+		c := s[i]
+		if c == '_' && i+1 < len(s) && isASCIILower(s[i+1]) {
+			continue // Skip the underscore in s.
+		}
+		if isASCIIDigit(c) {
+			t = append(t, c)
+			continue
+		}
+		// Assume we have a letter now - if not, it's a bogus identifier.
+		// The next word is a sequence of characters that must start upper case.
+		if isASCIILower(c) {
+			c ^= ' ' // Make it a capital letter.
+		}
+		t = append(t, c) // Guaranteed not lower case.
+		// Accept lower case sequence that follows.
+		for i+1 < len(s) && isASCIILower(s[i+1]) {
+			i++
+			t = append(t, s[i])
+		}
+	}
+	return string(t)
+}
+
+func isASCIILower(c byte) bool {
+	return 'a' <= c && c <= 'z'
+}
+
+func isASCIIDigit(c byte) bool {
+	return '0' <= c && c <= '9'
 }
