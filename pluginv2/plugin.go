@@ -274,6 +274,7 @@ func (b *ORMBuilder) Generate() (*pluginpb.CodeGeneratorResponse, error) {
 				b.generateOrmable(g, message)
 				b.generateTableNameFunctions(g, message)
 				b.generateConvertFunctions(g, message)
+				b.generateHookInterfaces(g, message)
 			}
 		}
 
@@ -1211,6 +1212,9 @@ func (b *ORMBuilder) generateDefaultHandlers(file *protogen.File, g *protogen.Ge
 		if isOrmable(message) {
 			b.generateCreateHandler(message, g)
 		}
+
+		// TODO: check for primary key
+
 	}
 }
 
@@ -1275,4 +1279,23 @@ func (b *ORMBuilder) generateAfterHookDef(orm *OrmableType, method string, g *pr
 	g.P(`type `, orm.Name, `WithAfter`, method, ` interface {`)
 	g.P(`After`, method, `(context.Context, *`, "gorm", `.DB) error`)
 	g.P(`}`)
+}
+
+func (b *ORMBuilder) generateHookInterfaces(g *protogen.GeneratedFile, message *protogen.Message) {
+	typeName := string(message.Desc.Name())
+	g.P(`// The following are interfaces you can implement for special behavior during ORM/PB conversions`)
+	g.P(`// of type `, typeName, ` the arg will be the target, the caller the one being converted from`)
+	g.P()
+	for _, desc := range [][]string{
+		{"BeforeToORM", typeName + "ORM", " called before default ToORM code"},
+		{"AfterToORM", typeName + "ORM", " called after default ToORM code"},
+		{"BeforeToPB", typeName, " called before default ToPB code"},
+		{"AfterToPB", typeName, " called after default ToPB code"},
+	} {
+		g.P(`// `, typeName, desc[0], desc[2])
+		g.P(`type `, typeName, `With`, desc[0], ` interface {`)
+		g.P(desc[0], `(context.Context, *`, desc[1], `) error`)
+		g.P(`}`)
+		g.P()
+	}
 }
