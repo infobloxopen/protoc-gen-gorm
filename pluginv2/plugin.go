@@ -276,6 +276,9 @@ func (b *ORMBuilder) Generate() (*pluginpb.CodeGeneratorResponse, error) {
 				b.generateConvertFunctions(g, message)
 			}
 		}
+
+		// TODO: generate default handlers
+		b.generateDefaultHandlers(protoFile, g)
 	}
 
 	return b.plugin.Response(), nil
@@ -285,6 +288,12 @@ func (b *ORMBuilder) generateConvertFunctions(g *protogen.GeneratedFile, message
 	typeName := string(message.Desc.Name())
 	// ormable := b.getOrmable(generator.CamelCaseSlice(message.TypeName()))
 	ormable := b.getOrmable(camelCase(typeName))
+
+	// Import context
+	g.QualifiedGoIdent(protogen.GoIdent{
+		GoName:       "context",
+		GoImportPath: "context",
+	})
 
 	///// To Orm
 	g.P(`// ToORM runs the BeforeToORM hook if present, converts the fields of this`)
@@ -1195,4 +1204,75 @@ func (b *ORMBuilder) generateFieldConversion(message *protogen.Message, field *p
 		g.P(`to.`, fieldName, ` = m.`, fieldName)
 	}
 	return nil
+}
+
+func (b *ORMBuilder) generateDefaultHandlers(file *protogen.File, g *protogen.GeneratedFile) {
+	for _, message := range file.Messages {
+		if isOrmable(message) {
+			b.generateCreateHandler(message, g)
+		}
+	}
+}
+
+func (b *ORMBuilder) generateCreateHandler(message *protogen.Message, g *protogen.GeneratedFile) {
+	g.QualifiedGoIdent(protogen.GoIdent{
+		GoName:       "gorm",
+		GoImportPath: protogen.GoImportPath(gormImport),
+	})
+	g.QualifiedGoIdent(protogen.GoIdent{
+		GoName:       "errors",
+		GoImportPath: protogen.GoImportPath(gerrorsImport),
+	})
+
+	typeName := string(message.Desc.Name())
+	orm := b.getOrmable(typeName)
+	g.P(`// DefaultCreate`, typeName, ` executes a basic gorm create call`)
+	g.P(`func DefaultCreate`, typeName, `(ctx context.Context, in *`,
+		typeName, `, db *`, "gorm", `.DB) (*`, typeName, `, error) {`)
+	g.P(`if in == nil {`)
+	g.P(`return nil, `, "errors", `.NilArgumentError`)
+	g.P(`}`)
+	g.P(`ormObj, err := in.ToORM(ctx)`)
+	g.P(`if err != nil {`)
+	g.P(`return nil, err`)
+	g.P(`}`)
+	create := "Create_"
+	b.generateBeforeHookCall(orm, create, g)
+	g.P(`if err = db.Create(&ormObj).Error; err != nil {`)
+	g.P(`return nil, err`)
+	g.P(`}`)
+	b.generateAfterHookCall(orm, create, g)
+	g.P(`pbResponse, err := ormObj.ToPB(ctx)`)
+	g.P(`return &pbResponse, err`)
+	g.P(`}`)
+	b.generateBeforeHookDef(orm, create, g)
+	b.generateAfterHookDef(orm, create, g)
+}
+
+func (b *ORMBuilder) generateBeforeHookCall(orm *OrmableType, method string, g *protogen.GeneratedFile) {
+	g.P(`if hook, ok := interface{}(&ormObj).(`, orm.Name, `WithBefore`, method, `); ok {`)
+	g.P(`if db, err = hook.Before`, method, `(ctx, db); err != nil {`)
+	g.P(`return nil, err`)
+	g.P(`}`)
+	g.P(`}`)
+}
+
+func (b *ORMBuilder) generateAfterHookCall(orm *OrmableType, method string, g *protogen.GeneratedFile) {
+	g.P(`if hook, ok := interface{}(&ormObj).(`, orm.Name, `WithAfter`, method, `); ok {`)
+	g.P(`if err = hook.After`, method, `(ctx, db); err != nil {`)
+	g.P(`return nil, err`)
+	g.P(`}`)
+	g.P(`}`)
+}
+
+func (b *ORMBuilder) generateBeforeHookDef(orm *OrmableType, method string, g *protogen.GeneratedFile) {
+	g.P(`type `, orm.Name, `WithBefore`, method, ` interface {`)
+	g.P(`Before`, method, `(context.Context, *`, "gorm", `.DB) (*`, "gorm", `.DB, error)`)
+	g.P(`}`)
+}
+
+func (b *ORMBuilder) generateAfterHookDef(orm *OrmableType, method string, g *protogen.GeneratedFile) {
+	g.P(`type `, orm.Name, `WithAfter`, method, ` interface {`)
+	g.P(`After`, method, `(context.Context, *`, "gorm", `.DB) error`)
+	g.P(`}`)
 }
