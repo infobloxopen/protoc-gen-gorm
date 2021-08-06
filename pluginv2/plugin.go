@@ -266,14 +266,14 @@ func (b *ORMBuilder) Generate() (*pluginpb.CodeGeneratorResponse, error) {
 	for _, protoFile := range b.plugin.Files {
 		// generate actual code
 		fileName := protoFile.GeneratedFilenamePrefix + ".gorm.go"
-		genFile := b.plugin.NewGeneratedFile(fileName, ".")
-		genFile.P("package ", protoFile.GoPackageName)
+		g := b.plugin.NewGeneratedFile(fileName, ".")
+		g.P("package ", protoFile.GoPackageName)
 
 		for _, message := range protoFile.Messages {
 			if isOrmable(message) {
-				b.generateOrmable(genFile, message)
-				b.generateTableNameFunctions(genFile, message)
-				b.generateConvertFunctions(genFile, message)
+				b.generateOrmable(g, message)
+				b.generateTableNameFunctions(g, message)
+				b.generateConvertFunctions(g, message)
 			}
 		}
 	}
@@ -281,22 +281,22 @@ func (b *ORMBuilder) Generate() (*pluginpb.CodeGeneratorResponse, error) {
 	return b.plugin.Response(), nil
 }
 
-func (b *ORMBuilder) generateConvertFunctions(genFile *protogen.GeneratedFile, message *protogen.Message) {
+func (b *ORMBuilder) generateConvertFunctions(g *protogen.GeneratedFile, message *protogen.Message) {
 	typeName := string(message.Desc.Name())
 	// ormable := b.getOrmable(generator.CamelCaseSlice(message.TypeName()))
 	ormable := b.getOrmable(camelCase(typeName))
 
 	///// To Orm
-	genFile.P(`// ToORM runs the BeforeToORM hook if present, converts the fields of this`)
-	genFile.P(`// object to ORM format, runs the AfterToORM hook, then returns the ORM object`)
-	genFile.P(`func (m *`, typeName, `) ToORM (ctx context.Context) (`, typeName, `ORM, error) {`)
-	genFile.P(`to := `, typeName, `ORM{}`)
-	genFile.P(`var err error`)
-	genFile.P(`if prehook, ok := interface{}(m).(`, typeName, `WithBeforeToORM); ok {`)
-	genFile.P(`if err = prehook.BeforeToORM(ctx, &to); err != nil {`)
-	genFile.P(`return to, err`)
-	genFile.P(`}`)
-	genFile.P(`}`)
+	g.P(`// ToORM runs the BeforeToORM hook if present, converts the fields of this`)
+	g.P(`// object to ORM format, runs the AfterToORM hook, then returns the ORM object`)
+	g.P(`func (m *`, typeName, `) ToORM (ctx context.Context) (`, typeName, `ORM, error) {`)
+	g.P(`to := `, typeName, `ORM{}`)
+	g.P(`var err error`)
+	g.P(`if prehook, ok := interface{}(m).(`, typeName, `WithBeforeToORM); ok {`)
+	g.P(`if err = prehook.BeforeToORM(ctx, &to); err != nil {`)
+	g.P(`return to, err`)
+	g.P(`}`)
+	g.P(`}`)
 	for _, field := range message.Fields {
 		// Checking if field is skipped
 		options := field.Desc.Options().(*descriptorpb.FieldOptions)
@@ -306,35 +306,35 @@ func (b *ORMBuilder) generateConvertFunctions(genFile *protogen.GeneratedFile, m
 		}
 
 		ofield := ormable.Fields[camelCase(field.GoName)]
-		b.generateFieldConversion(message, field, true, ofield, genFile)
+		b.generateFieldConversion(message, field, true, ofield, g)
 	}
 	if getMessageOptions(message).GetMultiAccount() {
-		genFile.P("accountID, err := ", b.Import(authImport), ".GetAccountID(ctx, nil)")
-		genFile.P("if err != nil {")
-		genFile.P("return to, err")
-		genFile.P("}")
-		genFile.P("to.AccountID = accountID")
+		g.P("accountID, err := ", b.Import(authImport), ".GetAccountID(ctx, nil)")
+		g.P("if err != nil {")
+		g.P("return to, err")
+		g.P("}")
+		g.P("to.AccountID = accountID")
 	}
-	b.setupOrderedHasMany(message, genFile)
-	genFile.P(`if posthook, ok := interface{}(m).(`, typeName, `WithAfterToORM); ok {`)
-	genFile.P(`err = posthook.AfterToORM(ctx, &to)`)
-	genFile.P(`}`)
-	genFile.P(`return to, err`)
-	genFile.P(`}`)
+	b.setupOrderedHasMany(message, g)
+	g.P(`if posthook, ok := interface{}(m).(`, typeName, `WithAfterToORM); ok {`)
+	g.P(`err = posthook.AfterToORM(ctx, &to)`)
+	g.P(`}`)
+	g.P(`return to, err`)
+	g.P(`}`)
 
-	genFile.P()
+	g.P()
 	///// To Pb
-	genFile.P(`// ToPB runs the BeforeToPB hook if present, converts the fields of this`)
-	genFile.P(`// object to PB format, runs the AfterToPB hook, then returns the PB object`)
-	genFile.P(`func (m *`, typeName, `ORM) ToPB (ctx context.Context) (`,
+	g.P(`// ToPB runs the BeforeToPB hook if present, converts the fields of this`)
+	g.P(`// object to PB format, runs the AfterToPB hook, then returns the PB object`)
+	g.P(`func (m *`, typeName, `ORM) ToPB (ctx context.Context) (`,
 		typeName, `, error) {`)
-	genFile.P(`to := `, typeName, `{}`)
-	genFile.P(`var err error`)
-	genFile.P(`if prehook, ok := interface{}(m).(`, typeName, `WithBeforeToPB); ok {`)
-	genFile.P(`if err = prehook.BeforeToPB(ctx, &to); err != nil {`)
-	genFile.P(`return to, err`)
-	genFile.P(`}`)
-	genFile.P(`}`)
+	g.P(`to := `, typeName, `{}`)
+	g.P(`var err error`)
+	g.P(`if prehook, ok := interface{}(m).(`, typeName, `WithBeforeToPB); ok {`)
+	g.P(`if err = prehook.BeforeToPB(ctx, &to); err != nil {`)
+	g.P(`return to, err`)
+	g.P(`}`)
+	g.P(`}`)
 	for _, field := range message.Fields {
 		// Checking if field is skipped
 		options := field.Desc.Options().(*descriptorpb.FieldOptions)
@@ -343,40 +343,40 @@ func (b *ORMBuilder) generateConvertFunctions(genFile *protogen.GeneratedFile, m
 			continue
 		}
 		ofield := ormable.Fields[generator.CamelCase(field.GoName)]
-		b.generateFieldConversion(message, field, false, ofield, genFile)
+		b.generateFieldConversion(message, field, false, ofield, g)
 	}
-	genFile.P(`if posthook, ok := interface{}(m).(`, typeName, `WithAfterToPB); ok {`)
-	genFile.P(`err = posthook.AfterToPB(ctx, &to)`)
-	genFile.P(`}`)
-	genFile.P(`return to, err`)
-	genFile.P(`}`)
+	g.P(`if posthook, ok := interface{}(m).(`, typeName, `WithAfterToPB); ok {`)
+	g.P(`err = posthook.AfterToPB(ctx, &to)`)
+	g.P(`}`)
+	g.P(`return to, err`)
+	g.P(`}`)
 }
 
-func (b *ORMBuilder) generateTableNameFunctions(genFile *protogen.GeneratedFile, message *protogen.Message) {
+func (b *ORMBuilder) generateTableNameFunctions(g *protogen.GeneratedFile, message *protogen.Message) {
 	typeName := string(message.Desc.Name())
 	msgName := string(message.Desc.Name())
 
-	genFile.P(`// TableName overrides the default tablename generated by GORM`)
-	genFile.P(`func (`, typeName, `ORM) TableName() string {`)
+	g.P(`// TableName overrides the default tablename generated by GORM`)
+	g.P(`func (`, typeName, `ORM) TableName() string {`)
 
 	tableName := inflection.Plural(jgorm.ToDBName(msgName))
 	if opts := getMessageOptions(message); opts != nil && len(opts.Table) > 0 {
 		tableName = opts.GetTable()
 	}
-	genFile.P(`return "`, tableName, `"`)
-	genFile.P(`}`)
+	g.P(`return "`, tableName, `"`)
+	g.P(`}`)
 }
 
-func (b *ORMBuilder) generateOrmable(genFile *protogen.GeneratedFile, message *protogen.Message) {
+func (b *ORMBuilder) generateOrmable(g *protogen.GeneratedFile, message *protogen.Message) {
 	ormable := b.getOrmable(message.GoIdent.GoName)
-	genFile.P(`type `, ormable.Name, ` struct {`)
+	g.P(`type `, ormable.Name, ` struct {`)
 
 	for name, field := range ormable.Fields { // TODO: sorting, if it's required
-		genFile.P(name, ` `, field.Type, b.renderGormTag(field))
+		g.P(name, ` `, field.Type, b.renderGormTag(field))
 	}
 
-	genFile.P(`}`)
-	genFile.P()
+	g.P(`}`)
+	g.P()
 }
 
 func (b *ORMBuilder) parseAssociations(msg *protogen.Message) {
@@ -927,15 +927,15 @@ func (p *ORMBuilder) renderGormTag(field *Field) string {
 
 func camelCaseSlice(elem []string) string { return camelCase(strings.Join(elem, "_")) }
 
-func (p *ORMBuilder) setupOrderedHasMany(message *protogen.Message, genFile *protogen.GeneratedFile) {
+func (p *ORMBuilder) setupOrderedHasMany(message *protogen.Message, g *protogen.GeneratedFile) {
 	typeName := string(message.Desc.Name())
 	ormable := p.getOrmable(typeName)
 	for fieldName := range ormable.Fields { // TODO: do we need to sort?
-		p.setupOrderedHasManyByName(message, fieldName, genFile)
+		p.setupOrderedHasManyByName(message, fieldName, g)
 	}
 }
 
-func (p *ORMBuilder) setupOrderedHasManyByName(message *protogen.Message, fieldName string, genFile *protogen.GeneratedFile) {
+func (p *ORMBuilder) setupOrderedHasManyByName(message *protogen.Message, fieldName string, g *protogen.GeneratedFile) {
 	typeName := string(message.Desc.Name())
 	ormable := p.getOrmable(typeName)
 	field := ormable.Fields[fieldName]
@@ -947,15 +947,15 @@ func (p *ORMBuilder) setupOrderedHasManyByName(message *protogen.Message, fieldN
 	if field.GetHasMany().GetPositionField() != "" {
 		positionField := field.GetHasMany().GetPositionField()
 		positionFieldType := p.getOrmable(field.Type).Fields[positionField].Type
-		genFile.P(`for i, e := range `, `to.`, fieldName, `{`)
-		genFile.P(`e.`, positionField, ` = `, positionFieldType, `(i)`)
-		genFile.P(`}`)
+		g.P(`for i, e := range `, `to.`, fieldName, `{`)
+		g.P(`e.`, positionField, ` = `, positionFieldType, `(i)`)
+		g.P(`}`)
 	}
 }
 
 // Output code that will convert a field to/from orm.
 func (b *ORMBuilder) generateFieldConversion(message *protogen.Message, field *protogen.Field,
-	toORM bool, ofield *Field, genFile *protogen.GeneratedFile) error {
+	toORM bool, ofield *Field, g *protogen.GeneratedFile) error {
 
 	// fieldName := generator.CamelCase(field.GetName())
 	// fieldType, _ := p.GoType(message, field)
@@ -964,52 +964,52 @@ func (b *ORMBuilder) generateFieldConversion(message *protogen.Message, field *p
 	if field.Desc.Cardinality() == protoreflect.Repeated {
 		// Some repeated fields can be handled by github.com/lib/pq
 		if b.dbEngine == ENGINE_POSTGRES && b.IsAbleToMakePQArray(fieldType) {
-			genFile.P(`if m.`, fieldName, ` != nil {`)
+			g.P(`if m.`, fieldName, ` != nil {`)
 			switch fieldType {
 			case "[]bool":
-				genFile.P(`to.`, fieldName, ` = make(`, b.Import(pqImport), `.BoolArray, len(m.`, fieldName, `))`)
+				g.P(`to.`, fieldName, ` = make(`, b.Import(pqImport), `.BoolArray, len(m.`, fieldName, `))`)
 			case "[]float64":
-				genFile.P(`to.`, fieldName, ` = make(`, b.Import(pqImport), `.Float64Array, len(m.`, fieldName, `))`)
+				g.P(`to.`, fieldName, ` = make(`, b.Import(pqImport), `.Float64Array, len(m.`, fieldName, `))`)
 			case "[]int64":
-				genFile.P(`to.`, fieldName, ` = make(`, b.Import(pqImport), `.Int64Array, len(m.`, fieldName, `))`)
+				g.P(`to.`, fieldName, ` = make(`, b.Import(pqImport), `.Int64Array, len(m.`, fieldName, `))`)
 			case "[]string":
-				genFile.P(`to.`, fieldName, ` = make(`, b.Import(pqImport), `.StringArray, len(m.`, fieldName, `))`)
+				g.P(`to.`, fieldName, ` = make(`, b.Import(pqImport), `.StringArray, len(m.`, fieldName, `))`)
 			}
-			genFile.P(`copy(to.`, fieldName, `, m.`, fieldName, `)`)
-			genFile.P(`}`)
+			g.P(`copy(to.`, fieldName, `, m.`, fieldName, `)`)
+			g.P(`}`)
 		} else if b.isOrmable(fieldType) { // Repeated ORMable type
 			//fieldType = strings.Trim(fieldType, "[]*")
 
-			genFile.P(`for _, v := range m.`, fieldName, ` {`)
-			genFile.P(`if v != nil {`)
+			g.P(`for _, v := range m.`, fieldName, ` {`)
+			g.P(`if v != nil {`)
 			if toORM {
-				genFile.P(`if temp`, fieldName, `, cErr := v.ToORM(ctx); cErr == nil {`)
+				g.P(`if temp`, fieldName, `, cErr := v.ToORM(ctx); cErr == nil {`)
 			} else {
-				genFile.P(`if temp`, fieldName, `, cErr := v.ToPB(ctx); cErr == nil {`)
+				g.P(`if temp`, fieldName, `, cErr := v.ToPB(ctx); cErr == nil {`)
 			}
-			genFile.P(`to.`, fieldName, ` = append(to.`, fieldName, `, &temp`, fieldName, `)`)
-			genFile.P(`} else {`)
-			genFile.P(`return to, cErr`)
-			genFile.P(`}`)
-			genFile.P(`} else {`)
-			genFile.P(`to.`, fieldName, ` = append(to.`, fieldName, `, nil)`)
-			genFile.P(`}`)
-			genFile.P(`}`) // end repeated for
+			g.P(`to.`, fieldName, ` = append(to.`, fieldName, `, &temp`, fieldName, `)`)
+			g.P(`} else {`)
+			g.P(`return to, cErr`)
+			g.P(`}`)
+			g.P(`} else {`)
+			g.P(`to.`, fieldName, ` = append(to.`, fieldName, `, nil)`)
+			g.P(`}`)
+			g.P(`}`) // end repeated for
 		} else {
-			genFile.P(`// Repeated type `, fieldType, ` is not an ORMable message type`)
+			g.P(`// Repeated type `, fieldType, ` is not an ORMable message type`)
 		}
 	} else if field.Enum != nil { // Singular Enum, which is an int32 ---
 		if toORM {
 			if b.stringEnums {
-				genFile.P(`to.`, fieldName, ` = `, fieldType, `_name[int32(m.`, fieldName, `)]`)
+				g.P(`to.`, fieldName, ` = `, fieldType, `_name[int32(m.`, fieldName, `)]`)
 			} else {
-				genFile.P(`to.`, fieldName, ` = int32(m.`, fieldName, `)`)
+				g.P(`to.`, fieldName, ` = int32(m.`, fieldName, `)`)
 			}
 		} else {
 			if b.stringEnums {
-				genFile.P(`to.`, fieldName, ` = `, fieldType, `(`, fieldType, `_value[m.`, fieldName, `])`)
+				g.P(`to.`, fieldName, ` = `, fieldType, `(`, fieldType, `_value[m.`, fieldName, `])`)
 			} else {
-				genFile.P(`to.`, fieldName, ` = `, fieldType, `(m.`, fieldName, `)`)
+				g.P(`to.`, fieldName, ` = `, fieldType, `(m.`, fieldName, `)`)
 			}
 		}
 	} else if field.Message != nil { // Singular Object -------------
@@ -1019,69 +1019,69 @@ func (b *ORMBuilder) generateFieldConversion(message *protogen.Message, field *p
 		// Type is a WKT, convert to/from as ptr to base type
 		if _, exists := wellKnownTypes[coreType]; exists { // Singular WKT -----
 			if toORM {
-				genFile.P(`if m.`, fieldName, ` != nil {`)
-				genFile.P(`v := m.`, fieldName, `.Value`)
-				genFile.P(`to.`, fieldName, ` = &v`)
-				genFile.P(`}`)
+				g.P(`if m.`, fieldName, ` != nil {`)
+				g.P(`v := m.`, fieldName, `.Value`)
+				g.P(`to.`, fieldName, ` = &v`)
+				g.P(`}`)
 			} else {
-				genFile.P(`if m.`, fieldName, ` != nil {`)
-				genFile.P(`to.`, fieldName, ` = &`, b.GetFileImports().wktPkgName, ".", coreType,
+				g.P(`if m.`, fieldName, ` != nil {`)
+				g.P(`to.`, fieldName, ` = &`, b.GetFileImports().wktPkgName, ".", coreType,
 					`{Value: *m.`, fieldName, `}`)
-				genFile.P(`}`)
+				g.P(`}`)
 			}
 		} else if coreType == protoTypeUUIDValue { // Singular UUIDValue type ----
 			if toORM {
-				genFile.P(`if m.`, fieldName, ` != nil {`)
-				genFile.P(`tempUUID, uErr := `, b.Import(uuidImport), `.FromString(m.`, fieldName, `.Value)`)
-				genFile.P(`if uErr != nil {`)
-				genFile.P(`return to, uErr`)
-				genFile.P(`}`)
-				genFile.P(`to.`, fieldName, ` = &tempUUID`)
-				genFile.P(`}`)
+				g.P(`if m.`, fieldName, ` != nil {`)
+				g.P(`tempUUID, uErr := `, b.Import(uuidImport), `.FromString(m.`, fieldName, `.Value)`)
+				g.P(`if uErr != nil {`)
+				g.P(`return to, uErr`)
+				g.P(`}`)
+				g.P(`to.`, fieldName, ` = &tempUUID`)
+				g.P(`}`)
 			} else {
-				genFile.P(`if m.`, fieldName, ` != nil {`)
-				genFile.P(`to.`, fieldName, ` = &`, b.Import(gtypesImport), `.UUIDValue{Value: m.`, fieldName, `.String()}`)
-				genFile.P(`}`)
+				g.P(`if m.`, fieldName, ` != nil {`)
+				g.P(`to.`, fieldName, ` = &`, b.Import(gtypesImport), `.UUIDValue{Value: m.`, fieldName, `.String()}`)
+				g.P(`}`)
 			}
 		} else if coreType == protoTypeUUID { // Singular UUID type --------------
 			if toORM {
-				genFile.P(`if m.`, fieldName, ` != nil {`)
-				genFile.P(`to.`, fieldName, `, err = `, b.Import(uuidImport), `.FromString(m.`, fieldName, `.Value)`)
-				genFile.P(`if err != nil {`)
-				genFile.P(`return to, err`)
-				genFile.P(`}`)
-				genFile.P(`} else {`)
-				genFile.P(`to.`, fieldName, ` = `, b.Import(uuidImport), `.Nil`)
-				genFile.P(`}`)
+				g.P(`if m.`, fieldName, ` != nil {`)
+				g.P(`to.`, fieldName, `, err = `, b.Import(uuidImport), `.FromString(m.`, fieldName, `.Value)`)
+				g.P(`if err != nil {`)
+				g.P(`return to, err`)
+				g.P(`}`)
+				g.P(`} else {`)
+				g.P(`to.`, fieldName, ` = `, b.Import(uuidImport), `.Nil`)
+				g.P(`}`)
 			} else {
-				genFile.P(`to.`, fieldName, ` = &`, b.Import(gtypesImport), `.UUID{Value: m.`, fieldName, `.String()}`)
+				g.P(`to.`, fieldName, ` = &`, b.Import(gtypesImport), `.UUID{Value: m.`, fieldName, `.String()}`)
 			}
 		} else if coreType == protoTypeTimestamp { // Singular WKT Timestamp ---
 			if toORM {
-				genFile.P(`if m.`, fieldName, ` != nil {`)
-				genFile.P(`var t time.Time`)
-				genFile.P(`if t, err = `, b.Import(ptypesImport), `.Timestamp(m.`, fieldName, `); err != nil {`)
-				genFile.P(`return to, err`)
-				genFile.P(`}`)
-				genFile.P(`to.`, fieldName, ` = &t`)
-				genFile.P(`}`)
+				g.P(`if m.`, fieldName, ` != nil {`)
+				g.P(`var t time.Time`)
+				g.P(`if t, err = `, b.Import(ptypesImport), `.Timestamp(m.`, fieldName, `); err != nil {`)
+				g.P(`return to, err`)
+				g.P(`}`)
+				g.P(`to.`, fieldName, ` = &t`)
+				g.P(`}`)
 			} else {
-				genFile.P(`if m.`, fieldName, ` != nil {`)
-				genFile.P(`if to.`, fieldName, `, err = `, b.Import(ptypesImport), `.TimestampProto(*m.`, fieldName, `); err != nil {`)
-				genFile.P(`return to, err`)
-				genFile.P(`}`)
-				genFile.P(`}`)
+				g.P(`if m.`, fieldName, ` != nil {`)
+				g.P(`if to.`, fieldName, `, err = `, b.Import(ptypesImport), `.TimestampProto(*m.`, fieldName, `); err != nil {`)
+				g.P(`return to, err`)
+				g.P(`}`)
+				g.P(`}`)
 			}
 		} else if coreType == protoTypeJSON {
 			if b.dbEngine == ENGINE_POSTGRES {
 				if toORM {
-					genFile.P(`if m.`, fieldName, ` != nil {`)
-					genFile.P(`to.`, fieldName, ` = &`, b.Import(gormpqImport), `.Jsonb{[]byte(m.`, fieldName, `.Value)}`)
-					genFile.P(`}`)
+					g.P(`if m.`, fieldName, ` != nil {`)
+					g.P(`to.`, fieldName, ` = &`, b.Import(gormpqImport), `.Jsonb{[]byte(m.`, fieldName, `.Value)}`)
+					g.P(`}`)
 				} else {
-					genFile.P(`if m.`, fieldName, ` != nil {`)
-					genFile.P(`to.`, fieldName, ` = &`, b.Import(gtypesImport), `.JSONValue{Value: string(m.`, fieldName, `.RawMessage)}`)
-					genFile.P(`}`)
+					g.P(`if m.`, fieldName, ` != nil {`)
+					g.P(`to.`, fieldName, ` = &`, b.Import(gtypesImport), `.JSONValue{Value: string(m.`, fieldName, `.RawMessage)}`)
+					g.P(`}`)
 				}
 			} // Potential TODO other DB engine handling if desired
 		} else if coreType == protoTypeResource {
@@ -1095,104 +1095,104 @@ func (b *ORMBuilder) generateFieldConversion(message *protogen.Message, field *p
 
 			if toORM {
 				if nillable {
-					genFile.P(`if m.`, fieldName, ` != nil {`)
+					g.P(`if m.`, fieldName, ` != nil {`)
 				}
 				switch btype {
 				case "int64":
-					genFile.P(`if v, err :=`, b.Import(resourceImport), `.DecodeInt64(`, resource, `, m.`, fieldName, `); err != nil {`)
-					genFile.P(`	return to, err`)
-					genFile.P(`} else {`)
+					g.P(`if v, err :=`, b.Import(resourceImport), `.DecodeInt64(`, resource, `, m.`, fieldName, `); err != nil {`)
+					g.P(`	return to, err`)
+					g.P(`} else {`)
 					if nillable {
-						genFile.P(`to.`, fieldName, ` = &v`)
+						g.P(`to.`, fieldName, ` = &v`)
 					} else {
-						genFile.P(`to.`, fieldName, ` = v`)
+						g.P(`to.`, fieldName, ` = v`)
 					}
-					genFile.P(`}`)
+					g.P(`}`)
 				case "[]byte":
-					genFile.P(`if v, err :=`, b.Import(resourceImport), `.DecodeBytes(`, resource, `, m.`, fieldName, `); err != nil {`)
-					genFile.P(`	return to, err`)
-					genFile.P(`} else {`)
-					genFile.P(`	to.`, fieldName, ` = v`)
-					genFile.P(`}`)
+					g.P(`if v, err :=`, b.Import(resourceImport), `.DecodeBytes(`, resource, `, m.`, fieldName, `); err != nil {`)
+					g.P(`	return to, err`)
+					g.P(`} else {`)
+					g.P(`	to.`, fieldName, ` = v`)
+					g.P(`}`)
 				default:
-					genFile.P(`if v, err :=`, b.Import(resourceImport), `.Decode(`, resource, `, m.`, fieldName, `); err != nil {`)
-					genFile.P(`return to, err`)
-					genFile.P(`} else if v != nil {`)
+					g.P(`if v, err :=`, b.Import(resourceImport), `.Decode(`, resource, `, m.`, fieldName, `); err != nil {`)
+					g.P(`return to, err`)
+					g.P(`} else if v != nil {`)
 					if nillable {
-						genFile.P(`vv := v.(`, btype, `)`)
-						genFile.P(`to.`, fieldName, ` = &vv`)
+						g.P(`vv := v.(`, btype, `)`)
+						g.P(`to.`, fieldName, ` = &vv`)
 					} else if iface {
-						genFile.P(`to.`, fieldName, `= v`)
+						g.P(`to.`, fieldName, `= v`)
 					} else {
-						genFile.P(`to.`, fieldName, ` = v.(`, btype, `)`)
+						g.P(`to.`, fieldName, ` = v.(`, btype, `)`)
 					}
-					genFile.P(`}`)
+					g.P(`}`)
 				}
 				if nillable {
-					genFile.P(`}`)
+					g.P(`}`)
 				}
 			}
 
 			if !toORM {
 				if nillable {
-					genFile.P(`if m.`, fieldName, `!= nil {`)
-					genFile.P(`	if v, err := `, b.Import(resourceImport), `.Encode(`, resource, `, *m.`, fieldName, `); err != nil {`)
-					genFile.P(`		return to, err`)
-					genFile.P(`	} else {`)
-					genFile.P(`		to.`, fieldName, ` = v`)
-					genFile.P(`	}`)
-					genFile.P(`}`)
+					g.P(`if m.`, fieldName, `!= nil {`)
+					g.P(`	if v, err := `, b.Import(resourceImport), `.Encode(`, resource, `, *m.`, fieldName, `); err != nil {`)
+					g.P(`		return to, err`)
+					g.P(`	} else {`)
+					g.P(`		to.`, fieldName, ` = v`)
+					g.P(`	}`)
+					g.P(`}`)
 
 				} else {
-					genFile.P(`if v, err := `, b.Import(resourceImport), `.Encode(`, resource, `, m.`, fieldName, `); err != nil {`)
-					genFile.P(`return to, err`)
-					genFile.P(`} else {`)
-					genFile.P(`to.`, fieldName, ` = v`)
-					genFile.P(`}`)
+					g.P(`if v, err := `, b.Import(resourceImport), `.Encode(`, resource, `, m.`, fieldName, `); err != nil {`)
+					g.P(`return to, err`)
+					g.P(`} else {`)
+					g.P(`to.`, fieldName, ` = v`)
+					g.P(`}`)
 				}
 			}
 		} else if coreType == protoTypeInet { // Inet type for Postgres only, currently
 			if toORM {
-				genFile.P(`if m.`, fieldName, ` != nil {`)
-				genFile.P(`if to.`, fieldName, `, err = `, b.Import(gtypesImport), `.ParseInet(m.`, fieldName, `.Value); err != nil {`)
-				genFile.P(`return to, err`)
-				genFile.P(`}`)
-				genFile.P(`}`)
+				g.P(`if m.`, fieldName, ` != nil {`)
+				g.P(`if to.`, fieldName, `, err = `, b.Import(gtypesImport), `.ParseInet(m.`, fieldName, `.Value); err != nil {`)
+				g.P(`return to, err`)
+				g.P(`}`)
+				g.P(`}`)
 			} else {
-				genFile.P(`if m.`, fieldName, ` != nil && m.`, fieldName, `.IPNet != nil {`)
-				genFile.P(`to.`, fieldName, ` = &`, b.Import(gtypesImport), `.InetValue{Value: m.`, fieldName, `.String()}`)
-				genFile.P(`}`)
+				g.P(`if m.`, fieldName, ` != nil && m.`, fieldName, `.IPNet != nil {`)
+				g.P(`to.`, fieldName, ` = &`, b.Import(gtypesImport), `.InetValue{Value: m.`, fieldName, `.String()}`)
+				g.P(`}`)
 			}
 		} else if coreType == protoTimeOnly { // Time only to support time via string
 			if toORM {
-				genFile.P(`if m.`, fieldName, ` != nil {`)
-				genFile.P(`if to.`, fieldName, `, err = `, b.Import(gtypesImport), `.ParseTime(m.`, fieldName, `.Value); err != nil {`)
-				genFile.P(`return to, err`)
-				genFile.P(`}`)
-				genFile.P(`}`)
+				g.P(`if m.`, fieldName, ` != nil {`)
+				g.P(`if to.`, fieldName, `, err = `, b.Import(gtypesImport), `.ParseTime(m.`, fieldName, `.Value); err != nil {`)
+				g.P(`return to, err`)
+				g.P(`}`)
+				g.P(`}`)
 			} else {
-				genFile.P(`if m.`, fieldName, ` != "" {`)
-				genFile.P(`if to.`, fieldName, `, err = `, b.Import(gtypesImport), `.TimeOnlyByString( m.`, fieldName, `); err != nil {`)
-				genFile.P(`return to, err`)
-				genFile.P(`}`)
-				genFile.P(`}`)
+				g.P(`if m.`, fieldName, ` != "" {`)
+				g.P(`if to.`, fieldName, `, err = `, b.Import(gtypesImport), `.TimeOnlyByString( m.`, fieldName, `); err != nil {`)
+				g.P(`return to, err`)
+				g.P(`}`)
+				g.P(`}`)
 			}
 		} else if b.isOrmable(fieldType) {
 			// Not a WKT, but a type we're building converters for
-			genFile.P(`if m.`, fieldName, ` != nil {`)
+			g.P(`if m.`, fieldName, ` != nil {`)
 			if toORM {
-				genFile.P(`temp`, fieldName, `, err := m.`, fieldName, `.ToORM (ctx)`)
+				g.P(`temp`, fieldName, `, err := m.`, fieldName, `.ToORM (ctx)`)
 			} else {
-				genFile.P(`temp`, fieldName, `, err := m.`, fieldName, `.ToPB (ctx)`)
+				g.P(`temp`, fieldName, `, err := m.`, fieldName, `.ToPB (ctx)`)
 			}
-			genFile.P(`if err != nil {`)
-			genFile.P(`return to, err`)
-			genFile.P(`}`)
-			genFile.P(`to.`, fieldName, ` = &temp`, fieldName)
-			genFile.P(`}`)
+			g.P(`if err != nil {`)
+			g.P(`return to, err`)
+			g.P(`}`)
+			g.P(`to.`, fieldName, ` = &temp`, fieldName)
+			g.P(`}`)
 		}
 	} else { // Singular raw ----------------------------------------------------
-		genFile.P(`to.`, fieldName, ` = m.`, fieldName)
+		g.P(`to.`, fieldName, ` = m.`, fieldName)
 	}
 	return nil
 }
