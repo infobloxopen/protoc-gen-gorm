@@ -5,12 +5,12 @@ import "options/gorm.proto";
 
 option go_package = "github.com/infobloxopen/protoc-gen-gorm/example/feature_demo;example";
 
-message ExternalChild {
-  option (gorm.opts) = {
-    ormable: true,
-  };
-  string id = 1;
-}
+// message ExternalChild {
+//   option (gorm.opts) = {
+//     ormable: true,
+//   };
+//   string id = 1;
+// }
 
 message BlogPost {
   option (gorm.opts) = {
@@ -19,10 +19,10 @@ message BlogPost {
   uint64 id = 1;
   string title = 2;
   string author = 3;
-  string magic = 4 [(gorm.field).drop = true];
-  enum Corpus {
-    UNIVERSAL = 0;
-    WEB = 1;
-  }
-  Corpus corpus = 5;
+  // string magic = 4 [(gorm.field).drop = true];
+  // enum Corpus {
+  //   UNIVERSAL = 0;
+  //   WEB = 1;
+  // }
+  // Corpus corpus = 5;
 }
