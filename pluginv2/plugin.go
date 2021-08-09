@@ -455,8 +455,18 @@ func (b *ORMBuilder) isOrmable(fieldType string) bool {
 }
 
 func (b *ORMBuilder) findPrimaryKey(ormable *OrmableType) (string, *Field) {
-	// TODO: implement me
-	return "", &Field{}
+	for fieldName, field := range ormable.Fields {
+		if field.GetTag().GetPrimaryKey() {
+			return fieldName, field
+		}
+	}
+	for fieldName, field := range ormable.Fields {
+		if strings.ToLower(fieldName) == "id" {
+			return fieldName, field
+		}
+	}
+
+	panic("no primary_key")
 }
 
 func (b *ORMBuilder) getOrmable(typeName string) *OrmableType {
@@ -1336,9 +1346,70 @@ func (b *ORMBuilder) generateReadHandler(message *protogen.Message, g *protogen.
 	g.P(`return nil, err`)
 	g.P(`}`)
 
+	k, f := b.findPrimaryKey(ormable)
+	if strings.Contains(f.Type, "*") {
+		g.P(`if ormObj.`, k, ` == nil || *ormObj.`, k, ` == `, b.guessZeroValue(f.Type), ` {`)
+	} else {
+		g.P(`if ormObj.`, k, ` == `, b.guessZeroValue(f.Type), ` {`)
+	}
+	g.P(`return nil, `, "errors", `.EmptyIdError`)
+	g.P(`}`)
+
+	var fs string
+	if b.readHasFieldSelection(ormable) {
+		fs = "fs"
+	} else {
+		fs = "nil"
+	}
+
+	qn := g.QualifiedGoIdent(protogen.GoIdent{
+		GoName:       "ApplyFieldSelection",
+		GoImportPath: protogen.GoImportPath(tkgormImport),
+	})
+
+	b.generateBeforeReadHookCall(ormable, "ApplyQuery", g)
+	g.P(`if db, err = `, qn, `(ctx, db, `, fs, `, &`, ormable.Name, `{}); err != nil {`)
+	g.P(`return nil, err`)
+	g.P(`}`)
+
 	g.P("}")
 }
 
 func (b *ORMBuilder) readHasFieldSelection(ormable *OrmableType) bool {
 	return false
+}
+
+// guessZeroValue of the input type, so that we can check if a (key) value is set or not
+func (b *ORMBuilder) guessZeroValue(typeName string) string {
+	typeName = strings.ToLower(typeName)
+	if strings.Contains(typeName, "string") {
+		return `""`
+	}
+	if strings.Contains(typeName, "int") {
+		return `0`
+	}
+	// TODO: import uuid
+	// if strings.Contains(typeName, "uuid") {
+	// 	return fmt.Sprintf(`%s.Nil`, p.Import(uuidImport))
+	// }
+	if strings.Contains(typeName, "[]byte") {
+		return `nil`
+	}
+	if strings.Contains(typeName, "bool") {
+		return `false`
+	}
+	return ``
+}
+
+func (p *ORMBuilder) generateBeforeReadHookCall(orm *OrmableType, suffix string, g *protogen.GeneratedFile) {
+	g.P(`if hook, ok := interface{}(&ormObj).(`, orm.Name, `WithBeforeRead`, suffix, `); ok {`)
+	hookCall := fmt.Sprint(`if db, err = hook.BeforeRead`, suffix, `(ctx, db`)
+	if p.readHasFieldSelection(orm) {
+		hookCall += `, fs`
+	}
+	hookCall += `); err != nil{`
+	g.P(hookCall)
+	g.P(`return nil, err`)
+	g.P(`}`)
+	g.P(`}`)
 }
