@@ -436,7 +436,16 @@ func (b *ORMBuilder) parseAssociations(msg *protogen.Message) {
 }
 
 func (b *ORMBuilder) hasPrimaryKey(ormable *OrmableType) bool {
-	// TODO: implement me
+	for _, field := range ormable.Fields {
+		if field.GetTag().GetPrimaryKey() {
+			return true
+		}
+	}
+	for fieldName := range ormable.Fields {
+		if strings.ToLower(fieldName) == "id" {
+			return true
+		}
+	}
 	return false
 }
 
@@ -1211,6 +1220,13 @@ func (b *ORMBuilder) generateDefaultHandlers(file *protogen.File, g *protogen.Ge
 	for _, message := range file.Messages {
 		if isOrmable(message) {
 			b.generateCreateHandler(message, g)
+			typeName := string(message.Desc.Name())
+			ormable := b.getOrmable(typeName)
+
+			if b.hasPrimaryKey(ormable) {
+				b.generateReadHandler(message, g)
+
+			}
 		}
 
 		// TODO: check for primary key
@@ -1298,4 +1314,31 @@ func (b *ORMBuilder) generateHookInterfaces(g *protogen.GeneratedFile, message *
 		g.P(`}`)
 		g.P()
 	}
+}
+
+func (b *ORMBuilder) generateReadHandler(message *protogen.Message, g *protogen.GeneratedFile) {
+	typeName := string(message.Desc.Name())
+	ormable := b.getOrmable(typeName)
+
+	if b.readHasFieldSelection(ormable) { // TODO: not implemented return false
+		// p.P(`func DefaultRead`, typeName, `(ctx context.Context, in *`,
+		// 	typeName, `, db *`, p.Import(gormImport), `.DB, fs *`, p.Import(queryImport), `.FieldSelection) (*`, typeName, `, error) {`)
+	} else {
+		g.P(`func DefaultRead`, typeName, `(ctx context.Context, in *`,
+			typeName, `, db *`, "gorm", `.DB) (*`, typeName, `, error) {`)
+	}
+	g.P(`if in == nil {`)
+	g.P(`return nil, `, "errors", `.NilArgumentError`)
+	g.P(`}`)
+
+	g.P(`ormObj, err := in.ToORM(ctx)`)
+	g.P(`if err != nil {`)
+	g.P(`return nil, err`)
+	g.P(`}`)
+
+	g.P("}")
+}
+
+func (b *ORMBuilder) readHasFieldSelection(ormable *OrmableType) bool {
+	return false
 }
