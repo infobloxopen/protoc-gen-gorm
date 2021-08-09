@@ -164,11 +164,11 @@ type OrmableType struct {
 
 func NewOrmableType(orignalName string, pkg string, file *protogen.File) *OrmableType {
 	return &OrmableType{
-		Name:    orignalName,
-		Package: pkg,
-		File:    file,
-		Fields:  make(map[string]*Field),
-		Methods: make(map[string]*autogenMethod),
+		OriginName: orignalName,
+		Package:    pkg,
+		File:       file,
+		Fields:     make(map[string]*Field),
+		Methods:    make(map[string]*autogenMethod),
 	}
 }
 
@@ -1235,6 +1235,7 @@ func (b *ORMBuilder) generateDefaultHandlers(file *protogen.File, g *protogen.Ge
 			if b.hasPrimaryKey(ormable) {
 				b.generateReadHandler(message, g)
 				b.generateDeleteHandler(message, g)
+				b.generateDeleteSetHandler(message, g)
 
 			}
 		}
@@ -1527,9 +1528,74 @@ func (b *ORMBuilder) generateBeforeHookDef(orm *OrmableType, method string, g *p
 	g.P(`}`)
 }
 
-func (p *ORMBuilder) generateAfterHookDef(orm *OrmableType, method string, g *protogen.GeneratedFile) {
+func (b *ORMBuilder) generateAfterHookDef(orm *OrmableType, method string, g *protogen.GeneratedFile) {
 	g.P(`type `, orm.Name, `WithAfter`, method, ` interface {`)
 	g.P(`After`, method, `(context.Context, *`, generateImport("DB", gormImport, g), `) error`)
+	g.P(`}`)
+}
+
+func (b *ORMBuilder) generateDeleteSetHandler(message *protogen.Message, g *protogen.GeneratedFile) {
+	typeName := string(message.Desc.Name())
+	gormDB := generateImport("DB", gormImport, g)
+
+	g.P(`func DefaultDelete`, typeName, `Set(ctx context.Context, in []*`,
+		typeName, `, db *`, gormDB, `) error {`)
+	g.P(`if in == nil {`)
+	g.P(`return `, generateImport("NilArgumentError", gerrorsImport, g))
+	g.P(`}`)
+	g.P(`var err error`)
+	ormable := b.getOrmable(typeName)
+	pkName, pk := b.findPrimaryKey(ormable)
+	g.P(`keys := []`, pk.Type, `{}`)
+	g.P(`for _, obj := range in {`)
+	g.P(`ormObj, err := obj.ToORM(ctx)`)
+	g.P(`if err != nil {`)
+	g.P(`return err`)
+	g.P(`}`)
+	if strings.Contains(pk.Type, "*") {
+		g.P(`if ormObj.`, pkName, ` == nil || *ormObj.`, pkName, ` == `, b.guessZeroValue(pk.Type), ` {`)
+	} else {
+		g.P(`if ormObj.`, pkName, ` == `, b.guessZeroValue(pk.Type), `{`)
+	}
+	g.P(`return `, generateImport("EmptyIdError", gerrorsImport, g))
+	g.P(`}`)
+	g.P(`keys = append(keys, ormObj.`, pkName, `)`)
+	g.P(`}`)
+	b.generateBeforeDeleteSetHookCall(ormable, g)
+	if getMessageOptions(message).GetMultiAccount() {
+		g.P(`acctId, err := `, generateImport("GetAccountID", authImport, g), `(ctx, nil)`)
+		g.P(`if err != nil {`)
+		g.P(`return err`)
+		g.P(`}`)
+		g.P(`err = db.Where("account_id = ? AND `, jgorm.ToDBName(pkName), ` in (?)", acctId, keys).Delete(&`, ormable.Name, `{}).Error`)
+	} else {
+		g.P(`err = db.Where("`, jgorm.ToDBName(pkName), ` in (?)", keys).Delete(&`, ormable.Name, `{}).Error`)
+	}
+	g.P(`if err != nil {`)
+	g.P(`return err`)
+	g.P(`}`)
+	b.generateAfterDeleteSetHookCall(ormable, g)
+	g.P(`return err`)
+	g.P(`}`)
+	g.P(`type `, ormable.Name, `WithBeforeDeleteSet interface {`)
+	g.P(`BeforeDeleteSet(context.Context, []*`, ormable.OriginName, `, *`, gormDB, `) (*`, gormDB, `, error)`)
+	g.P(`}`)
+	g.P(`type `, ormable.Name, `WithAfterDeleteSet interface {`)
+	g.P(`AfterDeleteSet(context.Context, []*`, ormable.OriginName, `, *`, gormDB, `) error`)
+	g.P(`}`)
+}
+
+func (b *ORMBuilder) generateBeforeDeleteSetHookCall(orm *OrmableType, g *protogen.GeneratedFile) {
+	g.P(`if hook, ok := (interface{}(&`, orm.Name, `{})).(`, orm.Name, `WithBeforeDeleteSet); ok {`)
+	g.P(`if db, err = hook.BeforeDeleteSet(ctx, in, db); err != nil {`)
+	g.P(`return err`)
+	g.P(`}`)
+	g.P(`}`)
+}
+
+func (b *ORMBuilder) generateAfterDeleteSetHookCall(orm *OrmableType, g *protogen.GeneratedFile) {
+	g.P(`if hook, ok := (interface{}(&`, orm.Name, `{})).(`, orm.Name, `WithAfterDeleteSet); ok {`)
+	g.P(`err = hook.AfterDeleteSet(ctx, in, db)`)
 	g.P(`}`)
 }
 
