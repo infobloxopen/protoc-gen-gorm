@@ -1330,7 +1330,8 @@ func (b *ORMBuilder) generateReadHandler(message *protogen.Message, g *protogen.
 	typeName := string(message.Desc.Name())
 	ormable := b.getOrmable(typeName)
 
-	if b.readHasFieldSelection(ormable) { // TODO: not implemented return false
+	if b.readHasFieldSelection(ormable) {
+		// TODO: not implemented return false
 		// p.P(`func DefaultRead`, typeName, `(ctx context.Context, in *`,
 		// 	typeName, `, db *`, p.Import(gormImport), `.DB, fs *`, p.Import(queryImport), `.FieldSelection) (*`, typeName, `, error) {`)
 	} else {
@@ -1362,17 +1363,31 @@ func (b *ORMBuilder) generateReadHandler(message *protogen.Message, g *protogen.
 		fs = "nil"
 	}
 
-	qn := g.QualifiedGoIdent(protogen.GoIdent{
+	applyFieldSelection := g.QualifiedGoIdent(protogen.GoIdent{
 		GoName:       "ApplyFieldSelection",
 		GoImportPath: protogen.GoImportPath(tkgormImport),
 	})
 
 	b.generateBeforeReadHookCall(ormable, "ApplyQuery", g)
-	g.P(`if db, err = `, qn, `(ctx, db, `, fs, `, &`, ormable.Name, `{}); err != nil {`)
+	g.P(`if db, err = `, applyFieldSelection, `(ctx, db, `, fs, `, &`, ormable.Name, `{}); err != nil {`)
 	g.P(`return nil, err`)
 	g.P(`}`)
 
-	g.P("}")
+	b.generateBeforeReadHookCall(ormable, "Find", g)
+	g.P(`ormResponse := `, ormable.Name, `{}`)
+	g.P(`if err = db.Where(&ormObj).First(&ormResponse).Error; err != nil {`)
+	g.P(`return nil, err`)
+	g.P(`}`)
+
+	b.generateAfterReadHookCall(ormable, g)
+	g.P(`pbResponse, err := ormResponse.ToPB(ctx)`)
+	g.P(`return &pbResponse, err`)
+	g.P(`}`)
+
+	b.generateBeforeReadHookDef(ormable, "ApplyQuery", g)
+	b.generateBeforeReadHookDef(ormable, "Find", g)
+	b.generateAfterReadHookDef(ormable, g)
+
 }
 
 func (b *ORMBuilder) readHasFieldSelection(ormable *OrmableType) bool {
@@ -1401,15 +1416,67 @@ func (b *ORMBuilder) guessZeroValue(typeName string) string {
 	return ``
 }
 
-func (p *ORMBuilder) generateBeforeReadHookCall(orm *OrmableType, suffix string, g *protogen.GeneratedFile) {
+func (b *ORMBuilder) generateBeforeReadHookCall(orm *OrmableType, suffix string, g *protogen.GeneratedFile) {
 	g.P(`if hook, ok := interface{}(&ormObj).(`, orm.Name, `WithBeforeRead`, suffix, `); ok {`)
 	hookCall := fmt.Sprint(`if db, err = hook.BeforeRead`, suffix, `(ctx, db`)
-	if p.readHasFieldSelection(orm) {
+	if b.readHasFieldSelection(orm) {
 		hookCall += `, fs`
 	}
 	hookCall += `); err != nil{`
 	g.P(hookCall)
 	g.P(`return nil, err`)
 	g.P(`}`)
+	g.P(`}`)
+}
+
+func (b *ORMBuilder) generateAfterReadHookCall(orm *OrmableType, g *protogen.GeneratedFile) {
+	g.P(`if hook, ok := interface{}(&ormResponse).(`, orm.Name, `WithAfterReadFind`, `); ok {`)
+	hookCall := `if err = hook.AfterReadFind(ctx, db`
+	if b.readHasFieldSelection(orm) {
+		hookCall += `, fs`
+	}
+	hookCall += `); err != nil {`
+	g.P(hookCall)
+	g.P(`return nil, err`)
+	g.P(`}`)
+	g.P(`}`)
+}
+
+func (b *ORMBuilder) generateBeforeReadHookDef(orm *OrmableType, suffix string, g *protogen.GeneratedFile) {
+	gormDB := g.QualifiedGoIdent(protogen.GoIdent{
+		GoName:       "DB",
+		GoImportPath: protogen.GoImportPath(gormImport),
+	})
+	g.P(`type `, orm.Name, `WithBeforeRead`, suffix, ` interface {`)
+	hookSign := fmt.Sprint(`BeforeRead`, suffix, `(context.Context, *`, gormDB)
+	if b.readHasFieldSelection(orm) {
+		queryFieldSelection := g.QualifiedGoIdent(protogen.GoIdent{
+			GoName:       "FieldSelection",
+			GoImportPath: protogen.GoImportPath(queryImport),
+		})
+		hookSign += fmt.Sprint(`, *`, queryFieldSelection)
+	}
+
+	hookSign += fmt.Sprint(`) (*`, gormDB, `, error)`)
+	g.P(hookSign)
+	g.P(`}`)
+}
+
+func (b *ORMBuilder) generateAfterReadHookDef(orm *OrmableType, g *protogen.GeneratedFile) {
+	g.P(`type `, orm.Name, `WithAfterReadFind interface {`)
+	gormDB := g.QualifiedGoIdent(protogen.GoIdent{
+		GoName:       "DB",
+		GoImportPath: protogen.GoImportPath(gormImport),
+	})
+	hookSign := fmt.Sprint(`AfterReadFind`, `(context.Context, *`, gormDB)
+	if b.readHasFieldSelection(orm) {
+		queryFieldSelection := g.QualifiedGoIdent(protogen.GoIdent{
+			GoName:       "FieldSelection",
+			GoImportPath: protogen.GoImportPath(queryImport),
+		})
+		hookSign += fmt.Sprint(`, *`, queryFieldSelection)
+	}
+	hookSign += `) error`
+	g.P(hookSign)
 	g.P(`}`)
 }
