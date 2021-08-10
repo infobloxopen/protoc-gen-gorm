@@ -1242,6 +1242,7 @@ func (b *ORMBuilder) generateDefaultHandlers(file *protogen.File, g *protogen.Ge
 			}
 
 			b.generateApplyFieldMask(message, g)
+			b.generateListHandler(message, g)
 		}
 
 	}
@@ -2069,9 +2070,209 @@ func isSpecialType(typeName string) bool {
 	return false
 }
 
+func (b *ORMBuilder) generateListHandler(message *protogen.Message, g *protogen.GeneratedFile) {
+	typeName := string(message.Desc.Name())
+	ormable := b.getOrmable(typeName)
+
+	g.P(`// DefaultList`, typeName, ` executes a gorm list call`)
+	listSign := fmt.Sprint(`func DefaultList`, typeName, `(ctx context.Context, db *`, generateImport("DB", gormImport, g))
+	var f, s, pg, fs string
+	if b.listHasFiltering(ormable) {
+		listSign += fmt.Sprint(`, f `, `*`, generateImport("Filtering", queryImport, g))
+		f = "f"
+	} else {
+		f = "nil"
+	}
+	if b.listHasSorting(ormable) {
+		listSign += fmt.Sprint(`, s `, `*`, generateImport("Sorting", queryImport, g))
+		s = "s"
+	} else {
+		s = "nil"
+	}
+	if b.listHasPagination(ormable) {
+		listSign += fmt.Sprint(`, p `, `*`, generateImport("Pagination", queryImport, g))
+		pg = "p"
+	} else {
+		pg = "nil"
+	}
+	if b.listHasFieldSelection(ormable) {
+		listSign += fmt.Sprint(`, fs `, `*`, generateImport("FieldSelection", queryImport, g))
+		fs = "fs"
+	} else {
+		fs = "nil"
+	}
+	listSign += fmt.Sprint(`) ([]*`, typeName, `, error) {`)
+	g.P(listSign)
+	g.P(`in := `, typeName, `{}`)
+	g.P(`ormObj, err := in.ToORM(ctx)`)
+	g.P(`if err != nil {`)
+	g.P(`return nil, err`)
+	g.P(`}`)
+	b.generateBeforeListHookCall(ormable, "ApplyQuery", g)
+	g.P(`db, err = `, generateImport("ApplyCollectionOperators", tkgormImport, g), `(ctx, db, &`, ormable.Name, `{}, &`, typeName, `{}, `, f, `,`, s, `,`, pg, `,`, fs, `)`)
+	g.P(`if err != nil {`)
+	g.P(`return nil, err`)
+	g.P(`}`)
+	b.generateBeforeListHookCall(ormable, "Find", g)
+	g.P(`db = db.Where(&ormObj)`)
+
+	// add default ordering by primary key
+	if b.hasPrimaryKey(ormable) {
+		pkName, pk := b.findPrimaryKey(ormable)
+		column := pk.GetTag().GetColumn()
+		if len(column) == 0 {
+			column = jgorm.ToDBName(pkName)
+		}
+		g.P(`db = db.Order("`, column, `")`)
+	}
+
+	g.P(`ormResponse := []`, ormable.Name, `{}`)
+	g.P(`if err := db.Find(&ormResponse).Error; err != nil {`)
+	g.P(`return nil, err`)
+	g.P(`}`)
+	b.generateAfterListHookCall(ormable, g)
+	g.P(`pbResponse := []*`, typeName, `{}`)
+	g.P(`for _, responseEntry := range ormResponse {`)
+	g.P(`temp, err := responseEntry.ToPB(ctx)`)
+	g.P(`if err != nil {`)
+	g.P(`return nil, err`)
+	g.P(`}`)
+	g.P(`pbResponse = append(pbResponse, &temp)`)
+	g.P(`}`)
+	g.P(`return pbResponse, nil`)
+	g.P(`}`)
+	b.generateBeforeListHookDef(ormable, "ApplyQuery", g)
+	b.generateBeforeListHookDef(ormable, "Find", g)
+	b.generateAfterListHookDef(ormable, g)
+}
+
+func (b *ORMBuilder) generateBeforeListHookCall(orm *OrmableType, suffix string, g *protogen.GeneratedFile) {
+	g.P(`if hook, ok := interface{}(&ormObj).(`, orm.Name, `WithBeforeList`, suffix, `); ok {`)
+	hookCall := fmt.Sprint(`if db, err = hook.BeforeList`, suffix, `(ctx, db`)
+	if b.listHasFiltering(orm) {
+		hookCall += `,f`
+	}
+	if b.listHasSorting(orm) {
+		hookCall += `,s`
+	}
+	if b.listHasPagination(orm) {
+		hookCall += `,p`
+	}
+	if b.listHasFieldSelection(orm) {
+		hookCall += `,fs`
+	}
+	hookCall += `); err != nil {`
+	g.P(hookCall)
+	g.P(`return nil, err`)
+	g.P(`}`)
+	g.P(`}`)
+}
+
+func (b *ORMBuilder) generateAfterListHookCall(orm *OrmableType, g *protogen.GeneratedFile) {
+	g.P(`if hook, ok := interface{}(&ormObj).(`, orm.Name, `WithAfterListFind); ok {`)
+	hookCall := fmt.Sprint(`if err = hook.AfterListFind(ctx, db, &ormResponse`)
+	if b.listHasFiltering(orm) {
+		hookCall += `,f`
+	}
+	if b.listHasSorting(orm) {
+		hookCall += `,s`
+	}
+	if b.listHasPagination(orm) {
+		hookCall += `,p`
+	}
+	if b.listHasFieldSelection(orm) {
+		hookCall += `,fs`
+	}
+	hookCall += `); err != nil {`
+	g.P(hookCall)
+	g.P(`return nil, err`)
+	g.P(`}`)
+	g.P(`}`)
+}
+
+func (p *ORMBuilder) generateBeforeListHookDef(orm *OrmableType, suffix string, g *protogen.GeneratedFile) {
+	g.P(`type `, orm.Name, `WithBeforeList`, suffix, ` interface {`)
+	hookSign := fmt.Sprint(`BeforeList`, suffix, `(context.Context, *`, generateImport("DB", gormImport, g))
+	if p.listHasFiltering(orm) {
+		hookSign += fmt.Sprint(`, *`, generateImport("Filtering", queryImport, g))
+	}
+	if p.listHasSorting(orm) {
+		hookSign += fmt.Sprint(`, *`, generateImport("Sorting", queryImport, g))
+	}
+	if p.listHasPagination(orm) {
+		hookSign += fmt.Sprint(`, *`, generateImport("Pagination", queryImport, g))
+	}
+	if p.listHasFieldSelection(orm) {
+		hookSign += fmt.Sprint(`, *`, generateImport("FieldSelection", queryImport, g))
+	}
+	hookSign += fmt.Sprint(`) (*`, generateImport("DB", gormImport, g), `, error)`)
+	g.P(hookSign)
+	g.P(`}`)
+}
+
+func (b *ORMBuilder) generateAfterListHookDef(orm *OrmableType, g *protogen.GeneratedFile) {
+	g.P(`type `, orm.Name, `WithAfterListFind interface {`)
+	hookSign := fmt.Sprint(`AfterListFind(context.Context, *`, generateImport("DB", gormImport, g), `, *[]`, orm.Name)
+	if b.listHasFiltering(orm) {
+		hookSign += fmt.Sprint(`, *`, generateImport("Filtering", queryImport, g))
+	}
+	if b.listHasSorting(orm) {
+		hookSign += fmt.Sprint(`, *`, generateImport("Sorting", queryImport, g))
+	}
+	if b.listHasPagination(orm) {
+		hookSign += fmt.Sprint(`, *`, generateImport("Pagination", queryImport, g))
+	}
+	if b.listHasFieldSelection(orm) {
+		hookSign += fmt.Sprint(`, *`, generateImport("FieldSelection", queryImport, g))
+	}
+	hookSign += fmt.Sprint(`) error`)
+	g.P(hookSign)
+	g.P(`}`)
+}
+
 func generateImport(name string, importPath string, g *protogen.GeneratedFile) string {
 	return g.QualifiedGoIdent(protogen.GoIdent{
 		GoName:       name,
 		GoImportPath: protogen.GoImportPath(importPath),
 	})
+}
+
+func (b *ORMBuilder) listHasFiltering(ormable *OrmableType) bool {
+	// TODO: parse filtering
+	//if read, ok := ormable.Methods[listService]; ok {
+	//	if s := p.getFiltering(read.inType); s != "" {
+	//		return true
+	//	}
+	//}
+	return false
+}
+
+func (b *ORMBuilder) listHasSorting(ormable *OrmableType) bool {
+	// TODO: parse sorting
+	//if read, ok := ormable.Methods[listService]; ok {
+	//	if s := p.getSorting(read.inType); s != "" {
+	//		return true
+	//	}
+	//}
+	return false
+}
+
+func (b *ORMBuilder) listHasPagination(ormable *OrmableType) bool {
+	// TODO: parse pagination
+	//if read, ok := ormable.Methods[listService]; ok {
+	//	if s := p.getPagination(read.inType); s != "" {
+	//		return true
+	//	}
+	//}
+	return false
+}
+
+func (b *ORMBuilder) listHasFieldSelection(ormable *OrmableType) bool {
+	// TODO: parse selections
+	//if read, ok := ormable.Methods[listService]; ok {
+	//	if s := p.getFieldSelection(read.inType); s != "" {
+	//		return true
+	//	}
+	//}
+	return false
 }
