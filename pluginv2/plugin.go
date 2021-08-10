@@ -1237,11 +1237,9 @@ func (b *ORMBuilder) generateDefaultHandlers(file *protogen.File, g *protogen.Ge
 				b.generateDeleteHandler(message, g)
 				b.generateDeleteSetHandler(message, g)
 				b.generateStrictUpdateHandler(message, g)
-
+				b.generatePatchHandler(message, g)
 			}
 		}
-
-		// TODO: check for primary key
 
 	}
 }
@@ -1791,6 +1789,106 @@ func (b *ORMBuilder) removeChildAssociationsByName(message *protogen.Message, fi
 		g.P(`}`)
 	}
 }
+
+func (b *ORMBuilder) generatePatchHandler(message *protogen.Message, g *protogen.GeneratedFile) {
+	var isMultiAccount bool
+
+	typeName := string(message.Desc.Name())
+	ormable := b.getOrmable(typeName)
+
+	if getMessageOptions(message).GetMultiAccount() {
+		isMultiAccount = true
+	}
+
+	if isMultiAccount && !b.hasIDField(message) {
+		g.P(fmt.Sprintf("// Cannot autogen DefaultPatch%s: this is a multi-account table without an \"id\" field in the message.\n", typeName))
+		return
+	}
+
+	g.P(`// DefaultPatch`, typeName, ` executes a basic gorm update call with patch behavior`)
+	g.P(`func DefaultPatch`, typeName, `(ctx context.Context, in *`,
+		typeName, `, updateMask *`, generateImport("FieldMask", fmImport, g), `, db *`, generateImport("DB", gormImport, g), `) (*`, typeName, `, error) {`)
+
+	g.P(`if in == nil {`)
+	g.P(`return nil, `, generateImport("NilArgumentError", gerrorsImport, g))
+	g.P(`}`)
+	g.P(`var pbObj `, typeName)
+	g.P(`var err error`)
+	b.generateBeforePatchHookCall(ormable, "Read", g)
+	if b.readHasFieldSelection(ormable) {
+		g.P(`pbReadRes, err := DefaultRead`, typeName, `(ctx, &`, typeName, `{Id: in.GetId()}, db, nil)`)
+	} else {
+		g.P(`pbReadRes, err := DefaultRead`, typeName, `(ctx, &`, typeName, `{Id: in.GetId()}, db)`)
+	}
+
+	g.P(`if err != nil {`)
+	g.P(`return nil, err`)
+	g.P(`}`)
+
+	g.P(`pbObj = *pbReadRes`)
+
+	b.generateBeforePatchHookCall(ormable, "ApplyFieldMask", g)
+	g.P(`if _, err := DefaultApplyFieldMask`, typeName, `(ctx, &pbObj, in, updateMask, "", db); err != nil {`)
+	g.P(`return nil, err`)
+	g.P(`}`)
+
+	b.generateBeforePatchHookCall(ormable, "Save", g)
+	g.P(`pbResponse, err := DefaultStrictUpdate`, typeName, `(ctx, &pbObj, db)`)
+	g.P(`if err != nil {`)
+	g.P(`return nil, err`)
+	g.P(`}`)
+	b.generateAfterPatchHookCall(ormable, "Save", g)
+
+	g.P(`return pbResponse, nil`)
+	g.P(`}`)
+
+	b.generateBeforePatchHookDef(ormable, "Read", g)
+	b.generateBeforePatchHookDef(ormable, "ApplyFieldMask", g)
+	b.generateBeforePatchHookDef(ormable, "Save", g)
+	b.generateAfterPatchHookDef(ormable, "Save", g)
+
+}
+
+func (b *ORMBuilder) hasIDField(message *protogen.Message) bool {
+	for _, field := range message.Fields {
+		if strings.ToLower(field.GoName) == "id" { // TODO: not sure
+			return true
+		}
+	}
+
+	return false
+}
+
+func (b *ORMBuilder) generateBeforePatchHookCall(orm *OrmableType, suffix string, g *protogen.GeneratedFile) {
+	g.P(`if hook, ok := interface{}(&pbObj).(`, orm.OriginName, `WithBeforePatch`, suffix, `); ok {`)
+	g.P(`if db, err = hook.BeforePatch`, suffix, `(ctx, in, updateMask, db); err != nil {`)
+	g.P(`return nil, err`)
+	g.P(`}`)
+	g.P(`}`)
+}
+
+func (b *ORMBuilder) generateAfterPatchHookCall(orm *OrmableType, suffix string, g *protogen.GeneratedFile) {
+	g.P(`if hook, ok := interface{}(pbResponse).(`, orm.OriginName, `WithAfterPatch`, suffix, `); ok {`)
+	g.P(`if err = hook.AfterPatch`, suffix, `(ctx, in, updateMask, db); err != nil {`)
+	g.P(`return nil, err`)
+	g.P(`}`)
+	g.P(`}`)
+}
+
+func (b *ORMBuilder) generateBeforePatchHookDef(orm *OrmableType, suffix string, g *protogen.GeneratedFile) {
+	g.P(`type `, orm.OriginName, `WithBeforePatch`, suffix, ` interface {`)
+	g.P(`BeforePatch`, suffix, `(context.Context, *`, orm.OriginName, `, *`, generateImport("FieldMask", fmImport, g), `, *`, generateImport("DB", gormImport, g),
+		`) (*`, generateImport("DB", gormImport, g), `, error)`)
+	g.P(`}`)
+}
+
+func (b *ORMBuilder) generateAfterPatchHookDef(orm *OrmableType, suffix string, g *protogen.GeneratedFile) {
+	g.P(`type `, orm.OriginName, `WithAfterPatch`, suffix, ` interface {`)
+	g.P(`AfterPatch`, suffix, `(context.Context, *`, orm.OriginName, `, *`, generateImport("FieldMask", fmImport, g), `, *`, generateImport("DB", gormImport, g),
+		`) error`)
+	g.P(`}`)
+}
+
 func generateImport(name string, importPath string, g *protogen.GeneratedFile) string {
 	return g.QualifiedGoIdent(protogen.GoIdent{
 		GoName:       name,
