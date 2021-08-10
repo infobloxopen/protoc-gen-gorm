@@ -1236,6 +1236,7 @@ func (b *ORMBuilder) generateDefaultHandlers(file *protogen.File, g *protogen.Ge
 				b.generateReadHandler(message, g)
 				b.generateDeleteHandler(message, g)
 				b.generateDeleteSetHandler(message, g)
+				b.generateStrictUpdateHandler(message, g)
 
 			}
 		}
@@ -1599,6 +1600,197 @@ func (b *ORMBuilder) generateAfterDeleteSetHookCall(orm *OrmableType, g *protoge
 	g.P(`}`)
 }
 
+func (b *ORMBuilder) generateStrictUpdateHandler(message *protogen.Message, g *protogen.GeneratedFile) {
+	_ = generateImport("", "fmt", g)
+	typeName := string(message.Desc.Name())
+
+	g.P(`// DefaultStrictUpdate`, typeName, ` clears / replaces / appends first level 1:many children and then executes a gorm update call`)
+	g.P(`func DefaultStrictUpdate`, typeName, `(ctx context.Context, in *`,
+		typeName, `, db *`, generateImport("DB", gormImport, g), `) (*`, typeName, `, error) {`)
+	g.P(`if in == nil {`)
+	g.P(`return nil, fmt.Errorf("Nil argument to DefaultStrictUpdate`, typeName, `")`)
+	g.P(`}`)
+	g.P(`ormObj, err := in.ToORM(ctx)`)
+	g.P(`if err != nil {`)
+	g.P(`return nil, err`)
+	g.P(`}`)
+
+	if getMessageOptions(message).GetMultiAccount() {
+		b.generateAccountIdWhereClause(g)
+	}
+
+	ormable := b.getOrmable(typeName)
+	if b.gateway {
+		g.P(`var count int64`)
+	}
+
+	if b.hasPrimaryKey(ormable) {
+		pkName, pk := b.findPrimaryKey(ormable)
+		column := pk.GetTag().GetColumn()
+		if len(column) == 0 {
+			column = jgorm.ToDBName(pkName)
+		}
+		g.P(`lockedRow := &`, typeName, `ORM{}`)
+		var count string
+		var rowsAffected string
+		if b.gateway {
+			count = `count = `
+			rowsAffected = `.RowsAffected`
+		}
+		g.P(count+`db.Model(&ormObj).Set("gorm:query_option", "FOR UPDATE").Where("`, column, `=?", ormObj.`, pkName, `).First(lockedRow)`+rowsAffected)
+	}
+	b.generateBeforeHookCall(ormable, "StrictUpdateCleanup", g)
+	b.handleChildAssociations(message, g)
+	b.generateBeforeHookCall(ormable, "StrictUpdateSave", g)
+	g.P(`if err = db.Save(&ormObj).Error; err != nil {`)
+	g.P(`return nil, err`)
+	g.P(`}`)
+	b.generateAfterHookCall(ormable, "StrictUpdateSave", g)
+	g.P(`pbResponse, err := ormObj.ToPB(ctx)`)
+	g.P(`if err != nil {`)
+	g.P(`return nil, err`)
+	g.P(`}`)
+
+	if b.gateway {
+		g.P(`if count == 0 {`)
+		g.P(`err = `, generateImport("SetCreated", gatewayImport, g), `(ctx, "")`)
+		g.P(`}`)
+	}
+
+	g.P(`return &pbResponse, err`)
+	g.P(`}`)
+
+	b.generateBeforeHookDef(ormable, "StrictUpdateCleanup", g)
+	b.generateBeforeHookDef(ormable, "StrictUpdateSave", g)
+	b.generateAfterHookDef(ormable, "StrictUpdateSave", g)
+}
+
+func (b *ORMBuilder) generateAccountIdWhereClause(g *protogen.GeneratedFile) {
+	g.P(`accountID, err := `, generateImport("GetAccountID", authImport, g), `(ctx, nil)`)
+	g.P(`if err != nil {`)
+	g.P(`return nil, err`)
+	g.P(`}`)
+	g.P(`db = db.Where(map[string]interface{}{"account_id": accountID})`)
+}
+
+func (b *ORMBuilder) handleChildAssociations(message *protogen.Message, g *protogen.GeneratedFile) {
+	ormable := b.getOrmable(string(message.Desc.Name()))
+
+	for fieldName := range ormable.Fields { // TODO: skipped sorting
+		b.handleChildAssociationsByName(message, fieldName, g)
+	}
+}
+
+func (b *ORMBuilder) handleChildAssociationsByName(message *protogen.Message, fieldName string, g *protogen.GeneratedFile) {
+	typeName := string(message.Desc.Name())
+	ormable := b.getOrmable(typeName)
+	field := ormable.Fields[fieldName]
+
+	if field == nil {
+		return
+	}
+
+	if field.GetHasMany() != nil || field.GetHasOne() != nil || field.GetManyToMany() != nil {
+		var assocHandler string
+		switch {
+		case field.GetHasMany() != nil:
+			switch {
+			case field.GetHasMany().GetClear():
+				assocHandler = "Clear"
+			case field.GetHasMany().GetAppend():
+				assocHandler = "Append"
+			case field.GetHasMany().GetReplace():
+				assocHandler = "Replace"
+			default:
+				assocHandler = "Remove"
+			}
+		case field.GetHasOne() != nil:
+			switch {
+			case field.GetHasOne().GetClear():
+				assocHandler = "Clear"
+			case field.GetHasOne().GetAppend():
+				assocHandler = "Append"
+			case field.GetHasOne().GetReplace():
+				assocHandler = "Replace"
+			default:
+				assocHandler = "Remove"
+			}
+		case field.GetManyToMany() != nil:
+			switch {
+			case field.GetManyToMany().GetClear():
+				assocHandler = "Clear"
+			case field.GetManyToMany().GetAppend():
+				assocHandler = "Append"
+			case field.GetManyToMany().GetReplace():
+				assocHandler = "Replace"
+			default:
+				assocHandler = "Replace"
+			}
+		}
+
+		if assocHandler == "Remove" {
+			b.removeChildAssociationsByName(message, fieldName, g)
+			return
+		}
+
+		action := fmt.Sprintf("%s(ormObj.%s)", assocHandler, fieldName)
+		if assocHandler == "Clear" {
+			action = fmt.Sprintf("%s()", assocHandler)
+		}
+
+		g.P(`if err = db.Model(&ormObj).Association("`, fieldName, `").`, action, `.Error; err != nil {`)
+		g.P(`return nil, err`)
+		g.P(`}`)
+		g.P(`ormObj.`, fieldName, ` = nil`)
+	}
+}
+
+func (b *ORMBuilder) removeChildAssociationsByName(message *protogen.Message, fieldName string, g *protogen.GeneratedFile) {
+	typeName := string(message.Desc.Name())
+	ormable := b.getOrmable(typeName)
+	field := ormable.Fields[fieldName]
+
+	if field == nil {
+		return
+	}
+
+	if field.GetHasMany() != nil || field.GetHasOne() != nil {
+		var assocKeyName, foreignKeyName string
+		switch {
+		case field.GetHasMany() != nil:
+			assocKeyName = field.GetHasMany().GetAssociationForeignkey()
+			foreignKeyName = field.GetHasMany().GetForeignkey()
+		case field.GetHasOne() != nil:
+			assocKeyName = field.GetHasOne().GetAssociationForeignkey()
+			foreignKeyName = field.GetHasOne().GetForeignkey()
+		}
+		assocKeyType := ormable.Fields[assocKeyName].Type
+		assocOrmable := b.getOrmable(field.Type)
+		foreignKeyType := assocOrmable.Fields[foreignKeyName].Type
+		g.P(`filter`, fieldName, ` := `, strings.Trim(field.Type, "[]*"), `{}`)
+		zeroValue := b.guessZeroValue(assocKeyType)
+		if strings.Contains(assocKeyType, "*") {
+			g.P(`if ormObj.`, assocKeyName, ` == nil || *ormObj.`, assocKeyName, ` == `, zeroValue, `{`)
+		} else {
+			g.P(`if ormObj.`, assocKeyName, ` == `, zeroValue, `{`)
+		}
+		g.P(`return nil, `, generateImport("EmptyIdError", gerrorsImport, g), `.EmptyIdError`)
+		g.P(`}`)
+		filterDesc := "filter" + fieldName + "." + foreignKeyName
+		ormDesc := "ormObj." + assocKeyName
+		if strings.HasPrefix(foreignKeyType, "*") {
+			g.P(filterDesc, ` = new(`, strings.TrimPrefix(foreignKeyType, "*"), `)`)
+			filterDesc = "*" + filterDesc
+		}
+		if strings.HasPrefix(assocKeyType, "*") {
+			ormDesc = "*" + ormDesc
+		}
+		g.P(filterDesc, " = ", ormDesc)
+		g.P(`if err = db.Where(filter`, fieldName, `).Delete(`, strings.Trim(field.Type, "[]*"), `{}).Error; err != nil {`)
+		g.P(`return nil, err`)
+		g.P(`}`)
+	}
+}
 func generateImport(name string, importPath string, g *protogen.GeneratedFile) string {
 	return g.QualifiedGoIdent(protogen.GoIdent{
 		GoName:       name,
