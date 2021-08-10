@@ -200,7 +200,13 @@ type pkgImport struct {
 }
 
 func (b *ORMBuilder) Generate() (*pluginpb.CodeGeneratorResponse, error) {
+	genFileMap := make(map[string]*protogen.GeneratedFile)
+
 	for _, protoFile := range b.plugin.Files {
+		fileName := protoFile.GeneratedFilenamePrefix + ".gorm.go"
+		g := b.plugin.NewGeneratedFile(fileName, ".")
+		genFileMap[fileName] = g
+
 		// TODO: set current file and newFileImport
 		b.fileImports[*protoFile.Proto.Name] = newFileImports()
 
@@ -224,7 +230,7 @@ func (b *ORMBuilder) Generate() (*pluginpb.CodeGeneratorResponse, error) {
 		// second traverse: parse basic fields
 		for _, message := range protoFile.Messages {
 			if isOrmable(message) {
-				b.parseBasicFields(message)
+				b.parseBasicFields(message, g)
 			}
 		}
 
@@ -266,8 +272,12 @@ func (b *ORMBuilder) Generate() (*pluginpb.CodeGeneratorResponse, error) {
 	for _, protoFile := range b.plugin.Files {
 		// generate actual code
 		fileName := protoFile.GeneratedFilenamePrefix + ".gorm.go"
-		g := b.plugin.NewGeneratedFile(fileName, ".")
+		g, ok := genFileMap[fileName]
+		if !ok {
+			panic("generated file should be present")
+		}
 		g.P("package ", protoFile.GoPackageName)
+
 
 		for _, message := range protoFile.Messages {
 			if isOrmable(message) {
@@ -289,16 +299,10 @@ func (b *ORMBuilder) generateConvertFunctions(g *protogen.GeneratedFile, message
 	// ormable := b.getOrmable(generator.CamelCaseSlice(message.TypeName()))
 	ormable := b.getOrmable(camelCase(typeName))
 
-	// Import context
-	g.QualifiedGoIdent(protogen.GoIdent{
-		GoName:       "context",
-		GoImportPath: "context",
-	})
-
 	///// To Orm
 	g.P(`// ToORM runs the BeforeToORM hook if present, converts the fields of this`)
 	g.P(`// object to ORM format, runs the AfterToORM hook, then returns the ORM object`)
-	g.P(`func (m *`, typeName, `) ToORM (ctx context.Context) (`, typeName, `ORM, error) {`)
+	g.P(`func (m *`, typeName, `) ToORM (ctx `, generateImport("Context", "context", g), `) (`, typeName, `ORM, error) {`)
 	g.P(`to := `, typeName, `ORM{}`)
 	g.P(`var err error`)
 	g.P(`if prehook, ok := interface{}(m).(`, typeName, `WithBeforeToORM); ok {`)
@@ -318,7 +322,7 @@ func (b *ORMBuilder) generateConvertFunctions(g *protogen.GeneratedFile, message
 		b.generateFieldConversion(message, field, true, ofield, g)
 	}
 	if getMessageOptions(message).GetMultiAccount() {
-		g.P("accountID, err := ", b.Import(authImport), ".GetAccountID(ctx, nil)")
+		g.P("accountID, err := ", generateImport("GetAccountID", authImport, g), "(ctx, nil)")
 		g.P("if err != nil {")
 		g.P("return to, err")
 		g.P("}")
@@ -499,9 +503,8 @@ func (p *ORMBuilder) parseBelongsTo(msg *protogen.Message, child *OrmableType, f
 	// TODO: implement me
 }
 
-func (b *ORMBuilder) parseBasicFields(msg *protogen.Message) {
+func (b *ORMBuilder) parseBasicFields(msg *protogen.Message, g *protogen.GeneratedFile) {
 	typeName := string(msg.Desc.Name())
-	fmt.Fprintf(os.Stderr, "parseBasicFields message Name: %s\n", typeName)
 
 	ormable, ok := b.ormableTypes[typeName]
 	if !ok {
@@ -517,8 +520,6 @@ func (b *ORMBuilder) parseBasicFields(msg *protogen.Message) {
 			gormOptions = &gorm.GormFieldOptions{}
 		}
 		if gormOptions.GetDrop() {
-			fmt.Fprintf(os.Stderr, "droping field: %s, %+v -> %t\n",
-				field.Desc.TextName(), gormOptions, gormOptions.GetDrop())
 			continue
 		}
 
@@ -526,24 +527,21 @@ func (b *ORMBuilder) parseBasicFields(msg *protogen.Message) {
 		fieldName := camelCase(string(fd.Name())) // TODO: move to camelCase
 		fieldType := fd.Kind().String()           // TODO: figure out GoType analog
 
-		fmt.Fprintf(os.Stderr, "field name: %s, type: %s, tag: %+v\n",
-			fieldName, fieldType, tag)
-
 		var typePackage string
 
 		if b.dbEngine == ENGINE_POSTGRES && b.IsAbleToMakePQArray(fieldType) {
 			switch fieldType {
 			case "[]bool":
-				fieldType = fmt.Sprintf("%s.BoolArray", b.Import(pqImport))
+				fieldType = generateImport("BoolArray", pqImport, g)
 				gormOptions.Tag = tagWithType(tag, "bool[]")
 			case "[]float64":
-				fieldType = fmt.Sprintf("%s.Float64Array", b.Import(pqImport))
+				fieldType = generateImport("Float64Array", pqImport, g)
 				gormOptions.Tag = tagWithType(tag, "float[]")
 			case "[]int64":
-				fieldType = fmt.Sprintf("%s.Int64Array", b.Import(pqImport))
+				fieldType = generateImport("Int64Array", pqImport, g)
 				gormOptions.Tag = tagWithType(tag, "integer[]")
 			case "[]string":
-				fieldType = fmt.Sprintf("%s.StringArray", b.Import(pqImport))
+				fieldType = generateImport("StringArray", pqImport, g)
 				gormOptions.Tag = tagWithType(tag, "text[]")
 			default:
 				continue
@@ -557,8 +555,6 @@ func (b *ORMBuilder) parseBasicFields(msg *protogen.Message) {
 		} else if field.Message != nil {
 			fmt.Fprintf(os.Stderr, "field: %s is a message\n", field.GoName)
 		}
-
-		fmt.Fprintf(os.Stderr, "detected field type is -> %s\n", fieldType)
 
 		if tName := gormOptions.GetReferenceOf(); tName != "" {
 			if _, ok := b.messages[tName]; !ok {
@@ -590,16 +586,14 @@ func (b *ORMBuilder) parseBasicFields(msg *protogen.Message) {
 	for _, field := range gormMsgOptions.GetInclude() {
 		fieldName := field.GetName() // TODO: camel case
 		if _, ok := ormable.Fields[fieldName]; !ok {
-			b.addIncludedField(ormable, field)
+			b.addIncludedField(ormable, field, g)
 		} else {
 			panic("cound not include")
 		}
 	}
-
-	fmt.Fprintf(os.Stderr, "parseBasicFields end, ormable: %+v\n", ormable)
 }
 
-func (b *ORMBuilder) addIncludedField(ormable *OrmableType, field *gorm.ExtraField) {
+func (b *ORMBuilder) addIncludedField(ormable *OrmableType, field *gorm.ExtraField, g *protogen.GeneratedFile) {
 	fieldName := field.GetName() // TODO: CamelCase
 	isPtr := strings.HasPrefix(field.GetType(), "*")
 	rawType := strings.TrimPrefix(field.GetType(), "*")
@@ -608,8 +602,7 @@ func (b *ORMBuilder) addIncludedField(ormable *OrmableType, field *gorm.ExtraFie
 	var typePackage string
 	// Handle types with a package defined
 	if field.GetPackage() != "" {
-		alias := b.Import(field.GetPackage())
-		rawType = fmt.Sprintf("%s.%s", alias, rawType)
+		rawType = generateImport(field.GetPackage(), rawType, g)
 		typePackage = field.GetPackage()
 	} else {
 		// Handle types without a package defined
@@ -617,17 +610,13 @@ func (b *ORMBuilder) addIncludedField(ormable *OrmableType, field *gorm.ExtraFie
 			// basic type, 100% okay, no imports or changes needed
 		} else if rawType == "Time" {
 			// b.UsingGoImports(stdTimeImport) // TODO: missing UsingGoImports
-			typePackage = stdTimeImport
-			rawType = fmt.Sprintf("%s.Time", typePackage)
+			rawType = generateImport("Time", stdTimeImport, g)
 		} else if rawType == "UUID" {
-			rawType = fmt.Sprintf("%s.UUID", b.Import(uuidImport))
-			typePackage = uuidImport
+			rawType = generateImport("UUID", uuidImport, g)
 		} else if field.GetType() == "Jsonb" && b.dbEngine == ENGINE_POSTGRES {
-			rawType = fmt.Sprintf("%s.Jsonb", b.Import(gormpqImport))
-			typePackage = gormpqImport
+			rawType = generateImport("Jsonb", gormpqImport, g)
 		} else if rawType == "Inet" {
-			rawType = fmt.Sprintf("%s.Inet", b.Import(gtypesImport))
-			typePackage = gtypesImport
+			rawType = generateImport("Inet", gtypesImport, g)
 		} else {
 			fmt.Fprintf(os.Stderr, "TODO: Warning")
 			// p.warning(`included field %q of type %q is not a recognized special type, and no package specified. This type is assumed to be in the same package as the generated code`,
@@ -701,23 +690,6 @@ func (b *ORMBuilder) IsAbleToMakePQArray(fieldType string) bool {
 		return true
 	default:
 		return false
-	}
-}
-
-func (b *ORMBuilder) Import(packagePath string) string {
-	subpath := packagePath[strings.LastIndex(packagePath, "/")+1:]
-	// package will always be suffixed with an integer to prevent any collisions
-	// with standard package imports
-	for i := 1; ; i++ {
-		newAlias := fmt.Sprintf("%s%d", strings.Replace(subpath, ".", "_", -1), i)
-		if pkg, ok := b.GetFileImports().packages[newAlias]; ok {
-			if packagePath == pkg.packagePath {
-				return pkg.alias
-			}
-		} else {
-			b.GetFileImports().packages[newAlias] = &pkgImport{packagePath: packagePath, alias: newAlias}
-			return newAlias
-		}
 	}
 }
 
@@ -995,13 +967,13 @@ func (b *ORMBuilder) generateFieldConversion(message *protogen.Message, field *p
 			g.P(`if m.`, fieldName, ` != nil {`)
 			switch fieldType {
 			case "[]bool":
-				g.P(`to.`, fieldName, ` = make(`, b.Import(pqImport), `.BoolArray, len(m.`, fieldName, `))`)
+				g.P(`to.`, fieldName, ` = make(`, generateImport("BoolArray", pqImport, g), `, len(m.`, fieldName, `))`)
 			case "[]float64":
-				g.P(`to.`, fieldName, ` = make(`, b.Import(pqImport), `.Float64Array, len(m.`, fieldName, `))`)
+				g.P(`to.`, fieldName, ` = make(`, generateImport("Float64Array", pqImport, g), `, len(m.`, fieldName, `))`)
 			case "[]int64":
-				g.P(`to.`, fieldName, ` = make(`, b.Import(pqImport), `.Int64Array, len(m.`, fieldName, `))`)
+				g.P(`to.`, fieldName, ` = make(`, generateImport("Int64Array", pqImport, g), `, len(m.`, fieldName, `))`)
 			case "[]string":
-				g.P(`to.`, fieldName, ` = make(`, b.Import(pqImport), `.StringArray, len(m.`, fieldName, `))`)
+				g.P(`to.`, fieldName, ` = make(`, generateImport("StringArray", pqImport, g), `, len(m.`, fieldName, `))`)
 			}
 			g.P(`copy(to.`, fieldName, `, m.`, fieldName, `)`)
 			g.P(`}`)
@@ -1060,7 +1032,7 @@ func (b *ORMBuilder) generateFieldConversion(message *protogen.Message, field *p
 		} else if coreType == protoTypeUUIDValue { // Singular UUIDValue type ----
 			if toORM {
 				g.P(`if m.`, fieldName, ` != nil {`)
-				g.P(`tempUUID, uErr := `, b.Import(uuidImport), `.FromString(m.`, fieldName, `.Value)`)
+				g.P(`tempUUID, uErr := `, generateImport("FromString", uuidImport, g), `(m.`, fieldName, `.Value)`)
 				g.P(`if uErr != nil {`)
 				g.P(`return to, uErr`)
 				g.P(`}`)
@@ -1068,34 +1040,34 @@ func (b *ORMBuilder) generateFieldConversion(message *protogen.Message, field *p
 				g.P(`}`)
 			} else {
 				g.P(`if m.`, fieldName, ` != nil {`)
-				g.P(`to.`, fieldName, ` = &`, b.Import(gtypesImport), `.UUIDValue{Value: m.`, fieldName, `.String()}`)
+				g.P(`to.`, fieldName, ` = &`, generateImport("UUIDValue", gtypesImport, g), `{Value: m.`, fieldName, `.String()}`)
 				g.P(`}`)
 			}
 		} else if coreType == protoTypeUUID { // Singular UUID type --------------
 			if toORM {
 				g.P(`if m.`, fieldName, ` != nil {`)
-				g.P(`to.`, fieldName, `, err = `, b.Import(uuidImport), `.FromString(m.`, fieldName, `.Value)`)
+				g.P(`to.`, fieldName, `, err = `, generateImport("FromString", uuidImport, g), `(m.`, fieldName, `.Value)`)
 				g.P(`if err != nil {`)
 				g.P(`return to, err`)
 				g.P(`}`)
 				g.P(`} else {`)
-				g.P(`to.`, fieldName, ` = `, b.Import(uuidImport), `.Nil`)
+				g.P(`to.`, fieldName, ` = `, generateImport("Nil", uuidImport, g))
 				g.P(`}`)
 			} else {
-				g.P(`to.`, fieldName, ` = &`, b.Import(gtypesImport), `.UUID{Value: m.`, fieldName, `.String()}`)
+				g.P(`to.`, fieldName, ` = &`, generateImport("UUID", gtypesImport, g), `{Value: m.`, fieldName, `.String()}`)
 			}
 		} else if coreType == protoTypeTimestamp { // Singular WKT Timestamp ---
 			if toORM {
 				g.P(`if m.`, fieldName, ` != nil {`)
 				g.P(`var t time.Time`)
-				g.P(`if t, err = `, b.Import(ptypesImport), `.Timestamp(m.`, fieldName, `); err != nil {`)
+				g.P(`if t, err = `, generateImport("Timestamp", ptypesImport, g), `(m.`, fieldName, `); err != nil {`)
 				g.P(`return to, err`)
 				g.P(`}`)
 				g.P(`to.`, fieldName, ` = &t`)
 				g.P(`}`)
 			} else {
 				g.P(`if m.`, fieldName, ` != nil {`)
-				g.P(`if to.`, fieldName, `, err = `, b.Import(ptypesImport), `.TimestampProto(*m.`, fieldName, `); err != nil {`)
+				g.P(`if to.`, fieldName, `, err = `, generateImport("TimestampProto", ptypesImport, g), `(*m.`, fieldName, `); err != nil {`)
 				g.P(`return to, err`)
 				g.P(`}`)
 				g.P(`}`)
@@ -1104,11 +1076,11 @@ func (b *ORMBuilder) generateFieldConversion(message *protogen.Message, field *p
 			if b.dbEngine == ENGINE_POSTGRES {
 				if toORM {
 					g.P(`if m.`, fieldName, ` != nil {`)
-					g.P(`to.`, fieldName, ` = &`, b.Import(gormpqImport), `.Jsonb{[]byte(m.`, fieldName, `.Value)}`)
+					g.P(`to.`, fieldName, ` = &`, generateImport("Jsonb", gormpqImport, g), `{[]byte(m.`, fieldName, `.Value)}`)
 					g.P(`}`)
 				} else {
 					g.P(`if m.`, fieldName, ` != nil {`)
-					g.P(`to.`, fieldName, ` = &`, b.Import(gtypesImport), `.JSONValue{Value: string(m.`, fieldName, `.RawMessage)}`)
+					g.P(`to.`, fieldName, ` = &`, generateImport("JSONValue", gtypesImport, g), `{Value: string(m.`, fieldName, `.RawMessage)}`)
 					g.P(`}`)
 				}
 			} // Potential TODO other DB engine handling if desired
@@ -1127,7 +1099,7 @@ func (b *ORMBuilder) generateFieldConversion(message *protogen.Message, field *p
 				}
 				switch btype {
 				case "int64":
-					g.P(`if v, err :=`, b.Import(resourceImport), `.DecodeInt64(`, resource, `, m.`, fieldName, `); err != nil {`)
+					g.P(`if v, err :=`, generateImport("DecodeInt64", resourceImport, g), `(`, resource, `, m.`, fieldName, `); err != nil {`)
 					g.P(`	return to, err`)
 					g.P(`} else {`)
 					if nillable {
@@ -1137,13 +1109,13 @@ func (b *ORMBuilder) generateFieldConversion(message *protogen.Message, field *p
 					}
 					g.P(`}`)
 				case "[]byte":
-					g.P(`if v, err :=`, b.Import(resourceImport), `.DecodeBytes(`, resource, `, m.`, fieldName, `); err != nil {`)
+					g.P(`if v, err :=`, generateImport("DecodeBytes", resourceImport, g), `(`, resource, `, m.`, fieldName, `); err != nil {`)
 					g.P(`	return to, err`)
 					g.P(`} else {`)
 					g.P(`	to.`, fieldName, ` = v`)
 					g.P(`}`)
 				default:
-					g.P(`if v, err :=`, b.Import(resourceImport), `.Decode(`, resource, `, m.`, fieldName, `); err != nil {`)
+					g.P(`if v, err :=`, generateImport("Decode", resourceImport, g), `(`, resource, `, m.`, fieldName, `); err != nil {`)
 					g.P(`return to, err`)
 					g.P(`} else if v != nil {`)
 					if nillable {
@@ -1164,7 +1136,7 @@ func (b *ORMBuilder) generateFieldConversion(message *protogen.Message, field *p
 			if !toORM {
 				if nillable {
 					g.P(`if m.`, fieldName, `!= nil {`)
-					g.P(`	if v, err := `, b.Import(resourceImport), `.Encode(`, resource, `, *m.`, fieldName, `); err != nil {`)
+					g.P(`	if v, err := `, generateImport("Encode", resourceImport, g), `(`, resource, `, *m.`, fieldName, `); err != nil {`)
 					g.P(`		return to, err`)
 					g.P(`	} else {`)
 					g.P(`		to.`, fieldName, ` = v`)
@@ -1172,7 +1144,7 @@ func (b *ORMBuilder) generateFieldConversion(message *protogen.Message, field *p
 					g.P(`}`)
 
 				} else {
-					g.P(`if v, err := `, b.Import(resourceImport), `.Encode(`, resource, `, m.`, fieldName, `); err != nil {`)
+					g.P(`if v, err := `, generateImport("Encode", resourceImport, g), `(`, resource, `, m.`, fieldName, `); err != nil {`)
 					g.P(`return to, err`)
 					g.P(`} else {`)
 					g.P(`to.`, fieldName, ` = v`)
@@ -1182,25 +1154,25 @@ func (b *ORMBuilder) generateFieldConversion(message *protogen.Message, field *p
 		} else if coreType == protoTypeInet { // Inet type for Postgres only, currently
 			if toORM {
 				g.P(`if m.`, fieldName, ` != nil {`)
-				g.P(`if to.`, fieldName, `, err = `, b.Import(gtypesImport), `.ParseInet(m.`, fieldName, `.Value); err != nil {`)
+				g.P(`if to.`, fieldName, `, err = `, generateImport("ParseInet", gtypesImport, g), `(m.`, fieldName, `.Value); err != nil {`)
 				g.P(`return to, err`)
 				g.P(`}`)
 				g.P(`}`)
 			} else {
 				g.P(`if m.`, fieldName, ` != nil && m.`, fieldName, `.IPNet != nil {`)
-				g.P(`to.`, fieldName, ` = &`, b.Import(gtypesImport), `.InetValue{Value: m.`, fieldName, `.String()}`)
+				g.P(`to.`, fieldName, ` = &`, generateImport("InetValue", gtypesImport, g), `.InetValue{Value: m.`, fieldName, `.String()}`)
 				g.P(`}`)
 			}
 		} else if coreType == protoTimeOnly { // Time only to support time via string
 			if toORM {
 				g.P(`if m.`, fieldName, ` != nil {`)
-				g.P(`if to.`, fieldName, `, err = `, b.Import(gtypesImport), `.ParseTime(m.`, fieldName, `.Value); err != nil {`)
+				g.P(`if to.`, fieldName, `, err = `, generateImport("ParseTime", gtypesImport, g), `(m.`, fieldName, `.Value); err != nil {`)
 				g.P(`return to, err`)
 				g.P(`}`)
 				g.P(`}`)
 			} else {
 				g.P(`if m.`, fieldName, ` != "" {`)
-				g.P(`if to.`, fieldName, `, err = `, b.Import(gtypesImport), `.TimeOnlyByString( m.`, fieldName, `); err != nil {`)
+				g.P(`if to.`, fieldName, `, err = `, generateImport("TimeOnlyByString", gtypesImport, g), `( m.`, fieldName, `); err != nil {`)
 				g.P(`return to, err`)
 				g.P(`}`)
 				g.P(`}`)
