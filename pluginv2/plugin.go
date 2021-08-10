@@ -1240,6 +1240,8 @@ func (b *ORMBuilder) generateDefaultHandlers(file *protogen.File, g *protogen.Ge
 				b.generatePatchHandler(message, g)
 				b.generatePatchSetHandler(message, g)
 			}
+
+			b.generateApplyFieldMask(message, g)
 		}
 
 	}
@@ -1924,6 +1926,147 @@ func (b *ORMBuilder) generatePatchSetHandler(message *protogen.Message, g *proto
 	g.P(`return results, nil`)
 	g.P(`}`)
 
+}
+
+func (b *ORMBuilder) generateApplyFieldMask(message *protogen.Message, g *protogen.GeneratedFile) {
+	typeName := string(message.Desc.Name())
+	g.P(`// DefaultApplyFieldMask`, typeName, ` patches an pbObject with patcher according to a field mask.`)
+	g.P(`func DefaultApplyFieldMask`, typeName, `(ctx context.Context, patchee *`,
+		typeName, `, patcher *`, typeName, `, updateMask *`, generateImport("FieldMask", fmImport, g),
+		`, prefix string, db *`, generateImport("DB", gormImport, g), `) (*`, typeName, `, error) {`)
+
+	g.P(`if patcher == nil {`)
+	g.P(`return nil, nil`)
+	g.P(`} else if patchee == nil {`)
+	g.P(`return nil, `, generateImport("NilArgumentError", gerrorsImport, g))
+	g.P(`}`)
+	g.P(`var err error`)
+
+	hasNested := false
+	for _, field := range message.Fields {
+		fieldType := field.Desc.Kind().String()
+
+		if field.Message != nil && !isSpecialType(fieldType) && field.Desc.Cardinality() != protoreflect.Repeated {
+			g.P(`var updated`, camelCase(field.GoName), ` bool`)
+			hasNested = true
+		} else if strings.HasSuffix(fieldType, protoTypeJSON) {
+			g.P(`var updated`, camelCase(field.GoName), ` bool`)
+		}
+	}
+
+	// Patch pbObj with input according to a field mask.
+	if hasNested {
+		g.P(`for i, f := range updateMask.Paths {`)
+	} else {
+		g.P(`for _, f := range updateMask.Paths {`)
+	}
+	for _, field := range message.Fields {
+		ccName := camelCase(field.GoName)
+		fieldType := field.Desc.Kind().String()
+		//  for ormable message, do recursive patching
+
+		if field.Message != nil && b.isOrmable(fieldType) && field.Desc.Cardinality() != protoreflect.Repeated {
+			_ = generateImport("", "stdStringsImport", g)
+
+			g.P(`if !updated`, ccName, ` && strings.HasPrefix(f, prefix+"`, ccName, `.") {`)
+			g.P(`updated`, ccName, ` = true`)
+			g.P(`if patcher.`, ccName, ` == nil {`)
+			g.P(`patchee.`, ccName, ` = nil`)
+			g.P(`continue`)
+			g.P(`}`)
+			g.P(`if patchee.`, ccName, ` == nil {`)
+			g.P(`patchee.`, ccName, ` = &`, strings.TrimPrefix(fieldType, "*"), `{}`)
+			g.P(`}`)
+			if s := strings.Split(fieldType, "."); len(s) == 2 {
+				g.P(`if o, err := `, strings.TrimLeft(s[0], "*"), `.DefaultApplyFieldMask`, s[1], `(ctx, patchee.`, ccName,
+					`, patcher.`, ccName, `, &`, generateImport("FieldMask", fmImport, g),
+					`{Paths:updateMask.Paths[i:]}, prefix+"`, ccName, `.", db); err != nil {`)
+			} else {
+				g.P(`if o, err := DefaultApplyFieldMask`, strings.TrimPrefix(fieldType, "*"), `(ctx, patchee.`, ccName,
+					`, patcher.`, ccName, `, &`, generateImport("FieldMask", fmImport, g),
+					`{Paths:updateMask.Paths[i:]}, prefix+"`, ccName, `.", db); err != nil {`)
+			}
+			g.P(`return nil, err`)
+			g.P(`} else {`)
+			g.P(`patchee.`, ccName, ` = o`)
+			g.P(`}`)
+			g.P(`continue`)
+			g.P(`}`)
+			g.P(`if f == prefix+"`, ccName, `" {`)
+			g.P(`updated`, ccName, ` = true`)
+			g.P(`patchee.`, ccName, ` = patcher.`, ccName)
+			g.P(`continue`)
+			g.P(`}`)
+		} else if field.Message != nil && !isSpecialType(fieldType) && field.Desc.Cardinality() != protoreflect.Repeated {
+			_ = generateImport("", "stdStringsImport", g)
+			g.P(`if !updated`, ccName, ` && strings.HasPrefix(f, prefix+"`, ccName, `.") {`)
+			g.P(`if patcher.`, ccName, ` == nil {`)
+			g.P(`patchee.`, ccName, ` = nil`)
+			g.P(`continue`)
+			g.P(`}`)
+			g.P(`if patchee.`, ccName, ` == nil {`)
+			g.P(`patchee.`, ccName, ` = &`, strings.TrimPrefix(fieldType, "*"), `{}`)
+			g.P(`}`)
+			g.P(`childMask := &`, generateImport("FieldMask", fmImport, g), `{}`)
+			g.P(`for j := i; j < len(updateMask.Paths); j++ {`)
+			g.P(`if trimPath := strings.TrimPrefix(updateMask.Paths[j], prefix+"`, ccName, `."); trimPath != updateMask.Paths[j] {`)
+			g.P(`childMask.Paths = append(childMask.Paths, trimPath)`)
+			g.P(`}`)
+			g.P(`}`)
+			g.P(`if err := `, generateImport("MergeWithMask", tkgormImport, g), `.(patcher.`, ccName, `, patchee.`, ccName, `, childMask); err != nil {`)
+			g.P(`return nil, nil`)
+			g.P(`}`)
+			g.P(`}`)
+			g.P(`if f == prefix+"`, ccName, `" {`)
+			g.P(`updated`, ccName, ` = true`)
+			g.P(`patchee.`, ccName, ` = patcher.`, ccName)
+			g.P(`continue`)
+			g.P(`}`)
+		} else if strings.HasSuffix(fieldType, protoTypeJSON) && field.Desc.Cardinality() != protoreflect.Repeated {
+			_ = generateImport("", "stdStringsImport", g)
+			g.P(`if !updated`, ccName, ` && strings.HasPrefix(f, prefix+"`, ccName, `") {`)
+			g.P(`patchee.`, ccName, ` = patcher.`, ccName)
+			g.P(`updated`, ccName, ` = true`)
+			g.P(`continue`)
+			g.P(`}`)
+		} else {
+			g.P(`if f == prefix+"`, ccName, `" {`)
+			g.P(`patchee.`, ccName, ` = patcher.`, ccName)
+			g.P(`continue`)
+			g.P(`}`)
+		}
+	}
+	g.P(`}`)
+	g.P(`if err != nil {`)
+	g.P(`return nil, err`)
+	g.P(`}`)
+	g.P(`return patchee, nil`)
+	g.P(`}`)
+	g.P()
+}
+
+func isSpecialType(typeName string) bool {
+	parts := strings.Split(typeName, ".")
+	if len(parts) > 2 { // what kinda format is this????
+		panic(fmt.Sprintf(""))
+	}
+	if len(parts) == 1 { // native to this package = not special
+		return false
+	}
+	// anything that looks like a google_protobufX should be considered special
+	if strings.HasPrefix(strings.TrimLeft(typeName, "[]*"), "google_protobuf") {
+		return true
+	}
+	switch parts[len(parts)-1] {
+	case protoTypeJSON,
+		protoTypeUUID,
+		protoTypeUUIDValue,
+		protoTypeResource,
+		protoTypeInet,
+		protoTimeOnly:
+		return true
+	}
+	return false
 }
 
 func generateImport(name string, importPath string, g *protogen.GeneratedFile) string {
