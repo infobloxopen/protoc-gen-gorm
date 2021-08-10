@@ -1238,6 +1238,7 @@ func (b *ORMBuilder) generateDefaultHandlers(file *protogen.File, g *protogen.Ge
 				b.generateDeleteSetHandler(message, g)
 				b.generateStrictUpdateHandler(message, g)
 				b.generatePatchHandler(message, g)
+				b.generatePatchSetHandler(message, g)
 			}
 		}
 
@@ -1887,6 +1888,42 @@ func (b *ORMBuilder) generateAfterPatchHookDef(orm *OrmableType, suffix string, 
 	g.P(`AfterPatch`, suffix, `(context.Context, *`, orm.OriginName, `, *`, generateImport("FieldMask", fmImport, g), `, *`, generateImport("DB", gormImport, g),
 		`) error`)
 	g.P(`}`)
+}
+
+func (b *ORMBuilder) generatePatchSetHandler(message *protogen.Message, g *protogen.GeneratedFile) {
+	var isMultiAccount bool
+
+	typeName := string(message.Desc.Name())
+	if getMessageOptions(message).GetMultiAccount() {
+		isMultiAccount = true
+	}
+
+	if isMultiAccount && !b.hasIDField(message) {
+		g.P(fmt.Sprintf("// Cannot autogen DefaultPatchSet%s: this is a multi-account table without an \"id\" field in the message.\n", typeName))
+		return
+	}
+
+	_ = generateImport("", "fmt", g)
+	g.P(`// DefaultPatchSet`, typeName, ` executes a bulk gorm update call with patch behavior`)
+	g.P(`func DefaultPatchSet`, typeName, `(ctx context.Context, objects []*`,
+		typeName, `, updateMasks []*`, generateImport("FieldMask", fmImport, g), `, db *`, generateImport("DB", gormImport, g), `) ([]*`, typeName, `, error) {`)
+	g.P(`if len(objects) != len(updateMasks) {`)
+	g.P(`return nil, fmt.Errorf(`, generateImport("BadRepeatedFieldMaskTpl", gerrorsImport, g), `, len(updateMasks), len(objects))`)
+	g.P(`}`)
+	g.P(``)
+	g.P(`results := make([]*`, typeName, `, 0, len(objects))`)
+	g.P(`for i, patcher := range objects {`)
+	g.P(`pbResponse, err := DefaultPatch`, typeName, `(ctx, patcher, updateMasks[i], db)`)
+	g.P(`if err != nil {`)
+	g.P(`return nil, err`)
+	g.P(`}`)
+	g.P(``)
+	g.P(`results = append(results, pbResponse)`)
+	g.P(`}`)
+	g.P(``)
+	g.P(`return results, nil`)
+	g.P(`}`)
+
 }
 
 func generateImport(name string, importPath string, g *protogen.GeneratedFile) string {
