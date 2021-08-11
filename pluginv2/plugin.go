@@ -181,6 +181,11 @@ type Field struct {
 }
 
 type autogenMethod struct {
+	ccName            string
+	verb              string
+	followsConvention bool
+	baseType          string
+	fieldMaskName     string
 }
 
 type fileImports struct {
@@ -188,6 +193,15 @@ type fileImports struct {
 	packages        map[string]*pkgImport
 	typesToRegister []string
 	stdImports      []string
+}
+
+type autogenService struct {
+	*protogen.Service
+	ccName string
+	file *protogen.File
+	usesTxnMiddleware bool
+	methods           []autogenMethod
+	autogen           bool
 }
 
 func newFileImports() *fileImports {
@@ -264,10 +278,9 @@ func (b *ORMBuilder) Generate() (*pluginpb.CodeGeneratorResponse, error) {
 		// gormFile.P("// this file is generated")
 	}
 
-	// TODO: parse services
-	// for _, protoFile := range b.plugin.Files {
-	// 	fmt.Fprintf(os.Stderr, "TODO: generate services: %+v\n", protoFile)
-	// }
+	for _, protoFile := range b.plugin.Files {
+		b.parseServices(protoFile)
+	}
 
 	for _, protoFile := range b.plugin.Files {
 		// generate actual code
@@ -288,6 +301,7 @@ func (b *ORMBuilder) Generate() (*pluginpb.CodeGeneratorResponse, error) {
 		}
 
 		b.generateDefaultHandlers(protoFile, g)
+		b.generateDefaultServer(protoFile, g)
 	}
 
 	return b.plugin.Response(), nil
@@ -2216,4 +2230,132 @@ func (b *ORMBuilder) listHasFieldSelection(ormable *OrmableType) bool {
 	//	}
 	//}
 	return false
+}
+
+func (b *ORMBuilder) parseServices(file *protogen.File) {
+	//defaultSuppressWarn := b.suppressWarn
+	for _, service := range file.Services {
+		genSvc := autogenService{
+			Service: service,
+			ccName:                 camelCase(string(service.Desc.Name())),
+			file:                   file,
+		}
+		fmt.Fprintf(os.Stderr, "genService: %+v\n", genSvc)
+
+
+		if opts := getServiceOptions(service); opts != nil {
+			genSvc.autogen = opts.GetAutogen()
+			genSvc.usesTxnMiddleware = opts.GetTxnMiddleware()
+			fmt.Fprintf(os.Stderr, "options: %+v\n", opts)
+		}
+
+		//if !genSvc.autogen {
+		//	p.suppressWarn = true
+		//}
+		//for _, method := range service.GetMethod() {
+		//	inType, outType, methodName := p.getMethodProps(method)
+		//	var verb, fmName, baseType string
+		//	var follows bool
+		//	if strings.HasPrefix(methodName, createService) {
+		//		verb = createService
+		//		follows, baseType = p.followsCreateConventions(inType, outType, createService)
+		//	} else if strings.HasPrefix(methodName, readService) {
+		//		verb = readService
+		//		follows, baseType = p.followsReadConventions(inType, outType, readService)
+		//	} else if strings.HasPrefix(methodName, updateSetService) {
+		//		verb = updateSetService
+		//		follows, baseType, fmName = p.followsUpdateSetConventions(inType, outType, updateSetService)
+		//	} else if strings.HasPrefix(methodName, updateService) {
+		//		verb = updateService
+		//		follows, baseType, fmName = p.followsUpdateConventions(inType, outType, updateService)
+		//	} else if strings.HasPrefix(methodName, deleteSetService) {
+		//		verb = deleteSetService
+		//		follows, baseType = p.followsDeleteSetConventions(inType, outType, method)
+		//	} else if strings.HasPrefix(methodName, deleteService) {
+		//		verb = deleteService
+		//		follows, baseType = p.followsDeleteConventions(inType, outType, method)
+		//	} else if strings.HasPrefix(methodName, listService) {
+		//		verb = listService
+		//		follows, baseType = p.followsListConventions(inType, outType, listService)
+		//	}
+		//	genMethod := autogenMethod{
+		//		MethodDescriptorProto: method,
+		//		ccName:                methodName,
+		//		inType:                inType,
+		//		outType:               outType,
+		//		baseType:              baseType,
+		//		fieldMaskName:         fmName,
+		//		followsConvention:     follows,
+		//		verb:                  verb,
+		//	}
+		//	genSvc.methods = append(genSvc.methods, genMethod)
+		//
+		//	if genMethod.verb != "" && p.isOrmable(genMethod.baseType) {
+		//		p.getOrmable(genMethod.baseType).Methods[genMethod.verb] = &genMethod
+		//	}
+		//}
+		//p.ormableServices = append(p.ormableServices, genSvc)
+		//p.suppressWarn = defaultSuppressWarn
+	}
+
+}
+
+func getServiceOptions(service *protogen.Service) *gorm.AutoServerOptions {
+	options := service.Desc.Options().(*descriptorpb.ServiceOptions)
+	if options == nil {
+		return nil
+	}
+
+	v := proto.GetExtension(options, gorm.E_Server)
+	if v == nil {
+		return nil
+	}
+
+	opts, ok := v.(*gorm.AutoServerOptions)
+	if !ok {
+		return nil
+	}
+
+	return opts
+}
+
+func (b *ORMBuilder) generateDefaultServer(file *protogen.File, g *protogen.GeneratedFile) {
+	//for _, service := range b.ormableServices {
+	//	if service.file != file || !service.autogen {
+	//		continue
+	//	}
+	//	p.P(`type `, service.ccName, `DefaultServer struct {`)
+	//	if !service.usesTxnMiddleware {
+	//		p.P(`DB *`, p.Import(gormImport), `.DB`)
+	//	}
+	//	p.P(`}`)
+	//	withSpan := getServiceOptions(service.ServiceDescriptorProto).WithTracing
+	//	if withSpan {
+	//		p.generateSpanInstantiationMethod(service)
+	//		p.generateSpanErrorMethod(service)
+	//		p.generateSpanResultMethod(service)
+	//	}
+	//	for _, method := range service.methods {
+	//		//Import context there because it have used in functions parameters
+	//		p.UsingGoImports(stdCtxImport)
+	//		switch method.verb {
+	//		case createService:
+	//			p.generateCreateServerMethod(service, method)
+	//		case readService:
+	//			p.generateReadServerMethod(service, method)
+	//		case updateService:
+	//			p.generateUpdateServerMethod(service, method)
+	//		case updateSetService:
+	//			p.generateUpdateSetServerMethod(service, method)
+	//		case deleteService:
+	//			p.generateDeleteServerMethod(service, method)
+	//		case deleteSetService:
+	//			p.generateDeleteSetServerMethod(service, method)
+	//		case listService:
+	//			p.generateListServerMethod(service, method)
+	//		default:
+	//			p.generateMethodStub(service, method)
+	//		}
+	//	}
+	//}
 }
