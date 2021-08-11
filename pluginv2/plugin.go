@@ -203,7 +203,7 @@ func (b *ORMBuilder) Generate() (*pluginpb.CodeGeneratorResponse, error) {
 	genFileMap := make(map[string]*protogen.GeneratedFile)
 
 	for _, protoFile := range b.plugin.Files {
-		fileName := protoFile.GeneratedFilenamePrefix + ".gorm.go"
+		fileName := protoFile.GeneratedFilenamePrefix + ".pb.gorm.go"
 		g := b.plugin.NewGeneratedFile(fileName, ".")
 		genFileMap[fileName] = g
 
@@ -271,7 +271,7 @@ func (b *ORMBuilder) Generate() (*pluginpb.CodeGeneratorResponse, error) {
 
 	for _, protoFile := range b.plugin.Files {
 		// generate actual code
-		fileName := protoFile.GeneratedFilenamePrefix + ".gorm.go"
+		fileName := protoFile.GeneratedFilenamePrefix + ".pb.gorm.go"
 		g, ok := genFileMap[fileName]
 		if !ok {
 			panic("generated file should be present")
