@@ -17,6 +17,16 @@ import (
 	"google.golang.org/protobuf/types/pluginpb"
 )
 
+const (
+	createService    = "Create"
+	readService      = "Read"
+	updateService    = "Update"
+	updateSetService = "UpdateSet"
+	deleteService    = "Delete"
+	deleteSetService = "DeleteSet"
+	listService      = "List"
+)
+
 var (
 	gormImport         = "github.com/jinzhu/gorm"
 	tkgormImport       = "github.com/infobloxopen/atlas-app-toolkit/gorm"
@@ -181,11 +191,14 @@ type Field struct {
 }
 
 type autogenMethod struct {
+	*protogen.Method
 	ccName            string
 	verb              string
 	followsConvention bool
 	baseType          string
 	fieldMaskName     string
+	inType *protogen.Message
+	outType *protogen.Message
 }
 
 type fileImports struct {
@@ -464,9 +477,10 @@ func (b *ORMBuilder) hasPrimaryKey(ormable *OrmableType) bool {
 	return false
 }
 
-func (b *ORMBuilder) isOrmable(fieldType string) bool {
-	// TODO: implement me
-	return false
+func (b *ORMBuilder) isOrmable(typeName string) bool {
+	fmt.Fprintf(os.Stderr, "typeName: %s\n", typeName)
+	_, ok := b.ormableTypes[typeName]
+	return ok
 }
 
 func (b *ORMBuilder) findPrimaryKey(ormable *OrmableType) (string, *Field) {
@@ -2240,18 +2254,62 @@ func (b *ORMBuilder) parseServices(file *protogen.File) {
 			ccName:                 camelCase(string(service.Desc.Name())),
 			file:                   file,
 		}
-		fmt.Fprintf(os.Stderr, "genService: %+v\n", genSvc)
-
 
 		if opts := getServiceOptions(service); opts != nil {
 			genSvc.autogen = opts.GetAutogen()
 			genSvc.usesTxnMiddleware = opts.GetTxnMiddleware()
-			fmt.Fprintf(os.Stderr, "options: %+v\n", opts)
+			//fmt.Fprintf(os.Stderr, "options: %+v\n", opts)
 		}
 
-		//if !genSvc.autogen {
-		//	p.suppressWarn = true
-		//}
+		if !genSvc.autogen {
+			b.suppressWarn = true
+		}
+
+		for _, method := range service.Methods {
+			input := method.Input
+			output := method.Output
+			methodName := string(method.Desc.Name())
+			var verb, fmName, baseType string
+			var follows bool
+			//fmt.Fprintf(os.Stderr, "method: %+v\n", method)
+
+			if strings.HasPrefix(methodName, createService) {
+				verb = createService
+				follows, baseType = b.followsCreateConventions(input, output, createService)
+			} else if strings.HasPrefix(methodName, readService) {
+				verb = readService
+				follows, baseType = b.followsReadConventions(input, output, readService)
+			} else if strings.HasPrefix(methodName, updateSetService) {
+				verb = updateSetService
+				follows, baseType, fmName = b.followsUpdateSetConventions(input, output, updateSetService)
+			} else if strings.HasPrefix(methodName, updateService) {
+				verb = updateService
+				follows, baseType, fmName = b.followsUpdateConventions(input, output, updateService)
+			} else if strings.HasPrefix(methodName, deleteSetService) {
+				verb = deleteSetService
+
+			} else if strings.HasPrefix(methodName, deleteService) {
+				verb = deleteService
+
+			} else if strings.HasPrefix(methodName, listService) {
+				verb = listService
+
+			}
+
+			genMethod := autogenMethod{
+				Method: method,
+				ccName: methodName,
+				inType: input,
+				outType: output,
+				fieldMaskName: fmName,
+				verb: verb,
+				followsConvention: follows,
+				baseType: baseType,
+			}
+
+			fmt.Fprintf(os.Stderr, "genMethod: %+v\n", genMethod)
+		}
+
 		//for _, method := range service.GetMethod() {
 		//	inType, outType, methodName := p.getMethodProps(method)
 		//	var verb, fmName, baseType string
@@ -2298,6 +2356,178 @@ func (b *ORMBuilder) parseServices(file *protogen.File) {
 		//p.suppressWarn = defaultSuppressWarn
 	}
 
+}
+
+func (b *ORMBuilder) followsCreateConventions(inType *protogen.Message, outType *protogen.Message, methodName string) (bool, string) {
+	var inTypeName string
+	var typeOrmable bool
+	for _, field := range inType.Fields {
+		if field.GoName == "payload" {
+			gType := field.Desc.Kind().String()
+			inTypeName = strings.TrimPrefix(gType, "*")
+			if b.isOrmable(inTypeName) {
+				typeOrmable = true
+			}
+		}
+	}
+	if !typeOrmable {
+		// TODO: how to produce waringing
+		//p.warning(`stub will be generated for %s since %s incoming message doesn't have "payload" field of ormable type`, methodName, p.TypeName(inType))
+		return false, ""
+	}
+	var outTypeName string
+	for _, field := range outType.Fields {
+		if field.GoName == "result" {
+			gType := field.Desc.Kind().String()
+			outTypeName = strings.TrimPrefix(gType, "*")
+		}
+	}
+	fmt.Fprintf(os.Stderr, "conv: %s -- %s\n", inTypeName, outTypeName)
+	if inTypeName != outTypeName {
+		//p.warning(`stub will be generated for %s since "payload" field type of %s incoming message type doesn't match "result" field type of %s outcoming message`, methodName, p.TypeName(inType), p.TypeName(outType))
+		return false, ""
+	}
+	return true, inTypeName
+}
+
+func (b *ORMBuilder) followsReadConventions(inType *protogen.Message, outType *protogen.Message, methodName string) (bool, string) {
+	var hasID bool
+	for _, field := range inType.Fields {
+		if string(field.Desc.Name()) == "id" {
+			hasID = true
+		}
+	}
+	if !hasID {
+		//p.warning(`stub will be generated for %s since %s incoming message doesn't have "id" field`, methodName, p.TypeName(inType))
+		return false, ""
+	}
+	var outTypeName string
+	var typeOrmable bool
+	for _, field := range outType.Fields {
+		if string(field.Desc.Name()) == "result" {
+			gType := field.Desc.Kind().String()
+			outTypeName = strings.TrimPrefix(gType, "*")
+			if b.isOrmable(outTypeName) {
+				typeOrmable = true
+			}
+		}
+	}
+	if !typeOrmable {
+		//p.warning(`stub will be generated for %s since %s outcoming message doesn't have "result" field of ormable type`, methodName, p.TypeName(outType))
+		return false, ""
+	}
+	if !b.hasPrimaryKey(b.getOrmable(outTypeName)) {
+		//p.warning(`stub will be generated for %s since %s ormable type doesn't have a primary key`, methodName, outTypeName)
+		return false, ""
+	}
+
+	return true, outTypeName
+}
+
+func (b *ORMBuilder) followsUpdateSetConventions(inType *protogen.Message, outType *protogen.Message, methodName string) (bool, string, string) {
+	var (
+		inEntity    *protogen.Field
+		inFieldMask *protogen.Field
+	)
+
+	for _, f := range inType.Fields {
+		if string(f.Desc.Name()) == "objects" {
+			inEntity = f
+		}
+
+		if f.Desc.Kind().String() == ".google.protobuf.FieldMask" {
+			if inFieldMask != nil {
+				//p.warning("message must not contains double field mask, prev on field name %s, after on field %s", inFieldMask.GetName(), f.GetName())
+				return false, "", ""
+			}
+
+			inFieldMask = f
+		}
+	}
+
+	var outEntity *protogen.Field
+	for _, f := range outType.Fields {
+		if string(f.Desc.Name()) == "results" {
+			outEntity = f
+		}
+	}
+
+	if inFieldMask == nil || inFieldMask.Desc.Cardinality() != protoreflect.Repeated {
+		//p.warning("repeated field mask should exist in request for method %q", methodName)
+		return false, "", ""
+	}
+
+	if inEntity == nil || outEntity == nil {
+		//p.warning(`method: %q, request should has repeated field 'objects' in request and repeated field 'results' in response`, methodName)
+		return false, "", ""
+	}
+
+	if inEntity.Desc.Cardinality() != protoreflect.Repeated || outEntity.Desc.Cardinality() != protoreflect.Repeated {
+		//p.warning(`method: %q, field 'objects' in request and field 'results' in response should be repeated`, methodName)
+		return false, "", ""
+	}
+
+	inGoType := inEntity.Desc.Kind().String() // TODO: not sure
+	outGoType := outEntity.Desc.Kind().String()
+	inTypeName, outTypeName := strings.TrimPrefix(inGoType, "*"), strings.TrimPrefix(outGoType, "*")
+	if !b.isOrmable(inTypeName) {
+		//p.warning("method: %q, type %q must be ormable", methodName, inTypeName)
+		return false, "", ""
+	}
+
+	if inTypeName != outTypeName {
+		//p.warning("method: %q, field 'objects' in request has type: %q but field 'results' in response has: %q", methodName, inTypeName, outTypeName)
+		return false, "", ""
+	}
+
+	return true, inTypeName, camelCase(inFieldMask.GoName)
+}
+
+func (b *ORMBuilder) followsUpdateConventions(inType *protogen.Message, outType *protogen.Message, methodName string) (bool, string, string) {
+	var inTypeName string
+	var typeOrmable bool
+	var updateMask string
+	for _, field := range inType.Fields {
+		if string(field.Desc.Name()) == "payload" {
+			gType := field.Desc.Kind().String()
+			inTypeName = strings.TrimPrefix(gType, "*")
+			if b.isOrmable(inTypeName) {
+				typeOrmable = true
+			}
+		}
+
+		// Check that type of field is a FieldMask
+		if field.Desc.Kind().String() == ".google.protobuf.FieldMask" {
+			// More than one mask in request is not allowed.
+			if updateMask != "" {
+				return false, "", ""
+			}
+			updateMask = string(field.Desc.Name())
+		}
+
+	}
+	if !typeOrmable {
+		//p.warning(`stub will be generated for %s since %s incoming message doesn't have "payload" field of ormable type`, methodName, p.TypeName(inType))
+		return false, "", ""
+	}
+
+	var outTypeName string
+	for _, field := range outType.Fields {
+		if string(field.Desc.Name()) == "result" {
+			gType := field.Desc.Kind().String()
+			outTypeName = strings.TrimPrefix(gType, "*")
+		}
+	}
+	if inTypeName != outTypeName {
+		//p.warning(`stub will be generated for %s since "payload" field type of %s incoming message doesn't match "result" field type of %s outcoming message`, methodName, p.TypeName(inType), p.TypeName(outType))
+		return false, "", ""
+	}
+	if !b.hasPrimaryKey(b.getOrmable(inTypeName)) {
+		//p.warning(`stub will be generated for %s since %s ormable type doesn't have a primary key`, methodName, outTypeName)
+		return false, "", ""
+	}
+
+	return true, inTypeName, generator.CamelCase(updateMask)
 }
 
 func getServiceOptions(service *protogen.Service) *gorm.AutoServerOptions {
