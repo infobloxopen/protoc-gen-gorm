@@ -162,9 +162,9 @@ type OrmableType struct {
 	Package    string
 }
 
-func NewOrmableType(orignalName string, pkg string, file *protogen.File) *OrmableType {
+func NewOrmableType(originalName string, pkg string, file *protogen.File) *OrmableType {
 	return &OrmableType{
-		OriginName: orignalName,
+		OriginName: originalName,
 		Package:    pkg,
 		File:       file,
 		Fields:     make(map[string]*Field),
@@ -278,7 +278,6 @@ func (b *ORMBuilder) Generate() (*pluginpb.CodeGeneratorResponse, error) {
 		}
 		g.P("package ", protoFile.GoPackageName)
 
-
 		for _, message := range protoFile.Messages {
 			if isOrmable(message) {
 				b.generateOrmable(g, message)
@@ -296,7 +295,6 @@ func (b *ORMBuilder) Generate() (*pluginpb.CodeGeneratorResponse, error) {
 
 func (b *ORMBuilder) generateConvertFunctions(g *protogen.GeneratedFile, message *protogen.Message) {
 	typeName := string(message.Desc.Name())
-	// ormable := b.getOrmable(generator.CamelCaseSlice(message.TypeName()))
 	ormable := b.getOrmable(camelCase(typeName))
 
 	///// To Orm
@@ -1221,22 +1219,13 @@ func (b *ORMBuilder) generateDefaultHandlers(file *protogen.File, g *protogen.Ge
 }
 
 func (b *ORMBuilder) generateCreateHandler(message *protogen.Message, g *protogen.GeneratedFile) {
-	g.QualifiedGoIdent(protogen.GoIdent{
-		GoName:       "gorm",
-		GoImportPath: protogen.GoImportPath(gormImport),
-	})
-	g.QualifiedGoIdent(protogen.GoIdent{
-		GoName:       "errors",
-		GoImportPath: protogen.GoImportPath(gerrorsImport),
-	})
-
 	typeName := string(message.Desc.Name())
 	orm := b.getOrmable(typeName)
 	g.P(`// DefaultCreate`, typeName, ` executes a basic gorm create call`)
 	g.P(`func DefaultCreate`, typeName, `(ctx context.Context, in *`,
-		typeName, `, db *`, "gorm", `.DB) (*`, typeName, `, error) {`)
+		typeName, `, db *`, generateImport("DB", gormImport, g), `) (*`, typeName, `, error) {`)
 	g.P(`if in == nil {`)
-	g.P(`return nil, `, "errors", `.NilArgumentError`)
+	g.P(`return nil, `, generateImport("NilArgumentError", gerrorsImport, g))
 	g.P(`}`)
 	g.P(`ormObj, err := in.ToORM(ctx)`)
 	g.P(`if err != nil {`)
@@ -1327,13 +1316,8 @@ func (b *ORMBuilder) generateReadHandler(message *protogen.Message, g *protogen.
 		fs = "nil"
 	}
 
-	applyFieldSelection := g.QualifiedGoIdent(protogen.GoIdent{
-		GoName:       "ApplyFieldSelection",
-		GoImportPath: protogen.GoImportPath(tkgormImport),
-	})
-
 	b.generateBeforeReadHookCall(ormable, "ApplyQuery", g)
-	g.P(`if db, err = `, applyFieldSelection, `(ctx, db, `, fs, `, &`, ormable.Name, `{}); err != nil {`)
+	g.P(`if db, err = `, generateImport("ApplyFieldSelection", tkgormImport, g), `(ctx, db, `, fs, `, &`, ormable.Name, `{}); err != nil {`)
 	g.P(`return nil, err`)
 	g.P(`}`)
 
@@ -1407,18 +1391,11 @@ func (b *ORMBuilder) generateAfterReadHookCall(orm *OrmableType, g *protogen.Gen
 }
 
 func (b *ORMBuilder) generateBeforeReadHookDef(orm *OrmableType, suffix string, g *protogen.GeneratedFile) {
-	gormDB := g.QualifiedGoIdent(protogen.GoIdent{
-		GoName:       "DB",
-		GoImportPath: protogen.GoImportPath(gormImport),
-	})
+	gormDB := generateImport("DB", gormImport, g)
 	g.P(`type `, orm.Name, `WithBeforeRead`, suffix, ` interface {`)
 	hookSign := fmt.Sprint(`BeforeRead`, suffix, `(context.Context, *`, gormDB)
 	if b.readHasFieldSelection(orm) {
-		queryFieldSelection := g.QualifiedGoIdent(protogen.GoIdent{
-			GoName:       "FieldSelection",
-			GoImportPath: protogen.GoImportPath(queryImport),
-		})
-		hookSign += fmt.Sprint(`, *`, queryFieldSelection)
+		hookSign += fmt.Sprint(`, *`, generateImport("FieldSelection", queryImport, g))
 	}
 
 	hookSign += fmt.Sprint(`) (*`, gormDB, `, error)`)
@@ -1428,17 +1405,9 @@ func (b *ORMBuilder) generateBeforeReadHookDef(orm *OrmableType, suffix string, 
 
 func (b *ORMBuilder) generateAfterReadHookDef(orm *OrmableType, g *protogen.GeneratedFile) {
 	g.P(`type `, orm.Name, `WithAfterReadFind interface {`)
-	gormDB := g.QualifiedGoIdent(protogen.GoIdent{
-		GoName:       "DB",
-		GoImportPath: protogen.GoImportPath(gormImport),
-	})
-	hookSign := fmt.Sprint(`AfterReadFind`, `(context.Context, *`, gormDB)
+	hookSign := fmt.Sprint(`AfterReadFind`, `(context.Context, *`, generateImport("DB", gormImport, g))
 	if b.readHasFieldSelection(orm) {
-		queryFieldSelection := g.QualifiedGoIdent(protogen.GoIdent{
-			GoName:       "FieldSelection",
-			GoImportPath: protogen.GoImportPath(queryImport),
-		})
-		hookSign += fmt.Sprint(`, *`, queryFieldSelection)
+		hookSign += fmt.Sprint(`, *`, generateImport("FieldSelection", queryImport, g))
 	}
 	hookSign += `) error`
 	g.P(hookSign)
