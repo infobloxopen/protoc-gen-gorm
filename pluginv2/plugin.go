@@ -2320,20 +2320,15 @@ func (b *ORMBuilder) followsCreateConventions(inType *protogen.Message, outType 
 	var inTypeName string
 	var typeOrmable bool
 	for _, field := range inType.Fields {
-		fmt.Fprintf(os.Stderr, "method: %s, field: %s\n", methodName, string(field.Desc.Name()))
 		if string(field.Desc.Name()) == "payload" {
 			gType := string(field.Desc.Message().Name())
-			fmt.Fprintf(os.Stderr, "debug field: %+v\n", field)
 			inTypeName = strings.TrimPrefix(gType, "*")
-			fmt.Fprintf(os.Stderr, "candidate: %s, %v\n", gType, b.ormableTypes)
 			if b.isOrmable(inTypeName) {
 				typeOrmable = true
 			}
 		}
 	}
 	if !typeOrmable {
-		fmt.Fprintf(os.Stderr, "not ormable\n")
-
 		// TODO: how to produce waringing
 		//p.warning(`stub will be generated for %s since %s incoming message doesn't have "payload" field of ormable type`, methodName, p.TypeName(inType))
 		return false, ""
@@ -2345,7 +2340,6 @@ func (b *ORMBuilder) followsCreateConventions(inType *protogen.Message, outType 
 			outTypeName = strings.TrimPrefix(gType, "*")
 		}
 	}
-	fmt.Fprintf(os.Stderr, "conv: %s -- %s\n", inTypeName, outTypeName)
 	if inTypeName != outTypeName {
 		//p.warning(`stub will be generated for %s since "payload" field type of %s incoming message type doesn't match "result" field type of %s outcoming message`, methodName, p.TypeName(inType), p.TypeName(outType))
 		return false, ""
@@ -2695,7 +2689,6 @@ func (b *ORMBuilder) generateSpanResultMethod(service autogenService, g *protoge
 
 func (b *ORMBuilder) generateCreateServerMethod(service autogenService, method autogenMethod, g *protogen.GeneratedFile) {
 	b.generateMethodSignature(service, method, g)
-	fmt.Fprintf(os.Stderr, "method: %+v -> %t\n", method.ccName, method.followsConvention)
 	if method.followsConvention {
 		b.generateDBSetup(service, g)
 		b.generatePreserviceCall(service, method.baseType, method.ccName, g)
