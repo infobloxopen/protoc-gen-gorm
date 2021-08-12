@@ -2608,42 +2608,60 @@ func getMethodOptions(method *protogen.Method) *gorm.MethodOptions {
 }
 
 func (b *ORMBuilder) generateDefaultServer(file *protogen.File, g *protogen.GeneratedFile) {
-	//for _, service := range b.ormableServices {
-	//	if service.file != file || !service.autogen {
-	//		continue
-	//	}
-	//	p.P(`type `, service.ccName, `DefaultServer struct {`)
-	//	if !service.usesTxnMiddleware {
-	//		p.P(`DB *`, p.Import(gormImport), `.DB`)
-	//	}
-	//	p.P(`}`)
-	//	withSpan := getServiceOptions(service.ServiceDescriptorProto).WithTracing
-	//	if withSpan {
-	//		p.generateSpanInstantiationMethod(service)
-	//		p.generateSpanErrorMethod(service)
-	//		p.generateSpanResultMethod(service)
-	//	}
-	//	for _, method := range service.methods {
-	//		//Import context there because it have used in functions parameters
-	//		p.UsingGoImports(stdCtxImport)
-	//		switch method.verb {
-	//		case createService:
-	//			p.generateCreateServerMethod(service, method)
-	//		case readService:
-	//			p.generateReadServerMethod(service, method)
-	//		case updateService:
-	//			p.generateUpdateServerMethod(service, method)
-	//		case updateSetService:
-	//			p.generateUpdateSetServerMethod(service, method)
-	//		case deleteService:
-	//			p.generateDeleteServerMethod(service, method)
-	//		case deleteSetService:
-	//			p.generateDeleteSetServerMethod(service, method)
-	//		case listService:
-	//			p.generateListServerMethod(service, method)
-	//		default:
-	//			p.generateMethodStub(service, method)
-	//		}
-	//	}
-	//}
+	for _, service := range b.ormableServices {
+		if service.file != file || !service.autogen {
+			continue
+		}
+
+		g.P(`type `, service.ccName, `DefaultServer struct {`)
+		if !service.usesTxnMiddleware {
+			g.P(`DB *`, generateImport("DB", gormImport, g))
+		}
+		g.P(`}`)
+
+		withSpan := getServiceOptions(service.Service).WithTracing
+
+		if withSpan {
+			b.generateSpanInstantiationMethod(service, g)
+			//b.generateSpanErrorMethod(service)
+			//b.generateSpanResultMethod(service)
+		}
+
+		//for _, method := range service.methods {
+		//	//Import context there because it have used in functions parameters
+		//	_ = generateImport("", "context", g)
+		//	switch method.verb {
+		//	case createService:
+		//		b.generateCreateServerMethod(service, method)
+		//	case readService:
+		//		b.generateReadServerMethod(service, method)
+		//	case updateService:
+		//		b.generateUpdateServerMethod(service, method)
+		//	case updateSetService:
+		//		b.generateUpdateSetServerMethod(service, method)
+		//	case deleteService:
+		//		b.generateDeleteServerMethod(service, method)
+		//	case deleteSetService:
+		//		b.generateDeleteSetServerMethod(service, method)
+		//	case listService:
+		//		b.generateListServerMethod(service, method)
+		//	default:
+		//		b.generateMethodStub(service, method)
+		//	}
+		//}
+	}
+}
+
+func (b *ORMBuilder) generateSpanInstantiationMethod(service autogenService, g *protogen.GeneratedFile) {
+	serviceName := service.GoName
+	_ = generateImport("", "fmt", g)
+	g.P(`func (m *`, serviceName, `DefaultServer) spanCreate(ctx context.Context, in interface{}, methodName string) (*`, generateImport("Span", ocTraceImport, g), `, error) {`)
+	g.P(`_, span := `, generateImport("StartSpan", ocTraceImport, g), `(ctx, fmt.Sprint("`, serviceName, `DefaultServer.", methodName))`)
+	g.P(`raw, err := `, generateImport("Marshal", encodingJsonImport, g), `(in)`)
+	g.P(`if err != nil {`)
+	g.P(`return nil, err`)
+	g.P(`}`)
+	g.P(`span.Annotate([]`, generateImport("Attribute", ocTraceImport, g), `{`, generateImport("StringAttribute", ocTraceImport, g),`("in", string(raw))}, "in parameter")`)
+	g.P(`return span, nil`)
+	g.P(`}`)
 }
