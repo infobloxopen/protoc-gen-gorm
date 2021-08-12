@@ -1312,9 +1312,8 @@ func (b *ORMBuilder) generateReadHandler(message *protogen.Message, g *protogen.
 	ormable := b.getOrmable(typeName)
 
 	if b.readHasFieldSelection(ormable) {
-		// TODO: not implemented return false
-		// p.P(`func DefaultRead`, typeName, `(ctx context.Context, in *`,
-		// 	typeName, `, db *`, p.Import(gormImport), `.DB, fs *`, p.Import(queryImport), `.FieldSelection) (*`, typeName, `, error) {`)
+		g.P(`func DefaultRead`, typeName, `(ctx context.Context, in *`,
+			typeName, `, db *`, generateImport("DB", gormImport, g), `, fs *`, generateImport("FieldSelection", queryImport, g), `) (*`, typeName, `, error) {`)
 	} else {
 		g.P(`func DefaultRead`, typeName, `(ctx context.Context, in *`,
 			typeName, `, db *`, "gorm", `.DB) (*`, typeName, `, error) {`)
@@ -1367,6 +1366,12 @@ func (b *ORMBuilder) generateReadHandler(message *protogen.Message, g *protogen.
 }
 
 func (b *ORMBuilder) readHasFieldSelection(ormable *OrmableType) bool {
+	fmt.Fprintf(os.Stderr, "methods: %+v\n", ormable.Methods[readService])
+	if read, ok := ormable.Methods[readService]; ok {
+		if s := b.getFieldSelection(read.inType); s != "" {
+			return true
+		}
+	}
 	return false
 }
 
@@ -2852,11 +2857,15 @@ func (b *ORMBuilder) getPageInfo(message *protogen.Message) string {
 
 func (b *ORMBuilder) getFieldOfType(message *protogen.Message, fieldType string) string {
 	for _, field := range message.Fields {
-		goFieldName := camelCase(field.GoName)
-		goFieldType := field.Desc.Kind().String()
-		parts := strings.Split(goFieldType, ".")
-		if parts[len(parts)-1] == fieldType {
-			return goFieldName
+		//fmt.Fprintf(os.Stderr, "DEBUG: field: %+v, %s\n", field, goFieldType)
+		if field.Desc.Message() != nil {
+			//fmt.Fprintf(os.Stderr, "%+v\n", field.Desc.Message().Name())
+			goFieldName := camelCase(field.GoName)
+			goFieldType := string(field.Desc.Message().FullName())
+			parts := strings.Split(goFieldType, ".")
+			if parts[len(parts)-1] == fieldType {
+				return goFieldName
+			}
 		}
 	}
 	return ""
