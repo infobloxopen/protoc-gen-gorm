@@ -99,16 +99,17 @@ const (
 )
 
 type ORMBuilder struct {
-	plugin         *protogen.Plugin
-	ormableTypes   map[string]*OrmableType
-	messages       map[string]struct{}
-	fileImports    map[string]*fileImports // TODO: populate
-	currentFile    string                  // TODO populate
-	currentPackage string
-	dbEngine       int
-	stringEnums    bool
-	gateway        bool
-	suppressWarn   bool
+	plugin          *protogen.Plugin
+	ormableTypes    map[string]*OrmableType
+	messages        map[string]struct{}
+	fileImports     map[string]*fileImports // TODO: populate
+	currentFile     string                  // TODO populate
+	currentPackage  string
+	dbEngine        int
+	stringEnums     bool
+	gateway         bool
+	suppressWarn    bool
+	ormableServices []autogenService
 }
 
 func New(opts protogen.Options, request *pluginpb.CodeGeneratorRequest) (*ORMBuilder, error) {
@@ -478,7 +479,6 @@ func (b *ORMBuilder) hasPrimaryKey(ormable *OrmableType) bool {
 }
 
 func (b *ORMBuilder) isOrmable(typeName string) bool {
-	fmt.Fprintf(os.Stderr, "typeName: %s\n", typeName)
 	_, ok := b.ormableTypes[typeName]
 	return ok
 }
@@ -2247,7 +2247,6 @@ func (b *ORMBuilder) listHasFieldSelection(ormable *OrmableType) bool {
 }
 
 func (b *ORMBuilder) parseServices(file *protogen.File) {
-	//defaultSuppressWarn := b.suppressWarn
 	for _, service := range file.Services {
 		genSvc := autogenService{
 			Service: service,
@@ -2258,7 +2257,6 @@ func (b *ORMBuilder) parseServices(file *protogen.File) {
 		if opts := getServiceOptions(service); opts != nil {
 			genSvc.autogen = opts.GetAutogen()
 			genSvc.usesTxnMiddleware = opts.GetTxnMiddleware()
-			//fmt.Fprintf(os.Stderr, "options: %+v\n", opts)
 		}
 
 		if !genSvc.autogen {
@@ -2271,7 +2269,6 @@ func (b *ORMBuilder) parseServices(file *protogen.File) {
 			methodName := string(method.Desc.Name())
 			var verb, fmName, baseType string
 			var follows bool
-			//fmt.Fprintf(os.Stderr, "method: %+v\n", method)
 
 			if strings.HasPrefix(methodName, createService) {
 				verb = createService
@@ -2287,13 +2284,13 @@ func (b *ORMBuilder) parseServices(file *protogen.File) {
 				follows, baseType, fmName = b.followsUpdateConventions(input, output, updateService)
 			} else if strings.HasPrefix(methodName, deleteSetService) {
 				verb = deleteSetService
-
+				follows, baseType = b.followsDeleteSetConventions(input, output, method)
 			} else if strings.HasPrefix(methodName, deleteService) {
 				verb = deleteService
-
+				follows, baseType = b.followsDeleteConventions(input, output, method)
 			} else if strings.HasPrefix(methodName, listService) {
 				verb = listService
-
+				follows, baseType = b.followsListConventions(input, output, listService)
 			}
 
 			genMethod := autogenMethod{
@@ -2307,55 +2304,16 @@ func (b *ORMBuilder) parseServices(file *protogen.File) {
 				baseType:          baseType,
 			}
 
-			fmt.Fprintf(os.Stderr, "genMethod: %+v\n", genMethod)
+			//fmt.Fprintf(os.Stderr, "genMethod: %+v\n", genMethod)
+			genSvc.methods = append(genSvc.methods, genMethod)
+
+			if genMethod.verb != "" && b.isOrmable(genMethod.baseType) {
+				b.getOrmable(genMethod.baseType).Methods[genMethod.verb] = &genMethod
+			}
 		}
 
-		//for _, method := range service.GetMethod() {
-		//	inType, outType, methodName := p.getMethodProps(method)
-		//	var verb, fmName, baseType string
-		//	var follows bool
-		//	if strings.HasPrefix(methodName, createService) {
-		//		verb = createService
-		//		follows, baseType = p.followsCreateConventions(inType, outType, createService)
-		//	} else if strings.HasPrefix(methodName, readService) {
-		//		verb = readService
-		//		follows, baseType = p.followsReadConventions(inType, outType, readService)
-		//	} else if strings.HasPrefix(methodName, updateSetService) {
-		//		verb = updateSetService
-		//		follows, baseType, fmName = p.followsUpdateSetConventions(inType, outType, updateSetService)
-		//	} else if strings.HasPrefix(methodName, updateService) {
-		//		verb = updateService
-		//		follows, baseType, fmName = p.followsUpdateConventions(inType, outType, updateService)
-		//	} else if strings.HasPrefix(methodName, deleteSetService) {
-		//		verb = deleteSetService
-		//		follows, baseType = p.followsDeleteSetConventions(inType, outType, method)
-		//	} else if strings.HasPrefix(methodName, deleteService) {
-		//		verb = deleteService
-		//		follows, baseType = p.followsDeleteConventions(inType, outType, method)
-		//	} else if strings.HasPrefix(methodName, listService) {
-		//		verb = listService
-		//		follows, baseType = p.followsListConventions(inType, outType, listService)
-		//	}
-		//	genMethod := autogenMethod{
-		//		MethodDescriptorProto: method,
-		//		ccName:                methodName,
-		//		inType:                inType,
-		//		outType:               outType,
-		//		baseType:              baseType,
-		//		fieldMaskName:         fmName,
-		//		followsConvention:     follows,
-		//		verb:                  verb,
-		//	}
-		//	genSvc.methods = append(genSvc.methods, genMethod)
-		//
-		//	if genMethod.verb != "" && p.isOrmable(genMethod.baseType) {
-		//		p.getOrmable(genMethod.baseType).Methods[genMethod.verb] = &genMethod
-		//	}
-		//}
-		//p.ormableServices = append(p.ormableServices, genSvc)
-		//p.suppressWarn = defaultSuppressWarn
+		b.ormableServices = append(b.ormableServices, genSvc)
 	}
-
 }
 
 func (b *ORMBuilder) followsCreateConventions(inType *protogen.Message, outType *protogen.Message, methodName string) (bool, string) {
@@ -2527,7 +2485,88 @@ func (b *ORMBuilder) followsUpdateConventions(inType *protogen.Message, outType 
 		return false, "", ""
 	}
 
-	return true, inTypeName, generator.CamelCase(updateMask)
+	return true, inTypeName, camelCase(updateMask)
+}
+
+func (b *ORMBuilder) followsDeleteSetConventions(inType *protogen.Message, outType *protogen.Message, method *protogen.Method) (bool, string) {
+	//methodName := string(method.Desc.Name()) TODO: need for warnings
+	var hasIDs bool
+
+	for _, field := range inType.Fields {
+		if string(field.Desc.Name()) == "ids" && field.Desc.Cardinality() == protoreflect.Repeated {
+			hasIDs = true
+		}
+	}
+
+	if !hasIDs {
+		//p.warning(`stub will be generated for %s since %s incoming message doesn't have "ids" field`, methodName, p.TypeName(inType))
+		return false, ""
+	}
+	typeName := camelCase(getMethodOptions(method).GetObjectType())
+
+	if typeName == "" {
+		//p.warning(`stub will be generated for %s since (gorm.method).object_type option is not specified`, methodName)
+		return false, ""
+	}
+
+	if !b.isOrmable(typeName) {
+		//p.warning(`stub will be generated for %s since %s is not an ormable type`, methodName, typeName)
+		return false, ""
+	}
+
+	if !b.hasPrimaryKey(b.getOrmable(typeName)) {
+		//p.warning(`stub will be generated for %s since %s ormable type doesn't have a primary key`, methodName, typeName)
+		return false, ""
+	}
+
+	return true, typeName
+}
+
+func (b *ORMBuilder) followsDeleteConventions(inType *protogen.Message, outType *protogen.Message, method *protogen.Method) (bool, string) {
+	//methodName := generator.CamelCase(method.GetName())
+	var hasID bool
+	for _, field := range inType.Fields {
+		if string(field.Desc.Name()) == "id" {
+			hasID = true
+		}
+	}
+	if !hasID {
+		//p.warning(`stub will be generated for %s since %s incoming message doesn't have "id" field`, methodName, p.TypeName(inType))
+		return false, ""
+	}
+	typeName := camelCase(getMethodOptions(method).GetObjectType())
+	if typeName == "" {
+		//p.warning(`stub will be generated for %s since (gorm.method).object_type option is not specified`, methodName)
+		return false, ""
+	}
+	if !b.isOrmable(typeName) {
+		//p.warning(`stub will be generated for %s since %s is not an ormable type`, methodName, typeName)
+		return false, ""
+	}
+	if !b.hasPrimaryKey(b.getOrmable(typeName)) {
+		//p.warning(`stub will be generated for %s since %s ormable type doesn't have a primary key`, methodName, typeName)
+		return false, ""
+	}
+	return true, typeName
+}
+
+func (b *ORMBuilder) followsListConventions(inType *protogen.Message, outType *protogen.Message, methodName string) (bool, string) {
+	var outTypeName string
+	var typeOrmable bool
+	for _, field := range inType.Fields {
+		if string(field.Desc.Name()) == "results" {
+			gType := field.Desc.Kind().String()
+			outTypeName = strings.TrimPrefix(gType, "[]*")
+			if b.isOrmable(outTypeName) {
+				typeOrmable = true
+			}
+		}
+	}
+	if !typeOrmable {
+		//p.warning(`stub will be generated for %s since %s incoming message doesn't have "results" field of ormable type`, methodName, p.TypeName(outType))
+		return false, ""
+	}
+	return true, outTypeName
 }
 
 func getServiceOptions(service *protogen.Service) *gorm.AutoServerOptions {
@@ -2542,6 +2581,25 @@ func getServiceOptions(service *protogen.Service) *gorm.AutoServerOptions {
 	}
 
 	opts, ok := v.(*gorm.AutoServerOptions)
+	if !ok {
+		return nil
+	}
+
+	return opts
+}
+
+func getMethodOptions(method *protogen.Method) *gorm.MethodOptions {
+	options := method.Desc.Options().(*descriptorpb.MethodOptions)
+	if options == nil {
+		return nil
+	}
+
+	v := proto.GetExtension(options, gorm.E_Method)
+	if v == nil {
+		return nil
+	}
+
+	opts, ok := v.(*gorm.MethodOptions)
 	if !ok {
 		return nil
 	}
