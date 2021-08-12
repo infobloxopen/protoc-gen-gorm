@@ -2320,23 +2320,28 @@ func (b *ORMBuilder) followsCreateConventions(inType *protogen.Message, outType 
 	var inTypeName string
 	var typeOrmable bool
 	for _, field := range inType.Fields {
-		if field.GoName == "payload" {
-			gType := field.Desc.Kind().String()
+		fmt.Fprintf(os.Stderr, "method: %s, field: %s\n", methodName, string(field.Desc.Name()))
+		if string(field.Desc.Name()) == "payload" {
+			gType := string(field.Desc.Message().Name())
+			fmt.Fprintf(os.Stderr, "debug field: %+v\n", field)
 			inTypeName = strings.TrimPrefix(gType, "*")
+			fmt.Fprintf(os.Stderr, "candidate: %s, %v\n", gType, b.ormableTypes)
 			if b.isOrmable(inTypeName) {
 				typeOrmable = true
 			}
 		}
 	}
 	if !typeOrmable {
+		fmt.Fprintf(os.Stderr, "not ormable\n")
+
 		// TODO: how to produce waringing
 		//p.warning(`stub will be generated for %s since %s incoming message doesn't have "payload" field of ormable type`, methodName, p.TypeName(inType))
 		return false, ""
 	}
 	var outTypeName string
 	for _, field := range outType.Fields {
-		if field.GoName == "result" {
-			gType := field.Desc.Kind().String()
+		if string(field.Desc.Name()) == "result" {
+			gType := string(field.Desc.Message().Name())
 			outTypeName = strings.TrimPrefix(gType, "*")
 		}
 	}
@@ -2623,32 +2628,31 @@ func (b *ORMBuilder) generateDefaultServer(file *protogen.File, g *protogen.Gene
 
 		if withSpan {
 			b.generateSpanInstantiationMethod(service, g)
-			//b.generateSpanErrorMethod(service)
-			//b.generateSpanResultMethod(service)
+			b.generateSpanErrorMethod(service, g)
+			b.generateSpanResultMethod(service, g)
 		}
 
-		//for _, method := range service.methods {
-		//	//Import context there because it have used in functions parameters
-		//	_ = generateImport("", "context", g)
-		//	switch method.verb {
-		//	case createService:
-		//		b.generateCreateServerMethod(service, method)
-		//	case readService:
-		//		b.generateReadServerMethod(service, method)
-		//	case updateService:
-		//		b.generateUpdateServerMethod(service, method)
-		//	case updateSetService:
-		//		b.generateUpdateSetServerMethod(service, method)
-		//	case deleteService:
-		//		b.generateDeleteServerMethod(service, method)
-		//	case deleteSetService:
-		//		b.generateDeleteSetServerMethod(service, method)
-		//	case listService:
-		//		b.generateListServerMethod(service, method)
-		//	default:
-		//		b.generateMethodStub(service, method)
-		//	}
-		//}
+		for _, method := range service.methods {
+			_ = generateImport("", "context", g)
+			switch method.verb {
+			case createService:
+				b.generateCreateServerMethod(service, method, g)
+			case readService:
+				//b.generateReadServerMethod(service, method)
+			case updateService:
+				//b.generateUpdateServerMethod(service, method)
+			case updateSetService:
+				//b.generateUpdateSetServerMethod(service, method)
+			case deleteService:
+				//b.generateDeleteServerMethod(service, method)
+			case deleteSetService:
+				//b.generateDeleteSetServerMethod(service, method)
+			case listService:
+				//b.generateListServerMethod(service, method)
+			default:
+				//b.generateMethodStub(service, method)
+			}
+		}
 	}
 }
 
@@ -2663,5 +2667,146 @@ func (b *ORMBuilder) generateSpanInstantiationMethod(service autogenService, g *
 	g.P(`}`)
 	g.P(`span.Annotate([]`, generateImport("Attribute", ocTraceImport, g), `{`, generateImport("StringAttribute", ocTraceImport, g),`("in", string(raw))}, "in parameter")`)
 	g.P(`return span, nil`)
+	g.P(`}`)
+}
+
+func (b *ORMBuilder) generateSpanErrorMethod(service autogenService, g *protogen.GeneratedFile) {
+	g.P(`// spanError ...`)
+	g.P(`func (m *`, service.GoName, `DefaultServer) spanError(span *`, generateImport("Span", ocTraceImport, g), `, err error) error {`)
+	g.P(`span.SetStatus(`, generateImport("Status", ocTraceImport, g), `{`)
+	g.P(`Code: `, generateImport("StatusCodeUnknown", ocTraceImport, g), `,`)
+	g.P(`Message: err.Error(),`)
+	g.P(`})`)
+	g.P(`return err`)
+	g.P(`}`)
+}
+
+func (b *ORMBuilder) generateSpanResultMethod(service autogenService, g *protogen.GeneratedFile) {
+	g.P(`// spanResult ...`)
+	g.P(`func (m *`, service.GoName, `DefaultServer) spanResult(span *`, generateImport("Span", ocTraceImport, g), `, out interface{}) error {`)
+	g.P(`raw, err := `, generateImport("Marshal", encodingJsonImport, g), `(out)`)
+	g.P(`if err != nil {`)
+	g.P(`return err`)
+	g.P(`}`)
+	g.P(`span.Annotate([]`, generateImport("Attribute", ocTraceImport, g), `{`, generateImport("StringAttribute", ocTraceImport, g), `("out", string(raw))}, "out parameter")`)
+	g.P(`return nil`)
+	g.P(`}`)
+}
+
+func (b *ORMBuilder) generateCreateServerMethod(service autogenService, method autogenMethod, g *protogen.GeneratedFile) {
+	b.generateMethodSignature(service, method, g)
+	fmt.Fprintf(os.Stderr, "method: %+v -> %t\n", method.ccName, method.followsConvention)
+	if method.followsConvention {
+		b.generateDBSetup(service, g)
+		b.generatePreserviceCall(service, method.baseType, method.ccName, g)
+		g.P(`res, err := DefaultCreate`, method.baseType, `(ctx, in.GetPayload(), db)`)
+		g.P(`if err != nil {`)
+		g.P(`return nil, `, b.wrapSpanError(service, "err"))
+		g.P(`}`)
+		g.P(`out := &`, string(method.outType.Desc.Name()), `{Result: res}`)
+		if b.gateway {
+			g.P(`err = `, generateImport("SetCreated", gatewayImport, g), `(ctx, "")`)
+			g.P(`if err != nil {`)
+			g.P(`return nil, `, b.wrapSpanError(service, "err"))
+			g.P(`}`)
+		}
+
+		b.generatePostserviceCall(service, method.baseType, method.ccName, g)
+		b.spanResultHandling(service, g)
+		g.P(`return out, nil`)
+		g.P(`}`)
+		b.generatePreserviceHook(service.ccName, method.baseType, method.ccName, g)
+		b.generatePostserviceHook(service.ccName, method.baseType, string(method.outType.Desc.Name()), method.ccName, g)
+	} else {
+		b.generateEmptyBody(service, method.outType, g)
+	}
+}
+
+func (b *ORMBuilder) generateMethodSignature(service autogenService, method autogenMethod, g *protogen.GeneratedFile) {
+	in := method.Method.Input.GoIdent.GoName
+	out := method.Method.Output.GoIdent.GoName
+	g.P(`// `, method.ccName, ` ...`)
+	g.P(`func (m *`, service.GoName, `DefaultServer) `, method.ccName, ` (ctx context.Context, in *`,
+		in, `) (*`, out, `, error) {`)
+	withSpan := getServiceOptions(service.Service).WithTracing
+	if withSpan {
+		g.P(`span, errSpanCreate := m.spanCreate(ctx, in, "`, method.ccName, `")`)
+		g.P(`if errSpanCreate != nil {`)
+		g.P(`return nil, errSpanCreate`)
+		g.P(`}`)
+		g.P(`defer span.End()`)
+	}
+}
+
+func (b ORMBuilder) generateEmptyBody(service autogenService, outType *protogen.Message, g *protogen.GeneratedFile) {
+	g.P(`out:= &`, outType.GoIdent.GoName, `{}`)
+	b.spanResultHandling(service, g)
+	g.P(`return out, nil`)
+	g.P(`}`)
+}
+
+func (b *ORMBuilder) spanResultHandling(service autogenService, g *protogen.GeneratedFile) {
+	withSpan := getServiceOptions(service.Service).WithTracing
+	if withSpan {
+		g.P(`errSpanResult := m.spanResult(span, out)`)
+		g.P(`if errSpanResult != nil {`)
+		g.P(`return nil, `, b.wrapSpanError(service, "errSpanResult"))
+		g.P(`}`)
+	}
+}
+
+func (b *ORMBuilder) wrapSpanError(service autogenService, errVarName string) string {
+	withSpan := getServiceOptions(service.Service).WithTracing
+	if withSpan {
+		return fmt.Sprint(`m.spanError(span, `, errVarName, `)`)
+	}
+	return errVarName
+}
+
+func (b *ORMBuilder) generateDBSetup(service autogenService, g *protogen.GeneratedFile) error {
+	if service.usesTxnMiddleware {
+		g.P(`txn, ok := `, generateImport("FromContext", tkgormImport, g), `(ctx)`)
+		g.P(`if !ok {`)
+		g.P(`return nil, `, generateImport("NoTransactionError", gerrorsImport, g))
+		g.P(`}`)
+		g.P(`db := txn.Begin()`)
+		g.P(`if db.Error != nil {`)
+		g.P(`return nil, db.Error`)
+		g.P(`}`)
+	} else {
+		g.P(`db := m.DB`)
+	}
+	return nil
+}
+
+func (b *ORMBuilder) generatePreserviceCall(service autogenService, typeName, method string, g *protogen.GeneratedFile) {
+	g.P(`if custom, ok := interface{}(in).(`, service.ccName, typeName, `WithBefore`, method, `); ok {`)
+	g.P(`var err error`)
+	g.P(`if db, err = custom.Before`, method, `(ctx, db); err != nil {`)
+	g.P(`return nil, `, b.wrapSpanError(service, "err"))
+	g.P(`}`)
+	g.P(`}`)
+}
+
+func (b *ORMBuilder) generatePostserviceCall(service autogenService, typeName, method string, g *protogen.GeneratedFile) {
+	g.P(`if custom, ok := interface{}(in).(`, service.ccName, typeName, `WithAfter`, method, `); ok {`)
+	g.P(`var err error`)
+	g.P(`if err = custom.After`, method, `(ctx, out, db); err != nil {`)
+	g.P(`return nil, `, b.wrapSpanError(service, "err"))
+	g.P(`}`)
+	g.P(`}`)
+}
+
+func (b *ORMBuilder) generatePreserviceHook(svc, typeName, method string, g *protogen.GeneratedFile) {
+	g.P(`// `, svc, typeName, `WithBefore`, method, ` called before Default`, method, typeName, ` in the default `, method, ` handler`)
+	g.P(`type `, svc, typeName, `WithBefore`, method, ` interface {`)
+	g.P(`Before`, method, `(context.Context, *`, generateImport("DB", gormImport, g), `) (*`, generateImport("DB", gormImport, g), `, error)`)
+	g.P(`}`)
+}
+
+func (b *ORMBuilder) generatePostserviceHook(svc, typeName, outTypeName, method string, g *protogen.GeneratedFile) {
+	g.P(`// `, svc, typeName, `WithAfter`, method, ` called before Default`, method, typeName, ` in the default `, method, ` handler`)
+	g.P(`type `, svc, typeName, `WithAfter`, method, ` interface {`)
+	g.P(`After`, method, `(context.Context, *`, outTypeName, `, *`, generateImport("DB", gormImport, g), `) error`)
 	g.P(`}`)
 }
