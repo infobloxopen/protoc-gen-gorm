@@ -2362,7 +2362,7 @@ func (b *ORMBuilder) followsReadConventions(inType *protogen.Message, outType *p
 	var typeOrmable bool
 	for _, field := range outType.Fields {
 		if string(field.Desc.Name()) == "result" {
-			gType := field.Desc.Kind().String()
+			gType := string(field.Desc.Message().Name())
 			outTypeName = strings.TrimPrefix(gType, "*")
 			if b.isOrmable(outTypeName) {
 				typeOrmable = true
@@ -2632,7 +2632,7 @@ func (b *ORMBuilder) generateDefaultServer(file *protogen.File, g *protogen.Gene
 			case createService:
 				b.generateCreateServerMethod(service, method, g)
 			case readService:
-				//b.generateReadServerMethod(service, method)
+				b.generateReadServerMethod(service, method, g)
 			case updateService:
 				//b.generateUpdateServerMethod(service, method)
 			case updateSetService:
@@ -2802,4 +2802,62 @@ func (b *ORMBuilder) generatePostserviceHook(svc, typeName, outTypeName, method 
 	g.P(`type `, svc, typeName, `WithAfter`, method, ` interface {`)
 	g.P(`After`, method, `(context.Context, *`, outTypeName, `, *`, generateImport("DB", gormImport, g), `) error`)
 	g.P(`}`)
+}
+
+func (b *ORMBuilder) generateReadServerMethod(service autogenService, method autogenMethod, g *protogen.GeneratedFile) {
+	b.generateMethodSignature(service, method, g)
+	if method.followsConvention {
+		b.generateDBSetup(service, g)
+		b.generatePreserviceCall(service, method.baseType, method.ccName, g)
+		typeName := method.baseType
+		if fields := b.getFieldSelection(method.inType); fields != "" {
+			g.P(`res, err := DefaultRead`, typeName, `(ctx, &`, typeName, `{Id: in.GetId()}, db, in.`, fields, `)`)
+		} else {
+			g.P(`res, err := DefaultRead`, typeName, `(ctx, &`, typeName, `{Id: in.GetId()}, db)`)
+		}
+		g.P(`if err != nil {`)
+		g.P(`return nil, `, b.wrapSpanError(service, "err"))
+		g.P(`}`)
+		g.P(`out := &`, string(method.outType.Desc.Name()), `{Result: res}`)
+		b.generatePostserviceCall(service, method.baseType, method.ccName, g)
+		b.spanResultHandling(service, g)
+		g.P(`return out, nil`)
+		g.P(`}`)
+		b.generatePreserviceHook(service.ccName, method.baseType, method.ccName, g)
+		b.generatePostserviceHook(service.ccName, method.baseType, string(method.outType.Desc.Name()), method.ccName, g)
+	} else {
+		b.generateEmptyBody(service, method.outType, g)
+	}
+}
+
+func (b *ORMBuilder) getFieldSelection(message *protogen.Message) string {
+	return b.getFieldOfType(message, "FieldSelection")
+}
+
+func (b *ORMBuilder) getFiltering(message *protogen.Message) string {
+	return b.getFieldOfType(message, "Filtering")
+}
+
+func (b *ORMBuilder) getSorting(message *protogen.Message) string {
+	return b.getFieldOfType(message, "Sorting")
+}
+
+func (b *ORMBuilder) getPagination(message *protogen.Message) string {
+	return b.getFieldOfType(message, "Pagination")
+}
+
+func (b *ORMBuilder) getPageInfo(message *protogen.Message) string {
+	return b.getFieldOfType(message, "PageInfo")
+}
+
+func (b *ORMBuilder) getFieldOfType(message *protogen.Message, fieldType string) string {
+	for _, field := range message.Fields {
+		goFieldName := camelCase(field.GoName)
+		goFieldType := field.Desc.Kind().String()
+		parts := strings.Split(goFieldType, ".")
+		if parts[len(parts)-1] == fieldType {
+			return goFieldName
+		}
+	}
+	return ""
 }
