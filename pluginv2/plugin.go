@@ -197,8 +197,8 @@ type autogenMethod struct {
 	followsConvention bool
 	baseType          string
 	fieldMaskName     string
-	inType *protogen.Message
-	outType *protogen.Message
+	inType            *protogen.Message
+	outType           *protogen.Message
 }
 
 type fileImports struct {
@@ -210,8 +210,8 @@ type fileImports struct {
 
 type autogenService struct {
 	*protogen.Service
-	ccName string
-	file *protogen.File
+	ccName            string
+	file              *protogen.File
 	usesTxnMiddleware bool
 	methods           []autogenMethod
 	autogen           bool
@@ -2251,8 +2251,8 @@ func (b *ORMBuilder) parseServices(file *protogen.File) {
 	for _, service := range file.Services {
 		genSvc := autogenService{
 			Service: service,
-			ccName:                 camelCase(string(service.Desc.Name())),
-			file:                   file,
+			ccName:  camelCase(string(service.Desc.Name())),
+			file:    file,
 		}
 
 		if opts := getServiceOptions(service); opts != nil {
@@ -2297,14 +2297,14 @@ func (b *ORMBuilder) parseServices(file *protogen.File) {
 			}
 
 			genMethod := autogenMethod{
-				Method: method,
-				ccName: methodName,
-				inType: input,
-				outType: output,
-				fieldMaskName: fmName,
-				verb: verb,
+				Method:            method,
+				ccName:            methodName,
+				inType:            input,
+				outType:           output,
+				fieldMaskName:     fmName,
+				verb:              verb,
 				followsConvention: follows,
-				baseType: baseType,
+				baseType:          baseType,
 			}
 
 			fmt.Fprintf(os.Stderr, "genMethod: %+v\n", genMethod)
