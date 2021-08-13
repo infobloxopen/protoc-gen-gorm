@@ -2649,7 +2649,7 @@ func (b *ORMBuilder) generateDefaultServer(file *protogen.File, g *protogen.Gene
 			case listService:
 				b.generateListServerMethod(service, method, g)
 			default:
-				//b.generateMethodStub(service, method)
+				b.generateMethodStub(service, method, g)
 			}
 		}
 	}
@@ -2721,8 +2721,22 @@ func (b *ORMBuilder) generateCreateServerMethod(service autogenService, method a
 }
 
 func (b *ORMBuilder) generateMethodSignature(service autogenService, method autogenMethod, g *protogen.GeneratedFile) {
+	// TODO: fix super hack with propre package names
+	// TODO: we should not generate import from the same package, protoFile should be harvested for it
+	iPackage := "\"github.com/infobloxopen/protoc-gen-gorm/example/feature_demo\""
+	//fmt.Fprintf(os.Stderr, "%s - %s\n", method.Method.Input.GoIdent.GoImportPath.String(), iPackage)
 	in := method.Method.Input.GoIdent.GoName
 	out := method.Method.Output.GoIdent.GoName
+	if iPackage != string(method.Method.Input.GoIdent.GoImportPath.String()) {
+		//fmt.Fprintf(os.Stderr, "should be on once\n")
+		in = generateImport(method.Method.Input.GoIdent.GoName, string(method.Method.Input.GoIdent.GoImportPath), g)
+		//out = generateImport(method.Method.Output.GoIdent.GoName, string(method.Method.Output.GoIdent.GoImportPath), g)
+	}
+	if iPackage != string(method.Method.Output.GoIdent.GoImportPath.String()) {
+		//fmt.Fprintf(os.Stderr, "should be on once\n")
+		out = generateImport(method.Method.Output.GoIdent.GoName, string(method.Method.Output.GoIdent.GoImportPath), g)
+	}
+
 	g.P(`// `, method.ccName, ` ...`)
 	g.P(`func (m *`, service.GoName, `DefaultServer) `, method.ccName, ` (ctx context.Context, in *`,
 		in, `) (*`, out, `, error) {`)
@@ -3057,4 +3071,9 @@ func (b *ORMBuilder) generatePagedRequestHandling(pg string, g *protogen.Generat
 	g.P(`}`)
 	g.P(fmt.Sprintf(`resPaging = &%s{Offset: offset}`, generateImport("PageInfo", queryImport, g)))
 	g.P(`}`)
+}
+
+func (b *ORMBuilder) generateMethodStub(service autogenService, method autogenMethod, g *protogen.GeneratedFile) {
+	b.generateMethodSignature(service, method, g)
+	b.generateEmptyBody(service, method.outType, g)
 }
