@@ -297,7 +297,6 @@ func (b *ORMBuilder) Generate() (*pluginpb.CodeGeneratorResponse, error) {
 	}
 
 	for _, protoFile := range b.plugin.Files {
-		fmt.Fprintf(os.Stderr, "debug current package: %s\n", protoFile.GoImportPath.String())
 		b.currentPackage = protoFile.GoImportPath.String()
 		// generate actual code
 		fileName := protoFile.GeneratedFilenamePrefix + ".pb.gorm.go"
@@ -2703,7 +2702,7 @@ func (b *ORMBuilder) generateCreateServerMethod(service autogenService, method a
 		g.P(`if err != nil {`)
 		g.P(`return nil, `, b.wrapSpanError(service, "err"))
 		g.P(`}`)
-		g.P(`out := &`, string(method.outType.Desc.Name()), `{Result: res}`)
+		g.P(`out := &`, b.typeName(method.outType.GoIdent, g), `{Result: res}`)
 		if b.gateway {
 			g.P(`err = `, generateImport("SetCreated", gatewayImport, g), `(ctx, "")`)
 			g.P(`if err != nil {`)
@@ -2716,7 +2715,7 @@ func (b *ORMBuilder) generateCreateServerMethod(service autogenService, method a
 		g.P(`return out, nil`)
 		g.P(`}`)
 		b.generatePreserviceHook(service.ccName, method.baseType, method.ccName, g)
-		b.generatePostserviceHook(service.ccName, method.baseType, string(method.outType.Desc.Name()), method.ccName, g)
+		b.generatePostserviceHook(service.ccName, method.baseType, b.typeName(method.outType.GoIdent, g), method.ccName, g)
 	} else {
 		b.generateEmptyBody(service, method.outType, g)
 	}
