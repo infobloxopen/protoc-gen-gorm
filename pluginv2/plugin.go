@@ -297,6 +297,8 @@ func (b *ORMBuilder) Generate() (*pluginpb.CodeGeneratorResponse, error) {
 	}
 
 	for _, protoFile := range b.plugin.Files {
+		fmt.Fprintf(os.Stderr, "debug current package: %s\n", protoFile.GoImportPath.String())
+		b.currentPackage = protoFile.GoImportPath.String()
 		// generate actual code
 		fileName := protoFile.GeneratedFilenamePrefix + ".pb.gorm.go"
 		g, ok := genFileMap[fileName]
@@ -2721,21 +2723,8 @@ func (b *ORMBuilder) generateCreateServerMethod(service autogenService, method a
 }
 
 func (b *ORMBuilder) generateMethodSignature(service autogenService, method autogenMethod, g *protogen.GeneratedFile) {
-	// TODO: fix super hack with propre package names
-	// TODO: we should not generate import from the same package, protoFile should be harvested for it
-	iPackage := "\"github.com/infobloxopen/protoc-gen-gorm/example/feature_demo\""
-	//fmt.Fprintf(os.Stderr, "%s - %s\n", method.Method.Input.GoIdent.GoImportPath.String(), iPackage)
-	in := method.Method.Input.GoIdent.GoName
-	out := method.Method.Output.GoIdent.GoName
-	if iPackage != string(method.Method.Input.GoIdent.GoImportPath.String()) {
-		//fmt.Fprintf(os.Stderr, "should be on once\n")
-		in = generateImport(method.Method.Input.GoIdent.GoName, string(method.Method.Input.GoIdent.GoImportPath), g)
-		//out = generateImport(method.Method.Output.GoIdent.GoName, string(method.Method.Output.GoIdent.GoImportPath), g)
-	}
-	if iPackage != string(method.Method.Output.GoIdent.GoImportPath.String()) {
-		//fmt.Fprintf(os.Stderr, "should be on once\n")
-		out = generateImport(method.Method.Output.GoIdent.GoName, string(method.Method.Output.GoIdent.GoImportPath), g)
-	}
+	in := b.typeName(method.inType.GoIdent, g)
+	out := b.typeName(method.outType.GoIdent, g)
 
 	g.P(`// `, method.ccName, ` ...`)
 	g.P(`func (m *`, service.GoName, `DefaultServer) `, method.ccName, ` (ctx context.Context, in *`,
@@ -2751,7 +2740,7 @@ func (b *ORMBuilder) generateMethodSignature(service autogenService, method auto
 }
 
 func (b ORMBuilder) generateEmptyBody(service autogenService, outType *protogen.Message, g *protogen.GeneratedFile) {
-	g.P(`out:= &`, outType.GoIdent.GoName, `{}`)
+	g.P(`out:= &`, b.typeName(outType.GoIdent, g), `{}`)
 	b.spanResultHandling(service, g)
 	g.P(`return out, nil`)
 	g.P(`}`)
@@ -3076,4 +3065,13 @@ func (b *ORMBuilder) generatePagedRequestHandling(pg string, g *protogen.Generat
 func (b *ORMBuilder) generateMethodStub(service autogenService, method autogenMethod, g *protogen.GeneratedFile) {
 	b.generateMethodSignature(service, method, g)
 	b.generateEmptyBody(service, method.outType, g)
+}
+
+func (b *ORMBuilder) typeName(ident protogen.GoIdent, g *protogen.GeneratedFile) string {
+	// drop package prefix, no need to import
+	if b.currentPackage == ident.GoImportPath.String() {
+		return ident.GoName
+	}
+
+	return generateImport(ident.GoName, string(ident.GoImportPath), g)
 }
