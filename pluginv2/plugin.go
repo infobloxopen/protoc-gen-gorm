@@ -2642,7 +2642,7 @@ func (b *ORMBuilder) generateDefaultServer(file *protogen.File, g *protogen.Gene
 			case updateSetService:
 				b.generateUpdateSetServerMethod(service, method, g)
 			case deleteService:
-				//b.generateDeleteServerMethod(service, method)
+				b.generateDeleteServerMethod(service, method, g)
 			case deleteSetService:
 				//b.generateDeleteSetServerMethod(service, method)
 			case listService:
@@ -2938,6 +2938,28 @@ func (b *ORMBuilder) generateUpdateSetServerMethod(service autogenService, metho
 
 		b.generatePreserviceHook(service.ccName, typeName, method.ccName, g)
 		b.generatePostserviceHook(service.ccName, typeName, string(method.outType.Desc.Name()), method.ccName, g)
+	} else {
+		b.generateEmptyBody(service, method.outType, g)
+	}
+}
+
+func (b *ORMBuilder) generateDeleteServerMethod(service autogenService, method autogenMethod, g *protogen.GeneratedFile) {
+	b.generateMethodSignature(service, method, g)
+	if method.followsConvention {
+		typeName := method.baseType
+		b.generateDBSetup(service, g)
+		b.generatePreserviceCall(service, method.baseType, method.ccName, g)
+		g.P(`err := DefaultDelete`, typeName, `(ctx, &`, typeName, `{Id: in.GetId()}, db)`)
+		g.P(`if err != nil {`)
+		g.P(`return nil, `, b.wrapSpanError(service, "err"))
+		g.P(`}`)
+		g.P(`out := &`, string(method.outType.Desc.Name()), `{}`)
+		b.generatePostserviceCall(service, method.baseType, method.ccName, g)
+		b.spanResultHandling(service, g)
+		g.P(`return out, nil`)
+		g.P(`}`)
+		b.generatePreserviceHook(service.ccName, method.baseType, method.ccName, g)
+		b.generatePostserviceHook(service.ccName, method.baseType, string(method.outType.Desc.Name()), method.ccName, g)
 	} else {
 		b.generateEmptyBody(service, method.outType, g)
 	}
