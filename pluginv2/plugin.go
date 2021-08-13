@@ -2556,9 +2556,9 @@ func (b *ORMBuilder) followsDeleteConventions(inType *protogen.Message, outType 
 func (b *ORMBuilder) followsListConventions(inType *protogen.Message, outType *protogen.Message, methodName string) (bool, string) {
 	var outTypeName string
 	var typeOrmable bool
-	for _, field := range inType.Fields {
+	for _, field := range outType.Fields {
 		if string(field.Desc.Name()) == "results" {
-			gType := field.Desc.Kind().String()
+			gType := string(field.Desc.Message().Name())
 			outTypeName = strings.TrimPrefix(gType, "[]*")
 			if b.isOrmable(outTypeName) {
 				typeOrmable = true
@@ -2569,6 +2569,7 @@ func (b *ORMBuilder) followsListConventions(inType *protogen.Message, outType *p
 		//p.warning(`stub will be generated for %s since %s incoming message doesn't have "results" field of ormable type`, methodName, p.TypeName(outType))
 		return false, ""
 	}
+
 	return true, outTypeName
 }
 
@@ -2646,7 +2647,7 @@ func (b *ORMBuilder) generateDefaultServer(file *protogen.File, g *protogen.Gene
 			case deleteSetService:
 				b.generateDeleteSetServerMethod(service, method, g)
 			case listService:
-				//b.generateListServerMethod(service, method)
+				b.generateListServerMethod(service, method, g)
 			default:
 				//b.generateMethodStub(service, method)
 			}
@@ -2989,4 +2990,71 @@ func (b *ORMBuilder) generateDeleteSetServerMethod(service autogenService, metho
 	} else {
 		b.generateEmptyBody(service, method.outType, g)
 	}
+}
+
+func (b *ORMBuilder) generateListServerMethod(service autogenService, method autogenMethod, g *protogen.GeneratedFile) {
+	b.generateMethodSignature(service, method, g)
+	if method.followsConvention {
+		b.generateDBSetup(service, g)
+		b.generatePreserviceCall(service, method.baseType, method.ccName, g)
+		pg := b.getPagination(method.inType)
+		pi := b.getPageInfo(method.outType)
+		if pg != "" && pi != "" {
+			b.generatePagedRequestSetup(pg, g)
+		}
+		handlerCall := fmt.Sprint(`res, err := DefaultList`, method.baseType, `(ctx, db`)
+		if f := b.getFiltering(method.inType); f != "" {
+			handlerCall += fmt.Sprint(",in.", f)
+		}
+		if s := b.getSorting(method.inType); s != "" {
+			handlerCall += fmt.Sprint(",in.", s)
+		}
+		if pg != "" {
+			handlerCall += fmt.Sprint(",in.", pg)
+		}
+		if fs := b.getFieldSelection(method.inType); fs != "" {
+			handlerCall += fmt.Sprint(",in.", fs)
+		}
+		handlerCall += ")"
+		g.P(handlerCall)
+		g.P(`if err != nil {`)
+		g.P(`return nil, `, b.wrapSpanError(service, "err"))
+		g.P(`}`)
+		var pageInfoIfExist string
+		if pg != "" && pi != "" {
+			b.generatePagedRequestHandling(pg, g)
+			pageInfoIfExist = ", " + pi + ": resPaging"
+		}
+		g.P(`out := &`, string(method.outType.Desc.Name()), `{Results: res`, pageInfoIfExist, ` }`)
+		b.generatePostserviceCall(service, method.baseType, method.ccName, g)
+		b.spanResultHandling(service, g)
+		g.P(`return out, nil`)
+		g.P(`}`)
+		b.generatePreserviceHook(service.ccName, method.baseType, method.ccName, g)
+		b.generatePostserviceHook(service.ccName, method.baseType, string(method.outType.Desc.Name()), method.ccName, g)
+	} else {
+		b.generateEmptyBody(service, method.outType, g)
+	}
+}
+
+func (b *ORMBuilder) generatePagedRequestSetup(pg string, g *protogen.GeneratedFile) {
+	g.P(`pagedRequest := false`)
+	g.P(fmt.Sprintf(`if in.Get%s().GetLimit()>=1 {`, pg))
+	g.P(fmt.Sprintf(`in.%s.Limit ++`, pg))
+	g.P(`pagedRequest=true`)
+	g.P(`}`)
+}
+
+func (b *ORMBuilder) generatePagedRequestHandling(pg string, g *protogen.GeneratedFile) {
+	g.P(fmt.Sprintf(`var resPaging *%s`, generateImport("PageInfo", queryImport, g)))
+	g.P(`if pagedRequest {`)
+	g.P(`var offset int32`)
+	g.P(`var size int32 = int32(len(res))`)
+	g.P(fmt.Sprintf(`if size == in.Get%s().GetLimit(){`, pg))
+	g.P(`size--`)
+	g.P(`res=res[:size]`)
+	g.P(fmt.Sprintf(`offset=in.Get%s().GetOffset()+size`, pg))
+	g.P(`}`)
+	g.P(fmt.Sprintf(`resPaging = &%s{Offset: offset}`, generateImport("PageInfo", queryImport, g)))
+	g.P(`}`)
 }
