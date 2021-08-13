@@ -2640,7 +2640,7 @@ func (b *ORMBuilder) generateDefaultServer(file *protogen.File, g *protogen.Gene
 			case updateService:
 				b.generateUpdateServerMethod(service, method, g)
 			case updateSetService:
-				//b.generateUpdateSetServerMethod(service, method)
+				b.generateUpdateSetServerMethod(service, method, g)
 			case deleteService:
 				//b.generateDeleteServerMethod(service, method)
 			case deleteSetService:
@@ -2897,6 +2897,47 @@ func (b *ORMBuilder) generateUpdateServerMethod(service autogenService, method a
 		g.P(`}`)
 		b.generatePreserviceHook(service.ccName, method.baseType, method.ccName, g)
 		b.generatePostserviceHook(service.ccName, method.baseType, string(method.outType.Desc.Name()), method.ccName, g)
+	} else {
+		b.generateEmptyBody(service, method.outType, g)
+	}
+}
+
+func (b *ORMBuilder) generateUpdateSetServerMethod(service autogenService, method autogenMethod, g *protogen.GeneratedFile) {
+	b.generateMethodSignature(service, method, g)
+	if method.followsConvention {
+		typeName := method.baseType
+		typeName = strings.TrimPrefix(typeName, "[]*")
+		g.P(`if in == nil {`)
+		g.P(`return nil,`, generateImport("NilArgumentError", gerrorsImport, g))
+		g.P(`}`)
+		g.P(``)
+		b.generateDBSetup(service, g)
+		g.P(``)
+		b.generatePreserviceCall(service, typeName, method.ccName, g)
+
+		g.P(``)
+		g.P(`res, err := DefaultPatchSet`, typeName, `(ctx, in.GetObjects(), in.Get`, method.fieldMaskName, `(), db)`)
+		g.P(`if err != nil {`)
+		g.P(`return nil, `, b.wrapSpanError(service, "err"))
+		g.P(`}`)
+		g.P(``)
+		g.P(`out := &`, string(method.outType.Desc.Name()), `{Results: res}`)
+
+		g.P(``)
+		b.generatePostserviceCall(service, typeName, method.ccName, g)
+		g.P(``)
+		withSpan := getServiceOptions(service.Service).WithTracing
+		if withSpan {
+			g.P(`err = m.spanResult(span, out)`)
+			g.P(`if err != nil {`)
+			g.P(`return nil,`, b.wrapSpanError(service, "err"))
+			g.P(`}`)
+		}
+		g.P(`return out, nil`)
+		g.P(`}`)
+
+		b.generatePreserviceHook(service.ccName, typeName, method.ccName, g)
+		b.generatePostserviceHook(service.ccName, typeName, string(method.outType.Desc.Name()), method.ccName, g)
 	} else {
 		b.generateEmptyBody(service, method.outType, g)
 	}
