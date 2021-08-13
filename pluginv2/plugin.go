@@ -1366,7 +1366,6 @@ func (b *ORMBuilder) generateReadHandler(message *protogen.Message, g *protogen.
 }
 
 func (b *ORMBuilder) readHasFieldSelection(ormable *OrmableType) bool {
-	fmt.Fprintf(os.Stderr, "methods: %+v\n", ormable.Methods[readService])
 	if read, ok := ormable.Methods[readService]; ok {
 		if s := b.getFieldSelection(read.inType); s != "" {
 			return true
@@ -2451,7 +2450,7 @@ func (b *ORMBuilder) followsUpdateConventions(inType *protogen.Message, outType 
 	var updateMask string
 	for _, field := range inType.Fields {
 		if string(field.Desc.Name()) == "payload" {
-			gType := field.Desc.Kind().String()
+			gType := string(field.Desc.Message().Name())
 			inTypeName = strings.TrimPrefix(gType, "*")
 			if b.isOrmable(inTypeName) {
 				typeOrmable = true
@@ -2459,7 +2458,7 @@ func (b *ORMBuilder) followsUpdateConventions(inType *protogen.Message, outType 
 		}
 
 		// Check that type of field is a FieldMask
-		if field.Desc.Kind().String() == ".google.protobuf.FieldMask" {
+		if string(field.Desc.Message().FullName()) == "google.protobuf.FieldMask" {
 			// More than one mask in request is not allowed.
 			if updateMask != "" {
 				return false, "", ""
@@ -2476,7 +2475,7 @@ func (b *ORMBuilder) followsUpdateConventions(inType *protogen.Message, outType 
 	var outTypeName string
 	for _, field := range outType.Fields {
 		if string(field.Desc.Name()) == "result" {
-			gType := field.Desc.Kind().String()
+			gType := string(field.Desc.Message().Name())
 			outTypeName = strings.TrimPrefix(gType, "*")
 		}
 	}
@@ -2639,7 +2638,7 @@ func (b *ORMBuilder) generateDefaultServer(file *protogen.File, g *protogen.Gene
 			case readService:
 				b.generateReadServerMethod(service, method, g)
 			case updateService:
-				//b.generateUpdateServerMethod(service, method)
+				b.generateUpdateServerMethod(service, method, g)
 			case updateSetService:
 				//b.generateUpdateSetServerMethod(service, method)
 			case deleteService:
@@ -2857,11 +2856,11 @@ func (b *ORMBuilder) getPageInfo(message *protogen.Message) string {
 
 func (b *ORMBuilder) getFieldOfType(message *protogen.Message, fieldType string) string {
 	for _, field := range message.Fields {
-		//fmt.Fprintf(os.Stderr, "DEBUG: field: %+v, %s\n", field, goFieldType)
 		if field.Desc.Message() != nil {
-			//fmt.Fprintf(os.Stderr, "%+v\n", field.Desc.Message().Name())
 			goFieldName := camelCase(field.GoName)
 			goFieldType := string(field.Desc.Message().FullName())
+			// FullName is here because split really on it, but i don't see any
+			// evidence that this is necessary
 			parts := strings.Split(goFieldType, ".")
 			if parts[len(parts)-1] == fieldType {
 				return goFieldName
@@ -2869,4 +2868,36 @@ func (b *ORMBuilder) getFieldOfType(message *protogen.Message, fieldType string)
 		}
 	}
 	return ""
+}
+
+func (b *ORMBuilder) generateUpdateServerMethod(service autogenService, method autogenMethod, g *protogen.GeneratedFile) {
+	b.generateMethodSignature(service, method, g)
+	if method.followsConvention {
+		g.P(`var err error`)
+		typeName := method.baseType
+		g.P(`var res *`, typeName)
+		b.generateDBSetup(service, g)
+		b.generatePreserviceCall(service, method.baseType, method.ccName, g)
+		if method.fieldMaskName != "" {
+			g.P(`if in.Get`, method.fieldMaskName, `() == nil {`)
+			g.P(`res, err = DefaultStrictUpdate`, typeName, `(ctx, in.GetPayload(), db)`)
+			g.P(`} else {`)
+			g.P(`res, err = DefaultPatch`, typeName, `(ctx, in.GetPayload(), in.Get`, method.fieldMaskName, `(), db)`)
+			g.P(`}`)
+		} else {
+			g.P(`res, err = DefaultStrictUpdate`, typeName, `(ctx, in.GetPayload(), db)`)
+		}
+		g.P(`if err != nil {`)
+		g.P(`return nil, `, b.wrapSpanError(service, "err"))
+		g.P(`}`)
+		g.P(`out := &`, string(method.outType.Desc.Name()), `{Result: res}`)
+		b.generatePostserviceCall(service, method.baseType, method.ccName, g)
+		b.spanResultHandling(service, g)
+		g.P(`return out, nil`)
+		g.P(`}`)
+		b.generatePreserviceHook(service.ccName, method.baseType, method.ccName, g)
+		b.generatePostserviceHook(service.ccName, method.baseType, string(method.outType.Desc.Name()), method.ccName, g)
+	} else {
+		b.generateEmptyBody(service, method.outType, g)
+	}
 }
