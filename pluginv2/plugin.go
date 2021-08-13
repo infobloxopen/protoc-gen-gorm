@@ -2391,25 +2391,25 @@ func (b *ORMBuilder) followsUpdateSetConventions(inType *protogen.Message, outTy
 		inFieldMask *protogen.Field
 	)
 
-	for _, f := range inType.Fields {
-		if string(f.Desc.Name()) == "objects" {
-			inEntity = f
+	for _, field := range inType.Fields {
+		if string(field.Desc.Name()) == "objects" {
+			inEntity = field
 		}
 
-		if f.Desc.Kind().String() == ".google.protobuf.FieldMask" {
+		if string(field.Desc.Message().FullName()) == "google.protobuf.FieldMask" {
 			if inFieldMask != nil {
 				//p.warning("message must not contains double field mask, prev on field name %s, after on field %s", inFieldMask.GetName(), f.GetName())
 				return false, "", ""
 			}
 
-			inFieldMask = f
+			inFieldMask = field
 		}
 	}
 
 	var outEntity *protogen.Field
-	for _, f := range outType.Fields {
-		if string(f.Desc.Name()) == "results" {
-			outEntity = f
+	for _, field := range outType.Fields {
+		if string(field.Desc.Name()) == "results" {
+			outEntity = field
 		}
 	}
 
@@ -2428,8 +2428,8 @@ func (b *ORMBuilder) followsUpdateSetConventions(inType *protogen.Message, outTy
 		return false, "", ""
 	}
 
-	inGoType := inEntity.Desc.Kind().String() // TODO: not sure
-	outGoType := outEntity.Desc.Kind().String()
+	inGoType := string(inEntity.Message.Desc.Name())
+	outGoType := string(outEntity.Message.Desc.Name())
 	inTypeName, outTypeName := strings.TrimPrefix(inGoType, "*"), strings.TrimPrefix(outGoType, "*")
 	if !b.isOrmable(inTypeName) {
 		//p.warning("method: %q, type %q must be ormable", methodName, inTypeName)
