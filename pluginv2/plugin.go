@@ -2211,42 +2211,42 @@ func generateImport(name string, importPath string, g *protogen.GeneratedFile) s
 }
 
 func (b *ORMBuilder) listHasFiltering(ormable *OrmableType) bool {
-	// TODO: parse filtering
-	//if read, ok := ormable.Methods[listService]; ok {
-	//	if s := p.getFiltering(read.inType); s != "" {
-	//		return true
-	//	}
-	//}
+	if read, ok := ormable.Methods[listService]; ok {
+		if s := b.getFiltering(read.inType); s != "" {
+			return true
+		}
+	}
+
 	return false
 }
 
 func (b *ORMBuilder) listHasSorting(ormable *OrmableType) bool {
-	// TODO: parse sorting
-	//if read, ok := ormable.Methods[listService]; ok {
-	//	if s := p.getSorting(read.inType); s != "" {
-	//		return true
-	//	}
-	//}
+	if read, ok := ormable.Methods[listService]; ok {
+		if s := b.getSorting(read.inType); s != "" {
+			return true
+		}
+	}
+
 	return false
 }
 
 func (b *ORMBuilder) listHasPagination(ormable *OrmableType) bool {
-	// TODO: parse pagination
-	//if read, ok := ormable.Methods[listService]; ok {
-	//	if s := p.getPagination(read.inType); s != "" {
-	//		return true
-	//	}
-	//}
+	if read, ok := ormable.Methods[listService]; ok {
+		if s := b.getPagination(read.inType); s != "" {
+			return true
+		}
+	}
+
 	return false
 }
 
 func (b *ORMBuilder) listHasFieldSelection(ormable *OrmableType) bool {
-	// TODO: parse selections
-	//if read, ok := ormable.Methods[listService]; ok {
-	//	if s := p.getFieldSelection(read.inType); s != "" {
-	//		return true
-	//	}
-	//}
+	if read, ok := ormable.Methods[listService]; ok {
+		if s := b.getFieldSelection(read.inType); s != "" {
+			return true
+		}
+	}
+
 	return false
 }
 
