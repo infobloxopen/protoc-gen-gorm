@@ -2893,13 +2893,13 @@ func (b *ORMBuilder) generateUpdateServerMethod(service autogenService, method a
 		g.P(`if err != nil {`)
 		g.P(`return nil, `, b.wrapSpanError(service, "err"))
 		g.P(`}`)
-		g.P(`out := &`, string(method.outType.Desc.Name()), `{Result: res}`)
+		g.P(`out := &`, b.typeName(method.outType.GoIdent, g), `{Result: res}`)
 		b.generatePostserviceCall(service, method.baseType, method.ccName, g)
 		b.spanResultHandling(service, g)
 		g.P(`return out, nil`)
 		g.P(`}`)
 		b.generatePreserviceHook(service.ccName, method.baseType, method.ccName, g)
-		b.generatePostserviceHook(service.ccName, method.baseType, string(method.outType.Desc.Name()), method.ccName, g)
+		b.generatePostserviceHook(service.ccName, method.baseType, b.typeName(method.outType.GoIdent, g), method.ccName, g)
 	} else {
 		b.generateEmptyBody(service, method.outType, g)
 	}
