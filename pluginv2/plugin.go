@@ -559,10 +559,8 @@ func (b *ORMBuilder) parseBasicFields(msg *protogen.Message, g *protogen.Generat
 		}
 
 		var typePackage string
-		fmt.Fprintf(os.Stderr, "fieldType: %s\n", fieldType)
 
 		if b.dbEngine == ENGINE_POSTGRES && b.IsAbleToMakePQArray(fieldType) && field.Desc.IsList() {
-			fmt.Fprintf(os.Stderr, "fieldType: %s\n", fieldType)
 			switch fieldType {
 			case "bool":
 				fieldType = generateImport("BoolArray", pqImport, g)
