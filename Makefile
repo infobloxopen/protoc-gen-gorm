@@ -67,6 +67,8 @@ build-local:
 	example/feature_demo/demo_service.proto --gorm_out="engine=postgres,enums=string,gateway:./example/feature_demo" --go_out=./example/feature_demo
 
 build-postgres-local:
+	rm -rf example/postgres_arrays/github.com/
+	rm -rf example/postgres_arrays/google.golang.org
 	go install
 	protoc --proto_path . \
 	-I./proto/ \

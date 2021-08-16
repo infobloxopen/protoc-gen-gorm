@@ -554,20 +554,26 @@ func (b *ORMBuilder) parseBasicFields(msg *protogen.Message, g *protogen.Generat
 		fieldName := camelCase(string(fd.Name())) // TODO: move to camelCase
 		fieldType := fd.Kind().String()           // TODO: figure out GoType analog
 
-		var typePackage string
+		if fieldType == "double" {
+			fmt.Fprintf(os.Stderr, "DEBUG field: %+v\n", field)
+		}
 
-		if b.dbEngine == ENGINE_POSTGRES && b.IsAbleToMakePQArray(fieldType) {
+		var typePackage string
+		fmt.Fprintf(os.Stderr, "fieldType: %s\n", fieldType)
+
+		if b.dbEngine == ENGINE_POSTGRES && b.IsAbleToMakePQArray(fieldType) && field.Desc.IsList() {
+			fmt.Fprintf(os.Stderr, "fieldType: %s\n", fieldType)
 			switch fieldType {
-			case "[]bool":
+			case "bool":
 				fieldType = generateImport("BoolArray", pqImport, g)
 				gormOptions.Tag = tagWithType(tag, "bool[]")
-			case "[]float64":
+			case "double":
 				fieldType = generateImport("Float64Array", pqImport, g)
 				gormOptions.Tag = tagWithType(tag, "float[]")
-			case "[]int64":
+			case "int64":
 				fieldType = generateImport("Int64Array", pqImport, g)
 				gormOptions.Tag = tagWithType(tag, "integer[]")
-			case "[]string":
+			case "string":
 				fieldType = generateImport("StringArray", pqImport, g)
 				gormOptions.Tag = tagWithType(tag, "text[]")
 			default:
@@ -707,13 +713,7 @@ func isOrmable(message *protogen.Message) bool {
 
 func (b *ORMBuilder) IsAbleToMakePQArray(fieldType string) bool {
 	switch fieldType {
-	case "[]bool":
-		return true
-	case "[]float64":
-		return true
-	case "[]int64":
-		return true
-	case "[]string":
+	case "bool", "double", "int64", "string":
 		return true
 	default:
 		return false
@@ -990,16 +990,16 @@ func (b *ORMBuilder) generateFieldConversion(message *protogen.Message, field *p
 	fieldType := field.Desc.Kind().String() // was GoType
 	if field.Desc.Cardinality() == protoreflect.Repeated {
 		// Some repeated fields can be handled by github.com/lib/pq
-		if b.dbEngine == ENGINE_POSTGRES && b.IsAbleToMakePQArray(fieldType) {
+		if b.dbEngine == ENGINE_POSTGRES && b.IsAbleToMakePQArray(fieldType) && field.Desc.IsList() {
 			g.P(`if m.`, fieldName, ` != nil {`)
 			switch fieldType {
-			case "[]bool":
+			case "bool":
 				g.P(`to.`, fieldName, ` = make(`, generateImport("BoolArray", pqImport, g), `, len(m.`, fieldName, `))`)
-			case "[]float64":
+			case "double":
 				g.P(`to.`, fieldName, ` = make(`, generateImport("Float64Array", pqImport, g), `, len(m.`, fieldName, `))`)
-			case "[]int64":
+			case "int64":
 				g.P(`to.`, fieldName, ` = make(`, generateImport("Int64Array", pqImport, g), `, len(m.`, fieldName, `))`)
-			case "[]string":
+			case "string":
 				g.P(`to.`, fieldName, ` = make(`, generateImport("StringArray", pqImport, g), `, len(m.`, fieldName, `))`)
 			}
 			g.P(`copy(to.`, fieldName, `, m.`, fieldName, `)`)
