@@ -66,6 +66,15 @@ build-local:
 	-I=. example/feature_demo/demo_multi_file.proto \
 	example/feature_demo/demo_service.proto --gorm_out="engine=postgres,enums=string,gateway:./example/feature_demo" --go_out=./example/feature_demo
 
+build-user-local:
+	rm -rf example/feature_demo/github.com/
+	rm -rf example/feature_demo/google.golang.org
+	go install
+	protoc --proto_path . \
+	-I./proto/ \
+	-I./third_party/proto/ \
+	example/user/user.proto --gorm_out="engine=postgres,enums=string,gateway:./example/user" --go_out=./example/user
+
 build-postgres-local:
 	rm -rf example/postgres_arrays/github.com/
 	rm -rf example/postgres_arrays/google.golang.org
