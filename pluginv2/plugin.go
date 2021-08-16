@@ -2051,7 +2051,7 @@ func (b *ORMBuilder) generateApplyFieldMask(message *protogen.Message, g *protog
 			g.P(`childMask.Paths = append(childMask.Paths, trimPath)`)
 			g.P(`}`)
 			g.P(`}`)
-			g.P(`if err := `, generateImport("MergeWithMask", tkgormImport, g), `.(patcher.`, ccName, `, patchee.`, ccName, `, childMask); err != nil {`)
+			g.P(`if err := `, generateImport("MergeWithMask", tkgormImport, g), `(patcher.`, ccName, `, patchee.`, ccName, `, childMask); err != nil {`)
 			g.P(`return nil, nil`)
 			g.P(`}`)
 			g.P(`}`)
