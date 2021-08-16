@@ -532,6 +532,7 @@ func (p *ORMBuilder) parseBelongsTo(msg *protogen.Message, child *OrmableType, f
 
 func (b *ORMBuilder) parseBasicFields(msg *protogen.Message, g *protogen.GeneratedFile) {
 	typeName := string(msg.Desc.Name())
+	// fmt.Fprintf(os.Stderr, "typeName: %s\n", typeName)
 
 	ormable, ok := b.ormableTypes[typeName]
 	if !ok {
@@ -551,8 +552,10 @@ func (b *ORMBuilder) parseBasicFields(msg *protogen.Message, g *protogen.Generat
 		}
 
 		tag := gormOptions.Tag
-		fieldName := camelCase(string(fd.Name())) // TODO: move to camelCase
-		fieldType := fd.Kind().String()           // TODO: figure out GoType analog
+		fieldName := camelCase(string(fd.Name()))
+		fieldType := fd.Kind().String() // fieldType may be a message
+
+		fmt.Fprintf(os.Stderr, "fieldType: %s\n", fieldType)
 
 		var typePackage string
 
@@ -580,7 +583,39 @@ func (b *ORMBuilder) parseBasicFields(msg *protogen.Message, g *protogen.Generat
 				fieldType = "string"
 			}
 		} else if field.Message != nil {
-			fmt.Fprintf(os.Stderr, "field: %s is a message\n", field.GoName)
+			xs := strings.Split(string(field.Message.Desc.FullName()), ".")
+			rawType := xs[len(xs)-1]
+			fmt.Fprintf(os.Stderr, "field: %s\n", rawType)
+
+			if v, ok := wellKnownTypes[rawType]; ok {
+				fmt.Fprintf(os.Stderr, "TODO: hanle well known rawTypes: %s\n", v)
+			} else if rawType == protoTypeUUID {
+				typePackage = uuidImport
+				fieldType = generateImport("UUID", uuidImport, g)
+				if b.dbEngine == ENGINE_POSTGRES {
+					gormOptions.Tag = tagWithType(tag, "uuid")
+				}
+			} else if rawType == protoTypeUUIDValue {
+				typePackage = uuidImport
+				fieldType = "*" + generateImport("UUID", uuidImport, g)
+				if b.dbEngine == ENGINE_POSTGRES {
+					gormOptions.Tag = tagWithType(tag, "uuid")
+				}
+			} else if rawType == protoTypeTimestamp {
+				typePackage = stdTimeImport
+				fieldType = "*" + generateImport("Time", stdTimeImport, g)
+			} else if rawType == protoTypeJSON {
+				if b.dbEngine == ENGINE_POSTGRES {
+					typePackage = gormpqImport
+					fieldType = "*" + generateImport("Jsonb", gormpqImport, g)
+					gormOptions.Tag = tagWithType(tag, "jsonb")
+				} else {
+					// Potential TODO: add types we want to use in other/default DB engine
+					continue
+				}
+			} else if rawType == protoTypeResource {
+
+			}
 		}
 
 		if tName := gormOptions.GetReferenceOf(); tName != "" {
