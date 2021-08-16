@@ -6,15 +6,13 @@ package user
 import (
 	context "context"
 	fmt "fmt"
-
+	
+	_ "github.com/golang/protobuf/ptypes/timestamp"
+	_ "github.com/infobloxopen/atlas-app-toolkit/atlas/resource"
+	_ "github.com/infobloxopen/protoc-gen-gorm/options"
 	math "math"
 	strings "strings"
 	time "time"
-
-	_ "github.com/golang/protobuf/ptypes/timestamp"
-	timestamp "github.com/golang/protobuf/ptypes/timestamp"
-	_ "github.com/infobloxopen/atlas-app-toolkit/atlas/resource"
-	_ "github.com/infobloxopen/protoc-gen-gorm/options"
 
 	ptypes1 "github.com/golang/protobuf/ptypes"
 	auth1 "github.com/infobloxopen/atlas-app-toolkit/auth"
