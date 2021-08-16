@@ -532,8 +532,6 @@ func (p *ORMBuilder) parseBelongsTo(msg *protogen.Message, child *OrmableType, f
 
 func (b *ORMBuilder) parseBasicFields(msg *protogen.Message, g *protogen.GeneratedFile) {
 	typeName := string(msg.Desc.Name())
-	// fmt.Fprintf(os.Stderr, "typeName: %s\n", typeName)
-
 	ormable, ok := b.ormableTypes[typeName]
 	if !ok {
 		panic("typeName should be found")
@@ -554,8 +552,6 @@ func (b *ORMBuilder) parseBasicFields(msg *protogen.Message, g *protogen.Generat
 		tag := gormOptions.Tag
 		fieldName := camelCase(string(fd.Name()))
 		fieldType := fd.Kind().String() // fieldType may be a message
-
-		fmt.Fprintf(os.Stderr, "fieldType: %s\n", fieldType)
 
 		var typePackage string
 
@@ -585,7 +581,6 @@ func (b *ORMBuilder) parseBasicFields(msg *protogen.Message, g *protogen.Generat
 		} else if field.Message != nil {
 			xs := strings.Split(string(field.Message.Desc.FullName()), ".")
 			rawType := xs[len(xs)-1]
-			fmt.Fprintf(os.Stderr, "field: %s\n", rawType)
 
 			if v, ok := wellKnownTypes[rawType]; ok {
 				fmt.Fprintf(os.Stderr, "TODO: hanle well known rawTypes: %s\n", v)
@@ -614,13 +609,45 @@ func (b *ORMBuilder) parseBasicFields(msg *protogen.Message, g *protogen.Generat
 					continue
 				}
 			} else if rawType == protoTypeResource {
+				ttype := strings.ToLower(tag.GetType())
+				// fmt.Fprintf(os.Stderr, "ATLASID: %s\n", ttype)
+				// fmt.Fprintf(os.Stderr, "field: %+v\n", field)
 
-			}
-		}
+				if strings.Contains(ttype, "char") {
+					ttype = "char"
+				}
+				if field.Desc.IsList() {
+					ttype = "array"
+				}
+				switch ttype {
+				case "uuid", "text", "char", "array", "cidr", "inet", "macaddr":
+					fieldType = "*string"
+				case "smallint", "integer", "bigint", "numeric", "smallserial", "serial", "bigserial":
+					fieldType = "*int64"
+				case "jsonb", "bytea":
+					fieldType = "[]byte"
+				case "":
+					fieldType = "interface{}" // we do not know the type yet (if it association we will fix the type later)
+				default:
+					panic("unknown tag type of atlas.rpc.Identifier")
+				}
+				if tag.GetNotNull() || tag.GetPrimaryKey() {
+					fieldType = strings.TrimPrefix(fieldType, "*")
+				}
+			} else if rawType == protoTypeInet {
+				typePackage = gtypesImport
+				fieldType = "*" + generateImport("Inet", gtypesImport, g)
 
-		if tName := gormOptions.GetReferenceOf(); tName != "" {
-			if _, ok := b.messages[tName]; !ok {
-				panic("unknow")
+				if b.dbEngine == ENGINE_POSTGRES {
+					gormOptions.Tag = tagWithType(tag, "inet")
+				} else {
+					gormOptions.Tag = tagWithType(tag, "varchar(48)")
+				}
+			} else if rawType == protoTimeOnly {
+				fieldType = "string"
+				gormOptions.Tag = tagWithType(tag, "time")
+			} else {
+				continue
 			}
 		}
 
@@ -630,6 +657,13 @@ func (b *ORMBuilder) parseBasicFields(msg *protogen.Message, g *protogen.Generat
 			Type:             fieldType,
 			Package:          typePackage,
 			ParentOrigName:   typeName,
+		}
+
+		if tName := gormOptions.GetReferenceOf(); tName != "" {
+			if _, ok := b.messages[tName]; !ok {
+				panic("unknow")
+			}
+			f.ParentOrigName = tName
 		}
 
 		ormable.Fields[fieldName] = f
@@ -646,7 +680,7 @@ func (b *ORMBuilder) parseBasicFields(msg *protogen.Message, g *protogen.Generat
 
 	// TODO: GetInclude
 	for _, field := range gormMsgOptions.GetInclude() {
-		fieldName := field.GetName() // TODO: camel case
+		fieldName := camelCase(field.GetName())
 		if _, ok := ormable.Fields[fieldName]; !ok {
 			b.addIncludedField(ormable, field, g)
 		} else {
