@@ -2004,7 +2004,7 @@ func (b *ORMBuilder) generateApplyFieldMask(message *protogen.Message, g *protog
 		//  for ormable message, do recursive patching
 
 		if field.Message != nil && b.isOrmable(fieldType) && field.Desc.Cardinality() != protoreflect.Repeated {
-			_ = generateImport("", "stdStringsImport", g)
+			_ = generateImport("", stdStringsImport, g)
 
 			g.P(`if !updated`, ccName, ` && strings.HasPrefix(f, prefix+"`, ccName, `.") {`)
 			g.P(`updated`, ccName, ` = true`)
@@ -2036,7 +2036,7 @@ func (b *ORMBuilder) generateApplyFieldMask(message *protogen.Message, g *protog
 			g.P(`continue`)
 			g.P(`}`)
 		} else if field.Message != nil && !isSpecialType(fieldType) && field.Desc.Cardinality() != protoreflect.Repeated {
-			_ = generateImport("", "stdStringsImport", g)
+			_ = generateImport("", stdStringsImport, g)
 			g.P(`if !updated`, ccName, ` && strings.HasPrefix(f, prefix+"`, ccName, `.") {`)
 			g.P(`if patcher.`, ccName, ` == nil {`)
 			g.P(`patchee.`, ccName, ` = nil`)
@@ -2061,7 +2061,7 @@ func (b *ORMBuilder) generateApplyFieldMask(message *protogen.Message, g *protog
 			g.P(`continue`)
 			g.P(`}`)
 		} else if strings.HasSuffix(fieldType, protoTypeJSON) && field.Desc.Cardinality() != protoreflect.Repeated {
-			_ = generateImport("", "stdStringsImport", g)
+			_ = generateImport("", stdStringsImport, g)
 			g.P(`if !updated`, ccName, ` && strings.HasPrefix(f, prefix+"`, ccName, `") {`)
 			g.P(`patchee.`, ccName, ` = patcher.`, ccName)
 			g.P(`updated`, ccName, ` = true`)
