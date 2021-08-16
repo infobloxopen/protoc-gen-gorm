@@ -554,10 +554,6 @@ func (b *ORMBuilder) parseBasicFields(msg *protogen.Message, g *protogen.Generat
 		fieldName := camelCase(string(fd.Name())) // TODO: move to camelCase
 		fieldType := fd.Kind().String()           // TODO: figure out GoType analog
 
-		if fieldType == "double" {
-			fmt.Fprintf(os.Stderr, "DEBUG field: %+v\n", field)
-		}
-
 		var typePackage string
 
 		if b.dbEngine == ENGINE_POSTGRES && b.IsAbleToMakePQArray(fieldType) && field.Desc.IsList() {
