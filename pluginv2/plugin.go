@@ -3027,13 +3027,13 @@ func (b *ORMBuilder) generateListServerMethod(service autogenService, method aut
 			b.generatePagedRequestHandling(pg, g)
 			pageInfoIfExist = ", " + pi + ": resPaging"
 		}
-		g.P(`out := &`, string(method.outType.Desc.Name()), `{Results: res`, pageInfoIfExist, ` }`)
+		g.P(`out := &`, b.typeName(method.outType.GoIdent, g), `{Results: res`, pageInfoIfExist, ` }`)
 		b.generatePostserviceCall(service, method.baseType, method.ccName, g)
 		b.spanResultHandling(service, g)
 		g.P(`return out, nil`)
 		g.P(`}`)
 		b.generatePreserviceHook(service.ccName, method.baseType, method.ccName, g)
-		b.generatePostserviceHook(service.ccName, method.baseType, string(method.outType.Desc.Name()), method.ccName, g)
+		b.generatePostserviceHook(service.ccName, method.baseType, b.typeName(method.outType.GoIdent, g), method.ccName, g)
 	} else {
 		b.generateEmptyBody(service, method.outType, g)
 	}
