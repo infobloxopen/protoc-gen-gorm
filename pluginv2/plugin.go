@@ -102,14 +102,14 @@ type ORMBuilder struct {
 	plugin          *protogen.Plugin
 	ormableTypes    map[string]*OrmableType
 	messages        map[string]struct{}
-	fileImports     map[string]*fileImports // TODO: populate
-	currentFile     string                  // TODO populate
+	fileImports     map[string]*fileImports
+	currentFile     string
 	currentPackage  string
+	ormableServices []autogenService
 	dbEngine        int
 	stringEnums     bool
 	gateway         bool
 	suppressWarn    bool
-	ormableServices []autogenService
 }
 
 func New(opts protogen.Options, request *pluginpb.CodeGeneratorRequest) (*ORMBuilder, error) {
@@ -193,13 +193,13 @@ type Field struct {
 
 type autogenMethod struct {
 	*protogen.Method
-	ccName            string
+	outType           *protogen.Message
+	inType            *protogen.Message
 	verb              string
-	followsConvention bool
 	baseType          string
 	fieldMaskName     string
-	inType            *protogen.Message
-	outType           *protogen.Message
+	ccName            string
+	followsConvention bool
 }
 
 type fileImports struct {
@@ -211,10 +211,10 @@ type fileImports struct {
 
 type autogenService struct {
 	*protogen.Service
-	ccName            string
 	file              *protogen.File
-	usesTxnMiddleware bool
+	ccName            string
 	methods           []autogenMethod
+	usesTxnMiddleware bool
 	autogen           bool
 }
 
@@ -2023,7 +2023,7 @@ func (b *ORMBuilder) generateApplyFieldMask(message *protogen.Message, g *protog
 func isSpecialType(typeName string) bool {
 	parts := strings.Split(typeName, ".")
 	if len(parts) > 2 { // what kinda format is this????
-		panic(fmt.Sprintf(""))
+		panic("unknown error")
 	}
 	if len(parts) == 1 { // native to this package = not special
 		return false
@@ -2144,7 +2144,7 @@ func (b *ORMBuilder) generateBeforeListHookCall(orm *OrmableType, suffix string,
 
 func (b *ORMBuilder) generateAfterListHookCall(orm *OrmableType, g *protogen.GeneratedFile) {
 	g.P(`if hook, ok := interface{}(&ormObj).(`, orm.Name, `WithAfterListFind); ok {`)
-	hookCall := fmt.Sprint(`if err = hook.AfterListFind(ctx, db, &ormResponse`)
+	hookCall := `if err = hook.AfterListFind(ctx, db, &ormResponse`
 	if b.listHasFiltering(orm) {
 		hookCall += `,f`
 	}
@@ -2199,7 +2199,7 @@ func (b *ORMBuilder) generateAfterListHookDef(orm *OrmableType, g *protogen.Gene
 	if b.listHasFieldSelection(orm) {
 		hookSign += fmt.Sprint(`, *`, generateImport("FieldSelection", queryImport, g))
 	}
-	hookSign += fmt.Sprint(`) error`)
+	hookSign += `) error`
 	g.P(hookSign)
 	g.P(`}`)
 }
@@ -2665,7 +2665,7 @@ func (b *ORMBuilder) generateSpanInstantiationMethod(service autogenService, g *
 	g.P(`if err != nil {`)
 	g.P(`return nil, err`)
 	g.P(`}`)
-	g.P(`span.Annotate([]`, generateImport("Attribute", ocTraceImport, g), `{`, generateImport("StringAttribute", ocTraceImport, g),`("in", string(raw))}, "in parameter")`)
+	g.P(`span.Annotate([]`, generateImport("Attribute", ocTraceImport, g), `{`, generateImport("StringAttribute", ocTraceImport, g), `("in", string(raw))}, "in parameter")`)
 	g.P(`return span, nil`)
 	g.P(`}`)
 }
