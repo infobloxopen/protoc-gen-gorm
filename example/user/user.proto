@@ -23,7 +23,7 @@ message User {
     uint32 age = 5 [(gorm.field).drop = true]; // synthetic field
     uint32 num = 6;
     CreditCard credit_card = 7; // has one
-    // repeated Email emails = 8; // has many
+    repeated Email emails = 8; // has many
     // repeated Task tasks = 9 [(gorm.field).has_many = {position_field: "priority" foreignkey_tag: {not_null: true}}];
     // Address billing_address = 10 [(gorm.field).belongs_to = {}];
     // Address shipping_address = 11 [(gorm.field).belongs_to = {}];
@@ -33,17 +33,17 @@ message User {
     // atlas.resource.v1.Identifier external_uuid = 15 [(gorm.field).tag = {type: "uuid"}];
 }
 
-// message Email {
-//     option (gorm.opts) = {
-//         ormable: true,
-//         multi_account: true
-//     };
-//     atlas.resource.v1.Identifier id = 1 [(gorm.field).tag = {type: "uuid" primary_key: true}];
-//     string email = 2;
-//     bool subscribed = 3;
-//     atlas.resource.v1.Identifier user_id = 4;
-//     atlas.resource.v1.Identifier external_not_null = 5 [(gorm.field).tag = {type: "uuid" not_null: true}];
-// }
+message Email {
+    option (gorm.opts) = {
+        ormable: true,
+        multi_account: true
+    };
+    atlas.resource.v1.Identifier id = 1 [(gorm.field).tag = {type: "uuid" primary_key: true}];
+    string email = 2;
+    bool subscribed = 3;
+    atlas.resource.v1.Identifier user_id = 4;
+    atlas.resource.v1.Identifier external_not_null = 5 [(gorm.field).tag = {type: "uuid" not_null: true}];
+}
 
 // message Address {
 //     option (gorm.opts) = {

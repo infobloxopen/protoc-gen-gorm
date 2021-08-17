@@ -598,6 +598,76 @@ func (b *ORMBuilder) parseHasOne(msg *protogen.Message, parent *OrmableType, fie
 func (p *ORMBuilder) parseHasMany(msg *protogen.Message, parent *OrmableType, fieldName string, fieldType string, child *OrmableType, opts *gorm.GormFieldOptions) {
 	// TODO: implement me
 	fmt.Fprintf(os.Stderr, "inside: parseHasMany\n")
+	typeName := camelCase(string(msg.Desc.Name()))
+	hasMany := opts.GetHasMany()
+	if hasMany == nil {
+		hasMany = &gorm.HasManyOptions{}
+		opts.Association = &gorm.GormFieldOptions_HasMany{hasMany}
+	}
+	var assocKey *Field
+	var assocKeyName string
+	if assocKeyName = generator.CamelCase(hasMany.GetAssociationForeignkey()); assocKeyName == "" {
+		assocKeyName, assocKey = p.findPrimaryKey(parent)
+	} else {
+		var ok bool
+		assocKey, ok = parent.Fields[assocKeyName]
+		if !ok {
+			panic(fmt.Sprintf("Missing %s field in %s", assocKeyName, parent.Name))
+		}
+	}
+
+	hasMany.AssociationForeignkey = assocKeyName
+	var foreignKeyType string
+	if hasMany.GetForeignkeyTag().GetNotNull() {
+		foreignKeyType = strings.TrimPrefix(assocKey.Type, "*")
+	} else if strings.HasPrefix(assocKey.Type, "*") {
+		foreignKeyType = assocKey.Type
+	} else if strings.Contains(assocKey.Type, "[]byte") {
+		foreignKeyType = assocKey.Type
+	} else {
+		foreignKeyType = "*" + assocKey.Type
+	}
+	// foreignKeyType = p.resolveAliasName(foreignKeyType, assocKey.Package, child.File)
+	foreignKey := &Field{Type: foreignKeyType, Package: assocKey.Package, GormFieldOptions: &gorm.GormFieldOptions{Tag: hasMany.GetForeignkeyTag()}}
+	var foreignKeyName string
+	if foreignKeyName = hasMany.GetForeignkey(); foreignKeyName == "" {
+		if p.countHasAssociationDimension(msg, fieldType) == 1 {
+			foreignKeyName = fmt.Sprintf(typeName + assocKeyName)
+		} else {
+			foreignKeyName = fmt.Sprintf(fieldName + typeName + assocKeyName)
+		}
+	}
+	hasMany.Foreignkey = foreignKeyName
+	if _, ok := child.Fields[foreignKeyName]; child.Package != parent.Package && !ok {
+		// p.Fail(`Object`, child.Name, `from package`, child.Package, `cannot be used for has-many in`, parent.Name, `since it`,
+		// 	`does not have FK`, foreignKeyName, `defined. Manually define the key, or switch to many-to-many`)
+		panic("Object ...")
+
+	}
+	if exField, ok := child.Fields[foreignKeyName]; !ok {
+		child.Fields[foreignKeyName] = foreignKey
+	} else {
+		if exField.Type == "interface{}" {
+			exField.Type = foreignKey.Type
+		} else if !p.sameType(exField, foreignKey) {
+			// p.Fail("Cannot include", foreignKeyName, "field into", child.Name, "as it already exists there with a different type:", exField.Type, foreignKey.Type)
+			panic("Cannot include ...")
+		}
+	}
+	child.Fields[foreignKeyName].ParentOrigName = parent.OriginName
+
+	var posField string
+	if posField = generator.CamelCase(hasMany.GetPositionField()); posField != "" {
+		if exField, ok := child.Fields[posField]; !ok {
+			child.Fields[posField] = &Field{Type: "int", GormFieldOptions: &gorm.GormFieldOptions{Tag: hasMany.GetPositionFieldTag()}}
+		} else {
+			if !strings.Contains(exField.Type, "int") {
+				// p.Fail("Cannot include", posField, "field into", child.Name, "as it already exists there with a different type.")
+				panic("Cannot include ...")
+			}
+		}
+		hasMany.PositionField = posField
+	}
 }
 
 func (p *ORMBuilder) parseBelongsTo(msg *protogen.Message, child *OrmableType, fieldName string, fieldType string, parent *OrmableType, opts *gorm.GormFieldOptions) {
@@ -1127,7 +1197,8 @@ func (b *ORMBuilder) generateFieldConversion(message *protogen.Message, field *p
 	fieldName := camelCase(string(field.Desc.Name()))
 	fieldType := field.Desc.Kind().String() // was GoType
 	if field.Desc.Message() != nil {
-		fieldType = string(field.Desc.Message().FullName())
+		parts := strings.Split(string(field.Desc.Message().FullName()), ".")
+		fieldType = parts[len(parts)-1]
 	}
 	if field.Desc.Cardinality() == protoreflect.Repeated {
 		// Some repeated fields can be handled by github.com/lib/pq
@@ -1182,11 +1253,9 @@ func (b *ORMBuilder) generateFieldConversion(message *protogen.Message, field *p
 		}
 	} else if field.Message != nil { // Singular Object -------------
 		//Check for WKTs
-		parts := strings.Split(fieldType, ".")
-		coreType := parts[len(parts)-1]
-		fmt.Fprintf(os.Stderr, "coreType: %s, fieldType: %s\n", coreType, fieldType)
+		// fmt.Fprintf(os.Stderr, "coreType: %s, fieldType: %s\n", coreType, fieldType)
 		// Type is a WKT, convert to/from as ptr to base type
-		if _, exists := wellKnownTypes[coreType]; exists { // Singular WKT -----
+		if _, exists := wellKnownTypes[fieldType]; exists { // Singular WKT -----
 			if toORM {
 				g.P(`if m.`, fieldName, ` != nil {`)
 				g.P(`v := m.`, fieldName, `.Value`)
@@ -1194,11 +1263,11 @@ func (b *ORMBuilder) generateFieldConversion(message *protogen.Message, field *p
 				g.P(`}`)
 			} else {
 				g.P(`if m.`, fieldName, ` != nil {`)
-				g.P(`to.`, fieldName, ` = &`, b.GetFileImports().wktPkgName, ".", coreType,
+				g.P(`to.`, fieldName, ` = &`, b.GetFileImports().wktPkgName, ".", fieldType,
 					`{Value: *m.`, fieldName, `}`)
 				g.P(`}`)
 			}
-		} else if coreType == protoTypeUUIDValue { // Singular UUIDValue type ----
+		} else if fieldType == protoTypeUUIDValue { // Singular UUIDValue type ----
 			if toORM {
 				g.P(`if m.`, fieldName, ` != nil {`)
 				g.P(`tempUUID, uErr := `, generateImport("FromString", uuidImport, g), `(m.`, fieldName, `.Value)`)
@@ -1212,7 +1281,7 @@ func (b *ORMBuilder) generateFieldConversion(message *protogen.Message, field *p
 				g.P(`to.`, fieldName, ` = &`, generateImport("UUIDValue", gtypesImport, g), `{Value: m.`, fieldName, `.String()}`)
 				g.P(`}`)
 			}
-		} else if coreType == protoTypeUUID { // Singular UUID type --------------
+		} else if fieldType == protoTypeUUID { // Singular UUID type --------------
 			if toORM {
 				g.P(`if m.`, fieldName, ` != nil {`)
 				g.P(`to.`, fieldName, `, err = `, generateImport("FromString", uuidImport, g), `(m.`, fieldName, `.Value)`)
@@ -1225,7 +1294,7 @@ func (b *ORMBuilder) generateFieldConversion(message *protogen.Message, field *p
 			} else {
 				g.P(`to.`, fieldName, ` = &`, generateImport("UUID", gtypesImport, g), `{Value: m.`, fieldName, `.String()}`)
 			}
-		} else if coreType == protoTypeTimestamp { // Singular WKT Timestamp ---
+		} else if fieldType == protoTypeTimestamp { // Singular WKT Timestamp ---
 			if toORM {
 				g.P(`if m.`, fieldName, ` != nil {`)
 				g.P(`var t time.Time`)
@@ -1241,7 +1310,7 @@ func (b *ORMBuilder) generateFieldConversion(message *protogen.Message, field *p
 				g.P(`}`)
 				g.P(`}`)
 			}
-		} else if coreType == protoTypeJSON {
+		} else if fieldType == protoTypeJSON {
 			if b.dbEngine == ENGINE_POSTGRES {
 				if toORM {
 					g.P(`if m.`, fieldName, ` != nil {`)
@@ -1253,7 +1322,7 @@ func (b *ORMBuilder) generateFieldConversion(message *protogen.Message, field *p
 					g.P(`}`)
 				}
 			} // Potential TODO other DB engine handling if desired
-		} else if coreType == protoTypeResource {
+		} else if fieldType == protoTypeResource {
 			resource := "nil" // assuming we do not know the PB type, nil means call codec for any resource
 			if ofield != nil && ofield.ParentOrigName != "" {
 				resource = "&" + ofield.ParentOrigName + "{}"
@@ -1320,7 +1389,7 @@ func (b *ORMBuilder) generateFieldConversion(message *protogen.Message, field *p
 					g.P(`}`)
 				}
 			}
-		} else if coreType == protoTypeInet { // Inet type for Postgres only, currently
+		} else if fieldType == protoTypeInet { // Inet type for Postgres only, currently
 			if toORM {
 				g.P(`if m.`, fieldName, ` != nil {`)
 				g.P(`if to.`, fieldName, `, err = `, generateImport("ParseInet", gtypesImport, g), `(m.`, fieldName, `.Value); err != nil {`)
@@ -1332,7 +1401,7 @@ func (b *ORMBuilder) generateFieldConversion(message *protogen.Message, field *p
 				g.P(`to.`, fieldName, ` = &`, generateImport("InetValue", gtypesImport, g), `.InetValue{Value: m.`, fieldName, `.String()}`)
 				g.P(`}`)
 			}
-		} else if coreType == protoTimeOnly { // Time only to support time via string
+		} else if fieldType == protoTimeOnly { // Time only to support time via string
 			if toORM {
 				g.P(`if m.`, fieldName, ` != nil {`)
 				g.P(`if to.`, fieldName, `, err = `, generateImport("ParseTime", gtypesImport, g), `(m.`, fieldName, `.Value); err != nil {`)
@@ -1346,7 +1415,7 @@ func (b *ORMBuilder) generateFieldConversion(message *protogen.Message, field *p
 				g.P(`}`)
 				g.P(`}`)
 			}
-		} else if b.isOrmable(coreType) {
+		} else if b.isOrmable(fieldType) {
 			// Not a WKT, but a type we're building converters for
 			g.P(`if m.`, fieldName, ` != nil {`)
 			if toORM {
@@ -1892,7 +1961,7 @@ func (b *ORMBuilder) removeChildAssociationsByName(message *protogen.Message, fi
 		} else {
 			g.P(`if ormObj.`, assocKeyName, ` == `, zeroValue, `{`)
 		}
-		g.P(`return nil, `, generateImport("EmptyIdError", gerrorsImport, g), `.EmptyIdError`)
+		g.P(`return nil, `, generateImport("EmptyIdError", gerrorsImport, g))
 		g.P(`}`)
 		filterDesc := "filter" + fieldName + "." + foreignKeyName
 		ormDesc := "ormObj." + assocKeyName
