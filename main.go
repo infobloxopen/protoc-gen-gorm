@@ -40,5 +40,5 @@ func main() {
 		panic(err)
 	}
 
-	fmt.Fprintf(os.Stdout, string(out))
+	fmt.Fprint(os.Stdout, string(out))
 }
