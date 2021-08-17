@@ -1,6 +1,7 @@
 package pluginv2
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"strconv"
@@ -25,6 +26,10 @@ const (
 	deleteService    = "Delete"
 	deleteSetService = "DeleteSet"
 	listService      = "List"
+)
+
+var (
+	ErrNotOrmable = errors.New("type is not ormable")
 )
 
 var (
@@ -276,20 +281,6 @@ func (b *ORMBuilder) Generate() (*pluginpb.CodeGeneratorResponse, error) {
 			}
 		}
 
-		// Debug
-		// ---------------
-
-		// for _, ot := range b.ormableTypes {
-		// 	fmt.Fprintf(os.Stderr, "ormable type: %+v\n", ot.Name)
-		// 	for name, field := range ot.Fields {
-		// 		fmt.Fprintf(os.Stderr, "name: %s, field: %+v\n", name, field.Type)
-		// 	}
-		// }
-
-		// // dumb files
-		// filename := protoFile.GeneratedFilenamePrefix + ".gorm.go"
-		// gormFile := b.plugin.NewGeneratedFile(filename, ".")
-		// gormFile.P("// this file is generated")
 	}
 
 	for _, protoFile := range b.plugin.Files {
@@ -420,8 +411,10 @@ func (b *ORMBuilder) generateOrmable(g *protogen.GeneratedFile, message *protoge
 }
 
 func (b *ORMBuilder) parseAssociations(msg *protogen.Message) {
-	typeName := string(msg.Desc.Name()) // TODO: camelSnakeCase
+	typeName := camelCase(string(msg.Desc.Name())) // TODO: camelSnakeCase
 	ormable := b.getOrmable(typeName)
+	// fmt.Fprintf(os.Stderr, "parseAssociations: typeName: %s, ormable: %+v\n", typeName, ormable)
+	fmt.Fprintf(os.Stderr, "parseAssociations: typeName: %s\n", typeName)
 
 	for _, field := range msg.Fields {
 		options := field.Desc.Options().(*descriptorpb.FieldOptions)
@@ -431,12 +424,20 @@ func (b *ORMBuilder) parseAssociations(msg *protogen.Message) {
 		}
 
 		fieldName := camelCase(string(field.Desc.Name()))
-		fieldType := field.Desc.Kind().String() // was GoType
+		var fieldType string
+
+		if field.Desc.Message() == nil {
+			fieldType = field.Desc.Kind().String() // was GoType
+		} else {
+			fieldType = string(field.Desc.Message().Name())
+		}
+
 		fieldType = strings.Trim(fieldType, "[]*")
 		parts := strings.Split(fieldType, ".")
 		fieldTypeShort := parts[len(parts)-1]
 
 		if b.isOrmable(fieldType) {
+			fmt.Fprintf(os.Stderr, "ormable: %s\n", fieldType)
 			if fieldOpts == nil {
 				fieldOpts = &gorm.GormFieldOptions{}
 			}
@@ -459,7 +460,7 @@ func (b *ORMBuilder) parseAssociations(msg *protogen.Message) {
 			}
 
 			// Register type used, in case it's an imported type from another package
-			b.GetFileImports().typesToRegister = append(b.GetFileImports().typesToRegister, fieldType) // maybe we need other fields type
+			// b.GetFileImports().typesToRegister = append(b.GetFileImports().typesToRegister, fieldType) // maybe we need other fields type
 			ormable.Fields[fieldName] = &Field{Type: fieldType, GormFieldOptions: fieldOpts}
 		}
 	}
@@ -500,11 +501,11 @@ func (b *ORMBuilder) findPrimaryKey(ormable *OrmableType) (string, *Field) {
 }
 
 func (b *ORMBuilder) getOrmable(typeName string) *OrmableType {
-	// TODO: implement me
-	r, ok := b.ormableTypes[typeName]
-	if !ok {
-		panic("panic?")
+	r, err := GetOrmable(b.ormableTypes, typeName)
+	if err != nil {
+		panic(err)
 	}
+
 	return r
 }
 
@@ -516,18 +517,92 @@ func (b *ORMBuilder) setFile(file string, pkg string) {
 
 func (p *ORMBuilder) parseManyToMany(msg *protogen.Message, ormable *OrmableType, fieldName string, fieldType string, assoc *OrmableType, opts *gorm.GormFieldOptions) {
 	// TODO: implement me
+	fmt.Fprintf(os.Stderr, "inside: parseManyToMany\n")
 }
 
-func (p *ORMBuilder) parseHasOne(msg *protogen.Message, parent *OrmableType, fieldName string, fieldType string, child *OrmableType, opts *gorm.GormFieldOptions) {
-	// TODO: implement me
+func (b *ORMBuilder) parseHasOne(msg *protogen.Message, parent *OrmableType, fieldName string, fieldType string, child *OrmableType, opts *gorm.GormFieldOptions) {
+	fmt.Fprintf(os.Stderr, "inside: parseHasOne\n\n\n")
+	// fmt.Fprintf(os.Stderr, "msg: %+v\n", msg)
+	fmt.Fprintf(os.Stderr, "parent: %+v\n", parent)
+	fmt.Fprintf(os.Stderr, "child: %+v\n", child)
+
+	typeName := camelCase(string(msg.Desc.Name()))
+	hasOne := opts.GetHasOne()
+	fmt.Fprintf(os.Stderr, "hasOne: %+v\n", hasOne)
+	if hasOne == nil {
+		hasOne = &gorm.HasOneOptions{}
+		opts.Association = &gorm.GormFieldOptions_HasOne{hasOne}
+	}
+
+	var assocKey *Field
+	var assocKeyName string
+
+	if assocKeyName = camelCase(hasOne.GetAssociationForeignkey()); assocKeyName == "" {
+		fmt.Fprintf(os.Stderr, "finding PK\n")
+		assocKeyName, assocKey = b.findPrimaryKey(parent)
+		fmt.Fprintf(os.Stderr, "assocKeyName: %s, assocKey: %s\n", assocKeyName, assocKey)
+	} else {
+		var ok bool
+		assocKey, ok = parent.Fields[assocKeyName]
+		if !ok {
+			panic(fmt.Sprintf("Missing %s field in %s.", assocKeyName, parent.Name))
+		}
+	}
+
+	hasOne.AssociationForeignkey = assocKeyName
+	var foreignKeyType string
+	if hasOne.GetForeignkeyTag().GetNotNull() {
+		foreignKeyType = strings.TrimPrefix(assocKey.Type, "*")
+	} else if strings.HasPrefix(assocKey.Type, "*") {
+		foreignKeyType = assocKey.Type
+	} else if strings.Contains(assocKey.Type, "[]byte") {
+		foreignKeyType = assocKey.Type
+	} else {
+		foreignKeyType = "*" + assocKey.Type
+	}
+
+	fmt.Fprintf(os.Stderr, "typeName: %s, foreignKeyType: %s\n", typeName, foreignKeyType)
+
+	// TODO: understand how to resolve aliases and why we need to do it
+	// foreignKeyType = b.resolveAliasName(foreignKeyType, assocKey.Package, child.File)
+	foreignKey := &Field{Type: foreignKeyType, Package: assocKey.Package, GormFieldOptions: &gorm.GormFieldOptions{Tag: hasOne.GetForeignkeyTag()}}
+	var foreignKeyName string
+	if foreignKeyName = camelCase(hasOne.GetForeignkey()); foreignKeyName == "" {
+		if b.countHasAssociationDimension(msg, fieldType) == 1 {
+			foreignKeyName = fmt.Sprintf(typeName + assocKeyName)
+		} else {
+			foreignKeyName = fmt.Sprintf(fieldName + typeName + assocKeyName)
+		}
+	}
+
+	hasOne.Foreignkey = foreignKeyName
+	if _, ok := child.Fields[foreignKeyName]; child.Package != parent.Package && !ok {
+		// p.Fail(`Object`, child.Name, `from package`, child.Package, `cannot be used for has-one in`, parent.Name, `since it`,
+		// 	`does not have FK field`, foreignKeyName, `defined. Manually define the key, or switch to belongs-to`)
+		panic("Object ...")
+	}
+	if exField, ok := child.Fields[foreignKeyName]; !ok {
+		child.Fields[foreignKeyName] = foreignKey
+	} else {
+		if exField.Type == "interface{}" {
+			exField.Type = foreignKey.Type
+		} else if !b.sameType(exField, foreignKey) {
+			// b.Fail("Cannot include", foreignKeyName, "field into", child.Name, "as it already exists there with a different type:", exField.Type, foreignKey.Type)
+			panic("Cannot include...")
+		}
+	}
+
+	child.Fields[foreignKeyName].ParentOrigName = parent.OriginName
 }
 
 func (p *ORMBuilder) parseHasMany(msg *protogen.Message, parent *OrmableType, fieldName string, fieldType string, child *OrmableType, opts *gorm.GormFieldOptions) {
 	// TODO: implement me
+	fmt.Fprintf(os.Stderr, "inside: parseHasMany\n")
 }
 
 func (p *ORMBuilder) parseBelongsTo(msg *protogen.Message, child *OrmableType, fieldName string, fieldType string, parent *OrmableType, opts *gorm.GormFieldOptions) {
 	// TODO: implement me
+	fmt.Fprintf(os.Stderr, "inside: parseBelongsTo\n")
 }
 
 func (b *ORMBuilder) parseBasicFields(msg *protogen.Message, g *protogen.GeneratedFile) {
@@ -572,8 +647,10 @@ func (b *ORMBuilder) parseBasicFields(msg *protogen.Message, g *protogen.Generat
 			default:
 				continue
 			}
+		} else if (field.Message == nil || !b.isOrmable(fieldType)) && field.Desc.IsList() {
+			// not implemented
+			continue
 		} else if field.Enum != nil {
-			fmt.Fprintf(os.Stderr, "field: %s is a enum\n", field.GoName)
 			fieldType = "int32"
 			if b.stringEnums {
 				fieldType = "string"
@@ -583,7 +660,7 @@ func (b *ORMBuilder) parseBasicFields(msg *protogen.Message, g *protogen.Generat
 			rawType := xs[len(xs)-1]
 
 			if v, ok := wellKnownTypes[rawType]; ok {
-				fmt.Fprintf(os.Stderr, "TODO: hanle well known rawTypes: %s\n", v)
+				fmt.Fprintf(os.Stderr, "TODO: hanle well known rawTypes, it's old importPath probably dated: %s\n", v)
 			} else if rawType == protoTypeUUID {
 				typePackage = uuidImport
 				fieldType = generateImport("UUID", uuidImport, g)
@@ -3136,4 +3213,54 @@ func (b *ORMBuilder) typeName(ident protogen.GoIdent, g *protogen.GeneratedFile)
 	}
 
 	return generateImport(ident.GoName, string(ident.GoImportPath), g)
+}
+
+func GetOrmable(ormableTypes map[string]*OrmableType, typeName string) (*OrmableType, error) {
+	parts := strings.Split(typeName, ".")
+	ormable, ok := ormableTypes[strings.TrimSuffix(strings.Trim(parts[len(parts)-1], "[]*"), "ORM")]
+	var err error
+	if !ok {
+		err = ErrNotOrmable
+	}
+	return ormable, err
+}
+
+func (b *ORMBuilder) countHasAssociationDimension(message *protogen.Message, typeName string) int {
+	dim := 0
+	for _, field := range message.Fields {
+		options := field.Desc.Options().(*descriptorpb.FieldOptions)
+		fieldOpts := getFieldOptions(options)
+		if fieldOpts.GetDrop() {
+			continue
+		}
+
+		var fieldType string
+		if field.Desc.Message() == nil {
+			fieldType = field.Desc.Kind().String() // was GoType
+		} else {
+			fieldType = string(field.Desc.Message().Name())
+		}
+
+		if fieldOpts.GetManyToMany() == nil && fieldOpts.GetBelongsTo() == nil {
+			if strings.Trim(typeName, "[]*") == strings.Trim(fieldType, "[]*") {
+				dim++
+			}
+		}
+	}
+
+	return dim
+}
+
+func (b *ORMBuilder) sameType(field1 *Field, field2 *Field) bool {
+	isPointer1 := strings.HasPrefix(field1.Type, "*")
+	typeParts1 := strings.Split(field1.Type, ".")
+	if len(typeParts1) == 2 {
+		isPointer2 := strings.HasPrefix(field2.Type, "*")
+		typeParts2 := strings.Split(field2.Type, ".")
+		if len(typeParts2) == 2 && isPointer1 == isPointer2 && typeParts1[1] == typeParts2[1] && field1.Package == field2.Package {
+			return true
+		}
+		return false
+	}
+	return field1.Type == field2.Type
 }
