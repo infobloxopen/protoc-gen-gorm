@@ -1124,10 +1124,11 @@ func (p *ORMBuilder) setupOrderedHasManyByName(message *protogen.Message, fieldN
 func (b *ORMBuilder) generateFieldConversion(message *protogen.Message, field *protogen.Field,
 	toORM bool, ofield *Field, g *protogen.GeneratedFile) error {
 
-	// fieldName := generator.CamelCase(field.GetName())
-	// fieldType, _ := p.GoType(message, field)
 	fieldName := camelCase(string(field.Desc.Name()))
 	fieldType := field.Desc.Kind().String() // was GoType
+	if field.Desc.Message() != nil {
+		fieldType = string(field.Desc.Message().FullName())
+	}
 	if field.Desc.Cardinality() == protoreflect.Repeated {
 		// Some repeated fields can be handled by github.com/lib/pq
 		if b.dbEngine == ENGINE_POSTGRES && b.IsAbleToMakePQArray(fieldType) && field.Desc.IsList() {
@@ -1183,6 +1184,7 @@ func (b *ORMBuilder) generateFieldConversion(message *protogen.Message, field *p
 		//Check for WKTs
 		parts := strings.Split(fieldType, ".")
 		coreType := parts[len(parts)-1]
+		fmt.Fprintf(os.Stderr, "coreType: %s\n", coreType)
 		// Type is a WKT, convert to/from as ptr to base type
 		if _, exists := wellKnownTypes[coreType]; exists { // Singular WKT -----
 			if toORM {
