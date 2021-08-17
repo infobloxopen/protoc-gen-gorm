@@ -750,7 +750,7 @@ func getMessageOptions(message *protogen.Message) *gorm.GormMessageOptions {
 		return nil
 	}
 	v := proto.GetExtension(options, gorm.E_Opts)
-	if v != nil {
+	if v == nil {
 		return nil
 	}
 
