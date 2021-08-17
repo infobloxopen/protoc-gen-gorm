@@ -2130,7 +2130,9 @@ func (b *ORMBuilder) generateApplyFieldMask(message *protogen.Message, g *protog
 
 	hasNested := false
 	for _, field := range message.Fields {
-		fieldType := field.Desc.Kind().String()
+		// fieldType := field.Desc.Kind().String()
+		fieldType := getFieldType(field)
+		fmt.Fprintf(os.Stderr, "FieldType (FieldMask): %s\n", fieldType)
 
 		if field.Message != nil && !isSpecialType(fieldType) && field.Desc.Cardinality() != protoreflect.Repeated {
 			g.P(`var updated`, camelCase(field.GoName), ` bool`)
@@ -2148,7 +2150,9 @@ func (b *ORMBuilder) generateApplyFieldMask(message *protogen.Message, g *protog
 	}
 	for _, field := range message.Fields {
 		ccName := camelCase(field.GoName)
-		fieldType := field.Desc.Kind().String()
+		// fieldType := field.Desc.Kind().String()
+		fieldType := getFieldType(field)
+		fmt.Fprintf(os.Stderr, "DEBUG: %+v, %+v\n", field, field.Message.GoIdent.GoImportPath)
 		//  for ormable message, do recursive patching
 
 		if field.Message != nil && b.isOrmable(fieldType) && field.Desc.Cardinality() != protoreflect.Repeated {
@@ -2161,7 +2165,7 @@ func (b *ORMBuilder) generateApplyFieldMask(message *protogen.Message, g *protog
 			g.P(`continue`)
 			g.P(`}`)
 			g.P(`if patchee.`, ccName, ` == nil {`)
-			g.P(`patchee.`, ccName, ` = &`, strings.TrimPrefix(fieldType, "*"), `{}`)
+			g.P(`patchee.`, ccName, ` = &`, strings.TrimPrefix(b.typeName(field.GoIdent, g), "*"), `{}`)
 			g.P(`}`)
 			if s := strings.Split(fieldType, "."); len(s) == 2 {
 				g.P(`if o, err := `, strings.TrimLeft(s[0], "*"), `.DefaultApplyFieldMask`, s[1], `(ctx, patchee.`, ccName,
@@ -3334,4 +3338,11 @@ func (b *ORMBuilder) sameType(field1 *Field, field2 *Field) bool {
 		return false
 	}
 	return field1.Type == field2.Type
+}
+
+func getFieldType(field *protogen.Field) string {
+	if field.Desc.Message() == nil {
+		return field.Desc.Kind().String() // was GoType
+	}
+	return string(field.Desc.Message().Name())
 }
