@@ -1184,7 +1184,7 @@ func (b *ORMBuilder) generateFieldConversion(message *protogen.Message, field *p
 		//Check for WKTs
 		parts := strings.Split(fieldType, ".")
 		coreType := parts[len(parts)-1]
-		fmt.Fprintf(os.Stderr, "coreType: %s\n", coreType)
+		fmt.Fprintf(os.Stderr, "coreType: %s, fieldType: %s\n", coreType, fieldType)
 		// Type is a WKT, convert to/from as ptr to base type
 		if _, exists := wellKnownTypes[coreType]; exists { // Singular WKT -----
 			if toORM {
@@ -1346,7 +1346,7 @@ func (b *ORMBuilder) generateFieldConversion(message *protogen.Message, field *p
 				g.P(`}`)
 				g.P(`}`)
 			}
-		} else if b.isOrmable(fieldType) {
+		} else if b.isOrmable(coreType) {
 			// Not a WKT, but a type we're building converters for
 			g.P(`if m.`, fieldName, ` != nil {`)
 			if toORM {
