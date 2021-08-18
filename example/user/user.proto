@@ -26,7 +26,7 @@ message User {
     repeated Email emails = 8; // has many
     // repeated Task tasks = 9 [(gorm.field).has_many = {position_field: "priority" foreignkey_tag: {not_null: true}}];
     Address billing_address = 10 [(gorm.field).belongs_to = {}];
-    // Address shipping_address = 11 [(gorm.field).belongs_to = {}];
+    Address shipping_address = 11 [(gorm.field).belongs_to = {}];
     // repeated Language languages = 12 [(gorm.field).many_to_many = {}];
     // repeated User friends = 13 [(gorm.field).many_to_many = {}];
     // atlas.resource.v1.Identifier shipping_address_id = 14;
