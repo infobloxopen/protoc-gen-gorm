@@ -519,9 +519,61 @@ func (b *ORMBuilder) setFile(file string, pkg string) {
 	// b.Generator.SetFile(file) // TODO: do we need know current file?
 }
 
-func (p *ORMBuilder) parseManyToMany(msg *protogen.Message, ormable *OrmableType, fieldName string, fieldType string, assoc *OrmableType, opts *gorm.GormFieldOptions) {
-	// TODO: implement me
-	fmt.Fprintf(os.Stderr, "inside: parseManyToMany\n")
+func (b *ORMBuilder) parseManyToMany(msg *protogen.Message, ormable *OrmableType, fieldName string, fieldType string, assoc *OrmableType, opts *gorm.GormFieldOptions) {
+	typeName := camelCase(string(msg.Desc.Name()))
+	mtm := opts.GetManyToMany()
+	if mtm == nil {
+		mtm = &gorm.ManyToManyOptions{}
+		opts.Association = &gorm.GormFieldOptions_ManyToMany{mtm}
+	}
+
+	var foreignKeyName string
+	if foreignKeyName = camelCase(mtm.GetForeignkey()); foreignKeyName == "" {
+		foreignKeyName, _ = b.findPrimaryKey(ormable)
+	} else {
+		var ok bool
+		_, ok = ormable.Fields[foreignKeyName]
+		if !ok {
+			// p.Fail("Missing", foreignKeyName, "field in", ormable.Name, ".")
+			panic(fmt.Sprintf("Missing %s field in %s", foreignKeyName, ormable.Name))
+		}
+	}
+	mtm.Foreignkey = foreignKeyName
+	var assocKeyName string
+	if assocKeyName = camelCase(mtm.GetAssociationForeignkey()); assocKeyName == "" {
+		assocKeyName, _ = b.findPrimaryKey(assoc)
+	} else {
+		var ok bool
+		_, ok = assoc.Fields[assocKeyName]
+		if !ok {
+			// p.Fail("Missing", assocKeyName, "field in", assoc.Name, ".")
+			panic(fmt.Sprintf("Missing %s field in %s", assocKeyName, assoc.Name))
+		}
+	}
+	mtm.AssociationForeignkey = assocKeyName
+	var jt string
+	if jt = jgorm.ToDBName(mtm.GetJointable()); jt == "" {
+		if b.countManyToManyAssociationDimension(msg, fieldType) == 1 && typeName != fieldType {
+			jt = jgorm.ToDBName(typeName + inflection.Plural(fieldType))
+		} else {
+			jt = jgorm.ToDBName(typeName + inflection.Plural(fieldName))
+		}
+	}
+	mtm.Jointable = jt
+	var jtForeignKey string
+	if jtForeignKey = camelCase(mtm.GetJointableForeignkey()); jtForeignKey == "" {
+		jtForeignKey = jgorm.ToDBName(typeName + foreignKeyName)
+	}
+	mtm.JointableForeignkey = jtForeignKey
+	var jtAssocForeignKey string
+	if jtAssocForeignKey = camelCase(mtm.GetAssociationJointableForeignkey()); jtAssocForeignKey == "" {
+		if typeName == fieldType {
+			jtAssocForeignKey = jgorm.ToDBName(inflection.Singular(fieldName) + assocKeyName)
+		} else {
+			jtAssocForeignKey = jgorm.ToDBName(fieldType + assocKeyName)
+		}
+	}
+	mtm.AssociationJointableForeignkey = jtAssocForeignKey
 }
 
 func (b *ORMBuilder) parseHasOne(msg *protogen.Message, parent *OrmableType, fieldName string, fieldType string, child *OrmableType, opts *gorm.GormFieldOptions) {
@@ -3394,6 +3446,31 @@ func (b *ORMBuilder) countBelongsToAssociationDimension(message *protogen.Messag
 		}
 
 		if fieldOpts.GetBelongsTo() != nil {
+			if strings.Trim(typeName, "[]*") == strings.Trim(fieldType, "[]*") {
+				dim++
+			}
+		}
+	}
+
+	return dim
+}
+
+func (b *ORMBuilder) countManyToManyAssociationDimension(message *protogen.Message, typeName string) int {
+	dim := 0
+	for _, field := range message.Fields {
+		options := field.Desc.Options().(*descriptorpb.FieldOptions)
+		fieldOpts := getFieldOptions(options)
+		if fieldOpts.GetDrop() {
+			continue
+		}
+		var fieldType string
+		if field.Desc.Message() == nil {
+			fieldType = field.Desc.Kind().String() // was GoType
+		} else {
+			fieldType = string(field.Desc.Message().Name())
+		}
+
+		if fieldOpts.GetManyToMany() != nil {
 			if strings.Trim(typeName, "[]*") == strings.Trim(fieldType, "[]*") {
 				dim++
 			}

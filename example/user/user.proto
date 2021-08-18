@@ -27,7 +27,7 @@ message User {
     // repeated Task tasks = 9 [(gorm.field).has_many = {position_field: "priority" foreignkey_tag: {not_null: true}}];
     Address billing_address = 10 [(gorm.field).belongs_to = {}];
     Address shipping_address = 11 [(gorm.field).belongs_to = {}];
-    // repeated Language languages = 12 [(gorm.field).many_to_many = {}];
+    repeated Language languages = 12 [(gorm.field).many_to_many = {}];
     // repeated User friends = 13 [(gorm.field).many_to_many = {}];
     // atlas.resource.v1.Identifier shipping_address_id = 14;
     // atlas.resource.v1.Identifier external_uuid = 15 [(gorm.field).tag = {type: "uuid"}];
@@ -58,16 +58,16 @@ message Address {
     atlas.resource.v1.Identifier implicit_fk = 6 [(gorm.field) = {reference_of: "Email" tag: {type: "text"} }];
 }
 
-// message Language {
-//     option (gorm.opts) = {
-//         ormable: true,
-//         multi_account: true
-//     };
-//     atlas.resource.v1.Identifier id = 1 [(gorm.field).tag = {type: "integer" primary_key: true}];
-//     string name = 2;
-//     string code = 3;
-//     atlas.resource.v1.Identifier external_int = 4 [(gorm.field).tag = {type: "integer"}];
-// }
+message Language {
+    option (gorm.opts) = {
+        ormable: true,
+        multi_account: true
+    };
+    atlas.resource.v1.Identifier id = 1 [(gorm.field).tag = {type: "integer" primary_key: true}];
+    string name = 2;
+    string code = 3;
+    atlas.resource.v1.Identifier external_int = 4 [(gorm.field).tag = {type: "integer"}];
+}
 
 message CreditCard {
     option (gorm.opts) = {
