@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -402,7 +403,14 @@ func (b *ORMBuilder) generateOrmable(g *protogen.GeneratedFile, message *protoge
 	ormable := b.getOrmable(message.GoIdent.GoName)
 	g.P(`type `, ormable.Name, ` struct {`)
 
-	for name, field := range ormable.Fields { // TODO: sorting, if it's required
+	var names []string
+	for name := range ormable.Fields {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+
+	for _, name := range names {
+		field := ormable.Fields[name]
 		g.P(name, ` `, field.Type, b.renderGormTag(field))
 	}
 
@@ -1167,7 +1175,13 @@ func camelCaseSlice(elem []string) string { return camelCase(strings.Join(elem, 
 func (p *ORMBuilder) setupOrderedHasMany(message *protogen.Message, g *protogen.GeneratedFile) {
 	typeName := string(message.Desc.Name())
 	ormable := p.getOrmable(typeName)
-	for fieldName := range ormable.Fields { // TODO: do we need to sort?
+	var fieldNames []string
+	for name := range ormable.Fields {
+		fieldNames = append(fieldNames, name)
+	}
+	sort.Strings(fieldNames)
+
+	for _, fieldName := range fieldNames {
 		p.setupOrderedHasManyByName(message, fieldName, g)
 	}
 }
@@ -1863,7 +1877,13 @@ func (b *ORMBuilder) generateAccountIdWhereClause(g *protogen.GeneratedFile) {
 func (b *ORMBuilder) handleChildAssociations(message *protogen.Message, g *protogen.GeneratedFile) {
 	ormable := b.getOrmable(string(message.Desc.Name()))
 
-	for fieldName := range ormable.Fields { // TODO: skipped sorting
+	var fieldNames []string
+	for name := range ormable.Fields {
+		fieldNames = append(fieldNames, name)
+	}
+	sort.Strings(fieldNames)
+
+	for _, fieldName := range fieldNames {
 		b.handleChildAssociationsByName(message, fieldName, g)
 	}
 }
