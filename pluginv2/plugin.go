@@ -2152,7 +2152,6 @@ func (b *ORMBuilder) generateApplyFieldMask(message *protogen.Message, g *protog
 		ccName := camelCase(field.GoName)
 		// fieldType := field.Desc.Kind().String()
 		fieldType := getFieldType(field)
-		fmt.Fprintf(os.Stderr, "DEBUG: %+v, %+v\n", field, field.Message.GoIdent.GoImportPath)
 		//  for ormable message, do recursive patching
 
 		if field.Message != nil && b.isOrmable(fieldType) && field.Desc.Cardinality() != protoreflect.Repeated {
@@ -2165,7 +2164,7 @@ func (b *ORMBuilder) generateApplyFieldMask(message *protogen.Message, g *protog
 			g.P(`continue`)
 			g.P(`}`)
 			g.P(`if patchee.`, ccName, ` == nil {`)
-			g.P(`patchee.`, ccName, ` = &`, strings.TrimPrefix(b.typeName(field.GoIdent, g), "*"), `{}`)
+			g.P(`patchee.`, ccName, ` = &`, strings.TrimPrefix(b.typeName(getFieldIdent(field), g), "*"), `{}`)
 			g.P(`}`)
 			if s := strings.Split(fieldType, "."); len(s) == 2 {
 				g.P(`if o, err := `, strings.TrimLeft(s[0], "*"), `.DefaultApplyFieldMask`, s[1], `(ctx, patchee.`, ccName,
@@ -2195,7 +2194,7 @@ func (b *ORMBuilder) generateApplyFieldMask(message *protogen.Message, g *protog
 			g.P(`continue`)
 			g.P(`}`)
 			g.P(`if patchee.`, ccName, ` == nil {`)
-			g.P(`patchee.`, ccName, ` = &`, strings.TrimPrefix(fieldType, "*"), `{}`)
+			g.P(`patchee.`, ccName, ` = &`, strings.TrimPrefix(b.typeName(getFieldIdent(field), g), "*"), `{}`)
 			g.P(`}`)
 			g.P(`childMask := &`, generateImport("FieldMask", fmImport, g), `{}`)
 			g.P(`for j := i; j < len(updateMask.Paths); j++ {`)
@@ -3282,8 +3281,10 @@ func (b *ORMBuilder) generateMethodStub(service autogenService, method autogenMe
 }
 
 func (b *ORMBuilder) typeName(ident protogen.GoIdent, g *protogen.GeneratedFile) string {
+	fmt.Fprintf(os.Stderr, "DEBUG typeName: %+v\n", ident)
 	// drop package prefix, no need to import
 	if b.currentPackage == ident.GoImportPath.String() {
+		fmt.Fprintf(os.Stderr, "WRONG\n")
 		return ident.GoName
 	}
 
@@ -3345,4 +3346,12 @@ func getFieldType(field *protogen.Field) string {
 		return field.Desc.Kind().String() // was GoType
 	}
 	return string(field.Desc.Message().Name())
+}
+
+func getFieldIdent(field *protogen.Field) protogen.GoIdent {
+	if field.Desc.Message() != nil {
+		return field.Message.GoIdent
+	}
+
+	return field.GoIdent
 }
