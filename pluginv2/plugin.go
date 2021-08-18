@@ -2156,7 +2156,6 @@ func (b *ORMBuilder) generateApplyFieldMask(message *protogen.Message, g *protog
 
 		if field.Message != nil && b.isOrmable(fieldType) && field.Desc.Cardinality() != protoreflect.Repeated {
 			_ = generateImport("", stdStringsImport, g)
-
 			g.P(`if !updated`, ccName, ` && strings.HasPrefix(f, prefix+"`, ccName, `.") {`)
 			g.P(`updated`, ccName, ` = true`)
 			g.P(`if patcher.`, ccName, ` == nil {`)
@@ -2235,27 +2234,35 @@ func (b *ORMBuilder) generateApplyFieldMask(message *protogen.Message, g *protog
 }
 
 func isSpecialType(typeName string) bool {
-	parts := strings.Split(typeName, ".")
-	if len(parts) > 2 { // what kinda format is this????
-		panic("unknown error")
-	}
-	if len(parts) == 1 { // native to this package = not special
+	switch typeName {
+	case protoTypeJSON, protoTypeUUID, protoTypeUUIDValue, protoTypeResource, protoTypeInet, protoTimeOnly:
+		return true
+	default:
 		return false
 	}
-	// anything that looks like a google_protobufX should be considered special
-	if strings.HasPrefix(strings.TrimLeft(typeName, "[]*"), "google_protobuf") {
-		return true
-	}
-	switch parts[len(parts)-1] {
-	case protoTypeJSON,
-		protoTypeUUID,
-		protoTypeUUIDValue,
-		protoTypeResource,
-		protoTypeInet,
-		protoTimeOnly:
-		return true
-	}
-	return false
+	// TODO: probaly we need to add package to special type check
+
+	// parts := strings.Split(typeName, ".")
+	// if len(parts) > 2 { // what kinda format is this????
+	// 	panic("unknown error")
+	// }
+	// if len(parts) == 1 { // native to this package = not special
+	// 	return false
+	// }
+	// // anything that looks like a google_protobufX should be considered special
+	// if strings.HasPrefix(strings.TrimLeft(typeName, "[]*"), "google_protobuf") {
+	// 	return true
+	// }
+	// switch parts[len(parts)-1] {
+	// case protoTypeJSON,
+	// 	protoTypeUUID,
+	// 	protoTypeUUIDValue,
+	// 	protoTypeResource,
+	// 	protoTypeInet,
+	// 	protoTimeOnly:
+	// 	return true
+	// }
+	// return false
 }
 
 func (b *ORMBuilder) generateListHandler(message *protogen.Message, g *protogen.GeneratedFile) {
@@ -3281,10 +3288,8 @@ func (b *ORMBuilder) generateMethodStub(service autogenService, method autogenMe
 }
 
 func (b *ORMBuilder) typeName(ident protogen.GoIdent, g *protogen.GeneratedFile) string {
-	fmt.Fprintf(os.Stderr, "DEBUG typeName: %+v\n", ident)
 	// drop package prefix, no need to import
 	if b.currentPackage == ident.GoImportPath.String() {
-		fmt.Fprintf(os.Stderr, "WRONG\n")
 		return ident.GoName
 	}
 
