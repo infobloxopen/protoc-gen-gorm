@@ -8,7 +8,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/gogo/protobuf/protoc-gen-gogo/generator"
 	gorm "github.com/infobloxopen/protoc-gen-gorm/options"
 	jgorm "github.com/jinzhu/gorm"
 	"github.com/jinzhu/inflection"
@@ -374,7 +373,7 @@ func (b *ORMBuilder) generateConvertFunctions(g *protogen.GeneratedFile, message
 		if fieldOpts.GetDrop() {
 			continue
 		}
-		ofield := ormable.Fields[generator.CamelCase(field.GoName)]
+		ofield := ormable.Fields[camelCase(field.GoName)]
 		b.generateFieldConversion(message, field, false, ofield, g)
 	}
 	g.P(`if posthook, ok := interface{}(m).(`, typeName, `WithAfterToPB); ok {`)
@@ -599,7 +598,7 @@ func (p *ORMBuilder) parseHasMany(msg *protogen.Message, parent *OrmableType, fi
 	}
 	var assocKey *Field
 	var assocKeyName string
-	if assocKeyName = generator.CamelCase(hasMany.GetAssociationForeignkey()); assocKeyName == "" {
+	if assocKeyName = camelCase(hasMany.GetAssociationForeignkey()); assocKeyName == "" {
 		assocKeyName, assocKey = p.findPrimaryKey(parent)
 	} else {
 		var ok bool
@@ -650,7 +649,7 @@ func (p *ORMBuilder) parseHasMany(msg *protogen.Message, parent *OrmableType, fi
 	child.Fields[foreignKeyName].ParentOrigName = parent.OriginName
 
 	var posField string
-	if posField = generator.CamelCase(hasMany.GetPositionField()); posField != "" {
+	if posField = camelCase(hasMany.GetPositionField()); posField != "" {
 		if exField, ok := child.Fields[posField]; !ok {
 			child.Fields[posField] = &Field{Type: "int", GormFieldOptions: &gorm.GormFieldOptions{Tag: hasMany.GetPositionFieldTag()}}
 		} else {
@@ -671,7 +670,7 @@ func (b *ORMBuilder) parseBelongsTo(msg *protogen.Message, child *OrmableType, f
 	}
 	var assocKey *Field
 	var assocKeyName string
-	if assocKeyName = generator.CamelCase(belongsTo.GetAssociationForeignkey()); assocKeyName == "" {
+	if assocKeyName = camelCase(belongsTo.GetAssociationForeignkey()); assocKeyName == "" {
 		assocKeyName, assocKey = b.findPrimaryKey(parent)
 	} else {
 		var ok bool
