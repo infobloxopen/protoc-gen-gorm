@@ -562,7 +562,7 @@ func (b *ORMBuilder) parseManyToMany(msg *protogen.Message, ormable *OrmableType
 	mtm.Jointable = jt
 	var jtForeignKey string
 	if jtForeignKey = camelCase(mtm.GetJointableForeignkey()); jtForeignKey == "" {
-		jtForeignKey = jgorm.ToDBName(typeName + foreignKeyName)
+		jtForeignKey = camelCase(jgorm.ToDBName(typeName + foreignKeyName))
 	}
 	mtm.JointableForeignkey = jtForeignKey
 	var jtAssocForeignKey string
@@ -573,7 +573,7 @@ func (b *ORMBuilder) parseManyToMany(msg *protogen.Message, ormable *OrmableType
 			jtAssocForeignKey = jgorm.ToDBName(fieldType + assocKeyName)
 		}
 	}
-	mtm.AssociationJointableForeignkey = jtAssocForeignKey
+	mtm.AssociationJointableForeignkey = camelCase(jtAssocForeignKey)
 }
 
 func (b *ORMBuilder) parseHasOne(msg *protogen.Message, parent *OrmableType, fieldName string, fieldType string, child *OrmableType, opts *gorm.GormFieldOptions) {
