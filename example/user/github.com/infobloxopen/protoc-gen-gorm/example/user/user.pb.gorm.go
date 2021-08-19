@@ -150,7 +150,7 @@ func (m *User) ToORM(ctx context.Context) (UserORM, error) {
 		}
 	}
 	if m.ExternalUuid != nil {
-		if v, err := resource.Decode(&User{}, m.ExternalUuid); err != nil {
+		if v, err := resource.Decode(nil, m.ExternalUuid); err != nil {
 			return to, err
 		} else if v != nil {
 			vv := v.(string)
@@ -275,7 +275,7 @@ func (m *UserORM) ToPB(ctx context.Context) (User, error) {
 		}
 	}
 	if m.ExternalUuid != nil {
-		if v, err := resource.Encode(&User{}, *m.ExternalUuid); err != nil {
+		if v, err := resource.Encode(nil, *m.ExternalUuid); err != nil {
 			return to, err
 		} else {
 			to.ExternalUuid = v
@@ -349,7 +349,7 @@ func (m *Email) ToORM(ctx context.Context) (EmailORM, error) {
 			to.UserId = &vv
 		}
 	}
-	if v, err := resource.Decode(&Email{}, m.ExternalNotNull); err != nil {
+	if v, err := resource.Decode(nil, m.ExternalNotNull); err != nil {
 		return to, err
 	} else if v != nil {
 		to.ExternalNotNull = v.(string)
@@ -389,7 +389,7 @@ func (m *EmailORM) ToPB(ctx context.Context) (Email, error) {
 			to.UserId = v
 		}
 	}
-	if v, err := resource.Encode(&Email{}, m.ExternalNotNull); err != nil {
+	if v, err := resource.Encode(nil, m.ExternalNotNull); err != nil {
 		return to, err
 	} else {
 		to.ExternalNotNull = v
@@ -456,7 +456,7 @@ func (m *Address) ToORM(ctx context.Context) (AddressORM, error) {
 	to.Address_1 = m.Address_1
 	to.Address_2 = m.Address_2
 	to.Post = m.Post
-	if v, err := resource.DecodeBytes(&Address{}, m.External); err != nil {
+	if v, err := resource.DecodeBytes(nil, m.External); err != nil {
 		return to, err
 	} else {
 		to.External = v
@@ -498,7 +498,7 @@ func (m *AddressORM) ToPB(ctx context.Context) (Address, error) {
 	to.Address_1 = m.Address_1
 	to.Address_2 = m.Address_2
 	to.Post = m.Post
-	if v, err := resource.Encode(&Address{}, m.External); err != nil {
+	if v, err := resource.Encode(nil, m.External); err != nil {
 		return to, err
 	} else {
 		to.External = v
@@ -570,7 +570,7 @@ func (m *Language) ToORM(ctx context.Context) (LanguageORM, error) {
 	to.Name = m.Name
 	to.Code = m.Code
 	if m.ExternalInt != nil {
-		if v, err := resource.DecodeInt64(&Language{}, m.ExternalInt); err != nil {
+		if v, err := resource.DecodeInt64(nil, m.ExternalInt); err != nil {
 			return to, err
 		} else {
 			to.ExternalInt = &v
@@ -605,7 +605,7 @@ func (m *LanguageORM) ToPB(ctx context.Context) (Language, error) {
 	to.Name = m.Name
 	to.Code = m.Code
 	if m.ExternalInt != nil {
-		if v, err := resource.Encode(&Language{}, *m.ExternalInt); err != nil {
+		if v, err := resource.Encode(nil, *m.ExternalInt); err != nil {
 			return to, err
 		} else {
 			to.ExternalInt = v

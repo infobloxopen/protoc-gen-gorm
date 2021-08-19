@@ -268,7 +268,6 @@ func (b *ORMBuilder) Generate() (*pluginpb.CodeGeneratorResponse, error) {
 		}
 
 		// third traverse: build associations
-		// TODO: implement functions, simple example will not have any associations
 		for _, message := range protoFile.Messages {
 			typeName := string(message.Desc.Name())
 			if isOrmable(message) {
@@ -891,7 +890,6 @@ func (b *ORMBuilder) parseBasicFields(msg *protogen.Message, g *protogen.Generat
 			ParentGoType:     "",
 			Type:             fieldType,
 			Package:          typePackage,
-			ParentOrigName:   typeName,
 		}
 
 		if tName := gormOptions.GetReferenceOf(); tName != "" {
