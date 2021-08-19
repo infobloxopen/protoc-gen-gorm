@@ -24,13 +24,13 @@ message User {
     uint32 num = 6;
     CreditCard credit_card = 7; // has one
     repeated Email emails = 8; // has many
-    // repeated Task tasks = 9 [(gorm.field).has_many = {position_field: "priority" foreignkey_tag: {not_null: true}}];
+    repeated Task tasks = 9 [(gorm.field).has_many = {position_field: "priority" foreignkey_tag: {not_null: true}}];
     Address billing_address = 10 [(gorm.field).belongs_to = {}];
     Address shipping_address = 11 [(gorm.field).belongs_to = {}];
     repeated Language languages = 12 [(gorm.field).many_to_many = {}];
-    // repeated User friends = 13 [(gorm.field).many_to_many = {}];
-    // atlas.resource.v1.Identifier shipping_address_id = 14;
-    // atlas.resource.v1.Identifier external_uuid = 15 [(gorm.field).tag = {type: "uuid"}];
+    repeated User friends = 13 [(gorm.field).many_to_many = {}];
+    atlas.resource.v1.Identifier shipping_address_id = 14;
+    atlas.resource.v1.Identifier external_uuid = 15 [(gorm.field).tag = {type: "uuid"}];
 }
 
 message Email {
@@ -81,12 +81,12 @@ message CreditCard {
     atlas.resource.v1.Identifier user_id = 5;
 }
 
-// message Task {
-//     option (gorm.opts) = {
-//         ormable: true,
-//         multi_account: true
-//     };
-//     string name = 1;
-//     string description = 2;
-//     int64 priority = 3;
-// }
+message Task {
+    option (gorm.opts) = {
+        ormable: true,
+        multi_account: true
+    };
+    string name = 1;
+    string description = 2;
+    int64 priority = 3;
+}
