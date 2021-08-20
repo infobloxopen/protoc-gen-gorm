@@ -294,6 +294,21 @@ func (b *ORMBuilder) Generate() (*pluginpb.CodeGeneratorResponse, error) {
 		if !ok {
 			panic("generated file should be present")
 		}
+
+		skip := true
+
+		for _, message := range protoFile.Messages {
+			if isOrmable(message) {
+				skip = false
+				break
+			}
+		}
+
+		if skip {
+			g.Skip()
+			continue
+		}
+
 		g.P("package ", protoFile.GoPackageName)
 
 		for _, message := range protoFile.Messages {
