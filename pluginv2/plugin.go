@@ -303,6 +303,13 @@ func (b *ORMBuilder) Generate() (*pluginpb.CodeGeneratorResponse, error) {
 			}
 		}
 
+		for _, service := range protoFile.Services {
+			if getServiceOptions(service) != nil {
+				skip = false
+				break
+			}
+		}
+
 		if skip {
 			g.Skip()
 			continue
