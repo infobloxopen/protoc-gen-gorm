@@ -51,10 +51,8 @@ generate-gentool: #gentool
 		$(GENTOOL_IMAGE) \
 		--go_out="plugins=grpc:$(DOCKERPATH)" \
 		--gorm_out="engine=postgres,enums=string,gateway:$(DOCKERPATH)" \
-			feature_demo/demo_multi_file.proto \
-			feature_demo/demo_types.proto \
-			feature_demo/demo_service.proto \
-			feature_demo/demo_multi_file_service.proto
+			feature_demo/demo_multi_file_service.proto \
+			feature_demo/demo_multi_file.proto
 
 build-local:
 	rm -rf example/feature_demo/github.com/
