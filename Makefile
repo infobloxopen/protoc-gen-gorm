@@ -54,6 +54,16 @@ generate-gentool: #gentool
 			feature_demo/demo_multi_file.proto \
 			feature_demo/demo_multi_file_service.proto \
 			feature_demo/demo_service.proto
+	$(DOCKER_RUNNER) \
+		$(GENTOOL_IMAGE) \
+		--go_out="plugins=grpc:$(DOCKERPATH)" \
+		--gorm_out="engine=postgres,enums=string,gateway:$(DOCKERPATH)" \
+			user/user.proto
+	$(DOCKER_RUNNER) \
+		$(GENTOOL_IMAGE) \
+		--go_out="plugins=grpc:$(DOCKERPATH)" \
+		--gorm_out="engine=postgres,enums=string,gateway:$(DOCKERPATH)" \
+			postgres_arrays/postgres_arrays.proto
 
 build-local:
 	rm -rf example/feature_demo/github.com/
