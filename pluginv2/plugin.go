@@ -39,7 +39,6 @@ var (
 	authImport         = "github.com/infobloxopen/atlas-app-toolkit/auth"
 	gormpqImport       = "github.com/jinzhu/gorm/dialects/postgres"
 	gtypesImport       = "github.com/infobloxopen/protoc-gen-gorm/types"
-	ptypesImport       = "github.com/golang/protobuf/ptypes"
 	wktImport          = "github.com/golang/protobuf/ptypes/wrappers"
 	resourceImport     = "github.com/infobloxopen/atlas-app-toolkit/gorm/resource"
 	fmImport           = "google.golang.org/genproto/protobuf/field_mask"
@@ -48,7 +47,7 @@ var (
 	gatewayImport      = "github.com/infobloxopen/atlas-app-toolkit/gateway"
 	pqImport           = "github.com/lib/pq"
 	gerrorsImport      = "github.com/infobloxopen/protoc-gen-gorm/errors"
-	timestampImport    = "github.com/golang/protobuf/ptypes/timestamp"
+	timestampImport    = "google.golang.org/protobuf/types/known/timestamppb"
 	stdFmtImport       = "fmt"
 	stdCtxImport       = "context"
 	stdStringsImport   = "strings"
@@ -1403,17 +1402,11 @@ func (b *ORMBuilder) generateFieldConversion(message *protogen.Message, field *p
 		} else if fieldType == protoTypeTimestamp { // Singular WKT Timestamp ---
 			if toORM {
 				g.P(`if m.`, fieldName, ` != nil {`)
-				g.P(`var t time.Time`)
-				g.P(`if t, err = `, generateImport("Timestamp", ptypesImport, g), `(m.`, fieldName, `); err != nil {`)
-				g.P(`return to, err`)
-				g.P(`}`)
-				g.P(`to.`, fieldName, ` = &t`)
+				g.P(`*to.`, fieldName, ` = m.`, fieldName, `.AsTime()`)
 				g.P(`}`)
 			} else {
 				g.P(`if m.`, fieldName, ` != nil {`)
-				g.P(`if to.`, fieldName, `, err = `, generateImport("TimestampProto", ptypesImport, g), `(*m.`, fieldName, `); err != nil {`)
-				g.P(`return to, err`)
-				g.P(`}`)
+				g.P(`to.`, fieldName, ` = `, generateImport("New", timestampImport, g), `(*m.`, fieldName, `)`)
 				g.P(`}`)
 			}
 		} else if fieldType == protoTypeJSON {

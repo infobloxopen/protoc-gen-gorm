@@ -3,7 +3,6 @@ package user
 import (
 	context "context"
 	fmt "fmt"
-	ptypes "github.com/golang/protobuf/ptypes"
 	auth "github.com/infobloxopen/atlas-app-toolkit/auth"
 	gateway "github.com/infobloxopen/atlas-app-toolkit/gateway"
 	gorm1 "github.com/infobloxopen/atlas-app-toolkit/gorm"
@@ -56,25 +55,13 @@ func (m *User) ToORM(ctx context.Context) (UserORM, error) {
 		to.Id = v.(string)
 	}
 	if m.CreatedAt != nil {
-		var t time.Time
-		if t, err = ptypes.Timestamp(m.CreatedAt); err != nil {
-			return to, err
-		}
-		to.CreatedAt = &t
+		*to.CreatedAt = m.CreatedAt.AsTime()
 	}
 	if m.UpdatedAt != nil {
-		var t time.Time
-		if t, err = ptypes.Timestamp(m.UpdatedAt); err != nil {
-			return to, err
-		}
-		to.UpdatedAt = &t
+		*to.UpdatedAt = m.UpdatedAt.AsTime()
 	}
 	if m.Birthday != nil {
-		var t time.Time
-		if t, err = ptypes.Timestamp(m.Birthday); err != nil {
-			return to, err
-		}
-		to.Birthday = &t
+		*to.Birthday = m.Birthday.AsTime()
 	}
 	to.Num = m.Num
 	if m.CreditCard != nil {
@@ -187,19 +174,13 @@ func (m *UserORM) ToPB(ctx context.Context) (User, error) {
 		to.Id = v
 	}
 	if m.CreatedAt != nil {
-		if to.CreatedAt, err = ptypes.TimestampProto(*m.CreatedAt); err != nil {
-			return to, err
-		}
+		to.CreatedAt = timestamppb.New(*m.CreatedAt)
 	}
 	if m.UpdatedAt != nil {
-		if to.UpdatedAt, err = ptypes.TimestampProto(*m.UpdatedAt); err != nil {
-			return to, err
-		}
+		to.UpdatedAt = timestamppb.New(*m.UpdatedAt)
 	}
 	if m.Birthday != nil {
-		if to.Birthday, err = ptypes.TimestampProto(*m.Birthday); err != nil {
-			return to, err
-		}
+		to.Birthday = timestamppb.New(*m.Birthday)
 	}
 	to.Num = m.Num
 	if m.CreditCard != nil {
@@ -670,18 +651,10 @@ func (m *CreditCard) ToORM(ctx context.Context) (CreditCardORM, error) {
 		to.Id = v
 	}
 	if m.CreatedAt != nil {
-		var t time.Time
-		if t, err = ptypes.Timestamp(m.CreatedAt); err != nil {
-			return to, err
-		}
-		to.CreatedAt = &t
+		*to.CreatedAt = m.CreatedAt.AsTime()
 	}
 	if m.UpdatedAt != nil {
-		var t time.Time
-		if t, err = ptypes.Timestamp(m.UpdatedAt); err != nil {
-			return to, err
-		}
-		to.UpdatedAt = &t
+		*to.UpdatedAt = m.UpdatedAt.AsTime()
 	}
 	to.Number = m.Number
 	if m.UserId != nil {
@@ -719,14 +692,10 @@ func (m *CreditCardORM) ToPB(ctx context.Context) (CreditCard, error) {
 		to.Id = v
 	}
 	if m.CreatedAt != nil {
-		if to.CreatedAt, err = ptypes.TimestampProto(*m.CreatedAt); err != nil {
-			return to, err
-		}
+		to.CreatedAt = timestamppb.New(*m.CreatedAt)
 	}
 	if m.UpdatedAt != nil {
-		if to.UpdatedAt, err = ptypes.TimestampProto(*m.UpdatedAt); err != nil {
-			return to, err
-		}
+		to.UpdatedAt = timestamppb.New(*m.UpdatedAt)
 	}
 	to.Number = m.Number
 	if m.UserId != nil {
