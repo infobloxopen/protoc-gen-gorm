@@ -430,6 +430,16 @@ func (b *ORMBuilder) generateOrmable(g *protogen.GeneratedFile, message *protoge
 
 	for _, name := range names {
 		field := ormable.Fields[name]
+		sp := strings.Split(field.Type, ".")
+		if len(sp) == 2 && sp[1] == "UUID" {
+			s := generateImport("UUID", uuidImport, g)
+			if field.Type[0] == '*' {
+				field.Type = "*" + s
+			} else {
+				field.Type = s
+			}
+		}
+
 		g.P(name, ` `, field.Type, b.renderGormTag(field))
 	}
 
@@ -811,7 +821,7 @@ func (b *ORMBuilder) parseBasicFields(msg *protogen.Message, g *protogen.Generat
 
 		tag := gormOptions.Tag
 		fieldName := camelCase(string(fd.Name()))
-		fieldType := fd.Kind().String() // fieldType may be a message
+		fieldType := fd.Kind().String()
 
 		var typePackage string
 
@@ -845,7 +855,6 @@ func (b *ORMBuilder) parseBasicFields(msg *protogen.Message, g *protogen.Generat
 			rawType := xs[len(xs)-1]
 
 			if v, ok := wellKnownTypes[rawType]; ok {
-				fmt.Fprintf(os.Stderr, "TODO: hanle well known rawTypes, it's old importPath probably dated: %s\n", v)
 				fieldType = v
 			} else if rawType == protoTypeUUID {
 				typePackage = uuidImport
@@ -911,6 +920,13 @@ func (b *ORMBuilder) parseBasicFields(msg *protogen.Message, g *protogen.Generat
 			}
 		}
 
+		switch fieldType {
+		case "float":
+			fieldType = "float32"
+		case "double":
+			fieldType = "float64"
+		}
+
 		f := &Field{
 			GormFieldOptions: gormOptions,
 			ParentGoType:     "",
@@ -973,7 +989,7 @@ func (b *ORMBuilder) addIncludedField(ormable *OrmableType, field *gorm.ExtraFie
 		} else if rawType == "Inet" {
 			rawType = generateImport("Inet", gtypesImport, g)
 		} else {
-			fmt.Fprintf(os.Stderr, "TODO: Warning")
+			fmt.Fprintf(os.Stderr, "TODO: Warning\n")
 			// p.warning(`included field %q of type %q is not a recognized special type, and no package specified. This type is assumed to be in the same package as the generated code`,
 			// 	field.GetName(), field.GetType())
 		}
@@ -2290,7 +2306,6 @@ func (b *ORMBuilder) generateApplyFieldMask(message *protogen.Message, g *protog
 			g.P(`if patchee.`, ccName, ` == nil {`)
 			g.P(`patchee.`, ccName, ` = &`, strings.TrimPrefix(b.typeName(getFieldIdent(field), g), "*"), `{}`)
 			g.P(`}`)
-			fmt.Fprintf(os.Stderr, "defaultApply (fieldType): %s\n", fieldType)
 			if s := strings.Split(fieldType, "."); len(s) == 2 {
 				g.P(`if o, err := `, strings.TrimLeft(s[0], "*"), `.DefaultApplyFieldMask`, s[1], `(ctx, patchee.`, ccName,
 					`, patcher.`, ccName, `, &`, generateImport("FieldMask", fmImport, g),
