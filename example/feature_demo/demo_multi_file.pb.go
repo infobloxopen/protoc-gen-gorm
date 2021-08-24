@@ -8,6 +8,7 @@ It is generated from these files:
 	feature_demo/demo_multi_file.proto
 	feature_demo/demo_multi_file_service.proto
 	feature_demo/demo_service.proto
+	feature_demo/demo_types.proto
 
 It has these top-level messages:
 	ExternalChild
@@ -33,6 +34,20 @@ It has these top-level messages:
 	Circle
 	ListCircleRequest
 	ListCircleResponse
+	TestTypes
+	TypeWithID
+	MultiaccountTypeWithID
+	MultiaccountTypeWithoutID
+	APIOnlyType
+	PrimaryUUIDType
+	PrimaryStringType
+	TestTag
+	TestAssocHandlerDefault
+	TestAssocHandlerReplace
+	TestAssocHandlerClear
+	TestAssocHandlerAppend
+	TestTagAssociation
+	PrimaryIncluded
 */
 package example
 

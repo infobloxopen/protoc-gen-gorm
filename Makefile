@@ -53,7 +53,8 @@ generate-gentool: #gentool
 		--gorm_out="engine=postgres,enums=string,gateway:$(DOCKERPATH)" \
 			feature_demo/demo_multi_file.proto \
 			feature_demo/demo_multi_file_service.proto \
-			feature_demo/demo_service.proto
+			feature_demo/demo_service.proto \
+			feature_demo/demo_types.proto
 	$(DOCKER_RUNNER) \
 		$(GENTOOL_IMAGE) \
 		--go_out="plugins=grpc:$(DOCKERPATH)" \

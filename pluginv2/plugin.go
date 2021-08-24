@@ -39,15 +39,15 @@ var (
 	authImport         = "github.com/infobloxopen/atlas-app-toolkit/auth"
 	gormpqImport       = "github.com/jinzhu/gorm/dialects/postgres"
 	gtypesImport       = "github.com/infobloxopen/protoc-gen-gorm/types"
-	wktImport          = "github.com/golang/protobuf/ptypes/wrappers"
 	resourceImport     = "github.com/infobloxopen/atlas-app-toolkit/gorm/resource"
-	fmImport           = "google.golang.org/genproto/protobuf/field_mask"
 	queryImport        = "github.com/infobloxopen/atlas-app-toolkit/query"
 	ocTraceImport      = "go.opencensus.io/trace"
 	gatewayImport      = "github.com/infobloxopen/atlas-app-toolkit/gateway"
 	pqImport           = "github.com/lib/pq"
 	gerrorsImport      = "github.com/infobloxopen/protoc-gen-gorm/errors"
 	timestampImport    = "google.golang.org/protobuf/types/known/timestamppb"
+	wktImport          = "google.golang.org/protobuf/types/known/wrapperspb"
+	fmImport           = "google.golang.org/genproto/protobuf/field_mask"
 	stdFmtImport       = "fmt"
 	stdCtxImport       = "context"
 	stdStringsImport   = "strings"
@@ -241,6 +241,7 @@ func (b *ORMBuilder) Generate() (*pluginpb.CodeGeneratorResponse, error) {
 
 		// TODO: set current file and newFileImport
 		b.fileImports[*protoFile.Proto.Name] = newFileImports()
+		b.currentPackage = protoFile.GoImportPath.String()
 
 		// first traverse: preload the messages
 		for _, message := range protoFile.Messages {
@@ -270,7 +271,7 @@ func (b *ORMBuilder) Generate() (*pluginpb.CodeGeneratorResponse, error) {
 		for _, message := range protoFile.Messages {
 			typeName := string(message.Desc.Name())
 			if isOrmable(message) {
-				b.parseAssociations(message)
+				b.parseAssociations(message, g)
 				o := b.getOrmable(typeName)
 				if b.hasPrimaryKey(o) {
 					_, fd := b.findPrimaryKey(o)
@@ -286,7 +287,6 @@ func (b *ORMBuilder) Generate() (*pluginpb.CodeGeneratorResponse, error) {
 	}
 
 	for _, protoFile := range b.plugin.Files {
-		b.currentPackage = protoFile.GoImportPath.String()
 		// generate actual code
 		fileName := protoFile.GeneratedFilenamePrefix + ".pb.gorm.go"
 		g, ok := genFileMap[fileName]
@@ -437,7 +437,7 @@ func (b *ORMBuilder) generateOrmable(g *protogen.GeneratedFile, message *protoge
 	g.P()
 }
 
-func (b *ORMBuilder) parseAssociations(msg *protogen.Message) {
+func (b *ORMBuilder) parseAssociations(msg *protogen.Message, g *protogen.GeneratedFile) {
 	typeName := camelCase(string(msg.Desc.Name())) // TODO: camelSnakeCase
 	ormable := b.getOrmable(typeName)
 
@@ -466,6 +466,10 @@ func (b *ORMBuilder) parseAssociations(msg *protogen.Message) {
 				fieldOpts = &gorm.GormFieldOptions{}
 			}
 			assocOrmable := b.getOrmable(fieldType)
+
+			if field.Message != nil {
+				fieldType = b.typeName(field.Message.GoIdent, g)
+			}
 
 			if field.Desc.Cardinality() == protoreflect.Repeated {
 				if fieldOpts.GetManyToMany() != nil {
@@ -842,6 +846,7 @@ func (b *ORMBuilder) parseBasicFields(msg *protogen.Message, g *protogen.Generat
 
 			if v, ok := wellKnownTypes[rawType]; ok {
 				fmt.Fprintf(os.Stderr, "TODO: hanle well known rawTypes, it's old importPath probably dated: %s\n", v)
+				fieldType = v
 			} else if rawType == protoTypeUUID {
 				typePackage = uuidImport
 				fieldType = generateImport("UUID", uuidImport, g)
@@ -944,7 +949,7 @@ func (b *ORMBuilder) parseBasicFields(msg *protogen.Message, g *protogen.Generat
 }
 
 func (b *ORMBuilder) addIncludedField(ormable *OrmableType, field *gorm.ExtraField, g *protogen.GeneratedFile) {
-	fieldName := field.GetName() // TODO: CamelCase
+	fieldName := camelCase(field.GetName())
 	isPtr := strings.HasPrefix(field.GetType(), "*")
 	rawType := strings.TrimPrefix(field.GetType(), "*")
 	// cut off any package subpaths
@@ -952,7 +957,7 @@ func (b *ORMBuilder) addIncludedField(ormable *OrmableType, field *gorm.ExtraFie
 	var typePackage string
 	// Handle types with a package defined
 	if field.GetPackage() != "" {
-		rawType = generateImport(field.GetPackage(), rawType, g)
+		rawType = generateImport(rawType, field.GetPackage(), g)
 		typePackage = field.GetPackage()
 	} else {
 		// Handle types without a package defined
@@ -1375,7 +1380,9 @@ func (b *ORMBuilder) generateFieldConversion(message *protogen.Message, field *p
 				g.P(`}`)
 			} else {
 				g.P(`if m.`, fieldName, ` != nil {`)
-				g.P(`to.`, fieldName, ` = &`, b.GetFileImports().wktPkgName, ".", fieldType,
+				// g.P(`to.`, fieldName, ` = &`, b.GetFileImports().wktPkgName, ".", fieldType,
+				// 	`{Value: *m.`, fieldName, `}`)
+				g.P(`to.`, fieldName, ` = &`, generateImport(fieldType, wktImport, g),
 					`{Value: *m.`, fieldName, `}`)
 				g.P(`}`)
 			}
@@ -1504,7 +1511,7 @@ func (b *ORMBuilder) generateFieldConversion(message *protogen.Message, field *p
 				g.P(`}`)
 			} else {
 				g.P(`if m.`, fieldName, ` != nil && m.`, fieldName, `.IPNet != nil {`)
-				g.P(`to.`, fieldName, ` = &`, generateImport("InetValue", gtypesImport, g), `.InetValue{Value: m.`, fieldName, `.String()}`)
+				g.P(`to.`, fieldName, ` = &`, generateImport("InetValue", gtypesImport, g), `{Value: m.`, fieldName, `.String()}`)
 				g.P(`}`)
 			}
 		} else if fieldType == protoTimeOnly { // Time only to support time via string
@@ -1647,9 +1654,9 @@ func (b *ORMBuilder) generateReadHandler(message *protogen.Message, g *protogen.
 
 	k, f := b.findPrimaryKey(ormable)
 	if strings.Contains(f.Type, "*") {
-		g.P(`if ormObj.`, k, ` == nil || *ormObj.`, k, ` == `, b.guessZeroValue(f.Type), ` {`)
+		g.P(`if ormObj.`, k, ` == nil || *ormObj.`, k, ` == `, b.guessZeroValue(f.Type, g), ` {`)
 	} else {
-		g.P(`if ormObj.`, k, ` == `, b.guessZeroValue(f.Type), ` {`)
+		g.P(`if ormObj.`, k, ` == `, b.guessZeroValue(f.Type, g), ` {`)
 	}
 	g.P(`return nil, `, "errors", `.EmptyIdError`)
 	g.P(`}`)
@@ -1693,7 +1700,7 @@ func (b *ORMBuilder) readHasFieldSelection(ormable *OrmableType) bool {
 }
 
 // guessZeroValue of the input type, so that we can check if a (key) value is set or not
-func (b *ORMBuilder) guessZeroValue(typeName string) string {
+func (b *ORMBuilder) guessZeroValue(typeName string, g *protogen.GeneratedFile) string {
 	typeName = strings.ToLower(typeName)
 	if strings.Contains(typeName, "string") {
 		return `""`
@@ -1701,10 +1708,10 @@ func (b *ORMBuilder) guessZeroValue(typeName string) string {
 	if strings.Contains(typeName, "int") {
 		return `0`
 	}
-	// TODO: import uuid
-	// if strings.Contains(typeName, "uuid") {
-	// 	return fmt.Sprintf(`%s.Nil`, p.Import(uuidImport))
-	// }
+	if strings.Contains(typeName, "uuid") {
+		// return fmt.Sprintf(`%s.Nil`, p.Import(uuidImport))
+		return generateImport("Nil", uuidImport, g)
+	}
 	if strings.Contains(typeName, "[]byte") {
 		return `nil`
 	}
@@ -1780,9 +1787,9 @@ func (b *ORMBuilder) generateDeleteHandler(message *protogen.Message, g *protoge
 	ormable := b.getOrmable(typeName)
 	pkName, pk := b.findPrimaryKey(ormable)
 	if strings.Contains(pk.Type, "*") {
-		g.P(`if ormObj.`, pkName, ` == nil || *ormObj.`, pkName, ` == `, b.guessZeroValue(pk.Type), ` {`)
+		g.P(`if ormObj.`, pkName, ` == nil || *ormObj.`, pkName, ` == `, b.guessZeroValue(pk.Type, g), ` {`)
 	} else {
-		g.P(`if ormObj.`, pkName, ` == `, b.guessZeroValue(pk.Type), `{`)
+		g.P(`if ormObj.`, pkName, ` == `, b.guessZeroValue(pk.Type, g), `{`)
 	}
 	g.P(`return `, generateImport("EmptyIdError", gerrorsImport, g))
 	g.P(`}`)
@@ -1847,9 +1854,9 @@ func (b *ORMBuilder) generateDeleteSetHandler(message *protogen.Message, g *prot
 	g.P(`return err`)
 	g.P(`}`)
 	if strings.Contains(pk.Type, "*") {
-		g.P(`if ormObj.`, pkName, ` == nil || *ormObj.`, pkName, ` == `, b.guessZeroValue(pk.Type), ` {`)
+		g.P(`if ormObj.`, pkName, ` == nil || *ormObj.`, pkName, ` == `, b.guessZeroValue(pk.Type, g), ` {`)
 	} else {
-		g.P(`if ormObj.`, pkName, ` == `, b.guessZeroValue(pk.Type), `{`)
+		g.P(`if ormObj.`, pkName, ` == `, b.guessZeroValue(pk.Type, g), `{`)
 	}
 	g.P(`return `, generateImport("EmptyIdError", gerrorsImport, g))
 	g.P(`}`)
@@ -2067,7 +2074,7 @@ func (b *ORMBuilder) removeChildAssociationsByName(message *protogen.Message, fi
 		assocOrmable := b.getOrmable(field.Type)
 		foreignKeyType := assocOrmable.Fields[foreignKeyName].Type
 		g.P(`filter`, fieldName, ` := `, strings.Trim(field.Type, "[]*"), `{}`)
-		zeroValue := b.guessZeroValue(assocKeyType)
+		zeroValue := b.guessZeroValue(assocKeyType, g)
 		if strings.Contains(assocKeyType, "*") {
 			g.P(`if ormObj.`, assocKeyName, ` == nil || *ormObj.`, assocKeyName, ` == `, zeroValue, `{`)
 		} else {
@@ -2261,11 +2268,14 @@ func (b *ORMBuilder) generateApplyFieldMask(message *protogen.Message, g *protog
 	}
 	for _, field := range message.Fields {
 		ccName := camelCase(field.GoName)
-		// fieldType := field.Desc.Kind().String()
+
 		fieldType := getFieldType(field)
 		//  for ormable message, do recursive patching
-
 		if field.Message != nil && b.isOrmable(fieldType) && field.Desc.Cardinality() != protoreflect.Repeated {
+			if field.Message != nil {
+				// TODO: a hack work around imported types
+				fieldType = b.typeName(field.Message.GoIdent, g)
+			}
 			_ = generateImport("", stdStringsImport, g)
 			g.P(`if !updated`, ccName, ` && strings.HasPrefix(f, prefix+"`, ccName, `.") {`)
 			g.P(`updated`, ccName, ` = true`)
@@ -2276,6 +2286,7 @@ func (b *ORMBuilder) generateApplyFieldMask(message *protogen.Message, g *protog
 			g.P(`if patchee.`, ccName, ` == nil {`)
 			g.P(`patchee.`, ccName, ` = &`, strings.TrimPrefix(b.typeName(getFieldIdent(field), g), "*"), `{}`)
 			g.P(`}`)
+			fmt.Fprintf(os.Stderr, "defaultApply (fieldType): %s\n", fieldType)
 			if s := strings.Split(fieldType, "."); len(s) == 2 {
 				g.P(`if o, err := `, strings.TrimLeft(s[0], "*"), `.DefaultApplyFieldMask`, s[1], `(ctx, patchee.`, ccName,
 					`, patcher.`, ccName, `, &`, generateImport("FieldMask", fmImport, g),
