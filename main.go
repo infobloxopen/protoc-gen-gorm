@@ -5,7 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/infobloxopen/protoc-gen-gorm/pluginv2"
+	"github.com/infobloxopen/protoc-gen-gorm/plugin"
 	"google.golang.org/protobuf/compiler/protogen"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/pluginpb"
@@ -25,7 +25,7 @@ func main() {
 
 	opts := protogen.Options{}
 
-	builder, err := pluginv2.New(opts, &request)
+	builder, err := plugin.New(opts, &request)
 	if err != nil {
 		panic(err)
 	}
