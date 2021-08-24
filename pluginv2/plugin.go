@@ -1356,6 +1356,7 @@ func (b *ORMBuilder) generateFieldConversion(message *protogen.Message, field *p
 			g.P(`// Repeated type `, fieldType, ` is not an ORMable message type`)
 		}
 	} else if field.Enum != nil { // Singular Enum, which is an int32 ---
+		fieldType = b.typeName(field.Enum.GoIdent, g)
 		if toORM {
 			if b.stringEnums {
 				g.P(`to.`, fieldName, ` = `, fieldType, `_name[int32(m.`, fieldName, `)]`)
@@ -2123,17 +2124,20 @@ func (b *ORMBuilder) generatePatchHandler(message *protogen.Message, g *protogen
 	g.P(`var pbObj `, typeName)
 	g.P(`var err error`)
 	b.generateBeforePatchHookCall(ormable, "Read", g)
-	if b.readHasFieldSelection(ormable) {
-		g.P(`pbReadRes, err := DefaultRead`, typeName, `(ctx, &`, typeName, `{Id: in.GetId()}, db, nil)`)
-	} else {
-		g.P(`pbReadRes, err := DefaultRead`, typeName, `(ctx, &`, typeName, `{Id: in.GetId()}, db)`)
+
+	// TODO: not in original code, but it don't make a lot of sense to generate code with id if message doesn't have it
+	if b.hasIDField(message) {
+		if b.readHasFieldSelection(ormable) {
+			g.P(`pbReadRes, err := DefaultRead`, typeName, `(ctx, &`, typeName, `{Id: in.GetId()}, db, nil)`)
+		} else {
+			g.P(`pbReadRes, err := DefaultRead`, typeName, `(ctx, &`, typeName, `{Id: in.GetId()}, db)`)
+		}
+
+		g.P(`if err != nil {`)
+		g.P(`return nil, err`)
+		g.P(`}`)
+		g.P(`pbObj = *pbReadRes`)
 	}
-
-	g.P(`if err != nil {`)
-	g.P(`return nil, err`)
-	g.P(`}`)
-
-	g.P(`pbObj = *pbReadRes`)
 
 	b.generateBeforePatchHookCall(ormable, "ApplyFieldMask", g)
 	g.P(`if _, err := DefaultApplyFieldMask`, typeName, `(ctx, &pbObj, in, updateMask, "", db); err != nil {`)
