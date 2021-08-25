@@ -106,7 +106,6 @@ type ORMBuilder struct {
 	plugin          *protogen.Plugin
 	ormableTypes    map[string]*OrmableType
 	messages        map[string]struct{}
-	fileImports     map[string]*fileImports
 	currentFile     string
 	currentPackage  string
 	ormableServices []autogenService
@@ -126,7 +125,6 @@ func New(opts protogen.Options, request *pluginpb.CodeGeneratorRequest) (*ORMBui
 		plugin:       plugin,
 		ormableTypes: make(map[string]*OrmableType),
 		messages:     make(map[string]struct{}),
-		fileImports:  make(map[string]*fileImports),
 	}
 
 	params := parseParameter(request.GetParameter())
@@ -239,8 +237,6 @@ func (b *ORMBuilder) Generate() (*pluginpb.CodeGeneratorResponse, error) {
 		g := b.plugin.NewGeneratedFile(fileName, ".")
 		genFileMap[fileName] = g
 
-		// TODO: set current file and newFileImport
-		b.fileImports[*protoFile.Proto.Name] = newFileImports()
 		b.currentPackage = protoFile.GoImportPath.String()
 
 		// first traverse: preload the messages
@@ -254,8 +250,6 @@ func (b *ORMBuilder) Generate() (*pluginpb.CodeGeneratorResponse, error) {
 
 			if isOrmable(message) {
 				ormable := NewOrmableType(typeName, string(protoFile.GoPackageName), protoFile)
-				// TODO: for some reason pluginv1 thinks that we can
-				// override values in this map
 				b.ormableTypes[typeName] = ormable
 			}
 		}
@@ -547,12 +541,6 @@ func (b *ORMBuilder) getOrmable(typeName string) *OrmableType {
 	return r
 }
 
-func (b *ORMBuilder) setFile(file string, pkg string) {
-	b.currentFile = file
-	b.currentPackage = pkg
-	// b.Generator.SetFile(file) // TODO: do we need know current file?
-}
-
 func (b *ORMBuilder) parseManyToMany(msg *protogen.Message, ormable *OrmableType, fieldName string, fieldType string, assoc *OrmableType, opts *gorm.GormFieldOptions) {
 	typeName := camelCase(string(msg.Desc.Name()))
 	mtm := opts.GetManyToMany()
@@ -568,7 +556,6 @@ func (b *ORMBuilder) parseManyToMany(msg *protogen.Message, ormable *OrmableType
 		var ok bool
 		_, ok = ormable.Fields[foreignKeyName]
 		if !ok {
-			// p.Fail("Missing", foreignKeyName, "field in", ormable.Name, ".")
 			panic(fmt.Sprintf("Missing %s field in %s", foreignKeyName, ormable.Name))
 		}
 	}
@@ -580,7 +567,6 @@ func (b *ORMBuilder) parseManyToMany(msg *protogen.Message, ormable *OrmableType
 		var ok bool
 		_, ok = assoc.Fields[assocKeyName]
 		if !ok {
-			// p.Fail("Missing", assocKeyName, "field in", assoc.Name, ".")
 			panic(fmt.Sprintf("Missing %s field in %s", assocKeyName, assoc.Name))
 		}
 	}
@@ -643,8 +629,6 @@ func (b *ORMBuilder) parseHasOne(msg *protogen.Message, parent *OrmableType, fie
 		foreignKeyType = "*" + assocKey.Type
 	}
 
-	// TODO: understand how to resolve aliases and why we need to do it
-	// foreignKeyType = b.resolveAliasName(foreignKeyType, assocKey.Package, child.File)
 	foreignKey := &Field{Type: foreignKeyType, Package: assocKey.Package, GormFieldOptions: &gorm.GormFieldOptions{Tag: hasOne.GetForeignkeyTag()}}
 	var foreignKeyName string
 	if foreignKeyName = camelCase(hasOne.GetForeignkey()); foreignKeyName == "" {
@@ -657,9 +641,8 @@ func (b *ORMBuilder) parseHasOne(msg *protogen.Message, parent *OrmableType, fie
 
 	hasOne.Foreignkey = foreignKeyName
 	if _, ok := child.Fields[foreignKeyName]; child.Package != parent.Package && !ok {
-		// p.Fail(`Object`, child.Name, `from package`, child.Package, `cannot be used for has-one in`, parent.Name, `since it`,
-		// 	`does not have FK field`, foreignKeyName, `defined. Manually define the key, or switch to belongs-to`)
-		panic("Object ...")
+		panic(fmt.Sprintf("Object %s from package %s cannot be user for has-one in %s since it does not have FK field %s defined. Manually define the key, or switch to belongs-to.",
+			child.Name, child.Package, parent.Name, foreignKeyName))
 	}
 	if exField, ok := child.Fields[foreignKeyName]; !ok {
 		child.Fields[foreignKeyName] = foreignKey
@@ -667,15 +650,15 @@ func (b *ORMBuilder) parseHasOne(msg *protogen.Message, parent *OrmableType, fie
 		if exField.Type == "interface{}" {
 			exField.Type = foreignKey.Type
 		} else if !b.sameType(exField, foreignKey) {
-			// b.Fail("Cannot include", foreignKeyName, "field into", child.Name, "as it already exists there with a different type:", exField.Type, foreignKey.Type)
-			panic("Cannot include...")
+			panic(fmt.Sprintf("Cannot include %s field into %s as it already exists there with a different type: %s, %s",
+				foreignKeyName, child.Name, exField.Type, foreignKey.Type))
 		}
 	}
 
 	child.Fields[foreignKeyName].ParentOrigName = parent.OriginName
 }
 
-func (p *ORMBuilder) parseHasMany(msg *protogen.Message, parent *OrmableType, fieldName string, fieldType string, child *OrmableType, opts *gorm.GormFieldOptions) {
+func (b *ORMBuilder) parseHasMany(msg *protogen.Message, parent *OrmableType, fieldName string, fieldType string, child *OrmableType, opts *gorm.GormFieldOptions) {
 	typeName := camelCase(string(msg.Desc.Name()))
 	hasMany := opts.GetHasMany()
 	if hasMany == nil {
@@ -685,7 +668,7 @@ func (p *ORMBuilder) parseHasMany(msg *protogen.Message, parent *OrmableType, fi
 	var assocKey *Field
 	var assocKeyName string
 	if assocKeyName = camelCase(hasMany.GetAssociationForeignkey()); assocKeyName == "" {
-		assocKeyName, assocKey = p.findPrimaryKey(parent)
+		assocKeyName, assocKey = b.findPrimaryKey(parent)
 	} else {
 		var ok bool
 		assocKey, ok = parent.Fields[assocKeyName]
@@ -705,11 +688,10 @@ func (p *ORMBuilder) parseHasMany(msg *protogen.Message, parent *OrmableType, fi
 	} else {
 		foreignKeyType = "*" + assocKey.Type
 	}
-	// foreignKeyType = p.resolveAliasName(foreignKeyType, assocKey.Package, child.File)
 	foreignKey := &Field{Type: foreignKeyType, Package: assocKey.Package, GormFieldOptions: &gorm.GormFieldOptions{Tag: hasMany.GetForeignkeyTag()}}
 	var foreignKeyName string
 	if foreignKeyName = hasMany.GetForeignkey(); foreignKeyName == "" {
-		if p.countHasAssociationDimension(msg, fieldType) == 1 {
+		if b.countHasAssociationDimension(msg, fieldType) == 1 {
 			foreignKeyName = fmt.Sprintf(typeName + assocKeyName)
 		} else {
 			foreignKeyName = fmt.Sprintf(fieldName + typeName + assocKeyName)
@@ -717,9 +699,8 @@ func (p *ORMBuilder) parseHasMany(msg *protogen.Message, parent *OrmableType, fi
 	}
 	hasMany.Foreignkey = foreignKeyName
 	if _, ok := child.Fields[foreignKeyName]; child.Package != parent.Package && !ok {
-		// p.Fail(`Object`, child.Name, `from package`, child.Package, `cannot be used for has-many in`, parent.Name, `since it`,
-		// 	`does not have FK`, foreignKeyName, `defined. Manually define the key, or switch to many-to-many`)
-		panic("Object ...")
+		panic(fmt.Sprintf("Object %s from package %s cannot be user for has-many in %s since it does not have FK field %s defined. Manually define the key, or switch to many-to-many.",
+			child.Name, child.Package, parent.Name, foreignKeyName))
 
 	}
 	if exField, ok := child.Fields[foreignKeyName]; !ok {
@@ -727,9 +708,9 @@ func (p *ORMBuilder) parseHasMany(msg *protogen.Message, parent *OrmableType, fi
 	} else {
 		if exField.Type == "interface{}" {
 			exField.Type = foreignKey.Type
-		} else if !p.sameType(exField, foreignKey) {
-			// p.Fail("Cannot include", foreignKeyName, "field into", child.Name, "as it already exists there with a different type:", exField.Type, foreignKey.Type)
-			panic("Cannot include ...")
+		} else if !b.sameType(exField, foreignKey) {
+			panic(fmt.Sprintf("Cannot include %s field into %s as it already exists there with a different type: %s, %s",
+				foreignKeyName, child.Name, exField.Type, foreignKey.Type))
 		}
 	}
 	child.Fields[foreignKeyName].ParentOrigName = parent.OriginName
@@ -740,8 +721,8 @@ func (p *ORMBuilder) parseHasMany(msg *protogen.Message, parent *OrmableType, fi
 			child.Fields[posField] = &Field{Type: "int", GormFieldOptions: &gorm.GormFieldOptions{Tag: hasMany.GetPositionFieldTag()}}
 		} else {
 			if !strings.Contains(exField.Type, "int") {
-				// p.Fail("Cannot include", posField, "field into", child.Name, "as it already exists there with a different type.")
-				panic("Cannot include ...")
+				panic(fmt.Sprintf("Cannot include %s field into %s as it already exists there with a different type.",
+					posField, child.Name))
 			}
 		}
 		hasMany.PositionField = posField
@@ -776,7 +757,6 @@ func (b *ORMBuilder) parseBelongsTo(msg *protogen.Message, child *OrmableType, f
 	} else {
 		foreignKeyType = "*" + assocKey.Type
 	}
-	// foreignKeyType = p.resolveAliasName(foreignKeyType, assocKey.Package, child.File)
 	foreignKey := &Field{Type: foreignKeyType, Package: assocKey.Package, GormFieldOptions: &gorm.GormFieldOptions{Tag: belongsTo.GetForeignkeyTag()}}
 	var foreignKeyName string
 	if foreignKeyName = camelCase(belongsTo.GetForeignkey()); foreignKeyName == "" {
@@ -793,8 +773,8 @@ func (b *ORMBuilder) parseBelongsTo(msg *protogen.Message, child *OrmableType, f
 		if exField.Type == "interface{}" {
 			exField.Type = foreignKeyType
 		} else if !b.sameType(exField, foreignKey) {
-			// p.Fail("Cannot include", foreignKeyName, "field into", child.Name, "as it already exists there with a different type:", exField.Type, foreignKey.Type)
-			panic("Cannot include ...")
+			panic(fmt.Sprintf("Cannot include %s field into %s as it already exists there with a different type: %s, %s",
+				foreignKeyName, child.Name, exField.Type, foreignKey.Type))
 		}
 	}
 	child.Fields[foreignKeyName].ParentOrigName = parent.OriginName
@@ -989,9 +969,8 @@ func (b *ORMBuilder) addIncludedField(ormable *OrmableType, field *gorm.ExtraFie
 		} else if rawType == "Inet" {
 			rawType = generateImport("Inet", gtypesImport, g)
 		} else {
-			fmt.Fprintf(os.Stderr, "TODO: Warning\n")
-			// p.warning(`included field %q of type %q is not a recognized special type, and no package specified. This type is assumed to be in the same package as the generated code`,
-			// 	field.GetName(), field.GetType())
+			fmt.Fprintf(os.Stderr, "included field %q of type %q is not a recognized special type, and no package specified. This type is assumed to be in the same package as the generated code",
+				field.GetName(), field.GetType())
 		}
 	}
 	if isPtr {
@@ -1056,10 +1035,6 @@ func (b *ORMBuilder) IsAbleToMakePQArray(fieldType string) bool {
 	default:
 		return false
 	}
-}
-
-func (b *ORMBuilder) GetFileImports() *fileImports {
-	return b.fileImports[b.currentFile]
 }
 
 func tagWithType(tag *gorm.GormTag, typename string) *gorm.GormTag {
@@ -2269,7 +2244,6 @@ func (b *ORMBuilder) generateApplyFieldMask(message *protogen.Message, g *protog
 
 	hasNested := false
 	for _, field := range message.Fields {
-		// fieldType := field.Desc.Kind().String()
 		fieldType := getFieldType(field)
 
 		if field.Message != nil && !isSpecialType(fieldType) && field.Desc.Cardinality() != protoreflect.Repeated {
@@ -2293,7 +2267,7 @@ func (b *ORMBuilder) generateApplyFieldMask(message *protogen.Message, g *protog
 		//  for ormable message, do recursive patching
 		if field.Message != nil && b.isOrmable(fieldType) && field.Desc.Cardinality() != protoreflect.Repeated {
 			if field.Message != nil {
-				// TODO: a hack work around imported types
+				// a hack work around imported types
 				fieldType = b.typeName(field.Message.GoIdent, g)
 			}
 			_ = generateImport("", stdStringsImport, g)
@@ -2381,29 +2355,6 @@ func isSpecialType(typeName string) bool {
 	default:
 		return false
 	}
-	// TODO: probaly we need to add package to special type check
-
-	// parts := strings.Split(typeName, ".")
-	// if len(parts) > 2 { // what kinda format is this????
-	// 	panic("unknown error")
-	// }
-	// if len(parts) == 1 { // native to this package = not special
-	// 	return false
-	// }
-	// // anything that looks like a google_protobufX should be considered special
-	// if strings.HasPrefix(strings.TrimLeft(typeName, "[]*"), "google_protobuf") {
-	// 	return true
-	// }
-	// switch parts[len(parts)-1] {
-	// case protoTypeJSON,
-	// 	protoTypeUUID,
-	// 	protoTypeUUIDValue,
-	// 	protoTypeResource,
-	// 	protoTypeInet,
-	// 	protoTimeOnly:
-	// 	return true
-	// }
-	// return false
 }
 
 func (b *ORMBuilder) generateListHandler(message *protogen.Message, g *protogen.GeneratedFile) {
@@ -2695,8 +2646,7 @@ func (b *ORMBuilder) followsCreateConventions(inType *protogen.Message, outType 
 		}
 	}
 	if !typeOrmable {
-		// TODO: how to produce waringing
-		//p.warning(`stub will be generated for %s since %s incoming message doesn't have "payload" field of ormable type`, methodName, p.TypeName(inType))
+		fmt.Fprintf(os.Stderr, "stub will be generated for %s since %s incoming message doesn't have \"payload\" field of ormable type.\n", methodName, inType.Desc.Name())
 		return false, ""
 	}
 	var outTypeName string
@@ -2707,7 +2657,8 @@ func (b *ORMBuilder) followsCreateConventions(inType *protogen.Message, outType 
 		}
 	}
 	if inTypeName != outTypeName {
-		//p.warning(`stub will be generated for %s since "payload" field type of %s incoming message type doesn't match "result" field type of %s outcoming message`, methodName, p.TypeName(inType), p.TypeName(outType))
+		fmt.Fprintf(os.Stderr, "stub will be generated for %s since \"payload\" field type of %s incoming message type doesn't match \"result\" field type of %s outcoming message.\n", methodName,
+			inType.Desc.Name(), outType.Desc.Name())
 		return false, ""
 	}
 	return true, inTypeName
@@ -2721,9 +2672,10 @@ func (b *ORMBuilder) followsReadConventions(inType *protogen.Message, outType *p
 		}
 	}
 	if !hasID {
-		//p.warning(`stub will be generated for %s since %s incoming message doesn't have "id" field`, methodName, p.TypeName(inType))
+		fmt.Fprintf(os.Stderr, "stub will be generated for %s since %s incoming message doesn't have \"id\" field", methodName, inType.Desc.Name())
 		return false, ""
 	}
+
 	var outTypeName string
 	var typeOrmable bool
 	for _, field := range outType.Fields {
@@ -2736,11 +2688,11 @@ func (b *ORMBuilder) followsReadConventions(inType *protogen.Message, outType *p
 		}
 	}
 	if !typeOrmable {
-		//p.warning(`stub will be generated for %s since %s outcoming message doesn't have "result" field of ormable type`, methodName, p.TypeName(outType))
+		fmt.Fprintf(os.Stderr, "stub will be generated for %s since %s outcoming message doesn't have \"result\" field of ormable type.\n", methodName, outTypeName)
 		return false, ""
 	}
 	if !b.hasPrimaryKey(b.getOrmable(outTypeName)) {
-		//p.warning(`stub will be generated for %s since %s ormable type doesn't have a primary key`, methodName, outTypeName)
+		fmt.Fprintf(os.Stderr, "stub will be generated for %s since %s ormable type doesn't have a primary key.\n", methodName, outTypeName)
 		return false, ""
 	}
 
@@ -2760,7 +2712,7 @@ func (b *ORMBuilder) followsUpdateSetConventions(inType *protogen.Message, outTy
 
 		if string(field.Desc.Message().FullName()) == "google.protobuf.FieldMask" {
 			if inFieldMask != nil {
-				//p.warning("message must not contains double field mask, prev on field name %s, after on field %s", inFieldMask.GetName(), f.GetName())
+				fmt.Fprintf(os.Stderr, "message must not contains double field mask, prev on field name %s, after on field %s.\n", inFieldMask.GoName, field.GoName)
 				return false, "", ""
 			}
 
@@ -2776,17 +2728,17 @@ func (b *ORMBuilder) followsUpdateSetConventions(inType *protogen.Message, outTy
 	}
 
 	if inFieldMask == nil || inFieldMask.Desc.Cardinality() != protoreflect.Repeated {
-		//p.warning("repeated field mask should exist in request for method %q", methodName)
+		fmt.Fprintf(os.Stderr, "repeated field mask should exist in request for method %q.\n", methodName)
 		return false, "", ""
 	}
 
 	if inEntity == nil || outEntity == nil {
-		//p.warning(`method: %q, request should has repeated field 'objects' in request and repeated field 'results' in response`, methodName)
+		fmt.Fprintf(os.Stderr, `method: %q, request should has repeated field 'objects' in request and repeated field 'results' in response.\n`, methodName)
 		return false, "", ""
 	}
 
 	if inEntity.Desc.Cardinality() != protoreflect.Repeated || outEntity.Desc.Cardinality() != protoreflect.Repeated {
-		//p.warning(`method: %q, field 'objects' in request and field 'results' in response should be repeated`, methodName)
+		fmt.Fprintf(os.Stderr, `method: %q, field 'objects' in request and field 'results' in response should be repeated.\n`, methodName)
 		return false, "", ""
 	}
 
@@ -2794,12 +2746,12 @@ func (b *ORMBuilder) followsUpdateSetConventions(inType *protogen.Message, outTy
 	outGoType := string(outEntity.Message.Desc.Name())
 	inTypeName, outTypeName := strings.TrimPrefix(inGoType, "*"), strings.TrimPrefix(outGoType, "*")
 	if !b.isOrmable(inTypeName) {
-		//p.warning("method: %q, type %q must be ormable", methodName, inTypeName)
+		fmt.Fprintf(os.Stderr, "method: %q, type %q must be ormable.\n", methodName, inTypeName)
 		return false, "", ""
 	}
 
 	if inTypeName != outTypeName {
-		//p.warning("method: %q, field 'objects' in request has type: %q but field 'results' in response has: %q", methodName, inTypeName, outTypeName)
+		fmt.Fprintf(os.Stderr, "method: %q, field 'objects' in request has type: %q but field 'results' in response has: %q.\n", methodName, inTypeName, outTypeName)
 		return false, "", ""
 	}
 
@@ -2830,7 +2782,7 @@ func (b *ORMBuilder) followsUpdateConventions(inType *protogen.Message, outType 
 
 	}
 	if !typeOrmable {
-		//p.warning(`stub will be generated for %s since %s incoming message doesn't have "payload" field of ormable type`, methodName, p.TypeName(inType))
+		fmt.Fprintf(os.Stderr, `stub will be generated for %s since %s incoming message doesn't have "payload" field of ormable type.\n`, methodName, inType.Desc.Name())
 		return false, "", ""
 	}
 
@@ -2842,11 +2794,12 @@ func (b *ORMBuilder) followsUpdateConventions(inType *protogen.Message, outType 
 		}
 	}
 	if inTypeName != outTypeName {
-		//p.warning(`stub will be generated for %s since "payload" field type of %s incoming message doesn't match "result" field type of %s outcoming message`, methodName, p.TypeName(inType), p.TypeName(outType))
+		fmt.Fprintf(os.Stderr, `stub will be generated for %s since "payload" field type of %s incoming message doesn't match "result" field type of %s outcoming message.\n`,
+			methodName, inType.Desc.Name(), outType.Desc.Name())
 		return false, "", ""
 	}
 	if !b.hasPrimaryKey(b.getOrmable(inTypeName)) {
-		//p.warning(`stub will be generated for %s since %s ormable type doesn't have a primary key`, methodName, outTypeName)
+		fmt.Fprintf(os.Stderr, `stub will be generated for %s since %s ormable type doesn't have a primary key.\n`, methodName, outTypeName)
 		return false, "", ""
 	}
 
@@ -2854,7 +2807,6 @@ func (b *ORMBuilder) followsUpdateConventions(inType *protogen.Message, outType 
 }
 
 func (b *ORMBuilder) followsDeleteSetConventions(inType *protogen.Message, outType *protogen.Message, method *protogen.Method) (bool, string) {
-	//methodName := string(method.Desc.Name()) TODO: need for warnings
 	var hasIDs bool
 
 	for _, field := range inType.Fields {
@@ -2863,24 +2815,25 @@ func (b *ORMBuilder) followsDeleteSetConventions(inType *protogen.Message, outTy
 		}
 	}
 
+	methodName := string(method.Desc.Name())
 	if !hasIDs {
-		//p.warning(`stub will be generated for %s since %s incoming message doesn't have "ids" field`, methodName, p.TypeName(inType))
+		fmt.Fprintf(os.Stderr, `stub will be generated for %s since %s incoming message doesn't have "ids" field.\n`, methodName, inType.Desc.Name())
 		return false, ""
 	}
 	typeName := camelCase(getMethodOptions(method).GetObjectType())
 
 	if typeName == "" {
-		//p.warning(`stub will be generated for %s since (gorm.method).object_type option is not specified`, methodName)
+		fmt.Fprintf(os.Stderr, `stub will be generated for %s since (gorm.method).object_type option is not specified.\n`, methodName)
 		return false, ""
 	}
 
 	if !b.isOrmable(typeName) {
-		//p.warning(`stub will be generated for %s since %s is not an ormable type`, methodName, typeName)
+		fmt.Fprintf(os.Stderr, `stub will be generated for %s since %s is not an ormable type.\n`, methodName, typeName)
 		return false, ""
 	}
 
 	if !b.hasPrimaryKey(b.getOrmable(typeName)) {
-		//p.warning(`stub will be generated for %s since %s ormable type doesn't have a primary key`, methodName, typeName)
+		fmt.Fprintf(os.Stderr, `stub will be generated for %s since %s ormable type doesn't have a primary key.\n`, methodName, typeName)
 		return false, ""
 	}
 
@@ -2888,30 +2841,35 @@ func (b *ORMBuilder) followsDeleteSetConventions(inType *protogen.Message, outTy
 }
 
 func (b *ORMBuilder) followsDeleteConventions(inType *protogen.Message, outType *protogen.Message, method *protogen.Method) (bool, string) {
-	//methodName := generator.CamelCase(method.GetName())
 	var hasID bool
 	for _, field := range inType.Fields {
 		if string(field.Desc.Name()) == "id" {
 			hasID = true
 		}
 	}
+
+	methodName := string(method.Desc.Name())
 	if !hasID {
-		//p.warning(`stub will be generated for %s since %s incoming message doesn't have "id" field`, methodName, p.TypeName(inType))
+		fmt.Fprintf(os.Stderr, `stub will be generated for %s since %s incoming message doesn't have "id" field.\n`, methodName, inType.Desc.Name())
 		return false, ""
 	}
+
 	typeName := camelCase(getMethodOptions(method).GetObjectType())
 	if typeName == "" {
-		//p.warning(`stub will be generated for %s since (gorm.method).object_type option is not specified`, methodName)
+		fmt.Fprintf(os.Stderr, `stub will be generated for %s since (gorm.method).object_type option is not specified.\n`, methodName)
 		return false, ""
 	}
+
 	if !b.isOrmable(typeName) {
-		//p.warning(`stub will be generated for %s since %s is not an ormable type`, methodName, typeName)
+		fmt.Fprintf(os.Stderr, `stub will be generated for %s since %s is not an ormable type.\n`, methodName, typeName)
 		return false, ""
 	}
+
 	if !b.hasPrimaryKey(b.getOrmable(typeName)) {
-		//p.warning(`stub will be generated for %s since %s ormable type doesn't have a primary key`, methodName, typeName)
+		fmt.Fprintf(os.Stderr, `stub will be generated for %s since %s ormable type doesn't have a primary key`, methodName, typeName)
 		return false, ""
 	}
+
 	return true, typeName
 }
 
@@ -2928,7 +2886,7 @@ func (b *ORMBuilder) followsListConventions(inType *protogen.Message, outType *p
 		}
 	}
 	if !typeOrmable {
-		//p.warning(`stub will be generated for %s since %s incoming message doesn't have "results" field of ormable type`, methodName, p.TypeName(outType))
+		fmt.Fprintf(os.Stderr, `stub will be generated for %s since %s incoming message doesn't have "results" field of ormable type`, methodName, outType.Desc.Name())
 		return false, ""
 	}
 
@@ -3500,13 +3458,16 @@ func (b *ORMBuilder) countBelongsToAssociationDimension(message *protogen.Messag
 
 func (b *ORMBuilder) countManyToManyAssociationDimension(message *protogen.Message, typeName string) int {
 	dim := 0
+
 	for _, field := range message.Fields {
 		options := field.Desc.Options().(*descriptorpb.FieldOptions)
 		fieldOpts := getFieldOptions(options)
+
 		if fieldOpts.GetDrop() {
 			continue
 		}
 		var fieldType string
+
 		if field.Desc.Message() == nil {
 			fieldType = field.Desc.Kind().String() // was GoType
 		} else {
@@ -3526,21 +3487,26 @@ func (b *ORMBuilder) countManyToManyAssociationDimension(message *protogen.Messa
 func (b *ORMBuilder) sameType(field1 *Field, field2 *Field) bool {
 	isPointer1 := strings.HasPrefix(field1.Type, "*")
 	typeParts1 := strings.Split(field1.Type, ".")
+
 	if len(typeParts1) == 2 {
 		isPointer2 := strings.HasPrefix(field2.Type, "*")
 		typeParts2 := strings.Split(field2.Type, ".")
+
 		if len(typeParts2) == 2 && isPointer1 == isPointer2 && typeParts1[1] == typeParts2[1] && field1.Package == field2.Package {
 			return true
 		}
+
 		return false
 	}
+
 	return field1.Type == field2.Type
 }
 
 func getFieldType(field *protogen.Field) string {
 	if field.Desc.Message() == nil {
-		return field.Desc.Kind().String() // was GoType
+		return field.Desc.Kind().String()
 	}
+
 	return string(field.Desc.Message().Name())
 }
 
