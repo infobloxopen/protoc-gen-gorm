@@ -1093,7 +1093,7 @@ func isASCIIDigit(c byte) bool {
 	return '0' <= c && c <= '9'
 }
 
-func (p *ORMBuilder) renderGormTag(field *Field) string {
+func (b *ORMBuilder) renderGormTag(field *Field) string {
 	var gormRes, atlasRes string
 	tag := field.GetTag()
 	if tag == nil {
@@ -1265,11 +1265,9 @@ func (p *ORMBuilder) renderGormTag(field *Field) string {
 	}
 }
 
-func camelCaseSlice(elem []string) string { return camelCase(strings.Join(elem, "_")) }
-
-func (p *ORMBuilder) setupOrderedHasMany(message *protogen.Message, g *protogen.GeneratedFile) {
+func (b *ORMBuilder) setupOrderedHasMany(message *protogen.Message, g *protogen.GeneratedFile) {
 	typeName := string(message.Desc.Name())
-	ormable := p.getOrmable(typeName)
+	ormable := b.getOrmable(typeName)
 	var fieldNames []string
 	for name := range ormable.Fields {
 		fieldNames = append(fieldNames, name)
@@ -1277,13 +1275,13 @@ func (p *ORMBuilder) setupOrderedHasMany(message *protogen.Message, g *protogen.
 	sort.Strings(fieldNames)
 
 	for _, fieldName := range fieldNames {
-		p.setupOrderedHasManyByName(message, fieldName, g)
+		b.setupOrderedHasManyByName(message, fieldName, g)
 	}
 }
 
-func (p *ORMBuilder) setupOrderedHasManyByName(message *protogen.Message, fieldName string, g *protogen.GeneratedFile) {
+func (b *ORMBuilder) setupOrderedHasManyByName(message *protogen.Message, fieldName string, g *protogen.GeneratedFile) {
 	typeName := string(message.Desc.Name())
-	ormable := p.getOrmable(typeName)
+	ormable := b.getOrmable(typeName)
 	field := ormable.Fields[fieldName]
 
 	if field == nil {
@@ -1292,7 +1290,7 @@ func (p *ORMBuilder) setupOrderedHasManyByName(message *protogen.Message, fieldN
 
 	if field.GetHasMany().GetPositionField() != "" {
 		positionField := field.GetHasMany().GetPositionField()
-		positionFieldType := p.getOrmable(field.Type).Fields[positionField].Type
+		positionFieldType := b.getOrmable(field.Type).Fields[positionField].Type
 		g.P(`for i, e := range `, `to.`, fieldName, `{`)
 		g.P(`e.`, positionField, ` = `, positionFieldType, `(i)`)
 		g.P(`}`)
@@ -2477,19 +2475,19 @@ func (b *ORMBuilder) generateAfterListHookCall(orm *OrmableType, g *protogen.Gen
 	g.P(`}`)
 }
 
-func (p *ORMBuilder) generateBeforeListHookDef(orm *OrmableType, suffix string, g *protogen.GeneratedFile) {
+func (b *ORMBuilder) generateBeforeListHookDef(orm *OrmableType, suffix string, g *protogen.GeneratedFile) {
 	g.P(`type `, orm.Name, `WithBeforeList`, suffix, ` interface {`)
 	hookSign := fmt.Sprint(`BeforeList`, suffix, `(context.Context, *`, generateImport("DB", gormImport, g))
-	if p.listHasFiltering(orm) {
+	if b.listHasFiltering(orm) {
 		hookSign += fmt.Sprint(`, *`, generateImport("Filtering", queryImport, g))
 	}
-	if p.listHasSorting(orm) {
+	if b.listHasSorting(orm) {
 		hookSign += fmt.Sprint(`, *`, generateImport("Sorting", queryImport, g))
 	}
-	if p.listHasPagination(orm) {
+	if b.listHasPagination(orm) {
 		hookSign += fmt.Sprint(`, *`, generateImport("Pagination", queryImport, g))
 	}
-	if p.listHasFieldSelection(orm) {
+	if b.listHasFieldSelection(orm) {
 		hookSign += fmt.Sprint(`, *`, generateImport("FieldSelection", queryImport, g))
 	}
 	hookSign += fmt.Sprint(`) (*`, generateImport("DB", gormImport, g), `, error)`)
