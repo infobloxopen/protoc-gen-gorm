@@ -93,8 +93,3 @@ build-postgres-local:
 	-I./proto/ \
 	-I./third_party/proto/ \
 	example/postgres_arrays/postgres_arrays.proto --gorm_out="engine=postgres,enums=string,gateway:./example/postgres_arrays" --go_out=./example/postgres_arrays
-
-diff-local:
-# 	diff example/feature_demo/github.com/infobloxopen/protoc-gen-gorm/example/feature_demo/demo_multi_file.pb.gorm.go partial-example/demo_multi_file.pb.gorm.go
-	diff example/feature_demo/github.com/infobloxopen/protoc-gen-gorm/example/feature_demo/demo_service.pb.gorm.go partial-example/demo_service.pb.gorm.go
-	diff example/postgres_arrays/github.com/infobloxopen/protoc-gen-gorm/example/postgres_arrays/postgres_arrays.pb.gorm.go partial-example/postgres_arrays.pb.gorm.go
