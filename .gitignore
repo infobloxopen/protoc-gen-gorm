@@ -20,6 +20,3 @@ trigger-travis.sh
 .idea
 
 /protoc-gen-gorm
-
-example/feature_demo/github.com/
-example/feature_demo/google.golang.org/
