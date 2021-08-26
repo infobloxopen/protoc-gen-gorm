@@ -3,8 +3,6 @@ package example
 import (
 	context "context"
 	fmt "fmt"
-	empty "github.com/golang/protobuf/ptypes/empty"
-	wrappers "github.com/golang/protobuf/ptypes/wrappers"
 	auth "github.com/infobloxopen/atlas-app-toolkit/auth"
 	gateway "github.com/infobloxopen/atlas-app-toolkit/gateway"
 	gorm1 "github.com/infobloxopen/atlas-app-toolkit/gorm"
@@ -16,6 +14,7 @@ import (
 	pq "github.com/lib/pq"
 	go_uuid "github.com/satori/go.uuid"
 	field_mask "google.golang.org/genproto/protobuf/field_mask"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	wrapperspb "google.golang.org/protobuf/types/known/wrapperspb"
 	strings "strings"
@@ -1305,7 +1304,7 @@ func DefaultApplyFieldMaskTestTypes(ctx context.Context, patchee *TestTypes, pat
 				continue
 			}
 			if patchee.OptionalString == nil {
-				patchee.OptionalString = &wrappers.StringValue{}
+				patchee.OptionalString = &wrapperspb.StringValue{}
 			}
 			childMask := &field_mask.FieldMask{}
 			for j := i; j < len(updateMask.Paths); j++ {
@@ -1332,7 +1331,7 @@ func DefaultApplyFieldMaskTestTypes(ctx context.Context, patchee *TestTypes, pat
 				continue
 			}
 			if patchee.Nothingness == nil {
-				patchee.Nothingness = &empty.Empty{}
+				patchee.Nothingness = &emptypb.Empty{}
 			}
 			childMask := &field_mask.FieldMask{}
 			for j := i; j < len(updateMask.Paths); j++ {
@@ -1881,7 +1880,7 @@ func DefaultApplyFieldMaskTypeWithID(ctx context.Context, patchee *TypeWithID, p
 				continue
 			}
 			if patchee.FloatField == nil {
-				patchee.FloatField = &wrappers.FloatValue{}
+				patchee.FloatField = &wrapperspb.FloatValue{}
 			}
 			childMask := &field_mask.FieldMask{}
 			for j := i; j < len(updateMask.Paths); j++ {
@@ -1904,7 +1903,7 @@ func DefaultApplyFieldMaskTypeWithID(ctx context.Context, patchee *TypeWithID, p
 				continue
 			}
 			if patchee.DoubleField == nil {
-				patchee.DoubleField = &wrappers.DoubleValue{}
+				patchee.DoubleField = &wrapperspb.DoubleValue{}
 			}
 			childMask := &field_mask.FieldMask{}
 			for j := i; j < len(updateMask.Paths); j++ {

@@ -6,7 +6,7 @@ WORKDIR /go/src/github.com/infobloxopen/protoc-gen-gorm
 COPY . .
 RUN CGO_ENABLED=0 GOOS=linux go build -o /out/usr/bin/protoc-gen-gorm main.go
 
-FROM infoblox/atlas-gentool:v19.1 AS runner
+FROM infoblox/atlas-gentool:v24.0 AS runner
 
 COPY --from=builder /out/usr/bin/protoc-gen-gorm /usr/bin/protoc-gen-gorm
 COPY --from=builder /go/src/github.com/infobloxopen/protoc-gen-gorm/proto /go/src/github.com/infobloxopen/protoc-gen-gorm/proto

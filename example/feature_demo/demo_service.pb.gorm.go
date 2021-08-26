@@ -4,7 +4,6 @@ import (
 	context "context"
 	json "encoding/json"
 	fmt "fmt"
-	empty "github.com/golang/protobuf/ptypes/empty"
 	gateway "github.com/infobloxopen/atlas-app-toolkit/gateway"
 	gorm1 "github.com/infobloxopen/atlas-app-toolkit/gorm"
 	query "github.com/infobloxopen/atlas-app-toolkit/query"
@@ -12,6 +11,7 @@ import (
 	gorm "github.com/jinzhu/gorm"
 	trace "go.opencensus.io/trace"
 	field_mask "google.golang.org/genproto/protobuf/field_mask"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
 
 type IntPointORM struct {
@@ -988,7 +988,7 @@ type IntPointServiceIntPointWithAfterList interface {
 }
 
 // ListSomething ...
-func (m *IntPointServiceDefaultServer) ListSomething(ctx context.Context, in *empty.Empty) (*ListSomethingResponse, error) {
+func (m *IntPointServiceDefaultServer) ListSomething(ctx context.Context, in *emptypb.Empty) (*ListSomethingResponse, error) {
 	db := m.DB
 	if custom, ok := interface{}(in).(IntPointServiceSomethingWithBeforeListSomething); ok {
 		var err error
@@ -1054,8 +1054,8 @@ type IntPointServiceIntPointWithAfterDelete interface {
 }
 
 // CustomMethod ...
-func (m *IntPointServiceDefaultServer) CustomMethod(ctx context.Context, in *empty.Empty) (*empty.Empty, error) {
-	out := &empty.Empty{}
+func (m *IntPointServiceDefaultServer) CustomMethod(ctx context.Context, in *emptypb.Empty) (*emptypb.Empty, error) {
+	out := &emptypb.Empty{}
 	return out, nil
 }
 
@@ -1422,13 +1422,13 @@ type IntPointTxnIntPointWithAfterDeleteSet interface {
 }
 
 // CustomMethod ...
-func (m *IntPointTxnDefaultServer) CustomMethod(ctx context.Context, in *empty.Empty) (*empty.Empty, error) {
+func (m *IntPointTxnDefaultServer) CustomMethod(ctx context.Context, in *emptypb.Empty) (*emptypb.Empty, error) {
 	span, errSpanCreate := m.spanCreate(ctx, in, "CustomMethod")
 	if errSpanCreate != nil {
 		return nil, errSpanCreate
 	}
 	defer span.End()
-	out := &empty.Empty{}
+	out := &emptypb.Empty{}
 	errSpanResult := m.spanResult(span, out)
 	if errSpanResult != nil {
 		return nil, m.spanError(span, errSpanResult)
