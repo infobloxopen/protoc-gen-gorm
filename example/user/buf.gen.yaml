@@ -1,6 +1,6 @@
 version: v1beta1
 plugins:
-  - name: gogo
+  - name: go
     out: example
     opt:
       - paths=source_relative
