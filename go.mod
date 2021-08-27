@@ -14,7 +14,6 @@ require (
 	github.com/mattn/go-sqlite3 v1.14.6 // indirect
 	github.com/satori/go.uuid v1.2.0
 	go.opencensus.io v0.22.6
-	golang.org/x/net v0.0.0-20210316092652-d523dce5a7f4 // indirect
 	google.golang.org/genproto v0.0.0-20210426193834-eac7f76ac494
 	google.golang.org/grpc v1.37.0
 	google.golang.org/grpc/examples v0.0.0-20210601155443-8bdcb4c9ab8d // indirect
