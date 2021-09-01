@@ -16,6 +16,14 @@ build: $(BUF)
 test: lint build
 	go test -v ./...
 
+delete-generated:
+	rm example/**/*.go || true
+	rm -rf example/**/github.com || true
+	rm -rf example/github.com || true
+
+
+regenerate: delete-generated generate
+
 generate: options/gorm.pb.go example/user/*.pb.go example/postgres_arrays/*.pb.go example/feature_demo/*.pb.go
 
 options/gorm.pb.go: proto/options/gorm.proto

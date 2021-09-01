@@ -2,7 +2,7 @@ module github.com/infobloxopen/protoc-gen-gorm
 
 require (
 	github.com/denisenkom/go-mssqldb v0.9.0 // indirect
-	github.com/gogo/protobuf v1.3.2
+	github.com/gogo/protobuf v1.2.1
 	github.com/golang/protobuf v1.5.2
 	github.com/google/go-cmp v0.5.5
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.4.0 // indirect
@@ -14,7 +14,6 @@ require (
 	github.com/mattn/go-sqlite3 v1.14.6 // indirect
 	github.com/satori/go.uuid v1.2.0
 	go.opencensus.io v0.22.6
-	golang.org/x/net v0.0.0-20210316092652-d523dce5a7f4 // indirect
 	google.golang.org/genproto v0.0.0-20210426193834-eac7f76ac494
 	google.golang.org/grpc v1.37.0
 	google.golang.org/grpc/examples v0.0.0-20210601155443-8bdcb4c9ab8d // indirect
