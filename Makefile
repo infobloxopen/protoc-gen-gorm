@@ -17,9 +17,7 @@ test: lint build
 	go test -v ./...
 
 delete-generated:
-	rm example/**/*.go || true
-	rm -rf example/**/github.com || true
-	rm -rf example/github.com || true
+	rm -rf example/feature_demo/feature_demo example/user/user example/postgres_arrays/postgres_arrays example/**/*.go example/**/github.com example/github.com || true
 
 
 regenerate: delete-generated generate

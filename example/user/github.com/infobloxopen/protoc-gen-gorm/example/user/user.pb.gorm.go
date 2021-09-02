@@ -3,7 +3,6 @@ package user
 import (
 	context "context"
 	fmt "fmt"
-	timestamp "github.com/golang/protobuf/ptypes/timestamp"
 	auth "github.com/infobloxopen/atlas-app-toolkit/auth"
 	gateway "github.com/infobloxopen/atlas-app-toolkit/gateway"
 	gorm1 "github.com/infobloxopen/atlas-app-toolkit/gorm"
@@ -1157,7 +1156,7 @@ func DefaultApplyFieldMaskUser(ctx context.Context, patchee *User, patcher *User
 				continue
 			}
 			if patchee.CreatedAt == nil {
-				patchee.CreatedAt = &timestamp.Timestamp{}
+				patchee.CreatedAt = &timestamppb.Timestamp{}
 			}
 			childMask := &field_mask.FieldMask{}
 			for j := i; j < len(updateMask.Paths); j++ {
@@ -1180,7 +1179,7 @@ func DefaultApplyFieldMaskUser(ctx context.Context, patchee *User, patcher *User
 				continue
 			}
 			if patchee.UpdatedAt == nil {
-				patchee.UpdatedAt = &timestamp.Timestamp{}
+				patchee.UpdatedAt = &timestamppb.Timestamp{}
 			}
 			childMask := &field_mask.FieldMask{}
 			for j := i; j < len(updateMask.Paths); j++ {
@@ -1203,7 +1202,7 @@ func DefaultApplyFieldMaskUser(ctx context.Context, patchee *User, patcher *User
 				continue
 			}
 			if patchee.Birthday == nil {
-				patchee.Birthday = &timestamp.Timestamp{}
+				patchee.Birthday = &timestamppb.Timestamp{}
 			}
 			childMask := &field_mask.FieldMask{}
 			for j := i; j < len(updateMask.Paths); j++ {
@@ -2799,7 +2798,7 @@ func DefaultApplyFieldMaskCreditCard(ctx context.Context, patchee *CreditCard, p
 				continue
 			}
 			if patchee.CreatedAt == nil {
-				patchee.CreatedAt = &timestamp.Timestamp{}
+				patchee.CreatedAt = &timestamppb.Timestamp{}
 			}
 			childMask := &field_mask.FieldMask{}
 			for j := i; j < len(updateMask.Paths); j++ {
@@ -2822,7 +2821,7 @@ func DefaultApplyFieldMaskCreditCard(ctx context.Context, patchee *CreditCard, p
 				continue
 			}
 			if patchee.UpdatedAt == nil {
-				patchee.UpdatedAt = &timestamp.Timestamp{}
+				patchee.UpdatedAt = &timestamppb.Timestamp{}
 			}
 			childMask := &field_mask.FieldMask{}
 			for j := i; j < len(updateMask.Paths); j++ {
