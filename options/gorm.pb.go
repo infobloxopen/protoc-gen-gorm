@@ -7,10 +7,10 @@
 package gorm
 
 import (
-	descriptor "github.com/gogo/protobuf/protoc-gen-gogo/descriptor"
 	proto "github.com/golang/protobuf/proto"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	descriptorpb "google.golang.org/protobuf/types/descriptorpb"
 	reflect "reflect"
 	sync "sync"
 )
@@ -1157,7 +1157,7 @@ func (x *MethodOptions) GetObjectType() string {
 
 var file_options_gorm_proto_extTypes = []protoimpl.ExtensionInfo{
 	{
-		ExtendedType:  (*descriptor.FileOptions)(nil),
+		ExtendedType:  (*descriptorpb.FileOptions)(nil),
 		ExtensionType: (*GormFileOptions)(nil),
 		Field:         52119,
 		Name:          "gorm.file_opts",
@@ -1165,7 +1165,7 @@ var file_options_gorm_proto_extTypes = []protoimpl.ExtensionInfo{
 		Filename:      "options/gorm.proto",
 	},
 	{
-		ExtendedType:  (*descriptor.MessageOptions)(nil),
+		ExtendedType:  (*descriptorpb.MessageOptions)(nil),
 		ExtensionType: (*GormMessageOptions)(nil),
 		Field:         52119,
 		Name:          "gorm.opts",
@@ -1173,7 +1173,7 @@ var file_options_gorm_proto_extTypes = []protoimpl.ExtensionInfo{
 		Filename:      "options/gorm.proto",
 	},
 	{
-		ExtendedType:  (*descriptor.FieldOptions)(nil),
+		ExtendedType:  (*descriptorpb.FieldOptions)(nil),
 		ExtensionType: (*GormFieldOptions)(nil),
 		Field:         52119,
 		Name:          "gorm.field",
@@ -1181,7 +1181,7 @@ var file_options_gorm_proto_extTypes = []protoimpl.ExtensionInfo{
 		Filename:      "options/gorm.proto",
 	},
 	{
-		ExtendedType:  (*descriptor.ServiceOptions)(nil),
+		ExtendedType:  (*descriptorpb.ServiceOptions)(nil),
 		ExtensionType: (*AutoServerOptions)(nil),
 		Field:         52119,
 		Name:          "gorm.server",
@@ -1189,7 +1189,7 @@ var file_options_gorm_proto_extTypes = []protoimpl.ExtensionInfo{
 		Filename:      "options/gorm.proto",
 	},
 	{
-		ExtendedType:  (*descriptor.MethodOptions)(nil),
+		ExtendedType:  (*descriptorpb.MethodOptions)(nil),
 		ExtensionType: (*MethodOptions)(nil),
 		Field:         52119,
 		Name:          "gorm.method",
@@ -1198,13 +1198,13 @@ var file_options_gorm_proto_extTypes = []protoimpl.ExtensionInfo{
 	},
 }
 
-// Extension fields to descriptor.FileOptions.
+// Extension fields to descriptorpb.FileOptions.
 var (
 	// optional gorm.GormFileOptions file_opts = 52119;
 	E_FileOpts = &file_options_gorm_proto_extTypes[0]
 )
 
-// Extension fields to descriptor.MessageOptions.
+// Extension fields to descriptorpb.MessageOptions.
 var (
 	// ormable will cause orm code to be generated for this message/object
 	//
@@ -1212,19 +1212,19 @@ var (
 	E_Opts = &file_options_gorm_proto_extTypes[1]
 )
 
-// Extension fields to descriptor.FieldOptions.
+// Extension fields to descriptorpb.FieldOptions.
 var (
 	// optional gorm.GormFieldOptions field = 52119;
 	E_Field = &file_options_gorm_proto_extTypes[2]
 )
 
-// Extension fields to descriptor.ServiceOptions.
+// Extension fields to descriptorpb.ServiceOptions.
 var (
 	// optional gorm.AutoServerOptions server = 52119;
 	E_Server = &file_options_gorm_proto_extTypes[3]
 )
 
-// Extension fields to descriptor.MethodOptions.
+// Extension fields to descriptorpb.MethodOptions.
 var (
 	// optional gorm.MethodOptions method = 52119;
 	E_Method = &file_options_gorm_proto_extTypes[4]
@@ -1501,22 +1501,22 @@ func file_options_gorm_proto_rawDescGZIP() []byte {
 
 var file_options_gorm_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
 var file_options_gorm_proto_goTypes = []interface{}{
-	(*GormFileOptions)(nil),           // 0: gorm.GormFileOptions
-	(*GormMessageOptions)(nil),        // 1: gorm.GormMessageOptions
-	(*ExtraField)(nil),                // 2: gorm.ExtraField
-	(*GormFieldOptions)(nil),          // 3: gorm.GormFieldOptions
-	(*GormTag)(nil),                   // 4: gorm.GormTag
-	(*HasOneOptions)(nil),             // 5: gorm.HasOneOptions
-	(*BelongsToOptions)(nil),          // 6: gorm.BelongsToOptions
-	(*HasManyOptions)(nil),            // 7: gorm.HasManyOptions
-	(*ManyToManyOptions)(nil),         // 8: gorm.ManyToManyOptions
-	(*AutoServerOptions)(nil),         // 9: gorm.AutoServerOptions
-	(*MethodOptions)(nil),             // 10: gorm.MethodOptions
-	(*descriptor.FileOptions)(nil),    // 11: google.protobuf.FileOptions
-	(*descriptor.MessageOptions)(nil), // 12: google.protobuf.MessageOptions
-	(*descriptor.FieldOptions)(nil),   // 13: google.protobuf.FieldOptions
-	(*descriptor.ServiceOptions)(nil), // 14: google.protobuf.ServiceOptions
-	(*descriptor.MethodOptions)(nil),  // 15: google.protobuf.MethodOptions
+	(*GormFileOptions)(nil),             // 0: gorm.GormFileOptions
+	(*GormMessageOptions)(nil),          // 1: gorm.GormMessageOptions
+	(*ExtraField)(nil),                  // 2: gorm.ExtraField
+	(*GormFieldOptions)(nil),            // 3: gorm.GormFieldOptions
+	(*GormTag)(nil),                     // 4: gorm.GormTag
+	(*HasOneOptions)(nil),               // 5: gorm.HasOneOptions
+	(*BelongsToOptions)(nil),            // 6: gorm.BelongsToOptions
+	(*HasManyOptions)(nil),              // 7: gorm.HasManyOptions
+	(*ManyToManyOptions)(nil),           // 8: gorm.ManyToManyOptions
+	(*AutoServerOptions)(nil),           // 9: gorm.AutoServerOptions
+	(*MethodOptions)(nil),               // 10: gorm.MethodOptions
+	(*descriptorpb.FileOptions)(nil),    // 11: google.protobuf.FileOptions
+	(*descriptorpb.MessageOptions)(nil), // 12: google.protobuf.MessageOptions
+	(*descriptorpb.FieldOptions)(nil),   // 13: google.protobuf.FieldOptions
+	(*descriptorpb.ServiceOptions)(nil), // 14: google.protobuf.ServiceOptions
+	(*descriptorpb.MethodOptions)(nil),  // 15: google.protobuf.MethodOptions
 }
 var file_options_gorm_proto_depIdxs = []int32{
 	2,  // 0: gorm.GormMessageOptions.include:type_name -> gorm.ExtraField
