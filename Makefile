@@ -27,6 +27,8 @@ generate: options/gorm.pb.go example/user/*.pb.go example/postgres_arrays/*.pb.g
 options/gorm.pb.go: proto/options/gorm.proto
 	buf generate --template proto/options/buf.gen.yaml --path proto/options
 
+options/types.pb.go: proto/types/types.proto
+	buf generate --template proto/types/buf.gen.yaml --path proto/types
 # TODO: gorm files are not being built by buf generate yet, use docker for now
 
 example/feature_demo/*.pb.go: example/feature_demo/*.proto
