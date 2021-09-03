@@ -11,5 +11,5 @@ plugins:
   - name: gorm
     out: example
     opt:
-      - engine=postgres,enums=string,gateway
+      - engine=postgres,enums=string,gateway:./example/feature_demo
       - Mgoogle/protobuf/timestamp.proto=github.com/golang/protobuf/ptypes/timestamp

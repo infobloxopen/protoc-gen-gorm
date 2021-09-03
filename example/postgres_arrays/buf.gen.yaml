@@ -5,4 +5,4 @@ plugins:
     opt: paths=source_relative
   - name: gorm
     out: example
-    opt: engine=postgres,paths=source_relative,enums=string,gateway
+    opt: engine=postgres,paths=source_relative,enums=string,gateway:./example/postgres_arrays
