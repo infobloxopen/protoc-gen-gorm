@@ -16,11 +16,11 @@ build: $(BUF)
 test: lint build
 	go test -v ./...
 
-delete-generated:
-	rm -rf example/feature_demo/feature_demo example/user/user example/postgres_arrays/postgres_arrays example/**/*.go example/**/github.com example/github.com || true
+clean:
+	@echo "WARNING: this kills test, override and custom files, fixme"
+# rm -rf example/feature_demo/feature_demo example/user/user example/postgres_arrays/postgres_arrays example/**/*.go example/**/github.com example/github.com || true
 
-
-regenerate: delete-generated generate
+regenerate: clean generate
 
 generate: options/gorm.pb.go example/user/*.pb.go example/postgres_arrays/*.pb.go example/feature_demo/*.pb.go
 
