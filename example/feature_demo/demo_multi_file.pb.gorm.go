@@ -3,6 +3,7 @@ package example
 import (
 	context "context"
 	fmt "fmt"
+	gateway "github.com/infobloxopen/atlas-app-toolkit/gateway"
 	gorm1 "github.com/infobloxopen/atlas-app-toolkit/gorm"
 	errors "github.com/infobloxopen/protoc-gen-gorm/errors"
 	gorm "github.com/jinzhu/gorm"
@@ -311,8 +312,9 @@ func DefaultStrictUpdateExternalChild(ctx context.Context, in *ExternalChild, db
 	if err != nil {
 		return nil, err
 	}
+	var count int64
 	lockedRow := &ExternalChildORM{}
-	db.Model(&ormObj).Set("gorm:query_option", "FOR UPDATE").Where("id=?", ormObj.Id).First(lockedRow)
+	count = db.Model(&ormObj).Set("gorm:query_option", "FOR UPDATE").Where("id=?", ormObj.Id).First(lockedRow).RowsAffected
 	if hook, ok := interface{}(&ormObj).(ExternalChildORMWithBeforeStrictUpdateCleanup); ok {
 		if db, err = hook.BeforeStrictUpdateCleanup(ctx, db); err != nil {
 			return nil, err
@@ -334,6 +336,9 @@ func DefaultStrictUpdateExternalChild(ctx context.Context, in *ExternalChild, db
 	pbResponse, err := ormObj.ToPB(ctx)
 	if err != nil {
 		return nil, err
+	}
+	if count == 0 {
+		err = gateway.SetCreated(ctx, "")
 	}
 	return &pbResponse, err
 }
@@ -655,8 +660,9 @@ func DefaultStrictUpdateBlogPost(ctx context.Context, in *BlogPost, db *gorm.DB)
 	if err != nil {
 		return nil, err
 	}
+	var count int64
 	lockedRow := &BlogPostORM{}
-	db.Model(&ormObj).Set("gorm:query_option", "FOR UPDATE").Where("id=?", ormObj.Id).First(lockedRow)
+	count = db.Model(&ormObj).Set("gorm:query_option", "FOR UPDATE").Where("id=?", ormObj.Id).First(lockedRow).RowsAffected
 	if hook, ok := interface{}(&ormObj).(BlogPostORMWithBeforeStrictUpdateCleanup); ok {
 		if db, err = hook.BeforeStrictUpdateCleanup(ctx, db); err != nil {
 			return nil, err
@@ -678,6 +684,9 @@ func DefaultStrictUpdateBlogPost(ctx context.Context, in *BlogPost, db *gorm.DB)
 	pbResponse, err := ormObj.ToPB(ctx)
 	if err != nil {
 		return nil, err
+	}
+	if count == 0 {
+		err = gateway.SetCreated(ctx, "")
 	}
 	return &pbResponse, err
 }

@@ -4,6 +4,7 @@ import (
 	context "context"
 	json "encoding/json"
 	fmt "fmt"
+	gateway "github.com/infobloxopen/atlas-app-toolkit/gateway"
 	gorm1 "github.com/infobloxopen/atlas-app-toolkit/gorm"
 	query "github.com/infobloxopen/atlas-app-toolkit/query"
 	errors "github.com/infobloxopen/protoc-gen-gorm/errors"
@@ -377,8 +378,9 @@ func DefaultStrictUpdateIntPoint(ctx context.Context, in *IntPoint, db *gorm.DB)
 	if err != nil {
 		return nil, err
 	}
+	var count int64
 	lockedRow := &IntPointORM{}
-	db.Model(&ormObj).Set("gorm:query_option", "FOR UPDATE").Where("id=?", ormObj.Id).First(lockedRow)
+	count = db.Model(&ormObj).Set("gorm:query_option", "FOR UPDATE").Where("id=?", ormObj.Id).First(lockedRow).RowsAffected
 	if hook, ok := interface{}(&ormObj).(IntPointORMWithBeforeStrictUpdateCleanup); ok {
 		if db, err = hook.BeforeStrictUpdateCleanup(ctx, db); err != nil {
 			return nil, err
@@ -400,6 +402,9 @@ func DefaultStrictUpdateIntPoint(ctx context.Context, in *IntPoint, db *gorm.DB)
 	pbResponse, err := ormObj.ToPB(ctx)
 	if err != nil {
 		return nil, err
+	}
+	if count == 0 {
+		err = gateway.SetCreated(ctx, "")
 	}
 	return &pbResponse, err
 }
@@ -796,6 +801,10 @@ func (m *IntPointServiceDefaultServer) Create(ctx context.Context, in *CreateInt
 		return nil, err
 	}
 	out := &CreateIntPointResponse{Result: res}
+	err = gateway.SetCreated(ctx, "")
+	if err != nil {
+		return nil, err
+	}
 	if custom, ok := interface{}(in).(IntPointServiceIntPointWithAfterCreate); ok {
 		var err error
 		if err = custom.AfterCreate(ctx, out, db); err != nil {
@@ -1114,6 +1123,10 @@ func (m *IntPointTxnDefaultServer) Create(ctx context.Context, in *CreateIntPoin
 		return nil, m.spanError(span, err)
 	}
 	out := &CreateIntPointResponse{Result: res}
+	err = gateway.SetCreated(ctx, "")
+	if err != nil {
+		return nil, m.spanError(span, err)
+	}
 	if custom, ok := interface{}(in).(IntPointTxnIntPointWithAfterCreate); ok {
 		var err error
 		if err = custom.AfterCreate(ctx, out, db); err != nil {
@@ -1492,6 +1505,10 @@ func (m *MultipleMethodsAutoGenDefaultServer) CreateA(ctx context.Context, in *C
 		return nil, err
 	}
 	out := &CreateIntPointResponse{Result: res}
+	err = gateway.SetCreated(ctx, "")
+	if err != nil {
+		return nil, err
+	}
 	if custom, ok := interface{}(in).(MultipleMethodsAutoGenIntPointWithAfterCreateA); ok {
 		var err error
 		if err = custom.AfterCreateA(ctx, out, db); err != nil {
@@ -1525,6 +1542,10 @@ func (m *MultipleMethodsAutoGenDefaultServer) CreateB(ctx context.Context, in *C
 		return nil, err
 	}
 	out := &CreateIntPointResponse{Result: res}
+	err = gateway.SetCreated(ctx, "")
+	if err != nil {
+		return nil, err
+	}
 	if custom, ok := interface{}(in).(MultipleMethodsAutoGenIntPointWithAfterCreateB); ok {
 		var err error
 		if err = custom.AfterCreateB(ctx, out, db); err != nil {

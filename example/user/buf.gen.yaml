@@ -7,4 +7,4 @@ plugins:
   - name: gorm
     out: example
     opt:
-      - paths=source_relative,enums=string,gateway:./example/user
+      - paths=source_relative,enums=string,gateway=true:./example/user

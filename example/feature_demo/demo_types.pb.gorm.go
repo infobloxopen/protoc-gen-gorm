@@ -4,6 +4,7 @@ import (
 	context "context"
 	fmt "fmt"
 	auth "github.com/infobloxopen/atlas-app-toolkit/auth"
+	gateway "github.com/infobloxopen/atlas-app-toolkit/gateway"
 	gorm1 "github.com/infobloxopen/atlas-app-toolkit/gorm"
 	errors "github.com/infobloxopen/protoc-gen-gorm/errors"
 	user "github.com/infobloxopen/protoc-gen-gorm/example/user"
@@ -1610,8 +1611,9 @@ func DefaultStrictUpdateTypeWithID(ctx context.Context, in *TypeWithID, db *gorm
 	if err != nil {
 		return nil, err
 	}
+	var count int64
 	lockedRow := &TypeWithIDORM{}
-	db.Model(&ormObj).Set("gorm:query_option", "FOR UPDATE").Where("id=?", ormObj.Id).First(lockedRow)
+	count = db.Model(&ormObj).Set("gorm:query_option", "FOR UPDATE").Where("id=?", ormObj.Id).First(lockedRow).RowsAffected
 	if hook, ok := interface{}(&ormObj).(TypeWithIDORMWithBeforeStrictUpdateCleanup); ok {
 		if db, err = hook.BeforeStrictUpdateCleanup(ctx, db); err != nil {
 			return nil, err
@@ -1651,6 +1653,9 @@ func DefaultStrictUpdateTypeWithID(ctx context.Context, in *TypeWithID, db *gorm
 	pbResponse, err := ormObj.ToPB(ctx)
 	if err != nil {
 		return nil, err
+	}
+	if count == 0 {
+		err = gateway.SetCreated(ctx, "")
 	}
 	return &pbResponse, err
 }
@@ -2171,8 +2176,9 @@ func DefaultStrictUpdateMultiaccountTypeWithID(ctx context.Context, in *Multiacc
 		return nil, err
 	}
 	db = db.Where(map[string]interface{}{"account_id": accountID})
+	var count int64
 	lockedRow := &MultiaccountTypeWithIDORM{}
-	db.Model(&ormObj).Set("gorm:query_option", "FOR UPDATE").Where("id=?", ormObj.Id).First(lockedRow)
+	count = db.Model(&ormObj).Set("gorm:query_option", "FOR UPDATE").Where("id=?", ormObj.Id).First(lockedRow).RowsAffected
 	if hook, ok := interface{}(&ormObj).(MultiaccountTypeWithIDORMWithBeforeStrictUpdateCleanup); ok {
 		if db, err = hook.BeforeStrictUpdateCleanup(ctx, db); err != nil {
 			return nil, err
@@ -2194,6 +2200,9 @@ func DefaultStrictUpdateMultiaccountTypeWithID(ctx context.Context, in *Multiacc
 	pbResponse, err := ormObj.ToPB(ctx)
 	if err != nil {
 		return nil, err
+	}
+	if count == 0 {
+		err = gateway.SetCreated(ctx, "")
 	}
 	return &pbResponse, err
 }
@@ -2624,8 +2633,9 @@ func DefaultStrictUpdatePrimaryUUIDType(ctx context.Context, in *PrimaryUUIDType
 	if err != nil {
 		return nil, err
 	}
+	var count int64
 	lockedRow := &PrimaryUUIDTypeORM{}
-	db.Model(&ormObj).Set("gorm:query_option", "FOR UPDATE").Where("id=?", ormObj.Id).First(lockedRow)
+	count = db.Model(&ormObj).Set("gorm:query_option", "FOR UPDATE").Where("id=?", ormObj.Id).First(lockedRow).RowsAffected
 	if hook, ok := interface{}(&ormObj).(PrimaryUUIDTypeORMWithBeforeStrictUpdateCleanup); ok {
 		if db, err = hook.BeforeStrictUpdateCleanup(ctx, db); err != nil {
 			return nil, err
@@ -2656,6 +2666,9 @@ func DefaultStrictUpdatePrimaryUUIDType(ctx context.Context, in *PrimaryUUIDType
 	pbResponse, err := ormObj.ToPB(ctx)
 	if err != nil {
 		return nil, err
+	}
+	if count == 0 {
+		err = gateway.SetCreated(ctx, "")
 	}
 	return &pbResponse, err
 }
@@ -2999,8 +3012,9 @@ func DefaultStrictUpdatePrimaryStringType(ctx context.Context, in *PrimaryString
 	if err != nil {
 		return nil, err
 	}
+	var count int64
 	lockedRow := &PrimaryStringTypeORM{}
-	db.Model(&ormObj).Set("gorm:query_option", "FOR UPDATE").Where("id=?", ormObj.Id).First(lockedRow)
+	count = db.Model(&ormObj).Set("gorm:query_option", "FOR UPDATE").Where("id=?", ormObj.Id).First(lockedRow).RowsAffected
 	if hook, ok := interface{}(&ormObj).(PrimaryStringTypeORMWithBeforeStrictUpdateCleanup); ok {
 		if db, err = hook.BeforeStrictUpdateCleanup(ctx, db); err != nil {
 			return nil, err
@@ -3031,6 +3045,9 @@ func DefaultStrictUpdatePrimaryStringType(ctx context.Context, in *PrimaryString
 	pbResponse, err := ormObj.ToPB(ctx)
 	if err != nil {
 		return nil, err
+	}
+	if count == 0 {
+		err = gateway.SetCreated(ctx, "")
 	}
 	return &pbResponse, err
 }
@@ -3374,8 +3391,9 @@ func DefaultStrictUpdateTestTag(ctx context.Context, in *TestTag, db *gorm.DB) (
 	if err != nil {
 		return nil, err
 	}
+	var count int64
 	lockedRow := &TestTagORM{}
-	db.Model(&ormObj).Set("gorm:query_option", "FOR UPDATE").Where("id=?", ormObj.Id).First(lockedRow)
+	count = db.Model(&ormObj).Set("gorm:query_option", "FOR UPDATE").Where("id=?", ormObj.Id).First(lockedRow).RowsAffected
 	if hook, ok := interface{}(&ormObj).(TestTagORMWithBeforeStrictUpdateCleanup); ok {
 		if db, err = hook.BeforeStrictUpdateCleanup(ctx, db); err != nil {
 			return nil, err
@@ -3406,6 +3424,9 @@ func DefaultStrictUpdateTestTag(ctx context.Context, in *TestTag, db *gorm.DB) (
 	pbResponse, err := ormObj.ToPB(ctx)
 	if err != nil {
 		return nil, err
+	}
+	if count == 0 {
+		err = gateway.SetCreated(ctx, "")
 	}
 	return &pbResponse, err
 }
@@ -3749,8 +3770,9 @@ func DefaultStrictUpdateTestAssocHandlerDefault(ctx context.Context, in *TestAss
 	if err != nil {
 		return nil, err
 	}
+	var count int64
 	lockedRow := &TestAssocHandlerDefaultORM{}
-	db.Model(&ormObj).Set("gorm:query_option", "FOR UPDATE").Where("id=?", ormObj.Id).First(lockedRow)
+	count = db.Model(&ormObj).Set("gorm:query_option", "FOR UPDATE").Where("id=?", ormObj.Id).First(lockedRow).RowsAffected
 	if hook, ok := interface{}(&ormObj).(TestAssocHandlerDefaultORMWithBeforeStrictUpdateCleanup); ok {
 		if db, err = hook.BeforeStrictUpdateCleanup(ctx, db); err != nil {
 			return nil, err
@@ -3781,6 +3803,9 @@ func DefaultStrictUpdateTestAssocHandlerDefault(ctx context.Context, in *TestAss
 	pbResponse, err := ormObj.ToPB(ctx)
 	if err != nil {
 		return nil, err
+	}
+	if count == 0 {
+		err = gateway.SetCreated(ctx, "")
 	}
 	return &pbResponse, err
 }
@@ -4106,8 +4131,9 @@ func DefaultStrictUpdateTestAssocHandlerReplace(ctx context.Context, in *TestAss
 	if err != nil {
 		return nil, err
 	}
+	var count int64
 	lockedRow := &TestAssocHandlerReplaceORM{}
-	db.Model(&ormObj).Set("gorm:query_option", "FOR UPDATE").Where("id=?", ormObj.Id).First(lockedRow)
+	count = db.Model(&ormObj).Set("gorm:query_option", "FOR UPDATE").Where("id=?", ormObj.Id).First(lockedRow).RowsAffected
 	if hook, ok := interface{}(&ormObj).(TestAssocHandlerReplaceORMWithBeforeStrictUpdateCleanup); ok {
 		if db, err = hook.BeforeStrictUpdateCleanup(ctx, db); err != nil {
 			return nil, err
@@ -4133,6 +4159,9 @@ func DefaultStrictUpdateTestAssocHandlerReplace(ctx context.Context, in *TestAss
 	pbResponse, err := ormObj.ToPB(ctx)
 	if err != nil {
 		return nil, err
+	}
+	if count == 0 {
+		err = gateway.SetCreated(ctx, "")
 	}
 	return &pbResponse, err
 }
@@ -4458,8 +4487,9 @@ func DefaultStrictUpdateTestAssocHandlerClear(ctx context.Context, in *TestAssoc
 	if err != nil {
 		return nil, err
 	}
+	var count int64
 	lockedRow := &TestAssocHandlerClearORM{}
-	db.Model(&ormObj).Set("gorm:query_option", "FOR UPDATE").Where("id=?", ormObj.Id).First(lockedRow)
+	count = db.Model(&ormObj).Set("gorm:query_option", "FOR UPDATE").Where("id=?", ormObj.Id).First(lockedRow).RowsAffected
 	if hook, ok := interface{}(&ormObj).(TestAssocHandlerClearORMWithBeforeStrictUpdateCleanup); ok {
 		if db, err = hook.BeforeStrictUpdateCleanup(ctx, db); err != nil {
 			return nil, err
@@ -4485,6 +4515,9 @@ func DefaultStrictUpdateTestAssocHandlerClear(ctx context.Context, in *TestAssoc
 	pbResponse, err := ormObj.ToPB(ctx)
 	if err != nil {
 		return nil, err
+	}
+	if count == 0 {
+		err = gateway.SetCreated(ctx, "")
 	}
 	return &pbResponse, err
 }
@@ -4810,8 +4843,9 @@ func DefaultStrictUpdateTestAssocHandlerAppend(ctx context.Context, in *TestAsso
 	if err != nil {
 		return nil, err
 	}
+	var count int64
 	lockedRow := &TestAssocHandlerAppendORM{}
-	db.Model(&ormObj).Set("gorm:query_option", "FOR UPDATE").Where("id=?", ormObj.Id).First(lockedRow)
+	count = db.Model(&ormObj).Set("gorm:query_option", "FOR UPDATE").Where("id=?", ormObj.Id).First(lockedRow).RowsAffected
 	if hook, ok := interface{}(&ormObj).(TestAssocHandlerAppendORMWithBeforeStrictUpdateCleanup); ok {
 		if db, err = hook.BeforeStrictUpdateCleanup(ctx, db); err != nil {
 			return nil, err
@@ -4837,6 +4871,9 @@ func DefaultStrictUpdateTestAssocHandlerAppend(ctx context.Context, in *TestAsso
 	pbResponse, err := ormObj.ToPB(ctx)
 	if err != nil {
 		return nil, err
+	}
+	if count == 0 {
+		err = gateway.SetCreated(ctx, "")
 	}
 	return &pbResponse, err
 }
@@ -5267,8 +5304,9 @@ func DefaultStrictUpdatePrimaryIncluded(ctx context.Context, in *PrimaryIncluded
 	if err != nil {
 		return nil, err
 	}
+	var count int64
 	lockedRow := &PrimaryIncludedORM{}
-	db.Model(&ormObj).Set("gorm:query_option", "FOR UPDATE").Where("id=?", ormObj.Id).First(lockedRow)
+	count = db.Model(&ormObj).Set("gorm:query_option", "FOR UPDATE").Where("id=?", ormObj.Id).First(lockedRow).RowsAffected
 	if hook, ok := interface{}(&ormObj).(PrimaryIncludedORMWithBeforeStrictUpdateCleanup); ok {
 		if db, err = hook.BeforeStrictUpdateCleanup(ctx, db); err != nil {
 			return nil, err
@@ -5299,6 +5337,9 @@ func DefaultStrictUpdatePrimaryIncluded(ctx context.Context, in *PrimaryIncluded
 	pbResponse, err := ormObj.ToPB(ctx)
 	if err != nil {
 		return nil, err
+	}
+	if count == 0 {
+		err = gateway.SetCreated(ctx, "")
 	}
 	return &pbResponse, err
 }

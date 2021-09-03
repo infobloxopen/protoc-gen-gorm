@@ -3,6 +3,7 @@ package postgres_arrays
 import (
 	context "context"
 	fmt "fmt"
+	gateway "github.com/infobloxopen/atlas-app-toolkit/gateway"
 	gorm1 "github.com/infobloxopen/atlas-app-toolkit/gorm"
 	errors "github.com/infobloxopen/protoc-gen-gorm/errors"
 	gorm "github.com/jinzhu/gorm"
@@ -275,8 +276,9 @@ func DefaultStrictUpdateExample(ctx context.Context, in *Example, db *gorm.DB) (
 	if err != nil {
 		return nil, err
 	}
+	var count int64
 	lockedRow := &ExampleORM{}
-	db.Model(&ormObj).Set("gorm:query_option", "FOR UPDATE").Where("id=?", ormObj.Id).First(lockedRow)
+	count = db.Model(&ormObj).Set("gorm:query_option", "FOR UPDATE").Where("id=?", ormObj.Id).First(lockedRow).RowsAffected
 	if hook, ok := interface{}(&ormObj).(ExampleORMWithBeforeStrictUpdateCleanup); ok {
 		if db, err = hook.BeforeStrictUpdateCleanup(ctx, db); err != nil {
 			return nil, err
@@ -298,6 +300,9 @@ func DefaultStrictUpdateExample(ctx context.Context, in *Example, db *gorm.DB) (
 	pbResponse, err := ormObj.ToPB(ctx)
 	if err != nil {
 		return nil, err
+	}
+	if count == 0 {
+		err = gateway.SetCreated(ctx, "")
 	}
 	return &pbResponse, err
 }

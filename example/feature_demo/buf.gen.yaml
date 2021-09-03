@@ -10,4 +10,4 @@ plugins:
   - name: gorm
     out: example
     opt:
-      - paths=source_relative,engine=postgres,enums=string,gateway:./example/feature_demo
+      - paths=source_relative,engine=postgres,enums=string,gateway=true:./example/feature_demo

@@ -4,6 +4,7 @@ import (
 	context "context"
 	fmt "fmt"
 	auth "github.com/infobloxopen/atlas-app-toolkit/auth"
+	gateway "github.com/infobloxopen/atlas-app-toolkit/gateway"
 	gorm1 "github.com/infobloxopen/atlas-app-toolkit/gorm"
 	resource "github.com/infobloxopen/atlas-app-toolkit/gorm/resource"
 	errors "github.com/infobloxopen/protoc-gen-gorm/errors"
@@ -981,8 +982,9 @@ func DefaultStrictUpdateUser(ctx context.Context, in *User, db *gorm.DB) (*User,
 		return nil, err
 	}
 	db = db.Where(map[string]interface{}{"account_id": accountID})
+	var count int64
 	lockedRow := &UserORM{}
-	db.Model(&ormObj).Set("gorm:query_option", "FOR UPDATE").Where("id=?", ormObj.Id).First(lockedRow)
+	count = db.Model(&ormObj).Set("gorm:query_option", "FOR UPDATE").Where("id=?", ormObj.Id).First(lockedRow).RowsAffected
 	if hook, ok := interface{}(&ormObj).(UserORMWithBeforeStrictUpdateCleanup); ok {
 		if db, err = hook.BeforeStrictUpdateCleanup(ctx, db); err != nil {
 			return nil, err
@@ -1038,6 +1040,9 @@ func DefaultStrictUpdateUser(ctx context.Context, in *User, db *gorm.DB) (*User,
 	pbResponse, err := ormObj.ToPB(ctx)
 	if err != nil {
 		return nil, err
+	}
+	if count == 0 {
+		err = gateway.SetCreated(ctx, "")
 	}
 	return &pbResponse, err
 }
@@ -1538,8 +1543,9 @@ func DefaultStrictUpdateEmail(ctx context.Context, in *Email, db *gorm.DB) (*Ema
 		return nil, err
 	}
 	db = db.Where(map[string]interface{}{"account_id": accountID})
+	var count int64
 	lockedRow := &EmailORM{}
-	db.Model(&ormObj).Set("gorm:query_option", "FOR UPDATE").Where("id=?", ormObj.Id).First(lockedRow)
+	count = db.Model(&ormObj).Set("gorm:query_option", "FOR UPDATE").Where("id=?", ormObj.Id).First(lockedRow).RowsAffected
 	if hook, ok := interface{}(&ormObj).(EmailORMWithBeforeStrictUpdateCleanup); ok {
 		if db, err = hook.BeforeStrictUpdateCleanup(ctx, db); err != nil {
 			return nil, err
@@ -1561,6 +1567,9 @@ func DefaultStrictUpdateEmail(ctx context.Context, in *Email, db *gorm.DB) (*Ema
 	pbResponse, err := ormObj.ToPB(ctx)
 	if err != nil {
 		return nil, err
+	}
+	if count == 0 {
+		err = gateway.SetCreated(ctx, "")
 	}
 	return &pbResponse, err
 }
@@ -1907,8 +1916,9 @@ func DefaultStrictUpdateAddress(ctx context.Context, in *Address, db *gorm.DB) (
 		return nil, err
 	}
 	db = db.Where(map[string]interface{}{"account_id": accountID})
+	var count int64
 	lockedRow := &AddressORM{}
-	db.Model(&ormObj).Set("gorm:query_option", "FOR UPDATE").Where("id=?", ormObj.Id).First(lockedRow)
+	count = db.Model(&ormObj).Set("gorm:query_option", "FOR UPDATE").Where("id=?", ormObj.Id).First(lockedRow).RowsAffected
 	if hook, ok := interface{}(&ormObj).(AddressORMWithBeforeStrictUpdateCleanup); ok {
 		if db, err = hook.BeforeStrictUpdateCleanup(ctx, db); err != nil {
 			return nil, err
@@ -1930,6 +1940,9 @@ func DefaultStrictUpdateAddress(ctx context.Context, in *Address, db *gorm.DB) (
 	pbResponse, err := ormObj.ToPB(ctx)
 	if err != nil {
 		return nil, err
+	}
+	if count == 0 {
+		err = gateway.SetCreated(ctx, "")
 	}
 	return &pbResponse, err
 }
@@ -2280,8 +2293,9 @@ func DefaultStrictUpdateLanguage(ctx context.Context, in *Language, db *gorm.DB)
 		return nil, err
 	}
 	db = db.Where(map[string]interface{}{"account_id": accountID})
+	var count int64
 	lockedRow := &LanguageORM{}
-	db.Model(&ormObj).Set("gorm:query_option", "FOR UPDATE").Where("id=?", ormObj.Id).First(lockedRow)
+	count = db.Model(&ormObj).Set("gorm:query_option", "FOR UPDATE").Where("id=?", ormObj.Id).First(lockedRow).RowsAffected
 	if hook, ok := interface{}(&ormObj).(LanguageORMWithBeforeStrictUpdateCleanup); ok {
 		if db, err = hook.BeforeStrictUpdateCleanup(ctx, db); err != nil {
 			return nil, err
@@ -2303,6 +2317,9 @@ func DefaultStrictUpdateLanguage(ctx context.Context, in *Language, db *gorm.DB)
 	pbResponse, err := ormObj.ToPB(ctx)
 	if err != nil {
 		return nil, err
+	}
+	if count == 0 {
+		err = gateway.SetCreated(ctx, "")
 	}
 	return &pbResponse, err
 }
@@ -2645,8 +2662,9 @@ func DefaultStrictUpdateCreditCard(ctx context.Context, in *CreditCard, db *gorm
 		return nil, err
 	}
 	db = db.Where(map[string]interface{}{"account_id": accountID})
+	var count int64
 	lockedRow := &CreditCardORM{}
-	db.Model(&ormObj).Set("gorm:query_option", "FOR UPDATE").Where("id=?", ormObj.Id).First(lockedRow)
+	count = db.Model(&ormObj).Set("gorm:query_option", "FOR UPDATE").Where("id=?", ormObj.Id).First(lockedRow).RowsAffected
 	if hook, ok := interface{}(&ormObj).(CreditCardORMWithBeforeStrictUpdateCleanup); ok {
 		if db, err = hook.BeforeStrictUpdateCleanup(ctx, db); err != nil {
 			return nil, err
@@ -2668,6 +2686,9 @@ func DefaultStrictUpdateCreditCard(ctx context.Context, in *CreditCard, db *gorm
 	pbResponse, err := ormObj.ToPB(ctx)
 	if err != nil {
 		return nil, err
+	}
+	if count == 0 {
+		err = gateway.SetCreated(ctx, "")
 	}
 	return &pbResponse, err
 }
