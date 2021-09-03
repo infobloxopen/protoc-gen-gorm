@@ -288,6 +288,11 @@ func (b *ORMBuilder) Generate() (*pluginpb.CodeGeneratorResponse, error) {
 			panic("generated file should be present")
 		}
 
+		if !protoFile.Generate {
+			g.Skip()
+			continue
+		}
+
 		skip := true
 
 		for _, message := range protoFile.Messages {

@@ -16,20 +16,22 @@ build: $(BUF)
 test: lint build
 	go test -v ./...
 
-clean:
-	@echo "WARNING: this kills test, override and custom files, fixme"
-# rm -rf example/feature_demo/feature_demo example/user/user example/postgres_arrays/postgres_arrays example/**/*.go example/**/github.com example/github.com || true
+regenerate: clean-gen generate
 
-regenerate: clean generate
+clean-gen:
+	cd example/postgres_arrays && rm -f *.pb.gorm.go && rm -f *.pb.go
+	cd example/user && rm -f *.pb.gorm.go && rm -f *.pb.go
+	cd example/feature_demo && rm -f *.pb.gorm.go && rm -f *.pb.go
+	cd options && rm -f *.pb.gorm.go && rm -f *.pb.go
+	cd types && rm -f types.pb.go
 
-generate: options/gorm.pb.go example/user/*.pb.go example/postgres_arrays/*.pb.go example/feature_demo/*.pb.go
+generate: options/gorm.pb.go types/types.pb.go example/user/*.pb.go example/postgres_arrays/*.pb.go example/feature_demo/*.pb.go
 
 options/gorm.pb.go: proto/options/gorm.proto
 	buf generate --template proto/options/buf.gen.yaml --path proto/options
 
-options/types.pb.go: proto/types/types.proto
+types/types.pb.go: proto/types/types.proto
 	buf generate --template proto/types/buf.gen.yaml --path proto/types
-# TODO: gorm files are not being built by buf generate yet, use docker for now
 
 example/feature_demo/*.pb.go: example/feature_demo/*.proto
 	buf generate --template example/feature_demo/buf.gen.yaml --path example/feature_demo
