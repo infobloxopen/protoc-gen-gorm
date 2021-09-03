@@ -10,5 +10,4 @@ plugins:
   - name: gorm
     out: example
     opt:
-      - module=github.com/infobloxopen/protoc-gen-gorm/example
-      - engine=postgres,enums=string,gateway
+      - paths=source_relative,engine=postgres,enums=string,gateway:./example/feature_demo

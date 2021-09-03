@@ -7,5 +7,4 @@ plugins:
   - name: gorm
     out: example
     opt:
-      - module=github.com/infobloxopen/protoc-gen-gorm/example
-      - enums=string,gateway
+      - paths=source_relative,enums=string,gateway:./example/user
