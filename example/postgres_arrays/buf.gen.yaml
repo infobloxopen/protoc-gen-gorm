@@ -5,4 +5,6 @@ plugins:
     opt: paths=source_relative
   - name: gorm
     out: example
-    opt: engine=postgres,paths=source_relative,enums=string,gateway
+    opt:
+      - module=github.com/infobloxopen/protoc-gen-gorm/example
+      - engine=postgres,enums=string,gateway

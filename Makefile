@@ -16,6 +16,14 @@ build: $(BUF)
 test: lint build
 	go test -v ./...
 
+regenerate: clean-gen generate
+
+clean-gen:
+	cd example/postgres_arrays && rm -f *.pb.*
+	cd example/user && rm -f *.pb.*
+	cd example/feature_demo && rm -f *.pb.*
+	cd options && rm -f *.pb.*
+
 generate: options/gorm.pb.go example/user/*.pb.go example/postgres_arrays/*.pb.go example/feature_demo/*.pb.go
 
 options/gorm.pb.go: proto/options/gorm.proto
