@@ -1411,7 +1411,8 @@ func (b *ORMBuilder) generateFieldConversion(message *protogen.Message, field *p
 		} else if fieldType == protoTypeTimestamp { // Singular WKT Timestamp ---
 			if toORM {
 				g.P(`if m.`, fieldName, ` != nil {`)
-				g.P(`*to.`, fieldName, ` = m.`, fieldName, `.AsTime()`)
+				g.P(`t := m.`, fieldName, `.AsTime()`)
+				g.P(`to.`, fieldName, ` = &t`)
 				g.P(`}`)
 			} else {
 				g.P(`if m.`, fieldName, ` != nil {`)

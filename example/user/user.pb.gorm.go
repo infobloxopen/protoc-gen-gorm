@@ -55,13 +55,16 @@ func (m *User) ToORM(ctx context.Context) (UserORM, error) {
 		to.Id = v.(string)
 	}
 	if m.CreatedAt != nil {
-		*to.CreatedAt = m.CreatedAt.AsTime()
+		t := m.CreatedAt.AsTime()
+		to.CreatedAt = &t
 	}
 	if m.UpdatedAt != nil {
-		*to.UpdatedAt = m.UpdatedAt.AsTime()
+		t := m.UpdatedAt.AsTime()
+		to.UpdatedAt = &t
 	}
 	if m.Birthday != nil {
-		*to.Birthday = m.Birthday.AsTime()
+		t := m.Birthday.AsTime()
+		to.Birthday = &t
 	}
 	to.Num = m.Num
 	if m.CreditCard != nil {
@@ -651,10 +654,12 @@ func (m *CreditCard) ToORM(ctx context.Context) (CreditCardORM, error) {
 		to.Id = v
 	}
 	if m.CreatedAt != nil {
-		*to.CreatedAt = m.CreatedAt.AsTime()
+		t := m.CreatedAt.AsTime()
+		to.CreatedAt = &t
 	}
 	if m.UpdatedAt != nil {
-		*to.UpdatedAt = m.UpdatedAt.AsTime()
+		t := m.UpdatedAt.AsTime()
+		to.UpdatedAt = &t
 	}
 	to.Number = m.Number
 	if m.UserId != nil {

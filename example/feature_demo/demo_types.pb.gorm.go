@@ -66,7 +66,8 @@ func (m *TestTypes) ToORM(ctx context.Context) (TestTypesORM, error) {
 		to.Uuid = go_uuid.Nil
 	}
 	if m.CreatedAt != nil {
-		*to.CreatedAt = m.CreatedAt.AsTime()
+		t := m.CreatedAt.AsTime()
+		to.CreatedAt = &t
 	}
 	to.TypeWithIdId = m.TypeWithIdId
 	if m.JsonField != nil {
@@ -240,7 +241,8 @@ func (m *TypeWithID) ToORM(ctx context.Context) (TypeWithIDORM, error) {
 		}
 	}
 	if m.DeletedAt != nil {
-		*to.DeletedAt = m.DeletedAt.AsTime()
+		t := m.DeletedAt.AsTime()
+		to.DeletedAt = &t
 	}
 	if posthook, ok := interface{}(m).(TypeWithIDWithAfterToORM); ok {
 		err = posthook.AfterToORM(ctx, &to)
