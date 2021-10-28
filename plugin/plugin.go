@@ -2641,7 +2641,7 @@ func (b *ORMBuilder) followsCreateConventions(inType *protogen.Message, outType 
 	var inTypeName string
 	var typeOrmable bool
 	for _, field := range inType.Fields {
-		if string(field.Desc.Name()) == "payload" {
+		if field.Desc != nil && string(field.Desc.Name()) == "payload" {
 			gType := string(field.Desc.Message().Name())
 			inTypeName = strings.TrimPrefix(gType, "*")
 			if b.isOrmable(inTypeName) {
