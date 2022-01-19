@@ -15,6 +15,30 @@ var validChars = regexp.MustCompile("^[0-9a-f]{8}-?[0-9a-f]{4}-?[1-5][0-9a-f]{3}
 const ZeroUUID = "00000000-0000-0000-0000-000000000000"
 
 // MarshalJSONPB overloads UUID's standard PB -> JSON conversion
+func (m *BigInt) MarshalJSONPB(*jsonpb.Marshaler) ([]byte, error) {
+	if len(m.Value) == 0 {
+		return []byte("null"), nil
+	}
+	return []byte(fmt.Sprintf("%q", m.Value)), nil
+}
+
+// UnmarshalJSONPB overloads UUID's standard JSON -> PB conversion.
+func (m *BigInt) UnmarshalJSONPB(_ *jsonpb.Unmarshaler, data []byte) error {
+	if string(data) == "null" {
+		m.Value = ""
+		return nil
+	}
+
+	t := string(data)
+	if t[0] != '"' || t[len(t)-1] != '"' {
+		return fmt.Errorf(`invalid bigint '%s' does not match accepted format`, t)
+	}
+
+	m.Value = strings.Trim(string(data), `"`)
+	return nil
+}
+
+// MarshalJSONPB overloads UUID's standard PB -> JSON conversion
 func (m *UUID) MarshalJSONPB(*jsonpb.Marshaler) ([]byte, error) {
 	if len(m.Value) == 0 {
 		return []byte(fmt.Sprintf(`%q`, ZeroUUID)), nil

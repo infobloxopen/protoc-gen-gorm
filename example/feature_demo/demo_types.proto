@@ -66,6 +66,7 @@ message TestTypes {
   // The TimeOnly should act as uint32 value at business layer, but is automatically
   // converted to/from string at API and ORM level
   gorm.types.TimeOnly time_only = 11;
+  gorm.types.BigInt bigint = 12;
 }
 
 // TypeWithID demonstrates some basic assocation behavior

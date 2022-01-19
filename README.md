@@ -31,16 +31,22 @@ The protobuf compiler (protoc) is required.
 
 Get the golang protobuf code generator:
 
+Before Go 1.17
 ```
 go get -u github.com/golang/protobuf/protoc-gen-go
 ```
+Starting from Go 1.17
+```
+go install github.com/golang/protobuf/protoc-gen-go
+```
+
 
 #### 3. Vendored Dependencies
 
-Retrieve and install the vendored dependencies for this project with [dep](https://github.com/golang/dep):
+Retrieve and install the vendored dependencies for this project with go mod:
 
 ```
-dep ensure
+go mod tidy
 ```
 
 ### Installation
@@ -115,6 +121,7 @@ to test the effects of changing the options and fields.
 Within the proto files, the following types are supported:
 - standard primitive types `uint32`, `uint64`, `int32`, `int64`, `float`,
   `double`, `bool`, `string` map to the same type at ORM level
+- 
 - [google wrapper types](https://github.com/golang/protobuf/blob/master/ptypes/wrappers/wrappers.proto)
  `google.protobuf.StringValue`, `.BoolValue`, `.UInt32Value`, `.FloatValue`, etc.
  map to pointers of the internal type at the ORM level, e.g.

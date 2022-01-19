@@ -22,3 +22,7 @@ message InetValue {
 message TimeOnly {
   uint32 value = 1;
 }
+
+message BigInt {
+  string value = 1;
+}

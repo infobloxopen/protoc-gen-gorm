@@ -53,6 +53,7 @@ var (
 	stdStringsImport   = "strings"
 	stdTimeImport      = "time"
 	encodingJsonImport = "encoding/json"
+	bigintImport       = "math/big"
 )
 
 var builtinTypes = map[string]struct{}{
@@ -94,6 +95,7 @@ const (
 	protoTypeResource  = "Identifier"
 	protoTypeInet      = "InetValue"
 	protoTimeOnly      = "TimeOnly"
+	protoTypeBigInt    = "BigInt"
 )
 
 // DB Engine Enum
@@ -430,8 +432,18 @@ func (b *ORMBuilder) generateOrmable(g *protogen.GeneratedFile, message *protoge
 	for _, name := range names {
 		field := ormable.Fields[name]
 		sp := strings.Split(field.Type, ".")
+
 		if len(sp) == 2 && sp[1] == "UUID" {
 			s := generateImport("UUID", uuidImport, g)
+			if field.Type[0] == '*' {
+				field.Type = "*" + s
+			} else {
+				field.Type = s
+			}
+		}
+
+		if len(sp) == 2 && sp[1] == "BigInt" {
+			s := generateImport("BigInt", bigintImport, g)
 			if field.Type[0] == '*' {
 				field.Type = "*" + s
 			} else {
@@ -841,6 +853,12 @@ func (b *ORMBuilder) parseBasicFields(msg *protogen.Message, g *protogen.Generat
 
 			if v, ok := wellKnownTypes[rawType]; ok {
 				fieldType = v
+			} else if rawType == protoTypeBigInt {
+				typePackage = bigintImport
+				fieldType = "*" + generateImport("Int", bigintImport, g)
+				if b.dbEngine == ENGINE_POSTGRES {
+					gormOptions.Tag = tagWithType(tag, "numeric")
+				}
 			} else if rawType == protoTypeUUID {
 				typePackage = uuidImport
 				fieldType = generateImport("UUID", uuidImport, g)
@@ -967,6 +985,8 @@ func (b *ORMBuilder) addIncludedField(ormable *OrmableType, field *gorm.ExtraFie
 		} else if rawType == "Time" {
 			// b.UsingGoImports(stdTimeImport) // TODO: missing UsingGoImports
 			rawType = generateImport("Time", stdTimeImport, g)
+		} else if rawType == "BigInt" {
+			rawType = generateImport("Int", bigintImport, g)
 		} else if rawType == "UUID" {
 			rawType = generateImport("UUID", uuidImport, g)
 		} else if field.GetType() == "Jsonb" && b.dbEngine == ENGINE_POSTGRES {
@@ -1381,6 +1401,19 @@ func (b *ORMBuilder) generateFieldConversion(message *protogen.Message, field *p
 					`{Value: *m.`, fieldName, `}`)
 				g.P(`}`)
 			}
+		} else if fieldType == protoTypeBigInt { // Singular BigInt type ----
+			if toORM {
+				g.P(`if m.`, fieldName, ` != nil {`)
+				g.P(`var ok bool`)
+				g.P(`to.`, fieldName, ` = new(big.Int)`)
+				g.P(`to.`, fieldName, `, ok = to.`, fieldName, `.SetString(m.`, fieldName, `.Value, 0)`)
+				g.P(`if !ok {`)
+				g.P(`return to, fmt.Errorf("unable convert `, fieldName, ` to big.Int")`)
+				g.P(`}`)
+				g.P(`}`)
+			} else {
+				g.P(`to.`, fieldName, ` = &`, generateImport("BigInt", gtypesImport, g), `{Value: m.`, fieldName, `.String()}`)
+			}
 		} else if fieldType == protoTypeUUIDValue { // Singular UUIDValue type ----
 			if toORM {
 				g.P(`if m.`, fieldName, ` != nil {`)
@@ -1705,8 +1738,10 @@ func (b *ORMBuilder) guessZeroValue(typeName string, g *protogen.GeneratedFile) 
 		return `0`
 	}
 	if strings.Contains(typeName, "uuid") {
-		// return fmt.Sprintf(`%s.Nil`, p.Import(uuidImport))
 		return generateImport("Nil", uuidImport, g)
+	}
+	if strings.Contains(typeName, "bigint") {
+		return generateImport("Nil", bigintImport, g)
 	}
 	if strings.Contains(typeName, "[]byte") {
 		return `nil`
@@ -2354,7 +2389,7 @@ func (b *ORMBuilder) generateApplyFieldMask(message *protogen.Message, g *protog
 
 func isSpecialType(typeName string) bool {
 	switch typeName {
-	case protoTypeJSON, protoTypeUUID, protoTypeUUIDValue, protoTypeResource, protoTypeInet, protoTimeOnly:
+	case protoTypeJSON, protoTypeBigInt, protoTypeUUID, protoTypeUUIDValue, protoTypeResource, protoTypeInet, protoTimeOnly:
 		return true
 	default:
 		return false
