@@ -17,6 +17,7 @@ import (
 	emptypb "google.golang.org/protobuf/types/known/emptypb"
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	wrapperspb "google.golang.org/protobuf/types/known/wrapperspb"
+	big "math/big"
 	strings "strings"
 	time "time"
 )
@@ -26,6 +27,7 @@ type TestTypesORM struct {
 	Array                     pq.StringArray
 	Array2                    pq.StringArray
 	BecomesInt                string
+	Bigint                    *big.Int `gorm:"type:numeric"`
 	CreatedAt                 *time.Time
 	JsonField                 *postgres.Jsonb `gorm:"type:jsonb"`
 	NullableUuid              *go_uuid.UUID   `gorm:"type:uuid"`
@@ -85,6 +87,14 @@ func (m *TestTypes) ToORM(ctx context.Context) (TestTypesORM, error) {
 			return to, err
 		}
 	}
+	if m.Bigint != nil {
+		var ok bool
+		to.Bigint = new(big.Int)
+		to.Bigint, ok = to.Bigint.SetString(m.Bigint.Value, 0)
+		if !ok {
+			return to, fmt.Errorf("unable convert Bigint to big.Int")
+		}
+	}
 	if posthook, ok := interface{}(m).(TestTypesWithAfterToORM); ok {
 		err = posthook.AfterToORM(ctx, &to)
 	}
@@ -122,6 +132,7 @@ func (m *TestTypesORM) ToPB(ctx context.Context) (TestTypes, error) {
 			return to, err
 		}
 	}
+	to.Bigint = &types.BigInt{Value: m.Bigint.String()}
 	if posthook, ok := interface{}(m).(TestTypesWithAfterToPB); ok {
 		err = posthook.AfterToPB(ctx, &to)
 	}
@@ -1392,6 +1403,10 @@ func DefaultApplyFieldMaskTestTypes(ctx context.Context, patchee *TestTypes, pat
 		}
 		if f == prefix+"TimeOnly" {
 			patchee.TimeOnly = patcher.TimeOnly
+			continue
+		}
+		if f == prefix+"Bigint" {
+			patchee.Bigint = patcher.Bigint
 			continue
 		}
 	}
