@@ -1,6 +1,6 @@
 # https://docs.buf.build/lint-usage/
 version: v1beta1
-name: infoblox.com/infobloxopen/protoc-gen-gorm
+name: buf.build/wk8/protoc-gen-gorm
 build:
   roots:
     - proto
