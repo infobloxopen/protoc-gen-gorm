@@ -8,10 +8,10 @@ import (
 	gorm1 "github.com/infobloxopen/atlas-app-toolkit/gorm"
 	query "github.com/infobloxopen/atlas-app-toolkit/query"
 	errors "github.com/infobloxopen/protoc-gen-gorm/errors"
-	gorm "github.com/jinzhu/gorm"
 	trace "go.opencensus.io/trace"
 	field_mask "google.golang.org/genproto/protobuf/field_mask"
 	emptypb "google.golang.org/protobuf/types/known/emptypb"
+	gorm "gorm.io/gorm"
 )
 
 type IntPointORM struct {

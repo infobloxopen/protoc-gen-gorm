@@ -9,14 +9,13 @@ import (
 	errors "github.com/infobloxopen/protoc-gen-gorm/errors"
 	user "github.com/infobloxopen/protoc-gen-gorm/example/user"
 	types "github.com/infobloxopen/protoc-gen-gorm/types"
-	gorm "github.com/jinzhu/gorm"
-	postgres "github.com/jinzhu/gorm/dialects/postgres"
 	pq "github.com/lib/pq"
 	go_uuid "github.com/satori/go.uuid"
 	field_mask "google.golang.org/genproto/protobuf/field_mask"
 	emptypb "google.golang.org/protobuf/types/known/emptypb"
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	wrapperspb "google.golang.org/protobuf/types/known/wrapperspb"
+	gorm "gorm.io/gorm"
 	big "math/big"
 	strings "strings"
 	time "time"
@@ -29,8 +28,8 @@ type TestTypesORM struct {
 	BecomesInt                string
 	Bigint                    *big.Int `gorm:"type:numeric"`
 	CreatedAt                 *time.Time
-	JsonField                 *postgres.Jsonb `gorm:"type:jsonb"`
-	NullableUuid              *go_uuid.UUID   `gorm:"type:uuid"`
+	JsonField                 *types.Jsonb  `gorm:"type:jsonb"`
+	NullableUuid              *go_uuid.UUID `gorm:"type:uuid"`
 	OptionalString            *string
 	ThingsTypeWithIDId        *uint32
 	TimeOnly                  string `gorm:"type:time"`
@@ -73,7 +72,7 @@ func (m *TestTypes) ToORM(ctx context.Context) (TestTypesORM, error) {
 	}
 	to.TypeWithIdId = m.TypeWithIdId
 	if m.JsonField != nil {
-		to.JsonField = &postgres.Jsonb{[]byte(m.JsonField.Value)}
+		to.JsonField = &types.Jsonb{[]byte(m.JsonField.Value)}
 	}
 	if m.NullableUuid != nil {
 		tempUUID, uErr := go_uuid.FromString(m.NullableUuid.Value)
@@ -4156,7 +4155,7 @@ func DefaultStrictUpdateTestAssocHandlerReplace(ctx context.Context, in *TestAss
 			return nil, err
 		}
 	}
-	if err = db.Model(&ormObj).Association("TestTagAssoc").Replace(ormObj.TestTagAssoc).Error; err != nil {
+	if err = db.Model(&ormObj).Association("TestTagAssoc").Replace(ormObj.TestTagAssoc); err != nil {
 		return nil, err
 	}
 	ormObj.TestTagAssoc = nil
@@ -4512,7 +4511,7 @@ func DefaultStrictUpdateTestAssocHandlerClear(ctx context.Context, in *TestAssoc
 			return nil, err
 		}
 	}
-	if err = db.Model(&ormObj).Association("TestTagAssoc").Clear().Error; err != nil {
+	if err = db.Model(&ormObj).Association("TestTagAssoc").Clear(); err != nil {
 		return nil, err
 	}
 	ormObj.TestTagAssoc = nil
@@ -4868,7 +4867,7 @@ func DefaultStrictUpdateTestAssocHandlerAppend(ctx context.Context, in *TestAsso
 			return nil, err
 		}
 	}
-	if err = db.Model(&ormObj).Association("TestTagAssoc").Append(ormObj.TestTagAssoc).Error; err != nil {
+	if err = db.Model(&ormObj).Association("TestTagAssoc").Append(ormObj.TestTagAssoc); err != nil {
 		return nil, err
 	}
 	ormObj.TestTagAssoc = nil
