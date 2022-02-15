@@ -20,3 +20,4 @@ trigger-travis.sh
 .idea
 
 /protoc-gen-gorm
+/build/

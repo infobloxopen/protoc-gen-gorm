@@ -103,3 +103,34 @@ build-postgres-local:
 	-I./proto/ \
 	-I./third_party/proto/ \
 	example/postgres_arrays/postgres_arrays.proto --gorm_out="engine=postgres,enums=string,gateway:./example/postgres_arrays" --go_out=./example/postgres_arrays
+
+.PHONY: compile
+compile:
+	rm -rf build && mkdir build
+	for RAW_DIST in $$(go tool dist list); do \
+		DIST=($${RAW_DIST//// }) && export GOOS=$${DIST[0]} && export GOARCH=$${DIST[1]} && CURRENT="build/protoc-gen-gorm-$$GOOS-$$GOARCH" \
+			&& go build -o "$$CURRENT" github.com/infobloxopen/protoc-gen-gorm \
+			|| rm -vf "$$CURRENT"; \
+	done
+
+GITHUB_USER ?= wk8
+GITHUB_REPO ?= protoc-gen-gorm
+
+wk:
+	$(MAKE) compile
+
+.PHONY: release
+release: _github_release compile
+	@ git push && if [[ "$$(git status --porcelain)" ]]; then echo 'Working dir dirty, aborting' && exit 1; fi
+	@ if [ ! "$$TAG" ]; then echo 'TAG env var not set, aborting' && exit 1; fi
+	git tag "$$TAG" && git push --tags
+	github-release release --user $(GITHUB_USER) --repo $(GITHUB_REPO) --tag "$$TAG"
+	cd build && for FILE in $$(ls protoc-gen-gorm-*); do \
+		github-release upload --user $(GITHUB_USER) --repo $(GITHUB_REPO) --tag "$$TAG" --file "$$FILE" --name "$$FILE"; \
+	done
+
+# see https://github.com/github-release/github-release
+.PHONY: _github_release
+_github_release:
+	@ which github-release &> /dev/null || go get -u github.com/github-release/github-release
+	@ if [ ! "$$GITHUB_TOKEN" ]; then echo 'GITHUB_TOKEN env var not set, aborting' && exit 1; fi
