@@ -116,9 +116,6 @@ compile:
 GITHUB_USER ?= wk8
 GITHUB_REPO ?= protoc-gen-gorm
 
-wk:
-	$(MAKE) compile
-
 .PHONY: release
 release: _github_release compile
 	@ git push && if [[ "$$(git status --porcelain)" ]]; then echo 'Working dir dirty, aborting' && exit 1; fi
