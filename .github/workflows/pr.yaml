@@ -1,0 +1,19 @@
+name: PR
+on:
+  pull_request:
+
+jobs:
+  stale:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Generate
+        run: make gentool generate-gentool
+      - name: Stale
+        run: git diff --exit-code
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Unit Tests
+        run: make test
