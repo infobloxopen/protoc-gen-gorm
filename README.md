@@ -107,10 +107,10 @@ using the service level option `option (gorm.server).txn_middleware = true`.
 ### Examples
 
 Example .proto files and generated .pb.gorm.go files are included in the
-'example' directory. The [user](user/user.proto) file contains model examples
-from [GORM](http://gorm.io/docs/) documentation, the [feature_demo/demo_types](feature_demo/demo_types.proto)
+'example' directory. The [user](example/user/user.proto) file contains model examples
+from [GORM](http://gorm.io/docs/) documentation, the [feature_demo/demo_types](example/feature_demo/demo_types.proto)
 demonstrates the type handling and multi_account functions, and the
-[feature_demo/demo_service](feature_demo/demo_service.proto) shows the
+[feature_demo/demo_service](example/feature_demo/demo_service.proto) shows the
 service autogeneration.
 
 Running `make example` will recompile all these test proto files, if you want
