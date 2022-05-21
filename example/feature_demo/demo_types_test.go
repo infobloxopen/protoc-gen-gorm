@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/infobloxopen/protoc-gen-gorm/types"
+	"github.com/circadence-official/protoc-gen-gorm/types"
 )
 
 func TestInet(t *testing.T) {

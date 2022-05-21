@@ -8,9 +8,9 @@ import (
 	"strconv"
 	"strings"
 
-	gorm "github.com/infobloxopen/protoc-gen-gorm/options"
 	jgorm "github.com/jinzhu/gorm"
 	"github.com/jinzhu/inflection"
+	gorm "github.com/circadence-official/protoc-gen-gorm/options"
 	"google.golang.org/protobuf/compiler/protogen"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
@@ -38,13 +38,13 @@ var (
 	uuidImport         = "github.com/satori/go.uuid"
 	authImport         = "github.com/infobloxopen/atlas-app-toolkit/auth"
 	gormpqImport       = "github.com/jinzhu/gorm/dialects/postgres"
-	gtypesImport       = "github.com/infobloxopen/protoc-gen-gorm/types"
+	gtypesImport       = "github.com/circadence-official/protoc-gen-gorm/types"
 	resourceImport     = "github.com/infobloxopen/atlas-app-toolkit/gorm/resource"
 	queryImport        = "github.com/infobloxopen/atlas-app-toolkit/query"
 	ocTraceImport      = "go.opencensus.io/trace"
 	gatewayImport      = "github.com/infobloxopen/atlas-app-toolkit/gateway"
 	pqImport           = "github.com/lib/pq"
-	gerrorsImport      = "github.com/infobloxopen/protoc-gen-gorm/errors"
+	gerrorsImport      = "github.com/circadence-official/protoc-gen-gorm/errors"
 	timestampImport    = "google.golang.org/protobuf/types/known/timestamppb"
 	wktImport          = "google.golang.org/protobuf/types/known/wrapperspb"
 	fmImport           = "google.golang.org/genproto/protobuf/field_mask"
@@ -2809,8 +2809,12 @@ func (b *ORMBuilder) followsUpdateConventions(inType *protogen.Message, outType 
 				typeOrmable = true
 			}
 		}
-
-		// Check that type of field is a FieldMask
+		if field == nil || field.Desc == nil || field.Desc.Message() == nil {
+			return false, "", ""
+		}
+		if field.Desc.Message().FullName() == "" {
+			return false, "", ""
+		}
 		if string(field.Desc.Message().FullName()) == "google.protobuf.FieldMask" {
 			// More than one mask in request is not allowed.
 			if updateMask != "" {

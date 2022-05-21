@@ -13,7 +13,7 @@ import "feature_demo/demo_service.proto";
 import "user/user.proto";
 import "feature_demo/demo_multi_file.proto";
 
-option go_package = "github.com/infobloxopen/protoc-gen-gorm/example/feature_demo;example";
+option go_package = "github.com/circadence-official/protoc-gen-gorm/example/feature_demo;example";
 
 // test_types is a message that includes a representative sample of the
 // available types

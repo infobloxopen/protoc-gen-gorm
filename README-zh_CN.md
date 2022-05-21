@@ -46,13 +46,13 @@ dep ensure
 - 方式一
 
 ```go
-go get github.com/infobloxopen/protoc-gen-gorm
+go get github.com/circadence-official/protoc-gen-gorm
 ```
 
 - 方式二
 
 ```go
-git clone https://github.com/infobloxopen/protoc-gen-gorm.git
+git clone https://github.com/circadence-official/protoc-gen-gorm.git
 make install || go install
 ```
 
@@ -73,7 +73,7 @@ make install || go install
     - `{type: "int32", name: "secret_key"}` 
   - 导入的类型, 例如
     - `{type: "StringArray", name: "array", package:"github.com/lib/pq"}`
-- 接受protobuf版本(例如来自API调用)和 `context` (与multiaccount选项一起使用，用于[operators](https://github.com/infobloxopen/atlas-app-toolkit#collection-operators)以及用于集合运算符)的准系统的C/U/R/D/L处理程序, 然后gorm.DB使用对象在数据库上执行基本操作
+- 接受protobuf版本(例如来自API调用)和 `context` (与multiaccount选项一起使用，用于[operators](https://github.com/circadence-official/atlas-app-toolkit#collection-operators)以及用于集合运算符)的准系统的C/U/R/D/L处理程序, 然后gorm.DB使用对象在数据库上执行基本操作
 - 每次转换之前和之后的接口挂钩，可以实现添加自定义处理。
 
 任何带有 `option (gorm.server).autogen = true` 选项的服务都将生成基本的grpc服务器：
@@ -94,7 +94,7 @@ make install || go install
 
 要利用数据库的特定功能，请在生成过程中使用 `--gorm_out="engine={postgres,...}:{path}"`. 当前只有Postgres支持特殊类型，其他任何选择都将作为默认类型。
 
-生成的代码还可以与在以下代码中提供的grpc服务器gorm交易中间件集成: [atlas-app-toolkit](https://github.com/infobloxopen/atlas-app-toolkit#middlewares), 使用服务级别选项 `option (gorm.server).txn_middleware = true`.
+生成的代码还可以与在以下代码中提供的grpc服务器gorm交易中间件集成: [atlas-app-toolkit](https://github.com/circadence-official/atlas-app-toolkit#middlewares), 使用服务级别选项 `option (gorm.server).txn_middleware = true`.
 
 ### 例子
 

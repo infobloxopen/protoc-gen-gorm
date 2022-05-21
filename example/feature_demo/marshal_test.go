@@ -10,7 +10,7 @@ import (
 	"github.com/golang/protobuf/ptypes/timestamp"
 	"github.com/golang/protobuf/ptypes/wrappers"
 	"github.com/google/go-cmp/cmp"
-	"github.com/infobloxopen/protoc-gen-gorm/types"
+	"github.com/circadence-official/protoc-gen-gorm/types"
 	"google.golang.org/protobuf/testing/protocmp"
 )
 

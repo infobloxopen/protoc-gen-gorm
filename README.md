@@ -52,7 +52,7 @@ go mod tidy
 ### Installation
 
 To use this tool, install it from code with `make install`, `go install` directly,
-or `go get github.com/infobloxopen/protoc-gen-gorm`.
+or `go get github.com/circadence-official/protoc-gen-gorm`.
 
 ### Usage
 
@@ -70,7 +70,7 @@ the field options `[(gorm.field).tag = {..., tag: value, ...}]`.
   imported type, e.g. `{type: "StringArray", name: "array", package:"github.com/lib/pq"}`.
 - Barebones C/U/R/D/L handlers that accept the protobuf versions (as from
   an API call), a context (used with the multiaccount option and for collection
-  operators https://github.com/infobloxopen/atlas-app-toolkit#collection-operators),
+  operators https://github.com/circadence-official/atlas-app-toolkit#collection-operators),
   and a gorm.DB then perform the basic operation on the DB with the object
 - Interface hooks for before and after each conversion that can be implemented
   to add custom handling.
@@ -101,7 +101,7 @@ the `--gorm_out="engine={postgres,...}:{path}"`. Currently only Postgres has
 special type support, any other choice will behave as default.
 
 The generated code can also integrate with the grpc server gorm transaction middleware provided
-in the [atlas-app-toolkit](https://github.com/infobloxopen/atlas-app-toolkit#middlewares)
+in the [atlas-app-toolkit](https://github.com/circadence-official/atlas-app-toolkit#middlewares)
 using the service level option `option (gorm.server).txn_middleware = true`.
 
 ### Examples

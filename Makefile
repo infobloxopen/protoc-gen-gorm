@@ -5,7 +5,7 @@ GENTOOL_IMAGE := infoblox/atlas-gentool:dev-gengorm
 GOPATH ?= $(HOME)/go
 SRCPATH := $(patsubst %/,%,$(GOPATH))/src
 
-PROJECT_ROOT := github.com/infobloxopen/protoc-gen-gorm
+PROJECT_ROOT := github.com/circadence-official/protoc-gen-gorm
 
 lint: $(BUF)
 	buf lint
