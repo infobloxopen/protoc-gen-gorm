@@ -46,6 +46,7 @@ var (
 	pqImport           = "github.com/lib/pq"
 	gerrorsImport      = "github.com/infobloxopen/protoc-gen-gorm/errors"
 	timestampImport    = "google.golang.org/protobuf/types/known/timestamppb"
+	durationImport     = "google.golang.org/protobuf/types/known/durationpb"
 	wktImport          = "google.golang.org/protobuf/types/known/wrapperspb"
 	fmImport           = "google.golang.org/genproto/protobuf/field_mask"
 	stdFmtImport       = "fmt"
@@ -89,6 +90,7 @@ var wellKnownTypes = map[string]string{
 
 const (
 	protoTypeTimestamp = "Timestamp" // last segment, first will be *google_protobufX
+	protoTypeDuration  = "Duration"
 	protoTypeJSON      = "JSONValue"
 	protoTypeUUID      = "UUID"
 	protoTypeUUIDValue = "UUIDValue"
@@ -874,6 +876,9 @@ func (b *ORMBuilder) parseBasicFields(msg *protogen.Message, g *protogen.Generat
 			} else if rawType == protoTypeTimestamp {
 				typePackage = stdTimeImport
 				fieldType = "*" + generateImport("Time", stdTimeImport, g)
+			} else if rawType == protoTypeDuration {
+				typePackage = stdTimeImport
+				fieldType = "*" + generateImport("Duration", stdTimeImport, g)
 			} else if rawType == protoTypeJSON {
 				if b.dbEngine == ENGINE_POSTGRES {
 					typePackage = gormpqImport
@@ -1450,6 +1455,17 @@ func (b *ORMBuilder) generateFieldConversion(message *protogen.Message, field *p
 			} else {
 				g.P(`if m.`, fieldName, ` != nil {`)
 				g.P(`to.`, fieldName, ` = `, generateImport("New", timestampImport, g), `(*m.`, fieldName, `)`)
+				g.P(`}`)
+			}
+		} else if fieldType == protoTypeDuration {
+			if toORM {
+				g.P(`if m.`, fieldName, ` != nil {`)
+				g.P(`t := m.`, fieldName, `.AsDuration()`)
+				g.P(`to.`, fieldName, ` = &t`)
+				g.P(`}`)
+			} else {
+				g.P(`if m.`, fieldName, ` != nil {`)
+				g.P(`to.`, fieldName, ` = `, generateImport("New", durationImport, g), `(*m.`, fieldName, `)`)
 				g.P(`}`)
 			}
 		} else if fieldType == protoTypeJSON {
