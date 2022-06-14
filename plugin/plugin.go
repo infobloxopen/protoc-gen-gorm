@@ -105,16 +105,17 @@ const (
 )
 
 type ORMBuilder struct {
-	plugin          *protogen.Plugin
-	ormableTypes    map[string]*OrmableType
-	messages        map[string]struct{}
-	currentFile     string
-	currentPackage  string
-	ormableServices []autogenService
-	dbEngine        int
-	stringEnums     bool
-	gateway         bool
-	suppressWarn    bool
+	plugin            *protogen.Plugin
+	ormableTypes      map[string]*OrmableType
+	messages          map[string]struct{}
+	currentFile       string
+	currentPackage    string
+	ormableServices   []autogenService
+	dbEngine          int
+	stringEnums       bool
+	gateway           bool
+	suppressWarn      bool
+	useDefaultMethods bool
 }
 
 func New(opts protogen.Options, request *pluginpb.CodeGeneratorRequest) (*ORMBuilder, error) {
@@ -147,6 +148,10 @@ func New(opts protogen.Options, request *pluginpb.CodeGeneratorRequest) (*ORMBui
 
 	if _, ok := params["quiet"]; ok {
 		builder.suppressWarn = true
+	}
+
+	if _, ok := params["useDefaultMethods"]; ok {
+		builder.useDefaultMethods = true
 	}
 
 	return builder, nil
@@ -327,7 +332,9 @@ func (b *ORMBuilder) Generate() (*pluginpb.CodeGeneratorResponse, error) {
 			}
 		}
 
-		b.generateDefaultHandlers(protoFile, g)
+		if b.useDefaultMethods {
+			b.generateDefaultHandlers(protoFile, g)
+		}
 		b.generateDefaultServer(protoFile, g)
 	}
 
