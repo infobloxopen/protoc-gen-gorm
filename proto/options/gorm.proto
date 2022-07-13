@@ -78,6 +78,7 @@ message GormTag {
     bool association_autocreate = 21;
     bool association_save_reference = 22;
     bool preload = 23;
+    string constraint = 24;
 }
 
 message HasOneOptions {

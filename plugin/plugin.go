@@ -1147,6 +1147,9 @@ func (b *ORMBuilder) renderGormTag(field *Field) string {
 	if tag.GetPrimaryKey() {
 		gormRes += "primary_key;"
 	}
+	if len(tag.Constraint) > 0 {
+		gormRes += fmt.Sprintf("constraint:%s;", tag.GetConstraint())
+	}
 	if tag.GetUnique() {
 		gormRes += "unique;"
 	}
