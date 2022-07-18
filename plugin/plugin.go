@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	gorm "github.com/infobloxopen/protoc-gen-gorm/options"
-	jgorm "github.com/jinzhu/gorm"
+	jgorm "gorm.io/gorm"
 	"github.com/jinzhu/inflection"
 	"google.golang.org/protobuf/compiler/protogen"
 	"google.golang.org/protobuf/proto"
@@ -33,11 +33,11 @@ var (
 )
 
 var (
-	gormImport         = "github.com/jinzhu/gorm"
+	gormImport         = "gorm.io/gorm"
 	tkgormImport       = "github.com/infobloxopen/atlas-app-toolkit/gorm"
 	uuidImport         = "github.com/satori/go.uuid"
 	authImport         = "github.com/infobloxopen/atlas-app-toolkit/auth"
-	gormpqImport       = "github.com/jinzhu/gorm/dialects/postgres"
+	gormpqImport       = "gorm.io/gorm/dialects/postgres"
 	gtypesImport       = "github.com/infobloxopen/protoc-gen-gorm/types"
 	resourceImport     = "github.com/infobloxopen/atlas-app-toolkit/gorm/resource"
 	queryImport        = "github.com/infobloxopen/atlas-app-toolkit/query"

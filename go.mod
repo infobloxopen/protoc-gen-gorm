@@ -6,7 +6,7 @@ require (
 	github.com/google/go-cmp v0.5.5
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.4.0 // indirect
 	github.com/infobloxopen/atlas-app-toolkit v0.24.1-0.20210416193901-4c7518b07e08
-	github.com/jinzhu/gorm v1.9.16
+	gorm.io/gorm v1.9.16
 	github.com/jinzhu/inflection v1.0.0
 	github.com/jinzhu/now v1.1.1 // indirect
 	github.com/lib/pq v1.3.1-0.20200116171513-9eb3fc897d6f
@@ -20,6 +20,10 @@ require (
 	google.golang.org/grpc v1.43.0
 	google.golang.org/grpc/examples v0.0.0-20210601155443-8bdcb4c9ab8d // indirect
 	google.golang.org/protobuf v1.27.1
+)
+
+replace (
+		github.com/infobloxopen/atlas-app-toolkit => github.com/MichaelSkuratovichNS/atlas-app-toolkit gorm_jrouge
 )
 
 go 1.16

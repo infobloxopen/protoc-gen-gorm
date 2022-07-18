@@ -135,7 +135,7 @@ Within the proto files, the following types are supported:
   level.
 - custom wrapper type `gorm.types.JSONValue`, which wraps a string in protobuf
   containing arbitrary JSON and converts to `postgres.Jsonb` GORM type
-  (https://github.com/jinzhu/gorm/blob/master/dialects/postgres/postgres.go#L59)
+  (https://gorm.io/gorm/blob/master/dialects/postgres/postgres.go#L59)
   if Postgres is the selected DB engine, otherwise it is currently dropped.
 - custom wrapper type `gorm.types.InetValue`, which wraps a string and will
   convert to the `types.Inet` type at ORM level, which uses the golang `net.IPNet`

@@ -7,13 +7,14 @@
 package user
 
 import (
-	resource "github.com/infobloxopen/atlas-app-toolkit/atlas/resource"
+	reflect "reflect"
+	sync "sync"
+
+	resource "github.com/infobloxopen/atlas-app-toolkit/rpc/resource"
 	_ "github.com/infobloxopen/protoc-gen-gorm/options"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
-	reflect "reflect"
-	sync "sync"
 )
 
 const (
