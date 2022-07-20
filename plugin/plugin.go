@@ -273,13 +273,12 @@ func (b *ORMBuilder) Generate() (*pluginpb.CodeGeneratorResponse, error) {
 					_, fd := b.findPrimaryKey(o)
 					fd.ParentOrigName = o.OriginName
 				}
+				fmt.Printf("Message: %+v\n", o)
+				for name, field := range o.Fields {
+					fmt.Printf("\t%s: %+v\n", name, field)
+				}
+				fmt.Printf("\n\n\n")
 			}
-			o := b.getOrmable(typeName)
-			fmt.Printf("Message: %+v\n", o)
-			for name, field := range o.Fields {
-				fmt.Printf("\t%s: %+v\n", name, field)
-			}
-			fmt.Printf("\n\n\n")
 		}
 
 	}
