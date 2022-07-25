@@ -33,17 +33,17 @@ var (
 )
 
 var (
-	gormImport         = "gorm.io/gorm"
-	tkgormImport       = "github.com/infobloxopen/atlas-app-toolkit/gorm"
-	uuidImport         = "github.com/satori/go.uuid"
-	authImport         = "github.com/infobloxopen/atlas-app-toolkit/auth"
-	gormpqImport       = "gorm.io/gorm/dialects/postgres"
+	gormImport   = "gorm.io/gorm"
+	tkgormImport = "github.com/infobloxopen/atlas-app-toolkit/gorm"
+	uuidImport   = "github.com/satori/go.uuid"
+	authImport   = "github.com/infobloxopen/atlas-app-toolkit/auth"
+	//gomrpgImport       = "gorm.io/driver/postgres"
 	gtypesImport       = "github.com/infobloxopen/protoc-gen-gorm/types"
 	resourceImport     = "github.com/infobloxopen/atlas-app-toolkit/gorm/resource"
 	queryImport        = "github.com/infobloxopen/atlas-app-toolkit/query"
 	ocTraceImport      = "go.opencensus.io/trace"
 	gatewayImport      = "github.com/infobloxopen/atlas-app-toolkit/gateway"
-	pqImport           = "github.com/lib/pq"
+	pgTypeImport       = "github.com/jackc/pgtype"
 	gerrorsImport      = "github.com/infobloxopen/protoc-gen-gorm/errors"
 	timestampImport    = "google.golang.org/protobuf/types/known/timestamppb"
 	wktImport          = "google.golang.org/protobuf/types/known/wrapperspb"
@@ -189,10 +189,12 @@ func NewOrmableType(originalName string, pkg string, file *protogen.File) *Ormab
 
 type Field struct {
 	*gormopts.GormFieldOptions
-	ParentGoType   string
-	Type           string
-	Package        string
-	ParentOrigName string
+	ParentGoType         string
+	TypeName             string
+	Type                 *OrmableType
+	Package              string
+	ParentOrigName       string
+	FieldAssociationInfo fieldAssociationInfo
 }
 
 type autogenMethod struct {
@@ -273,11 +275,6 @@ func (b *ORMBuilder) Generate() (*pluginpb.CodeGeneratorResponse, error) {
 					_, fd := b.findPrimaryKey(o)
 					fd.ParentOrigName = o.OriginName
 				}
-				fmt.Printf("Message: %+v\n", o)
-				for name, field := range o.Fields {
-					fmt.Printf("\t%s: %+v\n", name, field)
-				}
-				fmt.Printf("\n\n\n")
 			}
 		}
 
@@ -325,13 +322,14 @@ func (b *ORMBuilder) Generate() (*pluginpb.CodeGeneratorResponse, error) {
 
 		for _, message := range protoFile.Messages {
 			if isOrmable(message) {
-				_ = b.generateOrmable(g, message)
+				b.generateOrmable(g, message)
 				b.generateTableNameFunctions(g, message)
 				b.generateConvertFunctions(g, message)
 				b.generateHookInterfaces(g, message)
-				b.generateDefaultHandlers(g, message)
 			}
 		}
+
+		b.generateDefaultHandlers(protoFile, g)
 
 		b.generateDefaultServer(protoFile, g)
 	}
@@ -424,7 +422,7 @@ func (b *ORMBuilder) generateTableNameFunctions(g *protogen.GeneratedFile, messa
 	g.P(`}`)
 }
 
-func (b *ORMBuilder) generateOrmable(g *protogen.GeneratedFile, message *protogen.Message) map[string]fieldInfo {
+func (b *ORMBuilder) generateOrmable(g *protogen.GeneratedFile, message *protogen.Message) {
 	ormable := b.getOrmable(message.GoIdent.GoName)
 	g.P(`type `, ormable.Name, ` struct {`)
 
@@ -434,39 +432,33 @@ func (b *ORMBuilder) generateOrmable(g *protogen.GeneratedFile, message *protoge
 	}
 	sort.Strings(names)
 
-	fieldsInfo := make(map[string]fieldInfo)
-
 	for _, name := range names {
 		field := ormable.Fields[name]
-		sp := strings.Split(field.Type, ".")
+		sp := strings.Split(field.TypeName, ".")
 
 		if len(sp) == 2 && sp[1] == "UUID" {
 			s := generateImport("UUID", uuidImport, g)
-			if field.Type[0] == '*' {
-				field.Type = "*" + s
+			if field.TypeName[0] == '*' {
+				field.TypeName = "*" + s
 			} else {
-				field.Type = s
+				field.TypeName = s
 			}
 		}
 
 		if len(sp) == 2 && sp[1] == "BigInt" {
 			s := generateImport("BigInt", bigintImport, g)
-			if field.Type[0] == '*' {
-				field.Type = "*" + s
+			if field.TypeName[0] == '*' {
+				field.TypeName = "*" + s
 			} else {
-				field.Type = s
+				field.TypeName = s
 			}
 		}
 
-		tag, fInfo := b.renderGormTag(field)
-		fieldsInfo[name] = fInfo
-		g.P(name, ` `, field.Type, tag)
+		g.P(name, ` `, field.TypeName, b.renderGormTag(field))
 	}
 
 	g.P(`}`)
 	g.P()
-
-	return fieldsInfo
 }
 
 func (b *ORMBuilder) parseAssociations(msg *protogen.Message, g *protogen.GeneratedFile) {
@@ -488,7 +480,6 @@ func (b *ORMBuilder) parseAssociations(msg *protogen.Message, g *protogen.Genera
 		} else {
 			fieldType = string(field.Desc.Message().Name())
 		}
-
 		fieldType = strings.Trim(fieldType, "[]*")
 		parts := strings.Split(fieldType, ".")
 		fieldTypeShort := parts[len(parts)-1]
@@ -519,9 +510,10 @@ func (b *ORMBuilder) parseAssociations(msg *protogen.Message, g *protogen.Genera
 				fieldType = fmt.Sprintf("*%sORM", fieldType)
 			}
 
+			fInfo := parseGormAssosiationTags(fieldOpts)
 			// Register type used, in case it's an imported type from another package
 			// b.GetFileImports().typesToRegister = append(b.GetFileImports().typesToRegister, fieldType) // maybe we need other fields type
-			ormable.Fields[fieldName] = &Field{Type: fieldType, GormFieldOptions: fieldOpts}
+			ormable.Fields[fieldName] = &Field{TypeName: fieldType, GormFieldOptions: fieldOpts, Type: assocOrmable, FieldAssociationInfo: fInfo}
 		}
 	}
 }
@@ -649,16 +641,16 @@ func (b *ORMBuilder) parseHasOne(msg *protogen.Message, parent *OrmableType, fie
 	hasOne.AssociationForeignkey = assocKeyName
 	var foreignKeyType string
 	if hasOne.GetForeignkeyTag().GetNotNull() {
-		foreignKeyType = strings.TrimPrefix(assocKey.Type, "*")
-	} else if strings.HasPrefix(assocKey.Type, "*") {
-		foreignKeyType = assocKey.Type
-	} else if strings.Contains(assocKey.Type, "[]byte") {
-		foreignKeyType = assocKey.Type
+		foreignKeyType = strings.TrimPrefix(assocKey.TypeName, "*")
+	} else if strings.HasPrefix(assocKey.TypeName, "*") {
+		foreignKeyType = assocKey.TypeName
+	} else if strings.Contains(assocKey.TypeName, "[]byte") {
+		foreignKeyType = assocKey.TypeName
 	} else {
-		foreignKeyType = "*" + assocKey.Type
+		foreignKeyType = "*" + assocKey.TypeName
 	}
 
-	foreignKey := &Field{Type: foreignKeyType, Package: assocKey.Package, GormFieldOptions: &gormopts.GormFieldOptions{Tag: hasOne.GetForeignkeyTag()}}
+	foreignKey := &Field{TypeName: foreignKeyType, Package: assocKey.Package, GormFieldOptions: &gormopts.GormFieldOptions{Tag: hasOne.GetForeignkeyTag()}}
 	var foreignKeyName string
 	if foreignKeyName = camelCase(hasOne.GetForeignkey()); foreignKeyName == "" {
 		if b.countHasAssociationDimension(msg, fieldType) == 1 {
@@ -676,11 +668,11 @@ func (b *ORMBuilder) parseHasOne(msg *protogen.Message, parent *OrmableType, fie
 	if exField, ok := child.Fields[foreignKeyName]; !ok {
 		child.Fields[foreignKeyName] = foreignKey
 	} else {
-		if exField.Type == "interface{}" {
-			exField.Type = foreignKey.Type
+		if exField.TypeName == "interface{}" {
+			exField.TypeName = foreignKey.TypeName
 		} else if !b.sameType(exField, foreignKey) {
 			panic(fmt.Sprintf("Cannot include %s field into %s as it already exists there with a different type: %s, %s",
-				foreignKeyName, child.Name, exField.Type, foreignKey.Type))
+				foreignKeyName, child.Name, exField.TypeName, foreignKey.TypeName))
 		}
 	}
 
@@ -709,15 +701,15 @@ func (b *ORMBuilder) parseHasMany(msg *protogen.Message, parent *OrmableType, fi
 	hasMany.AssociationForeignkey = assocKeyName
 	var foreignKeyType string
 	if hasMany.GetForeignkeyTag().GetNotNull() {
-		foreignKeyType = strings.TrimPrefix(assocKey.Type, "*")
-	} else if strings.HasPrefix(assocKey.Type, "*") {
-		foreignKeyType = assocKey.Type
-	} else if strings.Contains(assocKey.Type, "[]byte") {
-		foreignKeyType = assocKey.Type
+		foreignKeyType = strings.TrimPrefix(assocKey.TypeName, "*")
+	} else if strings.HasPrefix(assocKey.TypeName, "*") {
+		foreignKeyType = assocKey.TypeName
+	} else if strings.Contains(assocKey.TypeName, "[]byte") {
+		foreignKeyType = assocKey.TypeName
 	} else {
-		foreignKeyType = "*" + assocKey.Type
+		foreignKeyType = "*" + assocKey.TypeName
 	}
-	foreignKey := &Field{Type: foreignKeyType, Package: assocKey.Package, GormFieldOptions: &gormopts.GormFieldOptions{Tag: hasMany.GetForeignkeyTag()}}
+	foreignKey := &Field{TypeName: foreignKeyType, Package: assocKey.Package, GormFieldOptions: &gormopts.GormFieldOptions{Tag: hasMany.GetForeignkeyTag()}}
 	var foreignKeyName string
 	if foreignKeyName = hasMany.GetForeignkey(); foreignKeyName == "" {
 		if b.countHasAssociationDimension(msg, fieldType) == 1 {
@@ -735,11 +727,11 @@ func (b *ORMBuilder) parseHasMany(msg *protogen.Message, parent *OrmableType, fi
 	if exField, ok := child.Fields[foreignKeyName]; !ok {
 		child.Fields[foreignKeyName] = foreignKey
 	} else {
-		if exField.Type == "interface{}" {
-			exField.Type = foreignKey.Type
+		if exField.TypeName == "interface{}" {
+			exField.TypeName = foreignKey.TypeName
 		} else if !b.sameType(exField, foreignKey) {
 			panic(fmt.Sprintf("Cannot include %s field into %s as it already exists there with a different type: %s, %s",
-				foreignKeyName, child.Name, exField.Type, foreignKey.Type))
+				foreignKeyName, child.Name, exField.TypeName, foreignKey.TypeName))
 		}
 	}
 	child.Fields[foreignKeyName].ParentOrigName = parent.OriginName
@@ -747,9 +739,9 @@ func (b *ORMBuilder) parseHasMany(msg *protogen.Message, parent *OrmableType, fi
 	var posField string
 	if posField = camelCase(hasMany.GetPositionField()); posField != "" {
 		if exField, ok := child.Fields[posField]; !ok {
-			child.Fields[posField] = &Field{Type: "int", GormFieldOptions: &gormopts.GormFieldOptions{Tag: hasMany.GetPositionFieldTag()}}
+			child.Fields[posField] = &Field{TypeName: "int", GormFieldOptions: &gormopts.GormFieldOptions{Tag: hasMany.GetPositionFieldTag()}}
 		} else {
-			if !strings.Contains(exField.Type, "int") {
+			if !strings.Contains(exField.TypeName, "int") {
 				panic(fmt.Sprintf("Cannot include %s field into %s as it already exists there with a different type.",
 					posField, child.Name))
 			}
@@ -778,15 +770,15 @@ func (b *ORMBuilder) parseBelongsTo(msg *protogen.Message, child *OrmableType, f
 	belongsTo.AssociationForeignkey = assocKeyName
 	var foreignKeyType string
 	if belongsTo.GetForeignkeyTag().GetNotNull() {
-		foreignKeyType = strings.TrimPrefix(assocKey.Type, "*")
-	} else if strings.HasPrefix(assocKey.Type, "*") {
-		foreignKeyType = assocKey.Type
-	} else if strings.Contains(assocKey.Type, "[]byte") {
-		foreignKeyType = assocKey.Type
+		foreignKeyType = strings.TrimPrefix(assocKey.TypeName, "*")
+	} else if strings.HasPrefix(assocKey.TypeName, "*") {
+		foreignKeyType = assocKey.TypeName
+	} else if strings.Contains(assocKey.TypeName, "[]byte") {
+		foreignKeyType = assocKey.TypeName
 	} else {
-		foreignKeyType = "*" + assocKey.Type
+		foreignKeyType = "*" + assocKey.TypeName
 	}
-	foreignKey := &Field{Type: foreignKeyType, Package: assocKey.Package, GormFieldOptions: &gormopts.GormFieldOptions{Tag: belongsTo.GetForeignkeyTag()}}
+	foreignKey := &Field{TypeName: foreignKeyType, Package: assocKey.Package, GormFieldOptions: &gormopts.GormFieldOptions{Tag: belongsTo.GetForeignkeyTag()}}
 	var foreignKeyName string
 	if foreignKeyName = camelCase(belongsTo.GetForeignkey()); foreignKeyName == "" {
 		if b.countBelongsToAssociationDimension(msg, fieldType) == 1 {
@@ -799,11 +791,11 @@ func (b *ORMBuilder) parseBelongsTo(msg *protogen.Message, child *OrmableType, f
 	if exField, ok := child.Fields[foreignKeyName]; !ok {
 		child.Fields[foreignKeyName] = foreignKey
 	} else {
-		if exField.Type == "interface{}" {
-			exField.Type = foreignKeyType
+		if exField.TypeName == "interface{}" {
+			exField.TypeName = foreignKeyType
 		} else if !b.sameType(exField, foreignKey) {
 			panic(fmt.Sprintf("Cannot include %s field into %s as it already exists there with a different type: %s, %s",
-				foreignKeyName, child.Name, exField.Type, foreignKey.Type))
+				foreignKeyName, child.Name, exField.TypeName, foreignKey.TypeName))
 		}
 	}
 	child.Fields[foreignKeyName].ParentOrigName = parent.OriginName
@@ -837,16 +829,16 @@ func (b *ORMBuilder) parseBasicFields(msg *protogen.Message, g *protogen.Generat
 		if b.dbEngine == ENGINE_POSTGRES && b.IsAbleToMakePQArray(fieldType) && field.Desc.IsList() {
 			switch fieldType {
 			case "bool":
-				fieldType = generateImport("BoolArray", pqImport, g)
+				fieldType = generateImport("BoolArray", pgTypeImport, g)
 				gormOptions.Tag = tagWithType(tag, "bool[]")
 			case "double":
-				fieldType = generateImport("Float64Array", pqImport, g)
+				fieldType = generateImport("Float64Array", pgTypeImport, g)
 				gormOptions.Tag = tagWithType(tag, "float[]")
 			case "int64":
-				fieldType = generateImport("Int64Array", pqImport, g)
+				fieldType = generateImport("Int64Array", pgTypeImport, g)
 				gormOptions.Tag = tagWithType(tag, "integer[]")
 			case "string":
-				fieldType = generateImport("StringArray", pqImport, g)
+				fieldType = generateImport("TextArray", pgTypeImport, g)
 				gormOptions.Tag = tagWithType(tag, "text[]")
 			default:
 				continue
@@ -888,8 +880,8 @@ func (b *ORMBuilder) parseBasicFields(msg *protogen.Message, g *protogen.Generat
 				fieldType = "*" + generateImport("Time", stdTimeImport, g)
 			} else if rawType == protoTypeJSON {
 				if b.dbEngine == ENGINE_POSTGRES {
-					typePackage = gormpqImport
-					fieldType = "*" + generateImport("Jsonb", gormpqImport, g)
+					typePackage = pgTypeImport
+					fieldType = "*" + generateImport("JSONB", pgTypeImport, g)
 					gormOptions.Tag = tagWithType(tag, "jsonb")
 				} else {
 					// Potential TODO: add types we want to use in other/default DB engine
@@ -945,7 +937,7 @@ func (b *ORMBuilder) parseBasicFields(msg *protogen.Message, g *protogen.Generat
 		f := &Field{
 			GormFieldOptions: gormOptions,
 			ParentGoType:     "",
-			Type:             fieldType,
+			TypeName:         fieldType,
 			Package:          typePackage,
 		}
 
@@ -962,8 +954,8 @@ func (b *ORMBuilder) parseBasicFields(msg *protogen.Message, g *protogen.Generat
 	gormMsgOptions := getMessageOptions(msg)
 	if gormMsgOptions.GetMultiAccount() {
 		if accID, ok := ormable.Fields["AccountID"]; !ok {
-			ormable.Fields["AccountID"] = &Field{Type: "string"}
-		} else if accID.Type != "string" {
+			ormable.Fields["AccountID"] = &Field{TypeName: "string"}
+		} else if accID.TypeName != "string" {
 			panic("cannot include AccountID field")
 		}
 	}
@@ -1002,7 +994,7 @@ func (b *ORMBuilder) addIncludedField(ormable *OrmableType, field *gormopts.Extr
 		} else if rawType == "UUID" {
 			rawType = generateImport("UUID", uuidImport, g)
 		} else if field.GetType() == "Jsonb" && b.dbEngine == ENGINE_POSTGRES {
-			rawType = generateImport("Jsonb", gormpqImport, g)
+			rawType = generateImport("JSONB", pgTypeImport, g)
 		} else if rawType == "Inet" {
 			rawType = generateImport("Inet", gtypesImport, g)
 		} else {
@@ -1013,7 +1005,7 @@ func (b *ORMBuilder) addIncludedField(ormable *OrmableType, field *gormopts.Extr
 	if isPtr {
 		rawType = fmt.Sprintf("*%s", rawType)
 	}
-	ormable.Fields[fieldName] = &Field{Type: rawType, Package: typePackage, GormFieldOptions: &gormopts.GormFieldOptions{Tag: field.GetTag()}}
+	ormable.Fields[fieldName] = &Field{TypeName: rawType, Package: typePackage, GormFieldOptions: &gormopts.GormFieldOptions{Tag: field.GetTag()}}
 }
 
 func getFieldOptions(options *descriptorpb.FieldOptions) *gormopts.GormFieldOptions {
@@ -1130,12 +1122,28 @@ func isASCIIDigit(c byte) bool {
 	return '0' <= c && c <= '9'
 }
 
-type fieldInfo struct {
-	associationAutoupdate bool
-	associationAutocreate bool
+type fieldAssociationInfo interface {
+	GetDisableAssociationAutocreate() bool
+	GetDisableAssociationAutoupdate() bool
+	GetPreload() bool
 }
 
-func (b *ORMBuilder) renderGormTag(field *Field) (string, fieldInfo) {
+func parseGormAssosiationTags(field *gormopts.GormFieldOptions) fieldAssociationInfo {
+	switch {
+	case field.GetHasOne() != nil:
+		return field.GetHasOne()
+	case field.GetBelongsTo() != nil:
+		return field.GetBelongsTo()
+	case field.GetHasMany() != nil:
+		return field.GetHasMany()
+	case field.GetManyToMany() != nil:
+		return field.GetManyToMany()
+	default:
+		return field.GetTag()
+	}
+}
+
+func (b *ORMBuilder) renderGormTag(field *Field) string {
 	var gormRes, atlasRes string
 	tag := field.GetTag()
 	if tag == nil {
@@ -1194,30 +1202,20 @@ func (b *ORMBuilder) renderGormTag(field *Field) (string, fieldInfo) {
 	}
 
 	var foreignKey, associationForeignKey, joinTable, joinTableForeignKey, associationJoinTableForeignKey string
-	var preload, replace, append, clear bool
-	fInfo := fieldInfo{true, true} //set to default values used by gORM
+	var replace, append, clear bool
 	if hasOne := field.GetHasOne(); hasOne != nil {
 		foreignKey = hasOne.Foreignkey
 		associationForeignKey = hasOne.AssociationForeignkey
-		fInfo.associationAutoupdate = hasOne.AssociationAutoupdate
-		fInfo.associationAutocreate = hasOne.AssociationAutocreate
-		preload = hasOne.Preload
 		clear = hasOne.Clear
 		replace = hasOne.Replace
 		append = hasOne.Append
 	} else if belongsTo := field.GetBelongsTo(); belongsTo != nil {
 		foreignKey = belongsTo.Foreignkey
 		associationForeignKey = belongsTo.AssociationForeignkey
-		fInfo.associationAutoupdate = belongsTo.AssociationAutoupdate
-		fInfo.associationAutocreate = belongsTo.AssociationAutocreate
-		preload = belongsTo.Preload
 	} else if hasMany := field.GetHasMany(); hasMany != nil {
 		foreignKey = hasMany.Foreignkey
 		associationForeignKey = hasMany.AssociationForeignkey
-		fInfo.associationAutoupdate = hasMany.AssociationAutoupdate
-		fInfo.associationAutocreate = hasMany.AssociationAutocreate
 		clear = hasMany.Clear
-		preload = hasMany.Preload
 		replace = hasMany.Replace
 		append = hasMany.Append
 		if len(hasMany.PositionField) > 0 {
@@ -1229,9 +1227,6 @@ func (b *ORMBuilder) renderGormTag(field *Field) (string, fieldInfo) {
 		joinTable = mtm.Jointable
 		joinTableForeignKey = mtm.JointableForeignkey
 		associationJoinTableForeignKey = mtm.AssociationJointableForeignkey
-		fInfo.associationAutoupdate = mtm.AssociationAutoupdate
-		fInfo.associationAutocreate = mtm.AssociationAutocreate
-		preload = mtm.Preload
 		clear = mtm.Clear
 		replace = mtm.Replace
 		append = mtm.Append
@@ -1241,9 +1236,6 @@ func (b *ORMBuilder) renderGormTag(field *Field) (string, fieldInfo) {
 		joinTable = tag.ManyToMany
 		joinTableForeignKey = tag.JointableForeignkey
 		associationJoinTableForeignKey = tag.AssociationJointableForeignkey
-		fInfo.associationAutoupdate = tag.AssociationAutoupdate
-		fInfo.associationAutocreate = tag.AssociationAutocreate
-		preload = tag.Preload
 	}
 
 	if len(foreignKey) > 0 {
@@ -1264,10 +1256,6 @@ func (b *ORMBuilder) renderGormTag(field *Field) (string, fieldInfo) {
 		gormRes += fmt.Sprintf("joinReferences:%s;", associationJoinTableForeignKey)
 	}
 
-	if preload {
-		gormRes += fmt.Sprintf("preload:%s;", strconv.FormatBool(preload))
-	}
-
 	if clear {
 		gormRes += fmt.Sprintf("clear:%s;", strconv.FormatBool(clear))
 	} else if replace {
@@ -1285,9 +1273,9 @@ func (b *ORMBuilder) renderGormTag(field *Field) (string, fieldInfo) {
 	}
 	finalTag := strings.TrimSpace(strings.Join([]string{gormTag, atlasTag}, " "))
 	if finalTag == "" {
-		return "", fInfo
+		return ""
 	} else {
-		return fmt.Sprintf("`%s`", finalTag), fInfo
+		return fmt.Sprintf("`%s`", finalTag)
 	}
 }
 
@@ -1316,7 +1304,7 @@ func (b *ORMBuilder) setupOrderedHasManyByName(message *protogen.Message, fieldN
 
 	if field.GetHasMany().GetPositionField() != "" {
 		positionField := field.GetHasMany().GetPositionField()
-		positionFieldType := b.getOrmable(field.Type).Fields[positionField].Type
+		positionFieldType := b.getOrmable(field.TypeName).Fields[positionField].TypeName
 		g.P(`for i, e := range `, `to.`, fieldName, `{`)
 		g.P(`e.`, positionField, ` = `, positionFieldType, `(i)`)
 		g.P(`}`)
@@ -1339,13 +1327,13 @@ func (b *ORMBuilder) generateFieldConversion(message *protogen.Message, field *p
 			g.P(`if m.`, fieldName, ` != nil {`)
 			switch fieldType {
 			case "bool":
-				g.P(`to.`, fieldName, ` = make(`, generateImport("BoolArray", pqImport, g), `, len(m.`, fieldName, `))`)
+				g.P(`to.`, fieldName, ` = make(`, generateImport("BoolArray", pgTypeImport, g), `, len(m.`, fieldName, `))`)
 			case "double":
-				g.P(`to.`, fieldName, ` = make(`, generateImport("Float64Array", pqImport, g), `, len(m.`, fieldName, `))`)
+				g.P(`to.`, fieldName, ` = make(`, generateImport("Float64Array", pgTypeImport, g), `, len(m.`, fieldName, `))`)
 			case "int64":
-				g.P(`to.`, fieldName, ` = make(`, generateImport("Int64Array", pqImport, g), `, len(m.`, fieldName, `))`)
+				g.P(`to.`, fieldName, ` = make(`, generateImport("Int64Array", pgTypeImport, g), `, len(m.`, fieldName, `))`)
 			case "string":
-				g.P(`to.`, fieldName, ` = make(`, generateImport("StringArray", pqImport, g), `, len(m.`, fieldName, `))`)
+				g.P(`to.`, fieldName, ` = make(`, generateImport("StringArray", pgTypeImport, g), `, len(m.`, fieldName, `))`)
 			}
 			g.P(`copy(to.`, fieldName, `, m.`, fieldName, `)`)
 			g.P(`}`)
@@ -1457,7 +1445,7 @@ func (b *ORMBuilder) generateFieldConversion(message *protogen.Message, field *p
 			if b.dbEngine == ENGINE_POSTGRES {
 				if toORM {
 					g.P(`if m.`, fieldName, ` != nil {`)
-					g.P(`to.`, fieldName, ` = &`, generateImport("Jsonb", gormpqImport, g), `{[]byte(m.`, fieldName, `.Value)}`)
+					g.P(`to.`, fieldName, ` = &`, generateImport("JSONB", pgTypeImport, g), `{[]byte(m.`, fieldName, `.Value)}`)
 					g.P(`}`)
 				} else {
 					g.P(`if m.`, fieldName, ` != nil {`)
@@ -1470,9 +1458,9 @@ func (b *ORMBuilder) generateFieldConversion(message *protogen.Message, field *p
 			if ofield != nil && ofield.ParentOrigName != "" {
 				resource = "&" + ofield.ParentOrigName + "{}"
 			}
-			btype := strings.TrimPrefix(ofield.Type, "*")
-			nillable := strings.HasPrefix(ofield.Type, "*")
-			iface := ofield.Type == "interface{}"
+			btype := strings.TrimPrefix(ofield.TypeName, "*")
+			nillable := strings.HasPrefix(ofield.TypeName, "*")
+			iface := ofield.TypeName == "interface{}"
 
 			if toORM {
 				if nillable {
@@ -1578,25 +1566,103 @@ func (b *ORMBuilder) generateFieldConversion(message *protogen.Message, field *p
 	return nil
 }
 
-func (b *ORMBuilder) generateDefaultHandlers(g *protogen.GeneratedFile, message *protogen.Message) {
-	if isOrmable(message) {
-		b.generateCreateHandler(message, g)
-		typeName := string(message.Desc.Name())
-		ormable := b.getOrmable(typeName)
+func (b *ORMBuilder) generateDefaultHandlers(file *protogen.File, g *protogen.GeneratedFile) {
+	for _, message := range file.Messages {
+		if isOrmable(message) {
+			b.generateCreateHandler(message, g)
+			typeName := string(message.Desc.Name())
+			ormable := b.getOrmable(typeName)
 
-		if b.hasPrimaryKey(ormable) {
-			b.generateReadHandler(message, g)
-			b.generateDeleteHandler(message, g)
-			b.generateDeleteSetHandler(message, g)
-			b.generateStrictUpdateHandler(message, g)
-			b.generatePatchHandler(message, g)
-			b.generatePatchSetHandler(message, g)
+			if b.hasPrimaryKey(ormable) {
+				b.generateReadHandler(message, g)
+				b.generateDeleteHandler(message, g)
+				b.generateDeleteSetHandler(message, g)
+				b.generateStrictUpdateHandler(message, g)
+				b.generatePatchHandler(message, g)
+				b.generatePatchSetHandler(message, g)
+			}
+
+			b.generateApplyFieldMask(message, g)
+			b.generateListHandler(message, g)
 		}
+	}
+}
 
-		b.generateApplyFieldMask(message, g)
-		b.generateListHandler(message, g)
+// fieldPath defines the path to the nested field
+//
+// NOTE: fieldPath stores path in reverse order internally
+type fieldPath struct {
+	// path is reversed path to the field
+	path []string
+}
+
+func NewFieldPath(part string) *fieldPath {
+	return &fieldPath{path: []string{part}}
+}
+
+func (p *fieldPath) String() string {
+	if len(p.path) == 0 {
+		return ""
 	}
 
+	bldr := strings.Builder{}
+	bldr.WriteString(p.path[len(p.path)-1])
+	for i := len(p.path) - 2; i >= 0; i-- {
+		bldr.WriteString(p.path[i])
+		bldr.WriteString(".")
+	}
+
+	return bldr.String()
+}
+
+func (p *fieldPath) Add(part string) *fieldPath {
+	p.path = append(p.path)
+	return p
+}
+
+func parseRecursiveFields(model *OrmableType, take func(*Field) bool) []*fieldPath {
+	// handled is used to check for recursive models
+	// if the model was already handled it should not be handled one more time
+	handled := make(map[string]struct{})
+
+	var rec func(*OrmableType) []*fieldPath
+	rec = func(m *OrmableType) (paths []*fieldPath) {
+		if m == nil {
+			return
+		}
+
+		if _, ok := handled[m.Name]; ok {
+			return
+		}
+		// mark model as handled already
+		handled[m.Name] = struct{}{}
+
+		for name, field := range m.Fields {
+			if take(field) {
+				paths = append(paths, NewFieldPath(name))
+				continue
+			}
+
+			subpaths := rec(field.Type)
+			for _, path := range subpaths {
+				paths = append(paths, path.Add(name))
+			}
+		}
+
+		return
+	}
+
+	return rec(model)
+}
+
+// fieldPathsToQuoted parses each path and qoutes it in ["{path.String()}",] separated by ','
+func fieldPathsToQuoted(paths []*fieldPath) string {
+	strs := make([]string, 0, len(paths))
+	for _, path := range paths {
+		strs = append(strs, `"`+path.String()+`"`)
+	}
+
+	return strings.Join(strs, ", ")
 }
 
 func (b *ORMBuilder) generateCreateHandler(message *protogen.Message, g *protogen.GeneratedFile) {
@@ -1614,7 +1680,30 @@ func (b *ORMBuilder) generateCreateHandler(message *protogen.Message, g *protoge
 	g.P(`}`)
 	create := "Create_"
 	b.generateBeforeHookCall(orm, create, g)
-	g.P(`if err = db.Create(&ormObj).Error; err != nil {`)
+	omitPaths := parseRecursiveFields(orm,
+		func(f *Field) bool {
+			// check only fields with association info (e.g. other Gorm types)
+			if f.FieldAssociationInfo == nil {
+				return false
+			}
+			// omit field if autocreate disabled
+			return f.FieldAssociationInfo.GetDisableAssociationAutocreate()
+		},
+	)
+
+	preloadPaths := parseRecursiveFields(orm,
+		func(f *Field) bool {
+			// check only fields with association info (e.g. other Gorm types)
+			if f.FieldAssociationInfo == nil {
+				return false
+			}
+			return f.FieldAssociationInfo.GetPreload()
+		},
+	)
+
+	g.P(`if err = db.Omit(`, fieldPathsToQuoted(omitPaths), `).`,
+		`Preload(`, fieldPathsToQuoted(preloadPaths), `).`,
+		`Create(&ormObj).Error; err != nil {`)
 	g.P(`return nil, err`)
 	g.P(`}`)
 	b.generateAfterHookCall(orm, create, g)
@@ -1681,10 +1770,10 @@ func (b *ORMBuilder) generateReadHandler(message *protogen.Message, g *protogen.
 	g.P(`}`)
 
 	k, f := b.findPrimaryKey(ormable)
-	if strings.Contains(f.Type, "*") {
-		g.P(`if ormObj.`, k, ` == nil || *ormObj.`, k, ` == `, b.guessZeroValue(f.Type, g), ` {`)
+	if strings.Contains(f.TypeName, "*") {
+		g.P(`if ormObj.`, k, ` == nil || *ormObj.`, k, ` == `, b.guessZeroValue(f.TypeName, g), ` {`)
 	} else {
-		g.P(`if ormObj.`, k, ` == `, b.guessZeroValue(f.Type, g), ` {`)
+		g.P(`if ormObj.`, k, ` == `, b.guessZeroValue(f.TypeName, g), ` {`)
 	}
 	g.P(`return nil, `, "errors", `.EmptyIdError`)
 	g.P(`}`)
@@ -1816,10 +1905,10 @@ func (b *ORMBuilder) generateDeleteHandler(message *protogen.Message, g *protoge
 
 	ormable := b.getOrmable(typeName)
 	pkName, pk := b.findPrimaryKey(ormable)
-	if strings.Contains(pk.Type, "*") {
-		g.P(`if ormObj.`, pkName, ` == nil || *ormObj.`, pkName, ` == `, b.guessZeroValue(pk.Type, g), ` {`)
+	if strings.Contains(pk.TypeName, "*") {
+		g.P(`if ormObj.`, pkName, ` == nil || *ormObj.`, pkName, ` == `, b.guessZeroValue(pk.TypeName, g), ` {`)
 	} else {
-		g.P(`if ormObj.`, pkName, ` == `, b.guessZeroValue(pk.Type, g), `{`)
+		g.P(`if ormObj.`, pkName, ` == `, b.guessZeroValue(pk.TypeName, g), `{`)
 	}
 	g.P(`return `, generateImport("EmptyIdError", gerrorsImport, g))
 	g.P(`}`)
@@ -1878,16 +1967,16 @@ func (b *ORMBuilder) generateDeleteSetHandler(message *protogen.Message, g *prot
 	g.P(`var err error`)
 	ormable := b.getOrmable(typeName)
 	pkName, pk := b.findPrimaryKey(ormable)
-	g.P(`keys := []`, pk.Type, `{}`)
+	g.P(`keys := []`, pk.TypeName, `{}`)
 	g.P(`for _, obj := range in {`)
 	g.P(`ormObj, err := obj.ToORM(ctx)`)
 	g.P(`if err != nil {`)
 	g.P(`return err`)
 	g.P(`}`)
-	if strings.Contains(pk.Type, "*") {
-		g.P(`if ormObj.`, pkName, ` == nil || *ormObj.`, pkName, ` == `, b.guessZeroValue(pk.Type, g), ` {`)
+	if strings.Contains(pk.TypeName, "*") {
+		g.P(`if ormObj.`, pkName, ` == nil || *ormObj.`, pkName, ` == `, b.guessZeroValue(pk.TypeName, g), ` {`)
 	} else {
-		g.P(`if ormObj.`, pkName, ` == `, b.guessZeroValue(pk.Type, g), `{`)
+		g.P(`if ormObj.`, pkName, ` == `, b.guessZeroValue(pk.TypeName, g), `{`)
 	}
 	g.P(`return `, generateImport("EmptyIdError", gerrorsImport, g))
 	g.P(`}`)
@@ -1973,7 +2062,29 @@ func (b *ORMBuilder) generateStrictUpdateHandler(message *protogen.Message, g *p
 	b.generateBeforeHookCall(ormable, "StrictUpdateCleanup", g)
 	b.handleChildAssociations(message, g)
 	b.generateBeforeHookCall(ormable, "StrictUpdateSave", g)
-	g.P(`if err = db.Save(&ormObj).Error; err != nil {`)
+	omitPaths := parseRecursiveFields(ormable,
+		func(f *Field) bool {
+			// check only fields with association info (e.g. other Gorm types)
+			if f.FieldAssociationInfo == nil {
+				return false
+			}
+			// omit field if autoupdate disabled
+			return f.FieldAssociationInfo.GetDisableAssociationAutoupdate()
+		},
+	)
+
+	preloadPaths := parseRecursiveFields(ormable,
+		func(f *Field) bool {
+			// check only fields with association info (e.g. other Gorm types)
+			if f.FieldAssociationInfo == nil {
+				return false
+			}
+			return f.FieldAssociationInfo.GetPreload()
+		},
+	)
+	g.P(`if err = db.Omit(`, fieldPathsToQuoted(omitPaths), `).`,
+		`Preload(`, fieldPathsToQuoted(preloadPaths), `).`,
+		`Save(&ormObj).Error; err != nil {`)
 	g.P(`return nil, err`)
 	g.P(`}`)
 	b.generateAfterHookCall(ormable, "StrictUpdateSave", g)
@@ -2101,10 +2212,10 @@ func (b *ORMBuilder) removeChildAssociationsByName(message *protogen.Message, fi
 			assocKeyName = field.GetHasOne().GetAssociationForeignkey()
 			foreignKeyName = field.GetHasOne().GetForeignkey()
 		}
-		assocKeyType := ormable.Fields[assocKeyName].Type
-		assocOrmable := b.getOrmable(field.Type)
-		foreignKeyType := assocOrmable.Fields[foreignKeyName].Type
-		g.P(`filter`, fieldName, ` := `, strings.Trim(field.Type, "[]*"), `{}`)
+		assocKeyType := ormable.Fields[assocKeyName].TypeName
+		assocOrmable := b.getOrmable(field.TypeName)
+		foreignKeyType := assocOrmable.Fields[foreignKeyName].TypeName
+		g.P(`filter`, fieldName, ` := `, strings.Trim(field.TypeName, "[]*"), `{}`)
 		zeroValue := b.guessZeroValue(assocKeyType, g)
 		if strings.Contains(assocKeyType, "*") {
 			g.P(`if ormObj.`, assocKeyName, ` == nil || *ormObj.`, assocKeyName, ` == `, zeroValue, `{`)
@@ -2123,7 +2234,7 @@ func (b *ORMBuilder) removeChildAssociationsByName(message *protogen.Message, fi
 			ormDesc = "*" + ormDesc
 		}
 		g.P(filterDesc, " = ", ormDesc)
-		g.P(`if err = db.Where(filter`, fieldName, `).Delete(`, strings.Trim(field.Type, "[]*"), `{}).Error; err != nil {`)
+		g.P(`if err = db.Where(filter`, fieldName, `).Delete(`, strings.Trim(field.TypeName, "[]*"), `{}).Error; err != nil {`)
 		g.P(`return nil, err`)
 		g.P(`}`)
 	}
@@ -3524,12 +3635,12 @@ func (b *ORMBuilder) countManyToManyAssociationDimension(message *protogen.Messa
 }
 
 func (b *ORMBuilder) sameType(field1 *Field, field2 *Field) bool {
-	isPointer1 := strings.HasPrefix(field1.Type, "*")
-	typeParts1 := strings.Split(field1.Type, ".")
+	isPointer1 := strings.HasPrefix(field1.TypeName, "*")
+	typeParts1 := strings.Split(field1.TypeName, ".")
 
 	if len(typeParts1) == 2 {
-		isPointer2 := strings.HasPrefix(field2.Type, "*")
-		typeParts2 := strings.Split(field2.Type, ".")
+		isPointer2 := strings.HasPrefix(field2.TypeName, "*")
+		typeParts2 := strings.Split(field2.TypeName, ".")
 
 		if len(typeParts2) == 2 && isPointer1 == isPointer2 && typeParts1[1] == typeParts2[1] && field1.Package == field2.Package {
 			return true
@@ -3538,7 +3649,7 @@ func (b *ORMBuilder) sameType(field1 *Field, field2 *Field) bool {
 		return false
 	}
 
-	return field1.Type == field2.Type
+	return field1.TypeName == field2.TypeName
 }
 
 func getFieldType(field *protogen.Field) string {
