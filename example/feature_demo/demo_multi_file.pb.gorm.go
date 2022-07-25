@@ -6,9 +6,9 @@ import (
 	gateway "github.com/infobloxopen/atlas-app-toolkit/gateway"
 	gorm1 "github.com/infobloxopen/atlas-app-toolkit/gorm"
 	errors "github.com/infobloxopen/protoc-gen-gorm/errors"
-	gorm "gorm.io/gorm"
 	go_uuid "github.com/satori/go.uuid"
 	field_mask "google.golang.org/genproto/protobuf/field_mask"
+	gorm "gorm.io/gorm"
 )
 
 type ExternalChildORM struct {
@@ -166,7 +166,7 @@ func DefaultCreateExternalChild(ctx context.Context, in *ExternalChild, db *gorm
 			return nil, err
 		}
 	}
-	if err = db.Create(&ormObj).Error; err != nil {
+	if err = db.Omit().Create(&ormObj).Error; err != nil {
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(ExternalChildORMWithAfterCreate_); ok {
@@ -325,7 +325,7 @@ func DefaultStrictUpdateExternalChild(ctx context.Context, in *ExternalChild, db
 			return nil, err
 		}
 	}
-	if err = db.Save(&ormObj).Error; err != nil {
+	if err = db.Omit().Save(&ormObj).Error; err != nil {
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(ExternalChildORMWithAfterStrictUpdateSave); ok {
@@ -514,7 +514,7 @@ func DefaultCreateBlogPost(ctx context.Context, in *BlogPost, db *gorm.DB) (*Blo
 			return nil, err
 		}
 	}
-	if err = db.Create(&ormObj).Error; err != nil {
+	if err = db.Omit().Create(&ormObj).Error; err != nil {
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(BlogPostORMWithAfterCreate_); ok {
@@ -673,7 +673,7 @@ func DefaultStrictUpdateBlogPost(ctx context.Context, in *BlogPost, db *gorm.DB)
 			return nil, err
 		}
 	}
-	if err = db.Save(&ormObj).Error; err != nil {
+	if err = db.Omit().Save(&ormObj).Error; err != nil {
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(BlogPostORMWithAfterStrictUpdateSave); ok {

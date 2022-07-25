@@ -8,29 +8,29 @@ import (
 	gorm1 "github.com/infobloxopen/atlas-app-toolkit/gorm"
 	resource "github.com/infobloxopen/atlas-app-toolkit/gorm/resource"
 	errors "github.com/infobloxopen/protoc-gen-gorm/errors"
-	gorm "gorm.io/gorm"
 	field_mask "google.golang.org/genproto/protobuf/field_mask"
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
+	gorm "gorm.io/gorm"
 	strings "strings"
 	time "time"
 )
 
 type UserORM struct {
 	AccountID         string
-	BillingAddress    *AddressORM `gorm:"foreignkey:BillingAddressId;association_foreignkey:Id"`
+	BillingAddress    *AddressORM `gorm:"foreignKey:BillingAddressId;references:Id"`
 	BillingAddressId  *int64
 	Birthday          *time.Time
 	CreatedAt         *time.Time
-	CreditCard        *CreditCardORM `gorm:"foreignkey:UserId;association_foreignkey:Id"`
-	Emails            []*EmailORM    `gorm:"foreignkey:UserId;association_foreignkey:Id"`
+	CreditCard        *CreditCardORM `gorm:"foreignKey:UserId;references:Id"`
+	Emails            []*EmailORM    `gorm:"foreignKey:UserId;references:Id"`
 	ExternalUuid      *string        `gorm:"type:uuid"`
-	Friends           []*UserORM     `gorm:"foreignkey:Id;association_foreignkey:Id;many2many:user_friends;jointable_foreignkey:UserId;association_jointable_foreignkey:FriendId"`
-	Id                string         `gorm:"type:uuid;primary_key"`
-	Languages         []*LanguageORM `gorm:"foreignkey:Id;association_foreignkey:Id;many2many:user_languages;jointable_foreignkey:UserId;association_jointable_foreignkey:LanguageId"`
+	Friends           []*UserORM     `gorm:"foreignKey:Id;references:Id;many2many:user_friends;joinForeignKey:UserId;joinReferences:FriendId"`
+	Id                string         `gorm:"type:uuid;primaryKey"`
+	Languages         []*LanguageORM `gorm:"foreignKey:Id;references:Id;many2many:user_languages;joinForeignKey:UserId;joinReferences:LanguageId"`
 	Num               uint32
-	ShippingAddress   *AddressORM `gorm:"foreignkey:ShippingAddressId;association_foreignkey:Id"`
+	ShippingAddress   *AddressORM `gorm:"foreignKey:ShippingAddressId;references:Id"`
 	ShippingAddressId *int64
-	Tasks             []*TaskORM `gorm:"foreignkey:UserId;association_foreignkey:Id" atlas:"position:Priority"`
+	Tasks             []*TaskORM `gorm:"foreignKey:UserId;references:Id" atlas:"position:Priority"`
 	UpdatedAt         *time.Time
 }
 
@@ -298,7 +298,7 @@ type EmailORM struct {
 	AccountID       string
 	Email           string
 	ExternalNotNull string `gorm:"type:uuid;not null"`
-	Id              string `gorm:"type:uuid;primary_key"`
+	Id              string `gorm:"type:uuid;primaryKey"`
 	Subscribed      bool
 	UserId          *string
 }
@@ -412,7 +412,7 @@ type AddressORM struct {
 	Address_1  string
 	Address_2  string
 	External   []byte  `gorm:"type:jsonb"`
-	Id         int64   `gorm:"type:integer;primary_key"`
+	Id         int64   `gorm:"type:integer;primaryKey"`
 	ImplicitFk *string `gorm:"type:text"`
 	Post       string
 }
@@ -527,7 +527,7 @@ type LanguageORM struct {
 	AccountID   string
 	Code        string
 	ExternalInt *int64 `gorm:"type:integer"`
-	Id          int64  `gorm:"type:integer;primary_key"`
+	Id          int64  `gorm:"type:integer;primaryKey"`
 	Name        string
 }
 
@@ -627,7 +627,7 @@ type LanguageWithAfterToPB interface {
 type CreditCardORM struct {
 	AccountID string
 	CreatedAt *time.Time
-	Id        int64 `gorm:"type:integer;primary_key"`
+	Id        int64 `gorm:"type:integer;primaryKey"`
 	Number    string
 	UpdatedAt *time.Time
 	UserId    *string
@@ -832,7 +832,7 @@ func DefaultCreateUser(ctx context.Context, in *User, db *gorm.DB) (*User, error
 			return nil, err
 		}
 	}
-	if err = db.Create(&ormObj).Error; err != nil {
+	if err = db.Omit("Friends", "Emails").Preload("Emails").Create(&ormObj).Error; err != nil {
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(UserORMWithAfterCreate_); ok {
@@ -1013,11 +1013,11 @@ func DefaultStrictUpdateUser(ctx context.Context, in *User, db *gorm.DB) (*User,
 	if err = db.Where(filterEmails).Delete(EmailORM{}).Error; err != nil {
 		return nil, err
 	}
-	if err = db.Model(&ormObj).Association("Friends").Replace(ormObj.Friends).Error; err != nil {
+	if err = db.Model(&ormObj).Association("Friends").Replace(ormObj.Friends); err != nil {
 		return nil, err
 	}
 	ormObj.Friends = nil
-	if err = db.Model(&ormObj).Association("Languages").Replace(ormObj.Languages).Error; err != nil {
+	if err = db.Model(&ormObj).Association("Languages").Replace(ormObj.Languages); err != nil {
 		return nil, err
 	}
 	ormObj.Languages = nil
@@ -1034,7 +1034,7 @@ func DefaultStrictUpdateUser(ctx context.Context, in *User, db *gorm.DB) (*User,
 			return nil, err
 		}
 	}
-	if err = db.Save(&ormObj).Error; err != nil {
+	if err = db.Omit("Emails").Preload("Emails").Save(&ormObj).Error; err != nil {
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(UserORMWithAfterStrictUpdateSave); ok {
@@ -1393,7 +1393,7 @@ func DefaultCreateEmail(ctx context.Context, in *Email, db *gorm.DB) (*Email, er
 			return nil, err
 		}
 	}
-	if err = db.Create(&ormObj).Error; err != nil {
+	if err = db.Omit().Create(&ormObj).Error; err != nil {
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(EmailORMWithAfterCreate_); ok {
@@ -1561,7 +1561,7 @@ func DefaultStrictUpdateEmail(ctx context.Context, in *Email, db *gorm.DB) (*Ema
 			return nil, err
 		}
 	}
-	if err = db.Save(&ormObj).Error; err != nil {
+	if err = db.Omit().Save(&ormObj).Error; err != nil {
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(EmailORMWithAfterStrictUpdateSave); ok {
@@ -1766,7 +1766,7 @@ func DefaultCreateAddress(ctx context.Context, in *Address, db *gorm.DB) (*Addre
 			return nil, err
 		}
 	}
-	if err = db.Create(&ormObj).Error; err != nil {
+	if err = db.Omit().Create(&ormObj).Error; err != nil {
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(AddressORMWithAfterCreate_); ok {
@@ -1934,7 +1934,7 @@ func DefaultStrictUpdateAddress(ctx context.Context, in *Address, db *gorm.DB) (
 			return nil, err
 		}
 	}
-	if err = db.Save(&ormObj).Error; err != nil {
+	if err = db.Omit().Save(&ormObj).Error; err != nil {
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(AddressORMWithAfterStrictUpdateSave); ok {
@@ -2143,7 +2143,7 @@ func DefaultCreateLanguage(ctx context.Context, in *Language, db *gorm.DB) (*Lan
 			return nil, err
 		}
 	}
-	if err = db.Create(&ormObj).Error; err != nil {
+	if err = db.Omit().Create(&ormObj).Error; err != nil {
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(LanguageORMWithAfterCreate_); ok {
@@ -2311,7 +2311,7 @@ func DefaultStrictUpdateLanguage(ctx context.Context, in *Language, db *gorm.DB)
 			return nil, err
 		}
 	}
-	if err = db.Save(&ormObj).Error; err != nil {
+	if err = db.Omit().Save(&ormObj).Error; err != nil {
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(LanguageORMWithAfterStrictUpdateSave); ok {
@@ -2512,7 +2512,7 @@ func DefaultCreateCreditCard(ctx context.Context, in *CreditCard, db *gorm.DB) (
 			return nil, err
 		}
 	}
-	if err = db.Create(&ormObj).Error; err != nil {
+	if err = db.Omit().Create(&ormObj).Error; err != nil {
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(CreditCardORMWithAfterCreate_); ok {
@@ -2680,7 +2680,7 @@ func DefaultStrictUpdateCreditCard(ctx context.Context, in *CreditCard, db *gorm
 			return nil, err
 		}
 	}
-	if err = db.Save(&ormObj).Error; err != nil {
+	if err = db.Omit().Save(&ormObj).Error; err != nil {
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(CreditCardORMWithAfterStrictUpdateSave); ok {
@@ -2925,7 +2925,7 @@ func DefaultCreateTask(ctx context.Context, in *Task, db *gorm.DB) (*Task, error
 			return nil, err
 		}
 	}
-	if err = db.Create(&ormObj).Error; err != nil {
+	if err = db.Omit().Create(&ormObj).Error; err != nil {
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(TaskORMWithAfterCreate_); ok {

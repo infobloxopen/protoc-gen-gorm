@@ -33,17 +33,16 @@ var (
 )
 
 var (
-	gormImport   = "gorm.io/gorm"
-	tkgormImport = "github.com/infobloxopen/atlas-app-toolkit/gorm"
-	uuidImport   = "github.com/satori/go.uuid"
-	authImport   = "github.com/infobloxopen/atlas-app-toolkit/auth"
-	//gomrpgImport       = "gorm.io/driver/postgres"
+	gormImport         = "gorm.io/gorm"
+	tkgormImport       = "github.com/infobloxopen/atlas-app-toolkit/gorm"
+	uuidImport         = "github.com/satori/go.uuid"
+	authImport         = "github.com/infobloxopen/atlas-app-toolkit/auth"
 	gtypesImport       = "github.com/infobloxopen/protoc-gen-gorm/types"
 	resourceImport     = "github.com/infobloxopen/atlas-app-toolkit/gorm/resource"
 	queryImport        = "github.com/infobloxopen/atlas-app-toolkit/query"
 	ocTraceImport      = "go.opencensus.io/trace"
 	gatewayImport      = "github.com/infobloxopen/atlas-app-toolkit/gateway"
-	pgTypeImport       = "github.com/jackc/pgtype"
+	pqImport           = "github.com/lib/pq"
 	gerrorsImport      = "github.com/infobloxopen/protoc-gen-gorm/errors"
 	timestampImport    = "google.golang.org/protobuf/types/known/timestamppb"
 	wktImport          = "google.golang.org/protobuf/types/known/wrapperspb"
@@ -829,16 +828,16 @@ func (b *ORMBuilder) parseBasicFields(msg *protogen.Message, g *protogen.Generat
 		if b.dbEngine == ENGINE_POSTGRES && b.IsAbleToMakePQArray(fieldType) && field.Desc.IsList() {
 			switch fieldType {
 			case "bool":
-				fieldType = generateImport("BoolArray", pgTypeImport, g)
+				fieldType = generateImport("BoolArray", pqImport, g)
 				gormOptions.Tag = tagWithType(tag, "bool[]")
 			case "double":
-				fieldType = generateImport("Float64Array", pgTypeImport, g)
+				fieldType = generateImport("Float64Array", pqImport, g)
 				gormOptions.Tag = tagWithType(tag, "float[]")
 			case "int64":
-				fieldType = generateImport("Int64Array", pgTypeImport, g)
+				fieldType = generateImport("Int64Array", pqImport, g)
 				gormOptions.Tag = tagWithType(tag, "integer[]")
 			case "string":
-				fieldType = generateImport("TextArray", pgTypeImport, g)
+				fieldType = generateImport("StringArray", pqImport, g)
 				gormOptions.Tag = tagWithType(tag, "text[]")
 			default:
 				continue
@@ -880,8 +879,8 @@ func (b *ORMBuilder) parseBasicFields(msg *protogen.Message, g *protogen.Generat
 				fieldType = "*" + generateImport("Time", stdTimeImport, g)
 			} else if rawType == protoTypeJSON {
 				if b.dbEngine == ENGINE_POSTGRES {
-					typePackage = pgTypeImport
-					fieldType = "*" + generateImport("JSONB", pgTypeImport, g)
+					typePackage = gtypesImport
+					fieldType = "*" + generateImport("Jsonb", gtypesImport, g)
 					gormOptions.Tag = tagWithType(tag, "jsonb")
 				} else {
 					// Potential TODO: add types we want to use in other/default DB engine
@@ -993,8 +992,8 @@ func (b *ORMBuilder) addIncludedField(ormable *OrmableType, field *gormopts.Extr
 			rawType = generateImport("Int", bigintImport, g)
 		} else if rawType == "UUID" {
 			rawType = generateImport("UUID", uuidImport, g)
-		} else if field.GetType() == "Jsonb" && b.dbEngine == ENGINE_POSTGRES {
-			rawType = generateImport("JSONB", pgTypeImport, g)
+		} else if field.GetType() == "Jsonb" {
+			rawType = generateImport("Jsonb", gtypesImport, g)
 		} else if rawType == "Inet" {
 			rawType = generateImport("Inet", gtypesImport, g)
 		} else {
@@ -1327,13 +1326,13 @@ func (b *ORMBuilder) generateFieldConversion(message *protogen.Message, field *p
 			g.P(`if m.`, fieldName, ` != nil {`)
 			switch fieldType {
 			case "bool":
-				g.P(`to.`, fieldName, ` = make(`, generateImport("BoolArray", pgTypeImport, g), `, len(m.`, fieldName, `))`)
+				g.P(`to.`, fieldName, ` = make(`, generateImport("BoolArray", pqImport, g), `, len(m.`, fieldName, `))`)
 			case "double":
-				g.P(`to.`, fieldName, ` = make(`, generateImport("Float64Array", pgTypeImport, g), `, len(m.`, fieldName, `))`)
+				g.P(`to.`, fieldName, ` = make(`, generateImport("Float64Array", pqImport, g), `, len(m.`, fieldName, `))`)
 			case "int64":
-				g.P(`to.`, fieldName, ` = make(`, generateImport("Int64Array", pgTypeImport, g), `, len(m.`, fieldName, `))`)
+				g.P(`to.`, fieldName, ` = make(`, generateImport("Int64Array", pqImport, g), `, len(m.`, fieldName, `))`)
 			case "string":
-				g.P(`to.`, fieldName, ` = make(`, generateImport("StringArray", pgTypeImport, g), `, len(m.`, fieldName, `))`)
+				g.P(`to.`, fieldName, ` = make(`, generateImport("StringArray", pqImport, g), `, len(m.`, fieldName, `))`)
 			}
 			g.P(`copy(to.`, fieldName, `, m.`, fieldName, `)`)
 			g.P(`}`)
@@ -1442,17 +1441,16 @@ func (b *ORMBuilder) generateFieldConversion(message *protogen.Message, field *p
 				g.P(`}`)
 			}
 		} else if fieldType == protoTypeJSON {
-			if b.dbEngine == ENGINE_POSTGRES {
-				if toORM {
-					g.P(`if m.`, fieldName, ` != nil {`)
-					g.P(`to.`, fieldName, ` = &`, generateImport("JSONB", pgTypeImport, g), `{[]byte(m.`, fieldName, `.Value)}`)
-					g.P(`}`)
-				} else {
-					g.P(`if m.`, fieldName, ` != nil {`)
-					g.P(`to.`, fieldName, ` = &`, generateImport("JSONValue", gtypesImport, g), `{Value: string(m.`, fieldName, `.RawMessage)}`)
-					g.P(`}`)
-				}
-			} // Potential TODO other DB engine handling if desired
+			if toORM {
+				g.P(`if m.`, fieldName, ` != nil {`)
+				g.P(`to.`, fieldName, ` = &`, generateImport("Jsonb", gtypesImport, g), `{[]byte(m.`, fieldName, `.Value)}`)
+				g.P(`}`)
+			} else {
+				g.P(`if m.`, fieldName, ` != nil {`)
+				g.P(`to.`, fieldName, ` = &`, generateImport("JSONValue", gtypesImport, g), `{Value: string(m.`, fieldName, `.RawMessage)}`)
+				g.P(`}`)
+			}
+			// Potential TODO other DB engine handling if desired
 		} else if fieldType == protoTypeResource {
 			resource := "nil" // assuming we do not know the PB type, nil means call codec for any resource
 			if ofield != nil && ofield.ParentOrigName != "" {
@@ -1615,6 +1613,10 @@ func (p *fieldPath) String() string {
 	return bldr.String()
 }
 
+func (p *fieldPath) Quoted() string {
+	return fmt.Sprintf(`"%s"`, p)
+}
+
 func (p *fieldPath) Add(part string) *fieldPath {
 	p.path = append(p.path)
 	return p
@@ -1659,7 +1661,7 @@ func parseRecursiveFields(model *OrmableType, take func(*Field) bool) []*fieldPa
 func fieldPathsToQuoted(paths []*fieldPath) string {
 	strs := make([]string, 0, len(paths))
 	for _, path := range paths {
-		strs = append(strs, `"`+path.String()+`"`)
+		strs = append(strs, path.Quoted())
 	}
 
 	return strings.Join(strs, ", ")
@@ -1701,8 +1703,15 @@ func (b *ORMBuilder) generateCreateHandler(message *protogen.Message, g *protoge
 		},
 	)
 
+	preloadBldr := strings.Builder{}
+	for _, path := range preloadPaths {
+		preloadBldr.WriteString(`Preload(`)
+		preloadBldr.WriteString(path.Quoted())
+		preloadBldr.WriteString(`).`)
+	}
+
 	g.P(`if err = db.Omit(`, fieldPathsToQuoted(omitPaths), `).`,
-		`Preload(`, fieldPathsToQuoted(preloadPaths), `).`,
+		preloadBldr.String(),
 		`Create(&ormObj).Error; err != nil {`)
 	g.P(`return nil, err`)
 	g.P(`}`)
@@ -2082,8 +2091,16 @@ func (b *ORMBuilder) generateStrictUpdateHandler(message *protogen.Message, g *p
 			return f.FieldAssociationInfo.GetPreload()
 		},
 	)
+
+	preloadBldr := strings.Builder{}
+	for _, path := range preloadPaths {
+		preloadBldr.WriteString(`Preload(`)
+		preloadBldr.WriteString(path.Quoted())
+		preloadBldr.WriteString(`).`)
+	}
+
 	g.P(`if err = db.Omit(`, fieldPathsToQuoted(omitPaths), `).`,
-		`Preload(`, fieldPathsToQuoted(preloadPaths), `).`,
+		preloadBldr.String(),
 		`Save(&ormObj).Error; err != nil {`)
 	g.P(`return nil, err`)
 	g.P(`}`)
@@ -2186,7 +2203,7 @@ func (b *ORMBuilder) handleChildAssociationsByName(message *protogen.Message, fi
 			action = fmt.Sprintf("%s()", assocHandler)
 		}
 
-		g.P(`if err = db.Model(&ormObj).Association("`, fieldName, `").`, action, `.Error; err != nil {`)
+		g.P(`if err = db.Model(&ormObj).Association("`, fieldName, `").`, action, `; err != nil {`)
 		g.P(`return nil, err`)
 		g.P(`}`)
 		g.P(`ormObj.`, fieldName, ` = nil`)
