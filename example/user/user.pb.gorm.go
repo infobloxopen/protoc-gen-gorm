@@ -832,7 +832,7 @@ func DefaultCreateUser(ctx context.Context, in *User, db *gorm.DB) (*User, error
 			return nil, err
 		}
 	}
-	if err = db.Omit("Friends", "Emails").Preload("Emails").Create(&ormObj).Error; err != nil {
+	if err = db.Omit("Emails", "Friends").Preload("Emails").Create(&ormObj).Error; err != nil {
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(UserORMWithAfterCreate_); ok {
