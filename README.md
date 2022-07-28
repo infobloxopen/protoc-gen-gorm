@@ -134,8 +134,7 @@ Within the proto files, the following types are supported:
   will become a ZeroUUID (`00000000-0000-0000-0000-000000000000`) at the ORM
   level.
 - custom wrapper type `gorm.types.JSONValue`, which wraps a string in protobuf
-  containing arbitrary JSON and converts to `postgres.Jsonb` GORM type
-  (https://gorm.io/gorm/blob/master/dialects/postgres/postgres.go#L59)
+  containing arbitrary JSON and converts to custom `types.Jsonb` type
   if Postgres is the selected DB engine, otherwise it is currently dropped.
 - custom wrapper type `gorm.types.InetValue`, which wraps a string and will
   convert to the `types.Inet` type at ORM level, which uses the golang `net.IPNet`
