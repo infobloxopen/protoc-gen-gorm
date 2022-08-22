@@ -1,6 +1,6 @@
-version: v1beta1
+version: v1
 plugins:
-  - name: go
+  - remote: buf.build/library/plugins/go:v1.27.1-1
     out: example
     opt: paths=source_relative
   - name: gorm
