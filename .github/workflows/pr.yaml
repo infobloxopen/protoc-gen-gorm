@@ -8,7 +8,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Generate
-        run: make gentool generate-gentool
+        run: make generate
       - name: Stale
         run: git diff --exit-code
   test:

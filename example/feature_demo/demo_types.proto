@@ -11,6 +11,7 @@ import "types/types.proto";
 
 import "feature_demo/demo_service.proto";
 import "user/user.proto";
+import "postgres_arrays/postgres_arrays.proto";
 import "feature_demo/demo_multi_file.proto";
 
 option go_package = "github.com/infobloxopen/protoc-gen-gorm/example/feature_demo;example";
@@ -67,6 +68,9 @@ message TestTypes {
   // converted to/from string at API and ORM level
   gorm.types.TimeOnly time_only = 11;
   gorm.types.BigInt bigint = 12;
+  // Repeated non-ormable objects are currently treated as single entity for
+  // purposes of an object's field masking
+  repeated gorm.types.JSONValue several_values = 13;
 }
 
 // TypeWithID demonstrates some basic assocation behavior
