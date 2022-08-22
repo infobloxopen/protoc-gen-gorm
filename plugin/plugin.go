@@ -2416,7 +2416,7 @@ func (b *ORMBuilder) generateApplyFieldMask(message *protogen.Message, g *protog
 		if field.Message != nil && !isSpecialType(fieldType) && field.Desc.Cardinality() != protoreflect.Repeated {
 			g.P(`var updated`, camelCase(field.GoName), ` bool`)
 			hasNested = true
-		} else if strings.HasSuffix(fieldType, protoTypeJSON) {
+		} else if strings.HasSuffix(fieldType, protoTypeJSON) && field.Desc.Cardinality() != protoreflect.Repeated {
 			g.P(`var updated`, camelCase(field.GoName), ` bool`)
 		}
 	}

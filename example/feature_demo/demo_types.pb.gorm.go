@@ -94,6 +94,7 @@ func (m *TestTypes) ToORM(ctx context.Context) (TestTypesORM, error) {
 			return to, fmt.Errorf("unable convert Bigint to big.Int")
 		}
 	}
+	// Repeated type JSONValue is not an ORMable message type
 	if posthook, ok := interface{}(m).(TestTypesWithAfterToORM); ok {
 		err = posthook.AfterToORM(ctx, &to)
 	}
@@ -132,6 +133,7 @@ func (m *TestTypesORM) ToPB(ctx context.Context) (TestTypes, error) {
 		}
 	}
 	to.Bigint = &types.BigInt{Value: m.Bigint.String()}
+	// Repeated type JSONValue is not an ORMable message type
 	if posthook, ok := interface{}(m).(TestTypesWithAfterToPB); ok {
 		err = posthook.AfterToPB(ctx, &to)
 	}
@@ -1408,6 +1410,10 @@ func DefaultApplyFieldMaskTestTypes(ctx context.Context, patchee *TestTypes, pat
 			patchee.Bigint = patcher.Bigint
 			continue
 		}
+		if f == prefix+"SeveralValues" {
+			patchee.SeveralValues = patcher.SeveralValues
+			continue
+		}
 	}
 	if err != nil {
 		return nil, err
@@ -1481,7 +1487,7 @@ func DefaultCreateTypeWithID(ctx context.Context, in *TypeWithID, db *gorm.DB) (
 			return nil, err
 		}
 	}
-	if err = db.Omit("Emails", "Friends").Preload("Emails").Create(&ormObj).Error; err != nil {
+	if err = db.Omit("Friends", "Emails").Preload("Emails").Create(&ormObj).Error; err != nil {
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(TypeWithIDORMWithAfterCreate_); ok {
