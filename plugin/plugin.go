@@ -2693,7 +2693,7 @@ func (b *ORMBuilder) followsCreateConventions(inType *protogen.Message, outType 
 	var inTypeName string
 	var typeOrmable bool
 	for _, field := range inType.Fields {
-		if string(field.Desc.Name()) == "payload" {
+		if string(field.Desc.Name()) == "payload" && field.Desc.Message() != nil {
 			gType := string(field.Desc.Message().Name())
 			inTypeName = strings.TrimPrefix(gType, "*")
 			if b.isOrmable(inTypeName) {
@@ -2819,7 +2819,7 @@ func (b *ORMBuilder) followsUpdateConventions(inType *protogen.Message, outType 
 	var typeOrmable bool
 	var updateMask string
 	for _, field := range inType.Fields {
-		if string(field.Desc.Name()) == "payload" {
+		if string(field.Desc.Name()) == "payload" && field.Desc.Message() != nil {
 			gType := string(field.Desc.Message().Name())
 			inTypeName = strings.TrimPrefix(gType, "*")
 			if b.isOrmable(inTypeName) {

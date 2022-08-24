@@ -408,6 +408,7 @@ var IntPointService_ServiceDesc = grpc.ServiceDesc{
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type IntPointServiceBClient interface {
 	List(ctx context.Context, in *ListFooRequest, opts ...grpc.CallOption) (*ListIntPointResponse, error)
+	Create(ctx context.Context, in *CreateFooRequest, opts ...grpc.CallOption) (*ListIntPointResponse, error)
 }
 
 type intPointServiceBClient struct {
@@ -427,11 +428,21 @@ func (c *intPointServiceBClient) List(ctx context.Context, in *ListFooRequest, o
 	return out, nil
 }
 
+func (c *intPointServiceBClient) Create(ctx context.Context, in *CreateFooRequest, opts ...grpc.CallOption) (*ListIntPointResponse, error) {
+	out := new(ListIntPointResponse)
+	err := c.cc.Invoke(ctx, "/example.IntPointServiceB/Create", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // IntPointServiceBServer is the server API for IntPointServiceB service.
 // All implementations must embed UnimplementedIntPointServiceBServer
 // for forward compatibility
 type IntPointServiceBServer interface {
 	List(context.Context, *ListFooRequest) (*ListIntPointResponse, error)
+	Create(context.Context, *CreateFooRequest) (*ListIntPointResponse, error)
 	mustEmbedUnimplementedIntPointServiceBServer()
 }
 
@@ -441,6 +452,9 @@ type UnimplementedIntPointServiceBServer struct {
 
 func (UnimplementedIntPointServiceBServer) List(context.Context, *ListFooRequest) (*ListIntPointResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method List not implemented")
+}
+func (UnimplementedIntPointServiceBServer) Create(context.Context, *CreateFooRequest) (*ListIntPointResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Create not implemented")
 }
 func (UnimplementedIntPointServiceBServer) mustEmbedUnimplementedIntPointServiceBServer() {}
 
@@ -473,6 +487,24 @@ func _IntPointServiceB_List_Handler(srv interface{}, ctx context.Context, dec fu
 	return interceptor(ctx, in, info, handler)
 }
 
+func _IntPointServiceB_Create_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateFooRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(IntPointServiceBServer).Create(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/example.IntPointServiceB/Create",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(IntPointServiceBServer).Create(ctx, req.(*CreateFooRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // IntPointServiceB_ServiceDesc is the grpc.ServiceDesc for IntPointServiceB service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -483,6 +515,10 @@ var IntPointServiceB_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "List",
 			Handler:    _IntPointServiceB_List_Handler,
+		},
+		{
+			MethodName: "Create",
+			Handler:    _IntPointServiceB_Create_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

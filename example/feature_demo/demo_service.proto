@@ -127,13 +127,18 @@ service IntPointService {
   rpc CreateSomething ( Something ) returns  ( Something ) {}
 }
 
-
+// Test cases that were previously broken
+message CreateFooRequest {
+  bytes payload = 1;
+}
 message ListFooRequest {
 
 }
+
 service IntPointServiceB {
   option (gorm.server).autogen = true;
   rpc List ( ListFooRequest ) returns ( ListIntPointResponse ) {}
+  rpc Create ( CreateFooRequest ) returns ( ListIntPointResponse ) {}
 }
 
 service IntPointTxn {

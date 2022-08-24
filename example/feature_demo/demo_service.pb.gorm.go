@@ -1101,6 +1101,13 @@ type IntPointServiceBIntPointWithBeforeList interface {
 type IntPointServiceBIntPointWithAfterList interface {
 	AfterList(context.Context, *ListIntPointResponse, *gorm.DB) error
 }
+
+// Create ...
+func (m *IntPointServiceBDefaultServer) Create(ctx context.Context, in *CreateFooRequest) (*ListIntPointResponse, error) {
+	out := &ListIntPointResponse{}
+	return out, nil
+}
+
 type IntPointTxnDefaultServer struct {
 }
 
