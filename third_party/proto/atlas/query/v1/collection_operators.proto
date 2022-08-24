@@ -1,32 +1,27 @@
 syntax = "proto3";
 
-package atlas.query.v1;
+package infoblox.api;
 
 import "protoc-gen-openapiv2/options/annotations.proto";
 
 option go_package = "github.com/infobloxopen/atlas-app-toolkit/query;query";
-
-// SortCriteriaOrder specifies the sort order.
-enum SortCriteriaOrder {
-  // Order not specified
-  SORT_CRITERIA_ORDER_UNSPECIFIED = 0;
-  // ascending sort order
-  SORT_CRITERIA_ORDER_ASC = 1;
-  // descending sort order
-  SORT_CRITERIA_ORDER_DESC = 2;
-}
 
 // SortCriteria represents sort criteria
 message SortCriteria {
     // Tag is a JSON tag.
     string tag = 1;
     // Order is a sort order.
-    SortCriteriaOrder order = 2;
+    enum Order {
+        // ascending sort order
+        ASC = 0;
+        // descending sort order
+        DESC = 1;
+    }
+    Order order = 2;
 }
 
 // Sorting represents list of sort criterias.
 message Sorting {
-
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_schema) = {
         json_schema: {
             type: STRING;
@@ -101,8 +96,8 @@ message LogicalOperator {
         NumberArrayCondition right_number_array_condition = 14;
     }
     enum Type {
-        TYPE_AND_UNSPECIFIED = 0;
-        TYPE_OR = 1;
+        AND = 0;
+        OR = 1;
     }
     Type type = 9;
     bool is_negative = 10;
@@ -117,13 +112,13 @@ message StringCondition {
     repeated string field_path = 1;
     string value = 2;
     enum Type {
-        TYPE_EQ_UNSPECIFIED = 0;
-        TYPE_MATCH = 1;
-        TYPE_GT = 2;
-        TYPE_GE = 3;
-        TYPE_LT = 4;
-        TYPE_LE = 5;
-        TYPE_IEQ = 6;
+        EQ = 0;
+        MATCH = 1;
+        GT = 2;
+        GE = 3;
+        LT = 4;
+        LE = 5;
+        IEQ = 6;
     }
     Type type = 3;
     bool is_negative = 4;
@@ -138,11 +133,11 @@ message NumberCondition {
     repeated string field_path = 1;
     double value = 2;
     enum Type {
-        TYPE_EQ_UNSPECIFIED = 0;
-        TYPE_GT = 1;
-        TYPE_GE = 2;
-        TYPE_LT = 3;
-        TYPE_LE = 4;
+        EQ = 0;
+        GT = 1;
+        GE = 2;
+        LT = 3;
+        LE = 4;
     }
     Type type = 3;
     bool is_negative = 4;
@@ -163,7 +158,7 @@ message StringArrayCondition {
     repeated string field_path = 1;
     repeated string values = 2;
     enum Type {
-        TYPE_IN_UNSPECIFIED = 0;
+        IN = 0;
     }
     Type type = 3;
     bool is_negative = 4;
@@ -177,7 +172,7 @@ message NumberArrayCondition {
     repeated string field_path = 1;
     repeated double values = 2;
     enum Type {
-        TYPE_IN_UNSPECIFIED = 0;
+        IN = 0;
     }
     Type type = 3;
     bool is_negative = 4;
@@ -225,4 +220,17 @@ message PageInfo {
     // The service may optionally include the offset of the next page of resources.
     // A null value indicates no more pages.
     int32 offset = 3;
+}
+
+
+// Searching represents search by.
+message Searching {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_schema) = {
+        json_schema: {
+            type: STRING;
+            description: "atlas.api.search_by";
+        };
+    };
+
+    string query = 1;
 }
