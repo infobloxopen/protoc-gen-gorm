@@ -6,12 +6,12 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/jsonpb"
-	"github.com/golang/protobuf/ptypes"
-	"github.com/golang/protobuf/ptypes/timestamp"
 	"github.com/golang/protobuf/ptypes/wrappers"
 	"github.com/google/go-cmp/cmp"
 	"github.com/infobloxopen/protoc-gen-gorm/types"
 	"google.golang.org/protobuf/testing/protocmp"
+	durationpb "google.golang.org/protobuf/types/known/durationpb"
+	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 )
 
 func TestSuccessfulUnmarshalTypes(t *testing.T) {
@@ -29,7 +29,7 @@ func TestSuccessfulUnmarshalTypes(t *testing.T) {
 		`{"becomes_int":"GOOD"}`:                          {BecomesInt: TestTypes_GOOD},
 		`{"becomes_int":"BAD"}`:                           {BecomesInt: TestTypes_BAD},
 		`{"uuid":"6ba7b810-9dad-11d1-80b4-00c04fd430c8"}`: {Uuid: &types.UUID{Value: "6ba7b810-9dad-11d1-80b4-00c04fd430c8"}},
-		`{"created_at":"2009-11-17T20:34:58.651387237Z"}`: {CreatedAt: MustTimestampProto(time.Date(2009, 11, 17, 20, 34, 58, 651387237, time.UTC))},
+		`{"created_at":"2009-11-17T20:34:58.651387237Z"}`: {CreatedAt: timestamppb.New(time.Date(2009, 11, 17, 20, 34, 58, 651387237, time.UTC))},
 		`{"type_with_id_id":4}`:                           {TypeWithIdId: 4},
 		`{"json_field":{"top":[{"something":1},2]}}`:      {JsonField: &types.JSONValue{Value: `{"top":[{"something":1},2]}`}},
 		`{"json_field":
@@ -87,17 +87,18 @@ func TestMarshalTypes(t *testing.T) {
 	// Will marshal with snake_case names and default values included
 	marshaler := &jsonpb.Marshaler{OrigName: true, EmitDefaults: true}
 	for expected, in := range map[string]TestTypes{
-		`{"api_only_string":"","numbers":[],"optional_string":null,"becomes_int":"UNKNOWN","nothingness":null,"uuid":null,"created_at":null,"type_with_id_id":0,"json_field":null,"nullable_uuid":null,"time_only":null,"bigint":null,"several_values":[]}`:                                   {},
-		`{"api_only_string":"Something","numbers":[],"optional_string":null,"becomes_int":"UNKNOWN","nothingness":null,"uuid":null,"created_at":null,"type_with_id_id":0,"json_field":null,"nullable_uuid":null,"time_only":null,"bigint":null,"several_values":[]}`:                          {ApiOnlyString: "Something"},
-		`{"api_only_string":"","numbers":[0,1,2,3],"optional_string":null,"becomes_int":"UNKNOWN","nothingness":null,"uuid":null,"created_at":null,"type_with_id_id":0,"json_field":null,"nullable_uuid":null,"time_only":null,"bigint":null,"several_values":[]}`:                            {Numbers: []int32{0, 1, 2, 3}},
-		`{"api_only_string":"","numbers":[],"optional_string":"Not nothing","becomes_int":"UNKNOWN","nothingness":null,"uuid":null,"created_at":null,"type_with_id_id":0,"json_field":null,"nullable_uuid":null,"time_only":null,"bigint":null,"several_values":[]}`:                          {OptionalString: &wrappers.StringValue{Value: "Not nothing"}},
-		`{"api_only_string":"","numbers":[],"optional_string":null,"becomes_int":"GOOD","nothingness":null,"uuid":null,"created_at":null,"type_with_id_id":0,"json_field":null,"nullable_uuid":null,"time_only":null,"bigint":null,"several_values":[]}`:                                      {BecomesInt: TestTypes_GOOD},
-		`{"api_only_string":"","numbers":[],"optional_string":null,"becomes_int":"UNKNOWN","nothingness":null,"uuid":"6ba7b810-9dad-11d1-80b4-00c04fd430c8","created_at":null,"type_with_id_id":0,"json_field":null,"nullable_uuid":null,"time_only":null,"bigint":null,"several_values":[]}`: {Uuid: &types.UUID{Value: "6ba7b810-9dad-11d1-80b4-00c04fd430c8"}},
-		`{"api_only_string":"","numbers":[],"optional_string":null,"becomes_int":"UNKNOWN","nothingness":null,"uuid":null,"created_at":"2009-11-17T20:34:58.651387237Z","type_with_id_id":0,"json_field":null,"nullable_uuid":null,"time_only":null,"bigint":null,"several_values":[]}`:       {CreatedAt: MustTimestampProto(time.Date(2009, 11, 17, 20, 34, 58, 651387237, time.UTC))},
-		`{"api_only_string":"","numbers":[],"optional_string":null,"becomes_int":"UNKNOWN","nothingness":null,"uuid":null,"created_at":null,"type_with_id_id":2,"json_field":null,"nullable_uuid":null,"time_only":null,"bigint":null,"several_values":[]}`:                                   {TypeWithIdId: 2},
-		`{"api_only_string":"","numbers":[],"optional_string":null,"becomes_int":"UNKNOWN","nothingness":null,"uuid":null,"created_at":null,"type_with_id_id":0,"json_field":{"text":[]},"nullable_uuid":null,"time_only":null,"bigint":null,"several_values":[]}`:                            {JsonField: &types.JSONValue{Value: `{"text":[]}`}},
-		`{"api_only_string":"","numbers":[],"optional_string":null,"becomes_int":"UNKNOWN","nothingness":null,"uuid":null,"created_at":null,"type_with_id_id":0,"json_field":null,"nullable_uuid":null,"time_only":"01:59:18","bigint":null,"several_values":[]}`:                             {TimeOnly: &types.TimeOnly{Value: 7158}},
-		`{"api_only_string":"","numbers":[],"optional_string":null,"becomes_int":"UNKNOWN","nothingness":null,"uuid":null,"created_at":null,"type_with_id_id":0,"json_field":null,"nullable_uuid":null,"time_only":null,"bigint":"7158","several_values":[]}`:                                 {Bigint: &types.BigInt{Value: "7158"}},
+		`{"api_only_string":"","numbers":[],"optional_string":null,"becomes_int":"UNKNOWN","nothingness":null,"uuid":null,"created_at":null,"duration":null,"type_with_id_id":0,"json_field":null,"nullable_uuid":null,"time_only":null,"bigint":null,"several_values":[]}`:                                   {},
+		`{"api_only_string":"Something","numbers":[],"optional_string":null,"becomes_int":"UNKNOWN","nothingness":null,"uuid":null,"created_at":null,"duration":null,"type_with_id_id":0,"json_field":null,"nullable_uuid":null,"time_only":null,"bigint":null,"several_values":[]}`:                          {ApiOnlyString: "Something"},
+		`{"api_only_string":"","numbers":[0,1,2,3],"optional_string":null,"becomes_int":"UNKNOWN","nothingness":null,"uuid":null,"created_at":null,"duration":null,"type_with_id_id":0,"json_field":null,"nullable_uuid":null,"time_only":null,"bigint":null,"several_values":[]}`:                            {Numbers: []int32{0, 1, 2, 3}},
+		`{"api_only_string":"","numbers":[],"optional_string":"Not nothing","becomes_int":"UNKNOWN","nothingness":null,"uuid":null,"created_at":null,"duration":null,"type_with_id_id":0,"json_field":null,"nullable_uuid":null,"time_only":null,"bigint":null,"several_values":[]}`:                          {OptionalString: &wrappers.StringValue{Value: "Not nothing"}},
+		`{"api_only_string":"","numbers":[],"optional_string":null,"becomes_int":"GOOD","nothingness":null,"uuid":null,"created_at":null,"duration":null,"type_with_id_id":0,"json_field":null,"nullable_uuid":null,"time_only":null,"bigint":null,"several_values":[]}`:                                      {BecomesInt: TestTypes_GOOD},
+		`{"api_only_string":"","numbers":[],"optional_string":null,"becomes_int":"UNKNOWN","nothingness":null,"uuid":"6ba7b810-9dad-11d1-80b4-00c04fd430c8","created_at":null,"duration":null,"type_with_id_id":0,"json_field":null,"nullable_uuid":null,"time_only":null,"bigint":null,"several_values":[]}`: {Uuid: &types.UUID{Value: "6ba7b810-9dad-11d1-80b4-00c04fd430c8"}},
+		`{"api_only_string":"","numbers":[],"optional_string":null,"becomes_int":"UNKNOWN","nothingness":null,"uuid":null,"created_at":"2009-11-17T20:34:58.651387237Z","duration":null,"type_with_id_id":0,"json_field":null,"nullable_uuid":null,"time_only":null,"bigint":null,"several_values":[]}`:       {CreatedAt: timestamppb.New(time.Date(2009, 11, 17, 20, 34, 58, 651387237, time.UTC))},
+		`{"api_only_string":"","numbers":[],"optional_string":null,"becomes_int":"UNKNOWN","nothingness":null,"uuid":null,"created_at":null,"duration":"3600s","type_with_id_id":0,"json_field":null,"nullable_uuid":null,"time_only":null,"bigint":null,"several_values":[]}`:                                {Duration: durationpb.New(time.Hour)},
+		`{"api_only_string":"","numbers":[],"optional_string":null,"becomes_int":"UNKNOWN","nothingness":null,"uuid":null,"created_at":null,"duration":null,"type_with_id_id":2,"json_field":null,"nullable_uuid":null,"time_only":null,"bigint":null,"several_values":[]}`:                                   {TypeWithIdId: 2},
+		`{"api_only_string":"","numbers":[],"optional_string":null,"becomes_int":"UNKNOWN","nothingness":null,"uuid":null,"created_at":null,"duration":null,"type_with_id_id":0,"json_field":{"text":[]},"nullable_uuid":null,"time_only":null,"bigint":null,"several_values":[]}`:                            {JsonField: &types.JSONValue{Value: `{"text":[]}`}},
+		`{"api_only_string":"","numbers":[],"optional_string":null,"becomes_int":"UNKNOWN","nothingness":null,"uuid":null,"created_at":null,"duration":null,"type_with_id_id":0,"json_field":null,"nullable_uuid":null,"time_only":"01:59:18","bigint":null,"several_values":[]}`:                             {TimeOnly: &types.TimeOnly{Value: 7158}},
+		`{"api_only_string":"","numbers":[],"optional_string":null,"becomes_int":"UNKNOWN","nothingness":null,"uuid":null,"created_at":null,"duration":null,"type_with_id_id":0,"json_field":null,"nullable_uuid":null,"time_only":null,"bigint":"7158","several_values":[]}`:                                 {Bigint: &types.BigInt{Value: "7158"}},
 	} {
 		out, err := marshaler.MarshalToString(&in)
 		if err != nil {
@@ -120,7 +121,7 @@ func TestMarshalTypesOmitEmpty(t *testing.T) {
 		`{"optional_string":"Not nothing"}`: {OptionalString: &wrappers.StringValue{Value: "Not nothing"}},
 		`{"becomes_int":"GOOD"}`:            {BecomesInt: 1},
 		`{"uuid":"6ba7b810-9dad-11d1-80b4-00c04fd430c8"}`: {Uuid: &types.UUID{Value: "6ba7b810-9dad-11d1-80b4-00c04fd430c8"}},
-		`{"created_at":"2009-11-17T20:34:58.651387237Z"}`: {CreatedAt: MustTimestampProto(time.Date(2009, 11, 17, 20, 34, 58, 651387237, time.UTC))},
+		`{"created_at":"2009-11-17T20:34:58.651387237Z"}`: {CreatedAt: timestamppb.New(time.Date(2009, 11, 17, 20, 34, 58, 651387237, time.UTC))},
 		`{"type_with_id_id":2}`:                           {TypeWithIdId: 2},
 		`{"json_field":{"text":[]}}`:                      {JsonField: &types.JSONValue{Value: `{"text":[]}`}},
 		`{"time_only":"00:00:00"}`:                        {TimeOnly: &types.TimeOnly{Value: 0}},
@@ -134,12 +135,4 @@ func TestMarshalTypesOmitEmpty(t *testing.T) {
 				expected, out)
 		}
 	}
-}
-
-func MustTimestampProto(t time.Time) *timestamp.Timestamp {
-	ts, err := ptypes.TimestampProto(t)
-	if err != nil {
-		panic(err)
-	}
-	return ts
 }
