@@ -13,7 +13,7 @@ lint: $(BUF)
 build: $(BUF)
 	buf build
 
-test: lint build
+test: build
 	go test -v ./...
 
 regenerate: clean-gen generate
@@ -25,7 +25,7 @@ clean-gen:
 	cd options && rm -f *.pb.gorm.go && rm -f *.pb.go
 	cd types && rm -f types.pb.go
 
-generate: options/gorm.pb.go types/types.pb.go example/user/*.pb.go example/postgres_arrays/*.pb.go example/feature_demo/*.pb.go
+generate: build options/gorm.pb.go types/types.pb.go install example/user/*.pb.go example/postgres_arrays/*.pb.go example/feature_demo/*.pb.go
 
 options/gorm.pb.go: proto/options/gorm.proto
 	buf generate --template proto/options/buf.gen.yaml --path proto/options

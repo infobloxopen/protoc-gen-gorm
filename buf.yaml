@@ -1,11 +1,6 @@
 # https://docs.buf.build/lint-usage/
-version: v1beta1
+version: v1
 name: infoblox.com/infobloxopen/protoc-gen-gorm
-build:
-  roots:
-    - proto
-    - third_party/proto
-    - example/
 lint:
   use:
     - DEFAULT

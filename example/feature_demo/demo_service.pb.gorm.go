@@ -1065,6 +1065,42 @@ func (m *IntPointServiceDefaultServer) CreateSomething(ctx context.Context, in *
 	return out, nil
 }
 
+type IntPointServiceBDefaultServer struct {
+	DB *gorm.DB
+}
+
+// List ...
+func (m *IntPointServiceBDefaultServer) List(ctx context.Context, in *ListFooRequest) (*ListIntPointResponse, error) {
+	db := m.DB
+	if custom, ok := interface{}(in).(IntPointServiceBIntPointWithBeforeList); ok {
+		var err error
+		if db, err = custom.BeforeList(ctx, db); err != nil {
+			return nil, err
+		}
+	}
+	res, err := DefaultListIntPoint(ctx, db, nil, nil, nil, nil)
+	if err != nil {
+		return nil, err
+	}
+	out := &ListIntPointResponse{Results: res}
+	if custom, ok := interface{}(in).(IntPointServiceBIntPointWithAfterList); ok {
+		var err error
+		if err = custom.AfterList(ctx, out, db); err != nil {
+			return nil, err
+		}
+	}
+	return out, nil
+}
+
+// IntPointServiceBIntPointWithBeforeList called before DefaultListIntPoint in the default List handler
+type IntPointServiceBIntPointWithBeforeList interface {
+	BeforeList(context.Context, *gorm.DB) (*gorm.DB, error)
+}
+
+// IntPointServiceBIntPointWithAfterList called before DefaultListIntPoint in the default List handler
+type IntPointServiceBIntPointWithAfterList interface {
+	AfterList(context.Context, *ListIntPointResponse, *gorm.DB) error
+}
 type IntPointTxnDefaultServer struct {
 }
 

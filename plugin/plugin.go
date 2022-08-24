@@ -173,7 +173,7 @@ func parseParameter(param string) map[string]string {
 type OrmableType struct {
 	File       *protogen.File
 	Fields     map[string]*Field
-	Methods    map[string]*autogenMethod
+	Methods    []*autogenMethod
 	Name       string
 	OriginName string
 	Package    string
@@ -185,7 +185,7 @@ func NewOrmableType(originalName string, pkg string, file *protogen.File) *Ormab
 		Package:    pkg,
 		File:       file,
 		Fields:     make(map[string]*Field),
-		Methods:    make(map[string]*autogenMethod),
+		Methods:    []*autogenMethod{},
 	}
 }
 
@@ -1736,9 +1736,11 @@ func (b *ORMBuilder) generateReadHandler(message *protogen.Message, g *protogen.
 }
 
 func (b *ORMBuilder) readHasFieldSelection(ormable *OrmableType) bool {
-	if read, ok := ormable.Methods[readService]; ok {
-		if s := b.getFieldSelection(read.inType); s != "" {
-			return true
+	for _, method := range ormable.Methods {
+		if method.verb == readService {
+			if s := b.getFieldSelection(method.inType); s != "" {
+				return true
+			}
 		}
 	}
 	return false
@@ -2304,7 +2306,7 @@ func (b *ORMBuilder) generateApplyFieldMask(message *protogen.Message, g *protog
 		if field.Message != nil && !isSpecialType(fieldType) && field.Desc.Cardinality() != protoreflect.Repeated {
 			g.P(`var updated`, camelCase(field.GoName), ` bool`)
 			hasNested = true
-		} else if strings.HasSuffix(fieldType, protoTypeJSON) {
+		} else if strings.HasSuffix(fieldType, protoTypeJSON) && field.Desc.Cardinality() != protoreflect.Repeated {
 			g.P(`var updated`, camelCase(field.GoName), ` bool`)
 		}
 	}
@@ -2580,18 +2582,17 @@ func generateImport(name string, importPath string, g *protogen.GeneratedFile) s
 }
 
 func (b *ORMBuilder) listHasFiltering(ormable *OrmableType) bool {
-	if read, ok := ormable.Methods[listService]; ok {
-		if s := b.getFiltering(read.inType); s != "" {
+	for _, method := range ormable.Methods {
+		if s := b.getFiltering(method.inType); s != "" {
 			return true
 		}
 	}
-
 	return false
 }
 
 func (b *ORMBuilder) listHasSorting(ormable *OrmableType) bool {
-	if read, ok := ormable.Methods[listService]; ok {
-		if s := b.getSorting(read.inType); s != "" {
+	for _, method := range ormable.Methods {
+		if s := b.getSorting(method.inType); s != "" {
 			return true
 		}
 	}
@@ -2600,8 +2601,8 @@ func (b *ORMBuilder) listHasSorting(ormable *OrmableType) bool {
 }
 
 func (b *ORMBuilder) listHasPagination(ormable *OrmableType) bool {
-	if read, ok := ormable.Methods[listService]; ok {
-		if s := b.getPagination(read.inType); s != "" {
+	for _, method := range ormable.Methods {
+		if s := b.getPagination(method.inType); s != "" {
 			return true
 		}
 	}
@@ -2610,8 +2611,8 @@ func (b *ORMBuilder) listHasPagination(ormable *OrmableType) bool {
 }
 
 func (b *ORMBuilder) listHasFieldSelection(ormable *OrmableType) bool {
-	if read, ok := ormable.Methods[listService]; ok {
-		if s := b.getFieldSelection(read.inType); s != "" {
+	for _, method := range ormable.Methods {
+		if s := b.getFieldSelection(method.inType); s != "" {
 			return true
 		}
 	}
@@ -2680,7 +2681,7 @@ func (b *ORMBuilder) parseServices(file *protogen.File) {
 			genSvc.methods = append(genSvc.methods, genMethod)
 
 			if genMethod.verb != "" && b.isOrmable(genMethod.baseType) {
-				b.getOrmable(genMethod.baseType).Methods[genMethod.verb] = &genMethod
+				b.getOrmable(genMethod.baseType).Methods = append(b.getOrmable(genMethod.baseType).Methods, &genMethod)
 			}
 		}
 
@@ -3372,6 +3373,7 @@ func (b *ORMBuilder) generateListServerMethod(service autogenService, method aut
 	b.generateMethodSignature(service, method, g)
 	if method.followsConvention {
 		b.generateDBSetup(service, g)
+		ormable := b.getOrmable(method.baseType)
 		b.generatePreserviceCall(service, method.baseType, method.ccName, g)
 		pg := b.getPagination(method.inType)
 		pi := b.getPageInfo(method.outType)
@@ -3381,15 +3383,23 @@ func (b *ORMBuilder) generateListServerMethod(service autogenService, method aut
 		handlerCall := fmt.Sprint(`res, err := DefaultList`, method.baseType, `(ctx, db`)
 		if f := b.getFiltering(method.inType); f != "" {
 			handlerCall += fmt.Sprint(",in.", f)
+		} else if b.listHasFiltering(ormable) {
+			handlerCall += fmt.Sprint(", nil")
 		}
 		if s := b.getSorting(method.inType); s != "" {
 			handlerCall += fmt.Sprint(",in.", s)
+		} else if b.listHasSorting(ormable) {
+			handlerCall += fmt.Sprint(", nil")
 		}
 		if pg != "" {
 			handlerCall += fmt.Sprint(",in.", pg)
+		} else if b.listHasPagination(ormable) {
+			handlerCall += fmt.Sprint(", nil")
 		}
 		if fs := b.getFieldSelection(method.inType); fs != "" {
 			handlerCall += fmt.Sprint(",in.", fs)
+		} else if b.listHasFieldSelection(ormable) {
+			handlerCall += fmt.Sprint(", nil")
 		}
 		handlerCall += ")"
 		g.P(handlerCall)
