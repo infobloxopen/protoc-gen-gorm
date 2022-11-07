@@ -1181,6 +1181,10 @@ func (b *ORMBuilder) renderGormTag(field *Field) string {
 		gormRes += "-;"
 	}
 
+	if len(tag.GetSerializer()) > 0 {
+		gormRes += fmt.Sprintf("serializer:%s;", tag.GetSerializer())
+	}
+
 	var foreignKey, associationForeignKey, joinTable, joinTableForeignKey, associationJoinTableForeignKey string
 	var associationAutoupdate, associationAutocreate, associationSaveReference, preload, replace, append, clear bool
 	if hasOne := field.GetHasOne(); hasOne != nil {
