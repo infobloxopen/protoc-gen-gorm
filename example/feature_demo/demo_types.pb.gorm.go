@@ -12,6 +12,7 @@ import (
 	pq "github.com/lib/pq"
 	go_uuid "github.com/satori/go.uuid"
 	field_mask "google.golang.org/genproto/protobuf/field_mask"
+	durationpb "google.golang.org/protobuf/types/known/durationpb"
 	emptypb "google.golang.org/protobuf/types/known/emptypb"
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	wrapperspb "google.golang.org/protobuf/types/known/wrapperspb"
@@ -28,6 +29,7 @@ type TestTypesORM struct {
 	BecomesInt                string
 	Bigint                    *big.Int `gorm:"type:numeric"`
 	CreatedAt                 *time.Time
+	Duration                  *time.Duration
 	JsonField                 *types.Jsonb  `gorm:"type:jsonb"`
 	NullableUuid              *go_uuid.UUID `gorm:"type:uuid"`
 	OptionalString            *string
@@ -69,6 +71,10 @@ func (m *TestTypes) ToORM(ctx context.Context) (TestTypesORM, error) {
 	if m.CreatedAt != nil {
 		t := m.CreatedAt.AsTime()
 		to.CreatedAt = &t
+	}
+	if m.Duration != nil {
+		t := m.Duration.AsDuration()
+		to.Duration = &t
 	}
 	to.TypeWithIdId = m.TypeWithIdId
 	if m.JsonField != nil {
@@ -119,6 +125,9 @@ func (m *TestTypesORM) ToPB(ctx context.Context) (TestTypes, error) {
 	to.Uuid = &types.UUID{Value: m.Uuid.String()}
 	if m.CreatedAt != nil {
 		to.CreatedAt = timestamppb.New(*m.CreatedAt)
+	}
+	if m.Duration != nil {
+		to.Duration = durationpb.New(*m.Duration)
 	}
 	to.TypeWithIdId = m.TypeWithIdId
 	if m.JsonField != nil {
@@ -1302,6 +1311,7 @@ func DefaultApplyFieldMaskTestTypes(ctx context.Context, patchee *TestTypes, pat
 	var updatedOptionalString bool
 	var updatedNothingness bool
 	var updatedCreatedAt bool
+	var updatedDuration bool
 	var updatedJsonField bool
 	for i, f := range updateMask.Paths {
 		if f == prefix+"ApiOnlyString" {
@@ -1387,6 +1397,29 @@ func DefaultApplyFieldMaskTestTypes(ctx context.Context, patchee *TestTypes, pat
 		if f == prefix+"CreatedAt" {
 			updatedCreatedAt = true
 			patchee.CreatedAt = patcher.CreatedAt
+			continue
+		}
+		if !updatedDuration && strings.HasPrefix(f, prefix+"Duration.") {
+			if patcher.Duration == nil {
+				patchee.Duration = nil
+				continue
+			}
+			if patchee.Duration == nil {
+				patchee.Duration = &durationpb.Duration{}
+			}
+			childMask := &field_mask.FieldMask{}
+			for j := i; j < len(updateMask.Paths); j++ {
+				if trimPath := strings.TrimPrefix(updateMask.Paths[j], prefix+"Duration."); trimPath != updateMask.Paths[j] {
+					childMask.Paths = append(childMask.Paths, trimPath)
+				}
+			}
+			if err := gorm1.MergeWithMask(patcher.Duration, patchee.Duration, childMask); err != nil {
+				return nil, nil
+			}
+		}
+		if f == prefix+"Duration" {
+			updatedDuration = true
+			patchee.Duration = patcher.Duration
 			continue
 		}
 		if f == prefix+"TypeWithIdId" {
@@ -1487,7 +1520,7 @@ func DefaultCreateTypeWithID(ctx context.Context, in *TypeWithID, db *gorm.DB) (
 			return nil, err
 		}
 	}
-	if err = db.Omit("Emails", "Friends").Preload("Emails").Create(&ormObj).Error; err != nil {
+	if err = db.Omit("Emails").Preload("Emails").Create(&ormObj).Error; err != nil {
 		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(TypeWithIDORMWithAfterCreate_); ok {

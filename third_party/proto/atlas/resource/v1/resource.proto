@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package atlas.resource.v1;
+package atlas.rpc;
 
 import "protoc-gen-openapiv2/options/annotations.proto";
 

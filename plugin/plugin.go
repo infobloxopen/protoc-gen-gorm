@@ -45,6 +45,7 @@ var (
 	pqImport           = "github.com/lib/pq"
 	gerrorsImport      = "github.com/infobloxopen/protoc-gen-gorm/errors"
 	timestampImport    = "google.golang.org/protobuf/types/known/timestamppb"
+	durationImport     = "google.golang.org/protobuf/types/known/durationpb"
 	wktImport          = "google.golang.org/protobuf/types/known/wrapperspb"
 	fmImport           = "google.golang.org/genproto/protobuf/field_mask"
 	stdFmtImport       = "fmt"
@@ -88,6 +89,7 @@ var wellKnownTypes = map[string]string{
 
 const (
 	protoTypeTimestamp = "Timestamp" // last segment, first will be *google_protobufX
+	protoTypeDuration  = "Duration"
 	protoTypeJSON      = "JSONValue"
 	protoTypeUUID      = "UUID"
 	protoTypeUUIDValue = "UUIDValue"
@@ -170,7 +172,7 @@ func parseParameter(param string) map[string]string {
 type OrmableType struct {
 	File       *protogen.File
 	Fields     map[string]*Field
-	Methods    map[string]*autogenMethod
+	Methods    []*autogenMethod
 	Name       string
 	OriginName string
 	Package    string
@@ -182,7 +184,7 @@ func NewOrmableType(originalName string, pkg string, file *protogen.File) *Ormab
 		Package:    pkg,
 		File:       file,
 		Fields:     make(map[string]*Field),
-		Methods:    make(map[string]*autogenMethod),
+		Methods:    []*autogenMethod{},
 	}
 }
 
@@ -877,6 +879,9 @@ func (b *ORMBuilder) parseBasicFields(msg *protogen.Message, g *protogen.Generat
 			} else if rawType == protoTypeTimestamp {
 				typePackage = stdTimeImport
 				fieldType = "*" + generateImport("Time", stdTimeImport, g)
+			} else if rawType == protoTypeDuration {
+				typePackage = stdTimeImport
+				fieldType = "*" + generateImport("Duration", stdTimeImport, g)
 			} else if rawType == protoTypeJSON {
 				if b.dbEngine == ENGINE_POSTGRES {
 					typePackage = gtypesImport
@@ -1440,6 +1445,17 @@ func (b *ORMBuilder) generateFieldConversion(message *protogen.Message, field *p
 				g.P(`to.`, fieldName, ` = `, generateImport("New", timestampImport, g), `(*m.`, fieldName, `)`)
 				g.P(`}`)
 			}
+		} else if fieldType == protoTypeDuration {
+			if toORM {
+				g.P(`if m.`, fieldName, ` != nil {`)
+				g.P(`t := m.`, fieldName, `.AsDuration()`)
+				g.P(`to.`, fieldName, ` = &t`)
+				g.P(`}`)
+			} else {
+				g.P(`if m.`, fieldName, ` != nil {`)
+				g.P(`to.`, fieldName, ` = `, generateImport("New", durationImport, g), `(*m.`, fieldName, `)`)
+				g.P(`}`)
+			}
 		} else if fieldType == protoTypeJSON {
 			if toORM {
 				g.P(`if m.`, fieldName, ` != nil {`)
@@ -1817,9 +1833,11 @@ func (b *ORMBuilder) generateReadHandler(message *protogen.Message, g *protogen.
 }
 
 func (b *ORMBuilder) readHasFieldSelection(ormable *OrmableType) bool {
-	if read, ok := ormable.Methods[readService]; ok {
-		if s := b.getFieldSelection(read.inType); s != "" {
-			return true
+	for _, method := range ormable.Methods {
+		if method.verb == readService {
+			if s := b.getFieldSelection(method.inType); s != "" {
+				return true
+			}
 		}
 	}
 	return false
@@ -2692,18 +2710,17 @@ func generateImport(name string, importPath string, g *protogen.GeneratedFile) s
 }
 
 func (b *ORMBuilder) listHasFiltering(ormable *OrmableType) bool {
-	if read, ok := ormable.Methods[listService]; ok {
-		if s := b.getFiltering(read.inType); s != "" {
+	for _, method := range ormable.Methods {
+		if s := b.getFiltering(method.inType); s != "" {
 			return true
 		}
 	}
-
 	return false
 }
 
 func (b *ORMBuilder) listHasSorting(ormable *OrmableType) bool {
-	if read, ok := ormable.Methods[listService]; ok {
-		if s := b.getSorting(read.inType); s != "" {
+	for _, method := range ormable.Methods {
+		if s := b.getSorting(method.inType); s != "" {
 			return true
 		}
 	}
@@ -2712,8 +2729,8 @@ func (b *ORMBuilder) listHasSorting(ormable *OrmableType) bool {
 }
 
 func (b *ORMBuilder) listHasPagination(ormable *OrmableType) bool {
-	if read, ok := ormable.Methods[listService]; ok {
-		if s := b.getPagination(read.inType); s != "" {
+	for _, method := range ormable.Methods {
+		if s := b.getPagination(method.inType); s != "" {
 			return true
 		}
 	}
@@ -2722,8 +2739,8 @@ func (b *ORMBuilder) listHasPagination(ormable *OrmableType) bool {
 }
 
 func (b *ORMBuilder) listHasFieldSelection(ormable *OrmableType) bool {
-	if read, ok := ormable.Methods[listService]; ok {
-		if s := b.getFieldSelection(read.inType); s != "" {
+	for _, method := range ormable.Methods {
+		if s := b.getFieldSelection(method.inType); s != "" {
 			return true
 		}
 	}
@@ -2792,7 +2809,7 @@ func (b *ORMBuilder) parseServices(file *protogen.File) {
 			genSvc.methods = append(genSvc.methods, genMethod)
 
 			if genMethod.verb != "" && b.isOrmable(genMethod.baseType) {
-				b.getOrmable(genMethod.baseType).Methods[genMethod.verb] = &genMethod
+				b.getOrmable(genMethod.baseType).Methods = append(b.getOrmable(genMethod.baseType).Methods, &genMethod)
 			}
 		}
 
@@ -2804,7 +2821,7 @@ func (b *ORMBuilder) followsCreateConventions(inType *protogen.Message, outType 
 	var inTypeName string
 	var typeOrmable bool
 	for _, field := range inType.Fields {
-		if string(field.Desc.Name()) == "payload" {
+		if string(field.Desc.Name()) == "payload" && field.Desc.Message() != nil {
 			gType := string(field.Desc.Message().Name())
 			inTypeName = strings.TrimPrefix(gType, "*")
 			if b.isOrmable(inTypeName) {
@@ -2930,7 +2947,7 @@ func (b *ORMBuilder) followsUpdateConventions(inType *protogen.Message, outType 
 	var typeOrmable bool
 	var updateMask string
 	for _, field := range inType.Fields {
-		if string(field.Desc.Name()) == "payload" {
+		if string(field.Desc.Name()) == "payload" && field.Desc.Message() != nil {
 			gType := string(field.Desc.Message().Name())
 			inTypeName = strings.TrimPrefix(gType, "*")
 			if b.isOrmable(inTypeName) {
@@ -3484,6 +3501,7 @@ func (b *ORMBuilder) generateListServerMethod(service autogenService, method aut
 	b.generateMethodSignature(service, method, g)
 	if method.followsConvention {
 		b.generateDBSetup(service, g)
+		ormable := b.getOrmable(method.baseType)
 		b.generatePreserviceCall(service, method.baseType, method.ccName, g)
 		pg := b.getPagination(method.inType)
 		pi := b.getPageInfo(method.outType)
@@ -3493,15 +3511,23 @@ func (b *ORMBuilder) generateListServerMethod(service autogenService, method aut
 		handlerCall := fmt.Sprint(`res, err := DefaultList`, method.baseType, `(ctx, db`)
 		if f := b.getFiltering(method.inType); f != "" {
 			handlerCall += fmt.Sprint(",in.", f)
+		} else if b.listHasFiltering(ormable) {
+			handlerCall += fmt.Sprint(", nil")
 		}
 		if s := b.getSorting(method.inType); s != "" {
 			handlerCall += fmt.Sprint(",in.", s)
+		} else if b.listHasSorting(ormable) {
+			handlerCall += fmt.Sprint(", nil")
 		}
 		if pg != "" {
 			handlerCall += fmt.Sprint(",in.", pg)
+		} else if b.listHasPagination(ormable) {
+			handlerCall += fmt.Sprint(", nil")
 		}
 		if fs := b.getFieldSelection(method.inType); fs != "" {
 			handlerCall += fmt.Sprint(",in.", fs)
+		} else if b.listHasFieldSelection(ormable) {
+			handlerCall += fmt.Sprint(", nil")
 		}
 		handlerCall += ")"
 		g.P(handlerCall)

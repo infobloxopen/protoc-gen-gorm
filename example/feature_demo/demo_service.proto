@@ -35,7 +35,7 @@ message CreateIntPointResponse {
 message ReadIntPointRequest {
     // For a read request, the id field is the only to be specified
     uint32 id = 1;
-    atlas.query.v1.FieldSelection fields = 2;
+    infoblox.api.FieldSelection fields = 2;
 }
 
 message ReadIntPointResponse {
@@ -79,13 +79,13 @@ message DeleteIntPointResponse {
 message ListIntPointResponse {
     // Note repeated field and plural name 'results'
     repeated IntPoint results = 1;
-    atlas.query.v1.PageInfo page_info = 2;
+    infoblox.api.PageInfo page_info = 2;
 }
 
 message ListSomethingResponse {
     // Note repeated field and plural name 'results'
     repeated Something results = 1;
-    atlas.query.v1.PageInfo page_info = 2;
+    infoblox.api.PageInfo page_info = 2;
 }
 
 
@@ -96,10 +96,10 @@ message Something {
 }
 
 message ListIntPointRequest {
-    atlas.query.v1.Filtering filter = 1;
-    atlas.query.v1.Sorting order_by = 2;
-    atlas.query.v1.FieldSelection fields = 3;
-    atlas.query.v1.Pagination paging = 4;
+    infoblox.api.Filtering filter = 1;
+    infoblox.api.Sorting order_by = 2;
+    infoblox.api.FieldSelection fields = 3;
+    infoblox.api.Pagination paging = 4;
 }
 
 service IntPointService {
@@ -125,6 +125,20 @@ service IntPointService {
   rpc CustomMethod ( google.protobuf.Empty ) returns  ( google.protobuf.Empty ) {}
   // CreateSomething also doesn't match conventions and will become a stub
   rpc CreateSomething ( Something ) returns  ( Something ) {}
+}
+
+// Test cases that were previously broken
+message CreateFooRequest {
+  bytes payload = 1;
+}
+message ListFooRequest {
+
+}
+
+service IntPointServiceB {
+  option (gorm.server).autogen = true;
+  rpc List ( ListFooRequest ) returns ( ListIntPointResponse ) {}
+  rpc Create ( CreateFooRequest ) returns ( ListIntPointResponse ) {}
 }
 
 service IntPointTxn {
