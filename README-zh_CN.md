@@ -125,7 +125,7 @@ make install || go install
 
    包含任意JSON并转换为 `postgres.Jsonb`  GORM类型
 
-   (https://github.com/jinzhu/gorm/blob/master/dialects/postgres/postgres.go#L59)
+   (https://gorm.io/gorm/blob/master/dialects/postgres/postgres.go#L59)
 
    如果Postgres是选定的数据库引擎，否则当前已删除
 

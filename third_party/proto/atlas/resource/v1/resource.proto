@@ -4,7 +4,7 @@ package atlas.rpc;
 
 import "protoc-gen-openapiv2/options/annotations.proto";
 
-option go_package = "github.com/infobloxopen/atlas-app-toolkit/atlas/resource;resource";
+option go_package = "github.com/infobloxopen/atlas-app-toolkit/rpc/resource;resource";
 
 // A number of application services require a mechanism to
 // encode the identity of a particular resource across applications.

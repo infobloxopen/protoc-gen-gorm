@@ -134,8 +134,7 @@ Within the proto files, the following types are supported:
   will become a ZeroUUID (`00000000-0000-0000-0000-000000000000`) at the ORM
   level.
 - custom wrapper type `gorm.types.JSONValue`, which wraps a string in protobuf
-  containing arbitrary JSON and converts to `postgres.Jsonb` GORM type
-  (https://github.com/jinzhu/gorm/blob/master/dialects/postgres/postgres.go#L59)
+  containing arbitrary JSON and converts to custom `types.Jsonb` type
   if Postgres is the selected DB engine, otherwise it is currently dropped.
 - custom wrapper type `gorm.types.InetValue`, which wraps a string and will
   convert to the `types.Inet` type at ORM level, which uses the golang `net.IPNet`
@@ -264,18 +263,18 @@ GORM association tags are also automatically inserted.
 
 #### Customization
 
-- For each association type you are able to override default foreign key and association key by setting `foreignkey` and `association_foreignkey` options.
+- For each association type you are able to override default foreign key and association key by setting `foreignKey` and `references` options.
 - For each association type you are able to override default behavior of creating/updating the record. It's references can be created/updated depending on
-`association_autoupdate`, `association_autocreate` and `association_save_reference` options. Check out
+`disable_association_autoupdate`, `disable_association_autocreate` options, which effectively produces statements to prevent Association _auto_ behavior (much like in tags were used in [gormV1](https://v1.gorm.io/docs/associations.html#Skip-AutoUpdate)). Check out
 [official association docs](http://gorm.io/docs/associations.html) for more information.
-- For each association type you are able to set `preload` option. Check out
+- For each association type you are able to set `preload` option, which generates required code (with the same meaning [gormV1](http://gorm.io/docs/preload.html#Auto-Preloading) preload tag was working). Check out
 [GORM](http://gorm.io/docs/preload.html#Auto-Preloading) docs.
 - By default when updating child associations are wiped and replaced. This functionality can be switched to work the same way gorm handles this see [GORM]https://gorm.io/docs/associations.html this is done by adding one of the gorm association handler options, the options are `append` ([GORM]https://gorm.io/docs/associations.html#Append-Associations), `clear` ([GORM]https://gorm.io/docs/associations.html#Clear-Associations) and `replace` ([GORM]https://gorm.io/docs/associations.html#Replace-Associations).
 - For Has-Many you are able to set `position_field` so additional field is created if it doesn't exist in proto message to maintain association ordering.
 Corresponding CRUDL handlers do all the necessary work to maintain the ordering.
 - For automatically created foreign key and position field you're able to assign GORM tags by setting `foreignkey_tag` and `position_field_tag` options.
-- For Many-To-Many you're able to override default join table name and column names by setting `jointable`, `jointable_foreignkey` and
-`association_jointable_foreignkey` options.
+- For Many-To-Many you're able to override default join table name and column names by setting `jointable`, `joinForeignKey` and
+`joinReferences` options.
 
 Check out [user](example/user/user.proto) to see a real example of associations usage.
 

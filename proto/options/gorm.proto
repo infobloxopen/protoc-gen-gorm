@@ -74,8 +74,8 @@ message GormTag {
     string many_to_many = 17;
     string jointable_foreignkey = 18;
     string association_jointable_foreignkey = 19;
-    bool association_autoupdate = 20;
-    bool association_autocreate = 21;
+    bool disable_association_autoupdate = 20;
+    bool disable_association_autocreate = 21;
     bool association_save_reference = 22;
     bool preload = 23;
     string serializer = 24;
@@ -85,8 +85,8 @@ message HasOneOptions {
     string foreignkey = 1;
     GormTag foreignkey_tag = 2;
     string association_foreignkey = 3;
-    bool association_autoupdate = 4;
-    bool association_autocreate = 5;
+    bool disable_association_autoupdate = 4;
+    bool disable_association_autocreate = 5;
     bool association_save_reference = 6;
     bool preload = 7;
     bool replace = 8;
@@ -98,8 +98,8 @@ message BelongsToOptions {
     string foreignkey = 1;
     GormTag foreignkey_tag = 2;
     string association_foreignkey = 3;
-    bool association_autoupdate = 4;
-    bool association_autocreate = 5;
+    bool disable_association_autoupdate = 4;
+    bool disable_association_autocreate = 5;
     bool association_save_reference = 6;
     bool preload = 7;
 }
@@ -110,8 +110,8 @@ message HasManyOptions {
     string association_foreignkey = 3;
     string position_field = 4;
     GormTag position_field_tag = 5;
-    bool association_autoupdate = 6;
-    bool association_autocreate = 7;
+    bool disable_association_autoupdate = 6;
+    bool disable_association_autocreate = 7;
     bool association_save_reference = 8;
     bool preload = 9;
     bool replace = 10;
@@ -125,8 +125,8 @@ message ManyToManyOptions {
     string jointable_foreignkey = 3;
     string association_foreignkey = 4;
     string association_jointable_foreignkey = 5;
-    bool association_autoupdate = 6;
-    bool association_autocreate = 7;
+    bool disable_association_autoupdate = 6;
+    bool disable_association_autocreate = 7;
     bool association_save_reference = 8;
     bool preload = 9;
     bool replace = 10;

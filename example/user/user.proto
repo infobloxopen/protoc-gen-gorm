@@ -23,8 +23,8 @@ message User {
     uint32 age = 5 [(gorm.field).drop = true]; // synthetic field
     uint32 num = 6;
     CreditCard credit_card = 7; // has one
-    repeated Email emails = 8; // has many
-    repeated Task tasks = 9 [(gorm.field).has_many = {position_field: "priority" foreignkey_tag: {not_null: true}}];
+    repeated Email emails = 8 [(gorm.field).has_many = {disable_association_autocreate: true disable_association_autoupdate: true preload: true}]; // has many
+    repeated Task tasks = 9 [(gorm.field).has_many = {position_field: "priority" foreignkey_tag: {not_null: true} disable_association_autocreate: false}];
     Address billing_address = 10 [(gorm.field).belongs_to = {}];
     Address shipping_address = 11 [(gorm.field).belongs_to = {}];
     repeated Language languages = 12 [(gorm.field).many_to_many = {}];
