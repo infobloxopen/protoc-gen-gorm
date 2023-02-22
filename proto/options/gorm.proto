@@ -78,6 +78,7 @@ message GormTag {
     bool disable_association_autocreate = 21;
     bool association_save_reference = 22;
     bool preload = 23;
+    string serializer = 24;
 }
 
 message HasOneOptions {
