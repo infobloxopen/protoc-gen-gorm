@@ -37,7 +37,7 @@ go get -u github.com/golang/protobuf/protoc-gen-go
 ```
 Starting from Go 1.17
 ```
-go install github.com/golang/protobuf/protoc-gen-go
+go install github.com/golang/protobuf/protoc-gen-go@latest
 ```
 
 
@@ -51,7 +51,7 @@ go mod tidy
 
 ### Installation
 
-To use this tool, install it from code with `make install`, `go install` directly,
+To use this tool, install it from code with `make install`, `go install github.com/infobloxopen/protoc-gen-gorm@latest` directly,
 or `go get github.com/infobloxopen/protoc-gen-gorm`.
 
 ### Usage
