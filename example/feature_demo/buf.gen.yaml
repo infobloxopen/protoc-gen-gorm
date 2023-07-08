@@ -1,13 +1,13 @@
 version: v1
 plugins:
-  - remote: buf.build/library/plugins/go:v1.27.1-1
+  - plugin: buf.build/protocolbuffers/go:v1.30.0
     out: example
     opt:
       - paths=source_relative
-  - remote: buf.build/library/plugins/go-grpc:v1.1.0-2
+  - plugin: buf.build/grpc/go:v1.3.0
     out: example
     opt: paths=source_relative
-  - name: gorm
+  - plugin: gorm
     out: example
     opt:
       - paths=source_relative,engine=postgres,enums=string,gateway=true:./example/feature_demo
