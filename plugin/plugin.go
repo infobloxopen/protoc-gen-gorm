@@ -995,13 +995,6 @@ func (b *ORMBuilder) parseBasicFields(msg *protogen.Message, g *protogen.Generat
 	}
 }
 
-func handleOptionalFields(field *protogen.Field, fieldType string) string {
-	if field.Desc.Cardinality() == protoreflect.Optional && fieldType == "string" {
-		fieldType = "*" + field.Desc.Cardinality().String()
-	}
-	return fieldType
-}
-
 func (b *ORMBuilder) addIncludedField(ormable *OrmableType, field *gormopts.ExtraField, g *protogen.GeneratedFile) {
 	fieldName := camelCase(field.GetName())
 	isPtr := strings.HasPrefix(field.GetType(), "*")
