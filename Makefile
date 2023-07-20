@@ -91,7 +91,6 @@ build-user-local:
 	rm -rf example/user/google.golang.org
 	go install
 	protoc --proto_path . \
-	--experimental_allow_proto3_optional \
 	-I./proto/ \
 	-I./third_party/proto/ \
 	example/user/user.proto --gorm_out="engine=postgres,enums=string,gateway:./example/user" --go_out=./example/user
