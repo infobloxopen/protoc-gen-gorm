@@ -52,7 +52,7 @@ message Address {
     };
     atlas.rpc.Identifier id = 1 [(gorm.field).tag = {type: "integer" primary_key: true}];
     string address_1 = 2;
-    string address_2 = 3;
+    optional string address_2 = 3;
     string post = 4;
     atlas.rpc.Identifier external = 5 [(gorm.field).tag = {type: "jsonb"}];
     atlas.rpc.Identifier implicit_fk = 6 [(gorm.field) = {reference_of: "Email" tag: {type: "text"} }];

@@ -87,6 +87,17 @@ var wellKnownTypes = map[string]string{
 	//  "BytesValue" : "*[]byte",
 }
 
+var optionalTypes = map[string]string{
+	"string":  "*string",
+	"float64": "*float64",
+	"float32": "*float32",
+	"int32":   "*int32",
+	"int64":   "*int64",
+	"uint32":  "*uint32",
+	"uint64":  "*uint64",
+	"bool":    "*bool",
+}
+
 const (
 	protoTypeTimestamp = "Timestamp" // last segment, first will be *google_protobufX
 	protoTypeDuration  = "Duration"
@@ -123,6 +134,7 @@ func New(opts protogen.Options, request *pluginpb.CodeGeneratorRequest) (*ORMBui
 	if err != nil {
 		return nil, err
 	}
+	SetSupportedFeaturesOnPluginGen(plugin)
 
 	builder := &ORMBuilder{
 		plugin:       plugin,
@@ -335,6 +347,7 @@ func (b *ORMBuilder) Generate() (*pluginpb.CodeGeneratorResponse, error) {
 		b.generateDefaultServer(protoFile, g)
 	}
 
+	SetSupportedFeaturesOnCodeGeneratorResponse(b.plugin.Response())
 	return b.plugin.Response(), nil
 }
 
@@ -342,7 +355,7 @@ func (b *ORMBuilder) generateConvertFunctions(g *protogen.GeneratedFile, message
 	typeName := string(message.Desc.Name())
 	ormable := b.getOrmable(camelCase(typeName))
 
-	///// To Orm
+	// /// To Orm
 	g.P(`// ToORM runs the BeforeToORM hook if present, converts the fields of this`)
 	g.P(`// object to ORM format, runs the AfterToORM hook, then returns the ORM object`)
 	g.P(`func (m *`, typeName, `) ToORM (ctx `, generateImport("Context", "context", g), `) (`, typeName, `ORM, error) {`)
@@ -379,7 +392,7 @@ func (b *ORMBuilder) generateConvertFunctions(g *protogen.GeneratedFile, message
 	g.P(`}`)
 
 	g.P()
-	///// To Pb
+	// /// To Pb
 	g.P(`// ToPB runs the BeforeToPB hook if present, converts the fields of this`)
 	g.P(`// object to PB format, runs the AfterToPB hook, then returns the PB object`)
 	g.P(`func (m *`, typeName, `ORM) ToPB (ctx context.Context) (`,
@@ -938,6 +951,13 @@ func (b *ORMBuilder) parseBasicFields(msg *protogen.Message, g *protogen.Generat
 			fieldType = "float64"
 		}
 
+		// handle optional fields
+		if fd.HasOptionalKeyword() {
+			if v, ok := optionalTypes[fieldType]; ok {
+				fieldType = v
+			}
+		}
+
 		f := &Field{
 			GormFieldOptions: gormOptions,
 			ParentGoType:     "",
@@ -1346,7 +1366,7 @@ func (b *ORMBuilder) generateFieldConversion(message *protogen.Message, field *p
 			g.P(`copy(to.`, fieldName, `, m.`, fieldName, `)`)
 			g.P(`}`)
 		} else if b.isOrmable(fieldType) { // Repeated ORMable type
-			//fieldType = strings.Trim(fieldType, "[]*")
+			// fieldType = strings.Trim(fieldType, "[]*")
 
 			g.P(`for _, v := range m.`, fieldName, ` {`)
 			g.P(`if v != nil {`)
@@ -1382,7 +1402,7 @@ func (b *ORMBuilder) generateFieldConversion(message *protogen.Message, field *p
 			}
 		}
 	} else if field.Message != nil { // Singular Object -------------
-		//Check for WKTs
+		// Check for WKTs
 		// Type is a WKT, convert to/from as ptr to base type
 		if _, exists := wellKnownTypes[fieldType]; exists { // Singular WKT -----
 			if toORM {
