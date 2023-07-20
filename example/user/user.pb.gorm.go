@@ -410,7 +410,7 @@ type EmailWithAfterToPB interface {
 type AddressORM struct {
 	AccountID  string
 	Address_1  string
-	Address_2  *string
+	Address_2  string
 	External   []byte  `gorm:"type:jsonb"`
 	Id         int64   `gorm:"type:integer;primaryKey"`
 	ImplicitFk *string `gorm:"type:text"`
