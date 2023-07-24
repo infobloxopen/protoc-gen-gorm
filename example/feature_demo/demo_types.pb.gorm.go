@@ -3,6 +3,10 @@ package example
 import (
 	context "context"
 	fmt "fmt"
+	big "math/big"
+	strings "strings"
+	time "time"
+
 	auth "github.com/infobloxopen/atlas-app-toolkit/auth"
 	gateway "github.com/infobloxopen/atlas-app-toolkit/gateway"
 	gorm1 "github.com/infobloxopen/atlas-app-toolkit/gorm"
@@ -17,9 +21,6 @@ import (
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	wrapperspb "google.golang.org/protobuf/types/known/wrapperspb"
 	gorm "gorm.io/gorm"
-	big "math/big"
-	strings "strings"
-	time "time"
 )
 
 type TestTypesORM struct {
@@ -1466,10 +1467,6 @@ func DefaultListTestTypes(ctx context.Context, db *gorm.DB) ([]*TestTypes, error
 			return nil, err
 		}
 	}
-	db, err = gorm1.ApplyCollectionOperators(ctx, db, &TestTypesORM{}, &TestTypes{}, nil, nil, nil, nil)
-	if err != nil {
-		return nil, err
-	}
 	if hook, ok := interface{}(&ormObj).(TestTypesORMWithBeforeListFind); ok {
 		if db, err = hook.BeforeListFind(ctx, db); err != nil {
 			return nil, err
@@ -1554,9 +1551,6 @@ func DefaultReadTypeWithID(ctx context.Context, in *TypeWithID, db *gorm.DB) (*T
 		if db, err = hook.BeforeReadApplyQuery(ctx, db); err != nil {
 			return nil, err
 		}
-	}
-	if db, err = gorm1.ApplyFieldSelection(ctx, db, nil, &TypeWithIDORM{}); err != nil {
-		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(TypeWithIDORMWithBeforeReadFind); ok {
 		if db, err = hook.BeforeReadFind(ctx, db); err != nil {
@@ -2021,10 +2015,6 @@ func DefaultListTypeWithID(ctx context.Context, db *gorm.DB) ([]*TypeWithID, err
 			return nil, err
 		}
 	}
-	db, err = gorm1.ApplyCollectionOperators(ctx, db, &TypeWithIDORM{}, &TypeWithID{}, nil, nil, nil, nil)
-	if err != nil {
-		return nil, err
-	}
 	if hook, ok := interface{}(&ormObj).(TypeWithIDORMWithBeforeListFind); ok {
 		if db, err = hook.BeforeListFind(ctx, db); err != nil {
 			return nil, err
@@ -2110,9 +2100,6 @@ func DefaultReadMultiaccountTypeWithID(ctx context.Context, in *MultiaccountType
 		if db, err = hook.BeforeReadApplyQuery(ctx, db); err != nil {
 			return nil, err
 		}
-	}
-	if db, err = gorm1.ApplyFieldSelection(ctx, db, nil, &MultiaccountTypeWithIDORM{}); err != nil {
-		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(MultiaccountTypeWithIDORMWithBeforeReadFind); ok {
 		if db, err = hook.BeforeReadFind(ctx, db); err != nil {
@@ -2382,10 +2369,6 @@ func DefaultListMultiaccountTypeWithID(ctx context.Context, db *gorm.DB) ([]*Mul
 			return nil, err
 		}
 	}
-	db, err = gorm1.ApplyCollectionOperators(ctx, db, &MultiaccountTypeWithIDORM{}, &MultiaccountTypeWithID{}, nil, nil, nil, nil)
-	if err != nil {
-		return nil, err
-	}
 	if hook, ok := interface{}(&ormObj).(MultiaccountTypeWithIDORMWithBeforeListFind); ok {
 		if db, err = hook.BeforeListFind(ctx, db); err != nil {
 			return nil, err
@@ -2488,10 +2471,6 @@ func DefaultListMultiaccountTypeWithoutID(ctx context.Context, db *gorm.DB) ([]*
 			return nil, err
 		}
 	}
-	db, err = gorm1.ApplyCollectionOperators(ctx, db, &MultiaccountTypeWithoutIDORM{}, &MultiaccountTypeWithoutID{}, nil, nil, nil, nil)
-	if err != nil {
-		return nil, err
-	}
 	if hook, ok := interface{}(&ormObj).(MultiaccountTypeWithoutIDORMWithBeforeListFind); ok {
 		if db, err = hook.BeforeListFind(ctx, db); err != nil {
 			return nil, err
@@ -2576,9 +2555,6 @@ func DefaultReadPrimaryUUIDType(ctx context.Context, in *PrimaryUUIDType, db *go
 		if db, err = hook.BeforeReadApplyQuery(ctx, db); err != nil {
 			return nil, err
 		}
-	}
-	if db, err = gorm1.ApplyFieldSelection(ctx, db, nil, &PrimaryUUIDTypeORM{}); err != nil {
-		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(PrimaryUUIDTypeORMWithBeforeReadFind); ok {
 		if db, err = hook.BeforeReadFind(ctx, db); err != nil {
@@ -2866,10 +2842,6 @@ func DefaultListPrimaryUUIDType(ctx context.Context, db *gorm.DB) ([]*PrimaryUUI
 			return nil, err
 		}
 	}
-	db, err = gorm1.ApplyCollectionOperators(ctx, db, &PrimaryUUIDTypeORM{}, &PrimaryUUIDType{}, nil, nil, nil, nil)
-	if err != nil {
-		return nil, err
-	}
 	if hook, ok := interface{}(&ormObj).(PrimaryUUIDTypeORMWithBeforeListFind); ok {
 		if db, err = hook.BeforeListFind(ctx, db); err != nil {
 			return nil, err
@@ -2955,9 +2927,6 @@ func DefaultReadPrimaryStringType(ctx context.Context, in *PrimaryStringType, db
 		if db, err = hook.BeforeReadApplyQuery(ctx, db); err != nil {
 			return nil, err
 		}
-	}
-	if db, err = gorm1.ApplyFieldSelection(ctx, db, nil, &PrimaryStringTypeORM{}); err != nil {
-		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(PrimaryStringTypeORMWithBeforeReadFind); ok {
 		if db, err = hook.BeforeReadFind(ctx, db); err != nil {
@@ -3245,10 +3214,6 @@ func DefaultListPrimaryStringType(ctx context.Context, db *gorm.DB) ([]*PrimaryS
 			return nil, err
 		}
 	}
-	db, err = gorm1.ApplyCollectionOperators(ctx, db, &PrimaryStringTypeORM{}, &PrimaryStringType{}, nil, nil, nil, nil)
-	if err != nil {
-		return nil, err
-	}
 	if hook, ok := interface{}(&ormObj).(PrimaryStringTypeORMWithBeforeListFind); ok {
 		if db, err = hook.BeforeListFind(ctx, db); err != nil {
 			return nil, err
@@ -3334,9 +3299,6 @@ func DefaultReadTestTag(ctx context.Context, in *TestTag, db *gorm.DB) (*TestTag
 		if db, err = hook.BeforeReadApplyQuery(ctx, db); err != nil {
 			return nil, err
 		}
-	}
-	if db, err = gorm1.ApplyFieldSelection(ctx, db, nil, &TestTagORM{}); err != nil {
-		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(TestTagORMWithBeforeReadFind); ok {
 		if db, err = hook.BeforeReadFind(ctx, db); err != nil {
@@ -3624,10 +3586,6 @@ func DefaultListTestTag(ctx context.Context, db *gorm.DB) ([]*TestTag, error) {
 			return nil, err
 		}
 	}
-	db, err = gorm1.ApplyCollectionOperators(ctx, db, &TestTagORM{}, &TestTag{}, nil, nil, nil, nil)
-	if err != nil {
-		return nil, err
-	}
 	if hook, ok := interface{}(&ormObj).(TestTagORMWithBeforeListFind); ok {
 		if db, err = hook.BeforeListFind(ctx, db); err != nil {
 			return nil, err
@@ -3713,9 +3671,6 @@ func DefaultReadTestAssocHandlerDefault(ctx context.Context, in *TestAssocHandle
 		if db, err = hook.BeforeReadApplyQuery(ctx, db); err != nil {
 			return nil, err
 		}
-	}
-	if db, err = gorm1.ApplyFieldSelection(ctx, db, nil, &TestAssocHandlerDefaultORM{}); err != nil {
-		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(TestAssocHandlerDefaultORMWithBeforeReadFind); ok {
 		if db, err = hook.BeforeReadFind(ctx, db); err != nil {
@@ -3985,10 +3940,6 @@ func DefaultListTestAssocHandlerDefault(ctx context.Context, db *gorm.DB) ([]*Te
 			return nil, err
 		}
 	}
-	db, err = gorm1.ApplyCollectionOperators(ctx, db, &TestAssocHandlerDefaultORM{}, &TestAssocHandlerDefault{}, nil, nil, nil, nil)
-	if err != nil {
-		return nil, err
-	}
 	if hook, ok := interface{}(&ormObj).(TestAssocHandlerDefaultORMWithBeforeListFind); ok {
 		if db, err = hook.BeforeListFind(ctx, db); err != nil {
 			return nil, err
@@ -4074,9 +4025,6 @@ func DefaultReadTestAssocHandlerReplace(ctx context.Context, in *TestAssocHandle
 		if db, err = hook.BeforeReadApplyQuery(ctx, db); err != nil {
 			return nil, err
 		}
-	}
-	if db, err = gorm1.ApplyFieldSelection(ctx, db, nil, &TestAssocHandlerReplaceORM{}); err != nil {
-		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(TestAssocHandlerReplaceORMWithBeforeReadFind); ok {
 		if db, err = hook.BeforeReadFind(ctx, db); err != nil {
@@ -4341,10 +4289,6 @@ func DefaultListTestAssocHandlerReplace(ctx context.Context, db *gorm.DB) ([]*Te
 			return nil, err
 		}
 	}
-	db, err = gorm1.ApplyCollectionOperators(ctx, db, &TestAssocHandlerReplaceORM{}, &TestAssocHandlerReplace{}, nil, nil, nil, nil)
-	if err != nil {
-		return nil, err
-	}
 	if hook, ok := interface{}(&ormObj).(TestAssocHandlerReplaceORMWithBeforeListFind); ok {
 		if db, err = hook.BeforeListFind(ctx, db); err != nil {
 			return nil, err
@@ -4430,9 +4374,6 @@ func DefaultReadTestAssocHandlerClear(ctx context.Context, in *TestAssocHandlerC
 		if db, err = hook.BeforeReadApplyQuery(ctx, db); err != nil {
 			return nil, err
 		}
-	}
-	if db, err = gorm1.ApplyFieldSelection(ctx, db, nil, &TestAssocHandlerClearORM{}); err != nil {
-		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(TestAssocHandlerClearORMWithBeforeReadFind); ok {
 		if db, err = hook.BeforeReadFind(ctx, db); err != nil {
@@ -4697,10 +4638,6 @@ func DefaultListTestAssocHandlerClear(ctx context.Context, db *gorm.DB) ([]*Test
 			return nil, err
 		}
 	}
-	db, err = gorm1.ApplyCollectionOperators(ctx, db, &TestAssocHandlerClearORM{}, &TestAssocHandlerClear{}, nil, nil, nil, nil)
-	if err != nil {
-		return nil, err
-	}
 	if hook, ok := interface{}(&ormObj).(TestAssocHandlerClearORMWithBeforeListFind); ok {
 		if db, err = hook.BeforeListFind(ctx, db); err != nil {
 			return nil, err
@@ -4786,9 +4723,6 @@ func DefaultReadTestAssocHandlerAppend(ctx context.Context, in *TestAssocHandler
 		if db, err = hook.BeforeReadApplyQuery(ctx, db); err != nil {
 			return nil, err
 		}
-	}
-	if db, err = gorm1.ApplyFieldSelection(ctx, db, nil, &TestAssocHandlerAppendORM{}); err != nil {
-		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(TestAssocHandlerAppendORMWithBeforeReadFind); ok {
 		if db, err = hook.BeforeReadFind(ctx, db); err != nil {
@@ -5053,10 +4987,6 @@ func DefaultListTestAssocHandlerAppend(ctx context.Context, db *gorm.DB) ([]*Tes
 			return nil, err
 		}
 	}
-	db, err = gorm1.ApplyCollectionOperators(ctx, db, &TestAssocHandlerAppendORM{}, &TestAssocHandlerAppend{}, nil, nil, nil, nil)
-	if err != nil {
-		return nil, err
-	}
 	if hook, ok := interface{}(&ormObj).(TestAssocHandlerAppendORMWithBeforeListFind); ok {
 		if db, err = hook.BeforeListFind(ctx, db); err != nil {
 			return nil, err
@@ -5159,10 +5089,6 @@ func DefaultListTestTagAssociation(ctx context.Context, db *gorm.DB) ([]*TestTag
 			return nil, err
 		}
 	}
-	db, err = gorm1.ApplyCollectionOperators(ctx, db, &TestTagAssociationORM{}, &TestTagAssociation{}, nil, nil, nil, nil)
-	if err != nil {
-		return nil, err
-	}
 	if hook, ok := interface{}(&ormObj).(TestTagAssociationORMWithBeforeListFind); ok {
 		if db, err = hook.BeforeListFind(ctx, db); err != nil {
 			return nil, err
@@ -5247,9 +5173,6 @@ func DefaultReadPrimaryIncluded(ctx context.Context, in *PrimaryIncluded, db *go
 		if db, err = hook.BeforeReadApplyQuery(ctx, db); err != nil {
 			return nil, err
 		}
-	}
-	if db, err = gorm1.ApplyFieldSelection(ctx, db, nil, &PrimaryIncludedORM{}); err != nil {
-		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(PrimaryIncludedORMWithBeforeReadFind); ok {
 		if db, err = hook.BeforeReadFind(ctx, db); err != nil {
@@ -5527,10 +5450,6 @@ func DefaultListPrimaryIncluded(ctx context.Context, db *gorm.DB) ([]*PrimaryInc
 		if db, err = hook.BeforeListApplyQuery(ctx, db); err != nil {
 			return nil, err
 		}
-	}
-	db, err = gorm1.ApplyCollectionOperators(ctx, db, &PrimaryIncludedORM{}, &PrimaryIncluded{}, nil, nil, nil, nil)
-	if err != nil {
-		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(PrimaryIncludedORMWithBeforeListFind); ok {
 		if db, err = hook.BeforeListFind(ctx, db); err != nil {

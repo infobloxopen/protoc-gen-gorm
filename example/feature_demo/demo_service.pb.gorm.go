@@ -4,6 +4,7 @@ import (
 	context "context"
 	json "encoding/json"
 	fmt "fmt"
+
 	gateway "github.com/infobloxopen/atlas-app-toolkit/gateway"
 	gorm1 "github.com/infobloxopen/atlas-app-toolkit/gorm"
 	query "github.com/infobloxopen/atlas-app-toolkit/query"
@@ -266,9 +267,6 @@ func DefaultReadIntPoint(ctx context.Context, in *IntPoint, db *gorm.DB, fs *que
 		if db, err = hook.BeforeReadApplyQuery(ctx, db, fs); err != nil {
 			return nil, err
 		}
-	}
-	if db, err = gorm1.ApplyFieldSelection(ctx, db, fs, &IntPointORM{}); err != nil {
-		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(IntPointORMWithBeforeReadFind); ok {
 		if db, err = hook.BeforeReadFind(ctx, db, fs); err != nil {
@@ -533,10 +531,6 @@ func DefaultListIntPoint(ctx context.Context, db *gorm.DB, f *query.Filtering, s
 			return nil, err
 		}
 	}
-	db, err = gorm1.ApplyCollectionOperators(ctx, db, &IntPointORM{}, &IntPoint{}, f, s, p, fs)
-	if err != nil {
-		return nil, err
-	}
 	if hook, ok := interface{}(&ormObj).(IntPointORMWithBeforeListFind); ok {
 		if db, err = hook.BeforeListFind(ctx, db, f, s, p, fs); err != nil {
 			return nil, err
@@ -639,10 +633,6 @@ func DefaultListSomething(ctx context.Context, db *gorm.DB) ([]*Something, error
 			return nil, err
 		}
 	}
-	db, err = gorm1.ApplyCollectionOperators(ctx, db, &SomethingORM{}, &Something{}, nil, nil, nil, nil)
-	if err != nil {
-		return nil, err
-	}
 	if hook, ok := interface{}(&ormObj).(SomethingORMWithBeforeListFind); ok {
 		if db, err = hook.BeforeListFind(ctx, db); err != nil {
 			return nil, err
@@ -743,10 +733,6 @@ func DefaultListCircle(ctx context.Context, db *gorm.DB) ([]*Circle, error) {
 		if db, err = hook.BeforeListApplyQuery(ctx, db); err != nil {
 			return nil, err
 		}
-	}
-	db, err = gorm1.ApplyCollectionOperators(ctx, db, &CircleORM{}, &Circle{}, nil, nil, nil, nil)
-	if err != nil {
-		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(CircleORMWithBeforeListFind); ok {
 		if db, err = hook.BeforeListFind(ctx, db); err != nil {
