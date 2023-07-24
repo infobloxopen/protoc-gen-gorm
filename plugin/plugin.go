@@ -1835,9 +1835,11 @@ func (b *ORMBuilder) generateReadHandler(message *protogen.Message, g *protogen.
 	}
 
 	b.generateBeforeReadHookCall(ormable, "ApplyQuery", g)
-	g.P(`if db, err = `, generateImport("ApplyFieldSelection", tkgormImport, g), `(ctx, db, `, fs, `, &`, ormable.Name, `{}); err != nil {`)
-	g.P(`return nil, err`)
-	g.P(`}`)
+	if fs != "nil" {
+		g.P(`if db, err = `, generateImport("ApplyFieldSelection", tkgormImport, g), `(ctx, db, `, fs, `, &`, ormable.Name, `{}); err != nil {`)
+		g.P(`return nil, err`)
+		g.P(`}`)
+	}
 
 	b.generateBeforeReadHookCall(ormable, "Find", g)
 	g.P(`ormResponse := `, ormable.Name, `{}`)
@@ -2605,10 +2607,12 @@ func (b *ORMBuilder) generateListHandler(message *protogen.Message, g *protogen.
 	g.P(`return nil, err`)
 	g.P(`}`)
 	b.generateBeforeListHookCall(ormable, "ApplyQuery", g)
-	g.P(`db, err = `, generateImport("ApplyCollectionOperators", tkgormImport, g), `(ctx, db, &`, ormable.Name, `{}, &`, typeName, `{}, `, f, `,`, s, `,`, pg, `,`, fs, `)`)
-	g.P(`if err != nil {`)
-	g.P(`return nil, err`)
-	g.P(`}`)
+	if f != "nil" || s != "nil" || pg != "nil" || fs != "nil" {
+		g.P(`db, err = `, generateImport("ApplyCollectionOperators", tkgormImport, g), `(ctx, db, &`, ormable.Name, `{}, &`, typeName, `{}, `, f, `,`, s, `,`, pg, `,`, fs, `)`)
+		g.P(`if err != nil {`)
+		g.P(`return nil, err`)
+		g.P(`}`)
+	}
 	b.generateBeforeListHookCall(ormable, "Find", g)
 	g.P(`db = db.Where(&ormObj)`)
 
