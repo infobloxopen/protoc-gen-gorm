@@ -31,6 +31,7 @@ message User {
     repeated User friends = 13 [(gorm.field).many_to_many = {}];
     atlas.rpc.Identifier shipping_address_id = 14;
     atlas.rpc.Identifier external_uuid = 15 [(gorm.field).tag = {type: "uuid"}];
+    Department department = 16;
 }
 
 message Email {
@@ -90,4 +91,13 @@ message Task {
     string description = 2;
     int64 priority = 3;
     optional string id = 4;
+}
+
+// Department added example for composite primary keys
+message Department {
+    option (gorm.opts) = {
+        ormable: true,
+    };
+    string name = 1 [(gorm.field).tag = {primary_key: true}];
+    int64 id = 2 [(gorm.field).tag = {primary_key: true}];
 }

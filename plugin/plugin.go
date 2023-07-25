@@ -546,6 +546,19 @@ func (b *ORMBuilder) hasPrimaryKey(ormable *OrmableType) bool {
 	return false
 }
 
+func (b *ORMBuilder) hasCompositePrimaryKey(ormable *OrmableType) bool {
+	keys := 0
+	for _, field := range ormable.Fields {
+		if field.GetTag().GetPrimaryKey() && keys <= 1 {
+			keys++
+		}
+	}
+	if keys > 1 {
+		return true
+	}
+	return false
+}
+
 func (b *ORMBuilder) isOrmable(typeName string) bool {
 	_, ok := b.ormableTypes[typeName]
 	return ok
@@ -564,6 +577,16 @@ func (b *ORMBuilder) findPrimaryKey(ormable *OrmableType) (string, *Field) {
 	}
 
 	panic("no primary_key")
+}
+
+func (b *ORMBuilder) getPrimaryKeys(ormable *OrmableType) map[string]*Field {
+	mapPK := make(map[string]*Field)
+	for fieldName, field := range ormable.Fields {
+		if field.GetTag().GetPrimaryKey() {
+			mapPK[fieldName] = field
+		}
+	}
+	return mapPK
 }
 
 func (b *ORMBuilder) getOrmable(typeName string) *OrmableType {
@@ -1611,7 +1634,11 @@ func (b *ORMBuilder) generateDefaultHandlers(file *protogen.File, g *protogen.Ge
 			typeName := string(message.Desc.Name())
 			ormable := b.getOrmable(typeName)
 
-			if b.hasPrimaryKey(ormable) {
+			if b.hasCompositePrimaryKey(ormable) {
+				// TODO support for Update,Patch,DeleteSet when composite primary keys exist
+				b.generateReadHandler(message, g)
+				b.generateDeleteHandler(message, g)
+			} else if b.hasPrimaryKey(ormable) {
 				b.generateReadHandler(message, g)
 				b.generateDeleteHandler(message, g)
 				b.generateDeleteSetHandler(message, g)
@@ -1818,14 +1845,16 @@ func (b *ORMBuilder) generateReadHandler(message *protogen.Message, g *protogen.
 	g.P(`return nil, err`)
 	g.P(`}`)
 
-	k, f := b.findPrimaryKey(ormable)
-	if strings.Contains(f.TypeName, "*") {
-		g.P(`if ormObj.`, k, ` == nil || *ormObj.`, k, ` == `, b.guessZeroValue(f.TypeName, g), ` {`)
-	} else {
-		g.P(`if ormObj.`, k, ` == `, b.guessZeroValue(f.TypeName, g), ` {`)
+	mapPK := b.getPrimaryKeys(ormable)
+	for k, f := range mapPK {
+		if strings.Contains(f.TypeName, "*") {
+			g.P(`if ormObj.`, k, ` == nil || *ormObj.`, k, ` == `, b.guessZeroValue(f.TypeName, g), ` {`)
+		} else {
+			g.P(`if ormObj.`, k, ` == `, b.guessZeroValue(f.TypeName, g), ` {`)
+		}
+		g.P(`return nil, `, "errors", `.EmptyIdError`)
+		g.P(`}`)
 	}
-	g.P(`return nil, `, "errors", `.EmptyIdError`)
-	g.P(`}`)
 
 	var fs string
 	if b.readHasFieldSelection(ormable) {
@@ -1957,14 +1986,16 @@ func (b *ORMBuilder) generateDeleteHandler(message *protogen.Message, g *protoge
 	g.P(`}`)
 
 	ormable := b.getOrmable(typeName)
-	pkName, pk := b.findPrimaryKey(ormable)
-	if strings.Contains(pk.TypeName, "*") {
-		g.P(`if ormObj.`, pkName, ` == nil || *ormObj.`, pkName, ` == `, b.guessZeroValue(pk.TypeName, g), ` {`)
-	} else {
-		g.P(`if ormObj.`, pkName, ` == `, b.guessZeroValue(pk.TypeName, g), `{`)
+	mapPKs := b.getPrimaryKeys(ormable)
+	for pkName, pk := range mapPKs {
+		if strings.Contains(pk.TypeName, "*") {
+			g.P(`if ormObj.`, pkName, ` == nil || *ormObj.`, pkName, ` == `, b.guessZeroValue(pk.TypeName, g), ` {`)
+		} else {
+			g.P(`if ormObj.`, pkName, ` == `, b.guessZeroValue(pk.TypeName, g), `{`)
+		}
+		g.P(`return `, generateImport("EmptyIdError", gerrorsImport, g))
+		g.P(`}`)
 	}
-	g.P(`return `, generateImport("EmptyIdError", gerrorsImport, g))
-	g.P(`}`)
 
 	b.generateBeforeDeleteHookCall(ormable, g)
 	g.P(`err = db.Where(&ormObj).Delete(&`, ormable.Name, `{}).Error`)
@@ -2633,8 +2664,19 @@ func (b *ORMBuilder) generateListHandler(message *protogen.Message, g *protogen.
 	b.generateBeforeListHookCall(ormable, "Find", g)
 	g.P(`db = db.Where(&ormObj)`)
 
-	// add default ordering by primary key
-	if b.hasPrimaryKey(ormable) {
+	// TODO handle composite primary keys order considering priority tag
+	if b.hasCompositePrimaryKey(ormable) {
+		pksMap := b.getPrimaryKeys(ormable)
+		var columns []string
+		for fieldName, field := range pksMap {
+			column := field.GetTag().GetColumn()
+			if len(column) == 0 {
+				column = gschema.NamingStrategy{SingularTable: true}.TableName(fieldName)
+			}
+			columns = append(columns, column)
+		}
+		g.P(`db = db.Order("`, strings.Join(columns, ", "), `")`)
+	} else if b.hasPrimaryKey(ormable) {
 		pkName, pk := b.findPrimaryKey(ormable)
 		column := pk.GetTag().GetColumn()
 		if len(column) == 0 {
