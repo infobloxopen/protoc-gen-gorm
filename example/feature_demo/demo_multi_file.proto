@@ -9,7 +9,7 @@ option go_package = "github.com/infobloxopen/protoc-gen-gorm/example/feature_dem
    option (gorm.opts) = {
      ormable: true,
    };
-   string id = 1;
+   string id = 1; // string id
  }
 
 message BlogPost {

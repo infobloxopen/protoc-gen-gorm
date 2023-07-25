@@ -639,10 +639,6 @@ func DefaultListSomething(ctx context.Context, db *gorm.DB) ([]*Something, error
 			return nil, err
 		}
 	}
-	db, err = gorm1.ApplyCollectionOperators(ctx, db, &SomethingORM{}, &Something{}, nil, nil, nil, nil)
-	if err != nil {
-		return nil, err
-	}
 	if hook, ok := interface{}(&ormObj).(SomethingORMWithBeforeListFind); ok {
 		if db, err = hook.BeforeListFind(ctx, db); err != nil {
 			return nil, err
@@ -743,10 +739,6 @@ func DefaultListCircle(ctx context.Context, db *gorm.DB) ([]*Circle, error) {
 		if db, err = hook.BeforeListApplyQuery(ctx, db); err != nil {
 			return nil, err
 		}
-	}
-	db, err = gorm1.ApplyCollectionOperators(ctx, db, &CircleORM{}, &Circle{}, nil, nil, nil, nil)
-	if err != nil {
-		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(CircleORMWithBeforeListFind); ok {
 		if db, err = hook.BeforeListFind(ctx, db); err != nil {

@@ -4,7 +4,6 @@ import (
 	context "context"
 	fmt "fmt"
 	gateway "github.com/infobloxopen/atlas-app-toolkit/gateway"
-	gorm1 "github.com/infobloxopen/atlas-app-toolkit/gorm"
 	errors "github.com/infobloxopen/protoc-gen-gorm/errors"
 	go_uuid "github.com/satori/go.uuid"
 	field_mask "google.golang.org/genproto/protobuf/field_mask"
@@ -200,9 +199,6 @@ func DefaultReadExternalChild(ctx context.Context, in *ExternalChild, db *gorm.D
 		if db, err = hook.BeforeReadApplyQuery(ctx, db); err != nil {
 			return nil, err
 		}
-	}
-	if db, err = gorm1.ApplyFieldSelection(ctx, db, nil, &ExternalChildORM{}); err != nil {
-		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(ExternalChildORMWithBeforeReadFind); ok {
 		if db, err = hook.BeforeReadFind(ctx, db); err != nil {
@@ -459,10 +455,6 @@ func DefaultListExternalChild(ctx context.Context, db *gorm.DB) ([]*ExternalChil
 			return nil, err
 		}
 	}
-	db, err = gorm1.ApplyCollectionOperators(ctx, db, &ExternalChildORM{}, &ExternalChild{}, nil, nil, nil, nil)
-	if err != nil {
-		return nil, err
-	}
 	if hook, ok := interface{}(&ormObj).(ExternalChildORMWithBeforeListFind); ok {
 		if db, err = hook.BeforeListFind(ctx, db); err != nil {
 			return nil, err
@@ -548,9 +540,6 @@ func DefaultReadBlogPost(ctx context.Context, in *BlogPost, db *gorm.DB) (*BlogP
 		if db, err = hook.BeforeReadApplyQuery(ctx, db); err != nil {
 			return nil, err
 		}
-	}
-	if db, err = gorm1.ApplyFieldSelection(ctx, db, nil, &BlogPostORM{}); err != nil {
-		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(BlogPostORMWithBeforeReadFind); ok {
 		if db, err = hook.BeforeReadFind(ctx, db); err != nil {
@@ -814,10 +803,6 @@ func DefaultListBlogPost(ctx context.Context, db *gorm.DB) ([]*BlogPost, error) 
 		if db, err = hook.BeforeListApplyQuery(ctx, db); err != nil {
 			return nil, err
 		}
-	}
-	db, err = gorm1.ApplyCollectionOperators(ctx, db, &BlogPostORM{}, &BlogPost{}, nil, nil, nil, nil)
-	if err != nil {
-		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(BlogPostORMWithBeforeListFind); ok {
 		if db, err = hook.BeforeListFind(ctx, db); err != nil {
