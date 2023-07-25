@@ -2327,12 +2327,17 @@ func (b *ORMBuilder) generatePatchHandler(message *protogen.Message, g *protogen
 	g.P(`var err error`)
 	b.generateBeforePatchHookCall(ormable, "Read", g)
 
-	// TODO: not in original code, but it don't make a lot of sense to generate code with id if message doesn't have it
+	// TODO: not in original code, but it doesn't make a lot of sense to generate code with id if message doesn't have it
 	if b.hasIDField(message) {
+		getIDFormatter := "{Id: in.GetId()},"
+		if b.IsIDFieldOptional(message) {
+			// This is necessary because the GetID returns a non pointer object
+			getIDFormatter = "{Id: in.Id},"
+		}
 		if b.readHasFieldSelection(ormable) {
-			g.P(`pbReadRes, err := DefaultRead`, typeName, `(ctx, &`, typeName, `{Id: in.GetId()}, db, nil)`)
+			g.P(`pbReadRes, err := DefaultRead`, typeName, `(ctx, &`, typeName, getIDFormatter, ` db, nil)`)
 		} else {
-			g.P(`pbReadRes, err := DefaultRead`, typeName, `(ctx, &`, typeName, `{Id: in.GetId()}, db)`)
+			g.P(`pbReadRes, err := DefaultRead`, typeName, `(ctx, &`, typeName, getIDFormatter, ` db)`)
 		}
 
 		g.P(`if err != nil {`)
@@ -2370,6 +2375,18 @@ func (b *ORMBuilder) hasIDField(message *protogen.Message) bool {
 		}
 	}
 
+	return false
+}
+
+// IsIDFieldOptional if the ID is an optional field
+func (b *ORMBuilder) IsIDFieldOptional(message *protogen.Message) bool {
+	for _, field := range message.Fields {
+		if strings.ToLower(field.GoName) == "id" {
+			if field.Desc.HasOptionalKeyword() {
+				return true
+			}
+		}
+	}
 	return false
 }
 
@@ -3348,10 +3365,14 @@ func (b *ORMBuilder) generateReadServerMethod(service autogenService, method aut
 		b.generateDBSetup(service, g)
 		b.generatePreserviceCall(service, method.baseType, method.ccName, g)
 		typeName := method.baseType
+		getIDFormatter := "{Id: in.GetId()},"
+		if b.IsIDFieldOptional(method.inType) {
+			getIDFormatter = "{Id: in.Id},"
+		}
 		if fields := b.getFieldSelection(method.inType); fields != "" {
-			g.P(`res, err := DefaultRead`, typeName, `(ctx, &`, typeName, `{Id: in.GetId()}, db, in.`, fields, `)`)
+			g.P(`res, err := DefaultRead`, typeName, `(ctx, &`, typeName, getIDFormatter, `db, in.`, fields, `)`)
 		} else {
-			g.P(`res, err := DefaultRead`, typeName, `(ctx, &`, typeName, `{Id: in.GetId()}, db)`)
+			g.P(`res, err := DefaultRead`, typeName, `(ctx, &`, typeName, getIDFormatter, ` db)`)
 		}
 		g.P(`if err != nil {`)
 		g.P(`return nil, `, b.wrapSpanError(service, "err"))
@@ -3483,7 +3504,11 @@ func (b *ORMBuilder) generateDeleteServerMethod(service autogenService, method a
 		typeName := method.baseType
 		b.generateDBSetup(service, g)
 		b.generatePreserviceCall(service, method.baseType, method.ccName, g)
-		g.P(`err := DefaultDelete`, typeName, `(ctx, &`, typeName, `{Id: in.GetId()}, db)`)
+		getIDFormatter := "{Id: in.GetId()},"
+		if b.IsIDFieldOptional(method.inType) {
+			getIDFormatter = "{Id: in.Id},"
+		}
+		g.P(`err := DefaultDelete`, typeName, `(ctx, &`, typeName, getIDFormatter, ` db)`)
 		g.P(`if err != nil {`)
 		g.P(`return nil, `, b.wrapSpanError(service, "err"))
 		g.P(`}`)

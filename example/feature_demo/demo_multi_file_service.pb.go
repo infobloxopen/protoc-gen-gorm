@@ -28,7 +28,8 @@ type ReadAccountRequest struct {
 	unknownFields protoimpl.UnknownFields
 
 	// For a read request, the id field is the only to be specified
-	Id     uint64                `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	Id uint64 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	// fields
 	Fields *query.FieldSelection `protobuf:"bytes,2,opt,name=fields,proto3" json:"fields,omitempty"`
 }
 

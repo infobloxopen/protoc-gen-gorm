@@ -4,7 +4,6 @@ import (
 	context "context"
 	json "encoding/json"
 	fmt "fmt"
-
 	gateway "github.com/infobloxopen/atlas-app-toolkit/gateway"
 	gorm1 "github.com/infobloxopen/atlas-app-toolkit/gorm"
 	query "github.com/infobloxopen/atlas-app-toolkit/query"
@@ -268,6 +267,9 @@ func DefaultReadIntPoint(ctx context.Context, in *IntPoint, db *gorm.DB, fs *que
 			return nil, err
 		}
 	}
+	if db, err = gorm1.ApplyFieldSelection(ctx, db, fs, &IntPointORM{}); err != nil {
+		return nil, err
+	}
 	if hook, ok := interface{}(&ormObj).(IntPointORMWithBeforeReadFind); ok {
 		if db, err = hook.BeforeReadFind(ctx, db, fs); err != nil {
 			return nil, err
@@ -530,6 +532,10 @@ func DefaultListIntPoint(ctx context.Context, db *gorm.DB, f *query.Filtering, s
 		if db, err = hook.BeforeListApplyQuery(ctx, db, f, s, p, fs); err != nil {
 			return nil, err
 		}
+	}
+	db, err = gorm1.ApplyCollectionOperators(ctx, db, &IntPointORM{}, &IntPoint{}, f, s, p, fs)
+	if err != nil {
+		return nil, err
 	}
 	if hook, ok := interface{}(&ormObj).(IntPointORMWithBeforeListFind); ok {
 		if db, err = hook.BeforeListFind(ctx, db, f, s, p, fs); err != nil {

@@ -89,4 +89,5 @@ message Task {
     string name = 1;
     string description = 2;
     int64 priority = 3;
+    optional string id = 4;
 }

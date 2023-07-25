@@ -18,7 +18,7 @@ message IntPoint {
 }
 
 // Convention dictates that we have separate Request and Response message types
-// for each API call, so that they can be alterred later without having to fear
+// for each API call, so that they can be altered later without having to fear
 // breaking a contract in any of the other services.
 
 message CreateIntPointRequest {

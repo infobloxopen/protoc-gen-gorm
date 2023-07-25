@@ -3,10 +3,6 @@ package example
 import (
 	context "context"
 	fmt "fmt"
-	big "math/big"
-	strings "strings"
-	time "time"
-
 	auth "github.com/infobloxopen/atlas-app-toolkit/auth"
 	gateway "github.com/infobloxopen/atlas-app-toolkit/gateway"
 	gorm1 "github.com/infobloxopen/atlas-app-toolkit/gorm"
@@ -21,6 +17,9 @@ import (
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	wrapperspb "google.golang.org/protobuf/types/known/wrapperspb"
 	gorm "gorm.io/gorm"
+	big "math/big"
+	strings "strings"
+	time "time"
 )
 
 type TestTypesORM struct {
