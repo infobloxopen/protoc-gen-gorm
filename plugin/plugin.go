@@ -586,6 +586,12 @@ func (b *ORMBuilder) getPrimaryKeys(ormable *OrmableType) map[string]*Field {
 			mapPK[fieldName] = field
 		}
 	}
+	// consider field name "id" as well
+	for fieldName, field := range ormable.Fields {
+		if strings.ToLower(fieldName) == "id" {
+			mapPK[fieldName] = field
+		}
+	}
 	return mapPK
 }
 
