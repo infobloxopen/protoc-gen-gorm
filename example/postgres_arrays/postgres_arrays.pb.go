@@ -26,6 +26,7 @@ type Example struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// id for example
 	Id             string    `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	Description    string    `protobuf:"bytes,2,opt,name=description,proto3" json:"description,omitempty"`
 	ArrayOfBools   []bool    `protobuf:"varint,20,rep,packed,name=array_of_bools,json=arrayOfBools,proto3" json:"array_of_bools,omitempty"`

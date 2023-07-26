@@ -9,6 +9,7 @@ option go_package = "github.com/infobloxopen/protoc-gen-gorm/example/postgres_ar
 message Example {
     option (gorm.opts) = {ormable: true};
 
+    // id for example
     string id = 1 [(gorm.field).tag = {type: "uuid" primary_key: true}];
     string description = 2;
     repeated bool array_of_bools = 20;

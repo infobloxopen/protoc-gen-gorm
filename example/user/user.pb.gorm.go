@@ -3036,6 +3036,9 @@ func DefaultReadTask(ctx context.Context, in *Task, db *gorm.DB) (*Task, error) 
 	if err != nil {
 		return nil, err
 	}
+	if ormObj.Id == nil || *ormObj.Id == "" {
+		return nil, errors.EmptyIdError
+	}
 	if hook, ok := interface{}(&ormObj).(TaskORMWithBeforeReadApplyQuery); ok {
 		if db, err = hook.BeforeReadApplyQuery(ctx, db); err != nil {
 			return nil, err
@@ -3076,6 +3079,9 @@ func DefaultDeleteTask(ctx context.Context, in *Task, db *gorm.DB) error {
 	ormObj, err := in.ToORM(ctx)
 	if err != nil {
 		return err
+	}
+	if ormObj.Id == nil || *ormObj.Id == "" {
+		return errors.EmptyIdError
 	}
 	if hook, ok := interface{}(&ormObj).(TaskORMWithBeforeDelete_); ok {
 		if db, err = hook.BeforeDelete_(ctx, db); err != nil {
@@ -3439,10 +3445,10 @@ func DefaultDeleteDepartment(ctx context.Context, in *Department, db *gorm.DB) e
 	if err != nil {
 		return err
 	}
-	if ormObj.Name == "" {
+	if ormObj.Id == 0 {
 		return errors.EmptyIdError
 	}
-	if ormObj.Id == 0 {
+	if ormObj.Name == "" {
 		return errors.EmptyIdError
 	}
 	if hook, ok := interface{}(&ormObj).(DepartmentORMWithBeforeDelete_); ok {
@@ -3509,7 +3515,7 @@ func DefaultListDepartment(ctx context.Context, db *gorm.DB) ([]*Department, err
 		}
 	}
 	db = db.Where(&ormObj)
-	db = db.Order("name, id")
+	db = db.Order("id, name")
 	ormResponse := []DepartmentORM{}
 	if err := db.Find(&ormResponse).Error; err != nil {
 		return nil, err

@@ -254,7 +254,7 @@ func (x *TestTypes) GetSeveralValues() []*types.JSONValue {
 	return nil
 }
 
-// TypeWithID demonstrates some basic assocation behavior
+// TypeWithID demonstrates some basic association behavior
 type TypeWithID struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

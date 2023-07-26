@@ -76,7 +76,7 @@ message TestTypes {
   repeated gorm.types.JSONValue several_values = 14;
 }
 
-// TypeWithID demonstrates some basic assocation behavior
+// TypeWithID demonstrates some basic association behavior
 message TypeWithID {
   // Again we use the 'ormable' option, but also include an extra field
   // using the 'include' option. Any number of fields can be defined this way
@@ -119,7 +119,7 @@ message TypeWithID {
 
 // MultiaccountTypeWithID demonstrates the generated multi-account support
 message MultiaccountTypeWithID {
-  // here we use the multi_account option to generate auth integration in
+  // here we use the multi-account option to generate auth integration in
   // the ORM layer, and an assumed "account_id" column
   option (gorm.opts) = {
     ormable: true,
