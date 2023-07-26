@@ -76,7 +76,7 @@ message TestTypes {
   repeated gorm.types.JSONValue several_values = 14;
 }
 
-// TypeWithID demonstrates some basic assocation behavior
+// TypeWithID demonstrates some basic association behavior
 message TypeWithID {
   // Again we use the 'ormable' option, but also include an extra field
   // using the 'include' option. Any number of fields can be defined this way

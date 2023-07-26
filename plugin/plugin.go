@@ -98,7 +98,7 @@ var optionalTypes = map[string]string{
 	"bool":    "*bool",
 }
 
-type fieldObj struct {
+type pkFieldObjs struct {
 	name  string
 	field *Field
 }
@@ -585,11 +585,11 @@ func (b *ORMBuilder) findPrimaryKey(ormable *OrmableType) (string, *Field) {
 }
 
 // getPrimaryKeys returns a sorted list of primary key field objects
-func (b *ORMBuilder) getPrimaryKeys(ormable *OrmableType) []fieldObj {
+func (b *ORMBuilder) getPrimaryKeys(ormable *OrmableType) []pkFieldObjs {
 	mapPK := make(map[string]*Field)
 	var (
 		pKeys     []string
-		fieldobjs []fieldObj
+		fieldobjs []pkFieldObjs
 	)
 	for fieldName, field := range ormable.Fields {
 		if field.GetTag().GetPrimaryKey() || strings.ToLower(fieldName) == "id" {
@@ -605,7 +605,7 @@ func (b *ORMBuilder) getPrimaryKeys(ormable *OrmableType) []fieldObj {
 	sort.Strings(pKeys)
 
 	for _, key := range pKeys {
-		fieldobjs = append(fieldobjs, fieldObj{
+		fieldobjs = append(fieldobjs, pkFieldObjs{
 			key,
 			mapPK[key],
 		})
