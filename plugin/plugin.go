@@ -98,6 +98,11 @@ var optionalTypes = map[string]string{
 	"bool":    "*bool",
 }
 
+type fieldObj struct {
+	name  string
+	field *Field
+}
+
 const (
 	protoTypeTimestamp = "Timestamp" // last segment, first will be *google_protobufX
 	protoTypeDuration  = "Duration"
@@ -579,20 +584,33 @@ func (b *ORMBuilder) findPrimaryKey(ormable *OrmableType) (string, *Field) {
 	panic("no primary_key")
 }
 
-func (b *ORMBuilder) getPrimaryKeys(ormable *OrmableType) map[string]*Field {
+// getPrimaryKeys returns a sorted list of primary key field objects
+func (b *ORMBuilder) getPrimaryKeys(ormable *OrmableType) []fieldObj {
 	mapPK := make(map[string]*Field)
+	var (
+		pKeys     []string
+		fieldobjs []fieldObj
+	)
 	for fieldName, field := range ormable.Fields {
-		if field.GetTag().GetPrimaryKey() {
+		if field.GetTag().GetPrimaryKey() || strings.ToLower(fieldName) == "id" {
+			pKeys = append(pKeys, fieldName)
+		}
+	}
+
+	for fieldName, field := range ormable.Fields {
+		if field.GetTag().GetPrimaryKey() || strings.ToLower(fieldName) == "id" {
 			mapPK[fieldName] = field
 		}
 	}
-	// consider field name "id" as well
-	for fieldName, field := range ormable.Fields {
-		if strings.ToLower(fieldName) == "id" {
-			mapPK[fieldName] = field
-		}
+	sort.Strings(pKeys)
+
+	for _, key := range pKeys {
+		fieldobjs = append(fieldobjs, fieldObj{
+			key,
+			mapPK[key],
+		})
 	}
-	return mapPK
+	return fieldobjs
 }
 
 func (b *ORMBuilder) getOrmable(typeName string) *OrmableType {
@@ -1851,12 +1869,12 @@ func (b *ORMBuilder) generateReadHandler(message *protogen.Message, g *protogen.
 	g.P(`return nil, err`)
 	g.P(`}`)
 
-	mapPK := b.getPrimaryKeys(ormable)
-	for k, f := range mapPK {
-		if strings.Contains(f.TypeName, "*") {
-			g.P(`if ormObj.`, k, ` == nil || *ormObj.`, k, ` == `, b.guessZeroValue(f.TypeName, g), ` {`)
+	pkfieldMapping := b.getPrimaryKeys(ormable)
+	for _, pkfieldObj := range pkfieldMapping {
+		if strings.Contains(pkfieldObj.name, "*") {
+			g.P(`if ormObj.`, pkfieldObj.name, ` == nil || *ormObj.`, pkfieldObj.name, ` == `, b.guessZeroValue(pkfieldObj.field.TypeName, g), ` {`)
 		} else {
-			g.P(`if ormObj.`, k, ` == `, b.guessZeroValue(f.TypeName, g), ` {`)
+			g.P(`if ormObj.`, pkfieldObj.name, ` == `, b.guessZeroValue(pkfieldObj.field.TypeName, g), ` {`)
 		}
 		g.P(`return nil, `, "errors", `.EmptyIdError`)
 		g.P(`}`)
@@ -1992,12 +2010,12 @@ func (b *ORMBuilder) generateDeleteHandler(message *protogen.Message, g *protoge
 	g.P(`}`)
 
 	ormable := b.getOrmable(typeName)
-	mapPKs := b.getPrimaryKeys(ormable)
-	for pkName, pk := range mapPKs {
-		if strings.Contains(pk.TypeName, "*") {
-			g.P(`if ormObj.`, pkName, ` == nil || *ormObj.`, pkName, ` == `, b.guessZeroValue(pk.TypeName, g), ` {`)
+	pkFieldMapping := b.getPrimaryKeys(ormable)
+	for _, pkFieldObj := range pkFieldMapping {
+		if strings.Contains(pkFieldObj.field.TypeName, "*") {
+			g.P(`if ormObj.`, pkFieldObj.name, ` == nil || *ormObj.`, pkFieldObj.name, ` == `, b.guessZeroValue(pkFieldObj.field.TypeName, g), ` {`)
 		} else {
-			g.P(`if ormObj.`, pkName, ` == `, b.guessZeroValue(pk.TypeName, g), `{`)
+			g.P(`if ormObj.`, pkFieldObj.name, ` == `, b.guessZeroValue(pkFieldObj.field.TypeName, g), `{`)
 		}
 		g.P(`return `, generateImport("EmptyIdError", gerrorsImport, g))
 		g.P(`}`)
@@ -2672,12 +2690,12 @@ func (b *ORMBuilder) generateListHandler(message *protogen.Message, g *protogen.
 
 	// TODO handle composite primary keys order considering priority tag
 	if b.hasCompositePrimaryKey(ormable) {
-		pksMap := b.getPrimaryKeys(ormable)
+		pkFieldMapping := b.getPrimaryKeys(ormable)
 		var columns []string
-		for fieldName, field := range pksMap {
-			column := field.GetTag().GetColumn()
+		for _, pkFieldObj := range pkFieldMapping {
+			column := pkFieldObj.field.GetTag().GetColumn()
 			if len(column) == 0 {
-				column = gschema.NamingStrategy{SingularTable: true}.TableName(fieldName)
+				column = gschema.NamingStrategy{SingularTable: true}.TableName(pkFieldObj.name)
 			}
 			columns = append(columns, column)
 		}
