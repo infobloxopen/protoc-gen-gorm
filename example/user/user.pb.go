@@ -583,6 +583,7 @@ type Department struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// department name and id are composite primary keys
 	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	Id   int64  `protobuf:"varint,2,opt,name=id,proto3" json:"id,omitempty"`
 }

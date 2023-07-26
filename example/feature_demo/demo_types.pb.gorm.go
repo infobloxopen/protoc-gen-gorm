@@ -2547,7 +2547,7 @@ func DefaultReadPrimaryUUIDType(ctx context.Context, in *PrimaryUUIDType, db *go
 	if err != nil {
 		return nil, err
 	}
-	if ormObj.Id == go_uuid.Nil {
+	if ormObj.Id == nil || *ormObj.Id == go_uuid.Nil {
 		return nil, errors.EmptyIdError
 	}
 	if hook, ok := interface{}(&ormObj).(PrimaryUUIDTypeORMWithBeforeReadApplyQuery); ok {

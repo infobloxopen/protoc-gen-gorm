@@ -98,6 +98,7 @@ message Department {
     option (gorm.opts) = {
         ormable: true,
     };
+    // department name and id are composite primary keys
     string name = 1 [(gorm.field).tag = {primary_key: true}];
     int64 id = 2 [(gorm.field).tag = {primary_key: true}];
 }

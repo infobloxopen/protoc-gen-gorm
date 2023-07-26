@@ -586,29 +586,31 @@ func (b *ORMBuilder) findPrimaryKey(ormable *OrmableType) (string, *Field) {
 
 // getPrimaryKeys returns a sorted list of primary key field objects
 func (b *ORMBuilder) getPrimaryKeys(ormable *OrmableType) []pkFieldObjs {
-	mapPK := make(map[string]*Field)
 	var (
-		pKeys     []string
 		fieldobjs []pkFieldObjs
 	)
-	for fieldName, field := range ormable.Fields {
-		if field.GetTag().GetPrimaryKey() || strings.ToLower(fieldName) == "id" {
-			pKeys = append(pKeys, fieldName)
-		}
-	}
 
 	for fieldName, field := range ormable.Fields {
-		if field.GetTag().GetPrimaryKey() || strings.ToLower(fieldName) == "id" {
-			mapPK[fieldName] = field
+		if field.GetTag().GetPrimaryKey() {
+			fieldobjs = append(fieldobjs, pkFieldObjs{
+				fieldName,
+				field,
+			})
 		}
 	}
-	sort.Strings(pKeys)
-
-	for _, key := range pKeys {
-		fieldobjs = append(fieldobjs, pkFieldObjs{
-			key,
-			mapPK[key],
-		})
+	sort.Slice(fieldobjs, func(i, j int) bool {
+		return fieldobjs[i].name < fieldobjs[j].name
+	})
+	// if no primary key is found, use the field named "id"
+	if len(fieldobjs) == 0 {
+		for fieldName, field := range ormable.Fields {
+			if strings.ToLower(fieldName) == "id" {
+				fieldobjs = append(fieldobjs, pkFieldObjs{
+					fieldName,
+					field,
+				})
+			}
+		}
 	}
 	return fieldobjs
 }
@@ -1871,7 +1873,7 @@ func (b *ORMBuilder) generateReadHandler(message *protogen.Message, g *protogen.
 
 	pkfieldMapping := b.getPrimaryKeys(ormable)
 	for _, pkfieldObj := range pkfieldMapping {
-		if strings.Contains(pkfieldObj.name, "*") {
+		if strings.Contains(pkfieldObj.field.TypeName, "*") {
 			g.P(`if ormObj.`, pkfieldObj.name, ` == nil || *ormObj.`, pkfieldObj.name, ` == `, b.guessZeroValue(pkfieldObj.field.TypeName, g), ` {`)
 		} else {
 			g.P(`if ormObj.`, pkfieldObj.name, ` == `, b.guessZeroValue(pkfieldObj.field.TypeName, g), ` {`)
