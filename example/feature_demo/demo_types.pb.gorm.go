@@ -181,6 +181,7 @@ type TypeWithIDORM struct {
 	Id                uint32
 	IntPointId        *uint32
 	Ip                string          `gorm:"column:ip_addr"`
+	Metadata          []byte          `gorm:"type:bytea"`
 	MultiAccountTypes []*JoinTable    `gorm:"foreignKey:TypeWithIDID"`
 	Point             *IntPointORM    `gorm:"foreignKey:IntPointId;references:Id"`
 	SecretInt         int32           `gorm:"-"`
@@ -265,6 +266,7 @@ func (m *TypeWithID) ToORM(ctx context.Context) (TypeWithIDORM, error) {
 		t := m.DeletedAt.AsTime()
 		to.DeletedAt = &t
 	}
+	to.Metadata = m.Metadata
 	if posthook, ok := interface{}(m).(TypeWithIDWithAfterToORM); ok {
 		err = posthook.AfterToORM(ctx, &to)
 	}
@@ -334,6 +336,7 @@ func (m *TypeWithIDORM) ToPB(ctx context.Context) (TypeWithID, error) {
 	if m.DeletedAt != nil {
 		to.DeletedAt = timestamppb.New(*m.DeletedAt)
 	}
+	to.Metadata = m.Metadata
 	if posthook, ok := interface{}(m).(TypeWithIDWithAfterToPB); ok {
 		err = posthook.AfterToPB(ctx, &to)
 	}
@@ -1993,6 +1996,10 @@ func DefaultApplyFieldMaskTypeWithID(ctx context.Context, patchee *TypeWithID, p
 		if f == prefix+"DeletedAt" {
 			updatedDeletedAt = true
 			patchee.DeletedAt = patcher.DeletedAt
+			continue
+		}
+		if f == prefix+"Metadata" {
+			patchee.Metadata = patcher.Metadata
 			continue
 		}
 	}

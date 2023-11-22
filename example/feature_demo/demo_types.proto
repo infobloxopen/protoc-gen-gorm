@@ -115,6 +115,7 @@ message TypeWithID {
   // Limited support for DB type 'time', implemented via strings (string -> DB && DB -> string)
   gorm.types.TimeOnly time_only = 14;
   google.protobuf.Timestamp deleted_at = 15;
+  bytes metadata = 16;
 }
 
 // MultiaccountTypeWithID demonstrates the generated multi-account support
