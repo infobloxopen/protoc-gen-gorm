@@ -119,6 +119,7 @@ const (
 const (
 	ENGINE_UNSET = iota
 	ENGINE_POSTGRES
+	ENGINE_CLICKHOUSE
 )
 
 type ORMBuilder struct {
@@ -151,6 +152,8 @@ func New(opts protogen.Options, request *pluginpb.CodeGeneratorRequest) (*ORMBui
 
 	if strings.EqualFold(params["engine"], "postgres") {
 		builder.dbEngine = ENGINE_POSTGRES
+	} else if strings.EqualFold(params["engine"], "clickhouse") {
+		builder.dbEngine = ENGINE_CLICKHOUSE
 	} else {
 		builder.dbEngine = ENGINE_UNSET
 	}
@@ -905,6 +908,23 @@ func (b *ORMBuilder) parseBasicFields(msg *protogen.Message, g *protogen.Generat
 			default:
 				continue
 			}
+		} else if b.dbEngine == ENGINE_CLICKHOUSE && b.IsAbleToMakePQArray(fieldType) && field.Desc.IsList() {
+			switch fieldType {
+			case "bool":
+				fieldType = generateImport("BoolArray", pqImport, g)
+				gormOptions.Tag = tagWithType(tag, "Array(Bool)")
+			case "double":
+				fieldType = generateImport("Float64Array", pqImport, g)
+				gormOptions.Tag = tagWithType(tag, "Array(Double)")
+			case "int64":
+				fieldType = generateImport("Int64Array", pqImport, g)
+				gormOptions.Tag = tagWithType(tag, "Array(Int64)")
+			case "string":
+				fieldType = generateImport("StringArray", pqImport, g)
+				gormOptions.Tag = tagWithType(tag, "Array(String)")
+			default:
+				continue
+			}
 		} else if (field.Message == nil || !b.isOrmable(fieldType)) && field.Desc.IsList() {
 			// not implemented
 			continue
@@ -925,17 +945,26 @@ func (b *ORMBuilder) parseBasicFields(msg *protogen.Message, g *protogen.Generat
 				if b.dbEngine == ENGINE_POSTGRES {
 					gormOptions.Tag = tagWithType(tag, "numeric")
 				}
+				if b.dbEngine == ENGINE_CLICKHOUSE {
+					gormOptions.Tag = tagWithType(tag, "Int64")
+				}
 			} else if rawType == protoTypeUUID {
 				typePackage = uuidImport
 				fieldType = generateImport("UUID", uuidImport, g)
 				if b.dbEngine == ENGINE_POSTGRES {
 					gormOptions.Tag = tagWithType(tag, "uuid")
 				}
+				if b.dbEngine == ENGINE_CLICKHOUSE {
+					gormOptions.Tag = tagWithType(tag, "UUID")
+				}
 			} else if rawType == protoTypeUUIDValue {
 				typePackage = uuidImport
 				fieldType = "*" + generateImport("UUID", uuidImport, g)
 				if b.dbEngine == ENGINE_POSTGRES {
 					gormOptions.Tag = tagWithType(tag, "uuid")
+				}
+				if b.dbEngine == ENGINE_CLICKHOUSE {
+					gormOptions.Tag = tagWithType(tag, "UUID")
 				}
 			} else if rawType == protoTypeTimestamp {
 				typePackage = stdTimeImport
@@ -945,6 +974,10 @@ func (b *ORMBuilder) parseBasicFields(msg *protogen.Message, g *protogen.Generat
 				fieldType = "*" + generateImport("Duration", stdTimeImport, g)
 			} else if rawType == protoTypeJSON {
 				if b.dbEngine == ENGINE_POSTGRES {
+					typePackage = gtypesImport
+					fieldType = "*" + generateImport("Jsonb", gtypesImport, g)
+					gormOptions.Tag = tagWithType(tag, "jsonb")
+				} else if b.dbEngine == ENGINE_CLICKHOUSE {
 					typePackage = gtypesImport
 					fieldType = "*" + generateImport("Jsonb", gtypesImport, g)
 					gormOptions.Tag = tagWithType(tag, "jsonb")
@@ -1403,6 +1436,20 @@ func (b *ORMBuilder) generateFieldConversion(message *protogen.Message, field *p
 	if field.Desc.Cardinality() == protoreflect.Repeated {
 		// Some repeated fields can be handled by github.com/lib/pq
 		if b.dbEngine == ENGINE_POSTGRES && b.IsAbleToMakePQArray(fieldType) && field.Desc.IsList() {
+			g.P(`if m.`, fieldName, ` != nil {`)
+			switch fieldType {
+			case "bool":
+				g.P(`to.`, fieldName, ` = make(`, generateImport("BoolArray", pqImport, g), `, len(m.`, fieldName, `))`)
+			case "double":
+				g.P(`to.`, fieldName, ` = make(`, generateImport("Float64Array", pqImport, g), `, len(m.`, fieldName, `))`)
+			case "int64":
+				g.P(`to.`, fieldName, ` = make(`, generateImport("Int64Array", pqImport, g), `, len(m.`, fieldName, `))`)
+			case "string":
+				g.P(`to.`, fieldName, ` = make(`, generateImport("StringArray", pqImport, g), `, len(m.`, fieldName, `))`)
+			}
+			g.P(`copy(to.`, fieldName, `, m.`, fieldName, `)`)
+			g.P(`}`)
+		} else if b.dbEngine == ENGINE_CLICKHOUSE && b.IsAbleToMakePQArray(fieldType) && field.Desc.IsList() {
 			g.P(`if m.`, fieldName, ` != nil {`)
 			switch fieldType {
 			case "bool":
