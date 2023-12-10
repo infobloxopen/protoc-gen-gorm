@@ -911,16 +911,16 @@ func (b *ORMBuilder) parseBasicFields(msg *protogen.Message, g *protogen.Generat
 		} else if b.dbEngine == ENGINE_CLICKHOUSE && b.IsAbleToMakePQArray(fieldType) && field.Desc.IsList() {
 			switch fieldType {
 			case "bool":
-				fieldType = generateImport("BoolArray", pqImport, g)
+				fieldType = "[]bool"
 				gormOptions.Tag = tagWithType(tag, "Array(Bool)")
 			case "double":
-				fieldType = generateImport("Float64Array", pqImport, g)
+				fieldType = "[]float64"
 				gormOptions.Tag = tagWithType(tag, "Array(Double)")
 			case "int64":
-				fieldType = generateImport("Int64Array", pqImport, g)
+				fieldType = "[]int64"
 				gormOptions.Tag = tagWithType(tag, "Array(Int64)")
 			case "string":
-				fieldType = generateImport("StringArray", pqImport, g)
+				fieldType = "[]string"
 				gormOptions.Tag = tagWithType(tag, "Array(String)")
 			default:
 				continue
