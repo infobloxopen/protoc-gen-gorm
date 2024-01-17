@@ -382,12 +382,21 @@ func (b *ORMBuilder) generateConvertFunctions(g *protogen.GeneratedFile, message
 		ofield := ormable.Fields[camelCase(field.GoName)]
 		b.generateFieldConversion(message, field, true, ofield, g)
 	}
+
 	if getMessageOptions(message).GetMultiAccount() {
 		g.P("accountID, err := ", generateImport("GetAccountID", authImport, g), "(ctx, nil)")
 		g.P("if err != nil {")
 		g.P("return to, err")
 		g.P("}")
 		g.P("to.AccountID = accountID")
+	}
+
+	if getMessageOptions(message).GetMultiCompartment() {
+		g.P("compartmentID, err := ", generateImport("GetCompartmentID", authImport, g), "(ctx, nil)")
+		g.P("if err != nil {")
+		g.P("return to, err")
+		g.P("}")
+		g.P("to.CompartmentID = compartmentID")
 	}
 	b.setupOrderedHasMany(message, g)
 	g.P(`if posthook, ok := interface{}(m).(`, typeName, `WithAfterToORM); ok {`)
@@ -1032,6 +1041,14 @@ func (b *ORMBuilder) parseBasicFields(msg *protogen.Message, g *protogen.Generat
 			ormable.Fields["AccountID"] = &Field{TypeName: "string"}
 		} else if accID.TypeName != "string" {
 			panic("cannot include AccountID field")
+		}
+	}
+
+	if gormMsgOptions.GetMultiCompartment() {
+		if comID, ok := ormable.Fields["CompartmentID"]; !ok {
+			ormable.Fields["CompartmentID"] = &Field{TypeName: "string"}
+		} else if comID.TypeName != "string" {
+			panic("cannot include CompartmentID field")
 		}
 	}
 
@@ -2095,18 +2112,80 @@ func (b *ORMBuilder) generateDeleteSetHandler(message *protogen.Message, g *prot
 	g.P(`keys = append(keys, ormObj.`, pkName, `)`)
 	g.P(`}`)
 	b.generateBeforeDeleteSetHookCall(ormable, g)
+
 	if getMessageOptions(message).GetMultiAccount() {
 		g.P(`acctId, err := `, generateImport("GetAccountID", authImport, g), `(ctx, nil)`)
 		g.P(`if err != nil {`)
 		g.P(`return err`)
 		g.P(`}`)
-		g.P(`err = db.Where("account_id = ? AND `, ns.TableName(pkName), ` in (?)", acctId, keys).Delete(&`, ormable.Name, `{}).Error`)
+
+		if getMessageOptions(message).GetMultiCompartment() {
+			g.P(`comtId, err := `, generateImport("GetCompartmentID", authImport, g), `(ctx, nil)`)
+			g.P(`if err != nil {`)
+			g.P(`return err`)
+			g.P(`}`)
+			g.P(`err = db.Where("account_id = ? AND compartment_id = ? AND `, ns.TableName(pkName), ` in (?)", acctId, comtId, keys).Delete(&`, ormable.Name, `{}).Error`)
+		} else {
+			g.P(`err = db.Where("account_id = ? AND `, ns.TableName(pkName), ` in (?)", acctId, keys).Delete(&`, ormable.Name, `{}).Error`)
+		}
 	} else {
 		g.P(`err = db.Where("`, ns.TableName(pkName), ` in (?)", keys).Delete(&`, ormable.Name, `{}).Error`)
 	}
 	g.P(`if err != nil {`)
 	g.P(`return err`)
 	g.P(`}`)
+
+	// if getMessageOptions(message).GetMultiAccount() && getMessageOptions(message).GetMultiCompartment() {
+	// 	g.P(`acctId, err := `, generateImport("GetAccountID", authImport, g), `(ctx, nil)`)
+	// 	g.P(`if err != nil {`)
+	// 	g.P(`return err`)
+	// 	g.P(`}`)
+	// 	g.P(`comtId, err := `, generateImport("GetCompartmentID", authImport, g), `(ctx, nil)`)
+	// 	g.P(`if err != nil {`)
+	// 	g.P(`return err`)
+	// 	g.P(`}`)
+	// 	g.P(`err = db.Where("account_id = ? AND compartment_id = ? AND `, ns.TableName(pkName), ` in (?)", acctId, comtId, keys).Delete(&`, ormable.Name, `{}).Error`)
+	// } else if getMessageOptions(message).GetMultiAccount() && !getMessageOptions(message).GetMultiCompartment() {
+	// 	g.P(`acctId, err := `, generateImport("GetAccountID", authImport, g), `(ctx, nil)`)
+	// 	g.P(`if err != nil {`)
+	// 	g.P(`return err`)
+	// 	g.P(`}`)
+	// 	g.P(`err = db.Where("account_id = ? AND `, ns.TableName(pkName), ` in (?)", acctId, keys).Delete(&`, ormable.Name, `{}).Error`)
+	// } else if !getMessageOptions(message).GetMultiAccount() && getMessageOptions(message).GetMultiCompartment() {
+	// 	g.P(`comtId, err := `, generateImport("GetCompartmentID", authImport, g), `(ctx, nil)`)
+	// 	g.P(`if err != nil {`)
+	// 	g.P(`return err`)
+	// 	g.P(`}`)
+	// 	g.P(`err = db.Where("compartment_id = ? AND `, ns.TableName(pkName), ` in (?)", comtId, keys).Delete(&`, ormable.Name, `{}).Error`)
+	// } else {
+	// 	g.P(`err = db.Where("`, ns.TableName(pkName), ` in (?)", keys).Delete(&`, ormable.Name, `{}).Error`)
+	// }
+	// g.P(`if err != nil {`)
+	// g.P(`return err`)
+	// g.P(`}`)
+
+	// if getMessageOptions(message).GetMultiAccount() {
+	// 	g.P(`acctId, err := `, generateImport("GetAccountID", authImport, g), `(ctx, nil)`)
+	// 	g.P(`if err != nil {`)
+	// 	g.P(`return err`)
+	// 	g.P(`}`)
+	// 	g.P(`err = db.Where("account_id = ? AND `, ns.TableName(pkName), ` in (?)", acctId, keys).Delete(&`, ormable.Name, `{}).Error`)
+	// } else {
+	// 	g.P(`err = db.Where("`, ns.TableName(pkName), ` in (?)", keys).Delete(&`, ormable.Name, `{}).Error`)
+	// }
+	// if getMessageOptions(message).GetMultiCompartment() {
+	// 	g.P(`comtId, err := `, generateImport("GetCompartmentID", authImport, g), `(ctx, nil)`)
+	// 	g.P(`if err != nil {`)
+	// 	g.P(`return err`)
+	// 	g.P(`}`)
+	// 	g.P(`err = db.Where("compartment_id = ? AND `, ns.TableName(pkName), ` in (?)", comtId, keys).Delete(&`, ormable.Name, `{}).Error`)
+	// } else {
+	// 	g.P(`err = db.Where("`, ns.TableName(pkName), ` in (?)", keys).Delete(&`, ormable.Name, `{}).Error`)
+	// }
+	// g.P(`if err != nil {`)
+	// g.P(`return err`)
+	// g.P(`}`)
+
 	b.generateAfterDeleteSetHookCall(ormable, g)
 	g.P(`return err`)
 	g.P(`}`)
@@ -2149,6 +2228,10 @@ func (b *ORMBuilder) generateStrictUpdateHandler(message *protogen.Message, g *p
 
 	if getMessageOptions(message).GetMultiAccount() {
 		b.generateAccountIdWhereClause(g)
+	}
+
+	if getMessageOptions(message).GetMultiCompartment() {
+		b.generateCompartmentIdWhereClause(g)
 	}
 
 	ormable := b.getOrmable(typeName)
@@ -2233,6 +2316,14 @@ func (b *ORMBuilder) generateAccountIdWhereClause(g *protogen.GeneratedFile) {
 	g.P(`return nil, err`)
 	g.P(`}`)
 	g.P(`db = db.Where(map[string]interface{}{"account_id": accountID})`)
+}
+
+func (b *ORMBuilder) generateCompartmentIdWhereClause(g *protogen.GeneratedFile) {
+	g.P(`compartmentID, err := `, generateImport("GetCompartmentID", authImport, g), `(ctx, nil)`)
+	g.P(`if err != nil {`)
+	g.P(`return nil, err`)
+	g.P(`}`)
+	g.P(`db = db.Where(map[string]interface{}{"compartment_id": compartmentID})`)
 }
 
 func (b *ORMBuilder) handleChildAssociations(message *protogen.Message, g *protogen.GeneratedFile) {
@@ -2361,7 +2452,7 @@ func (b *ORMBuilder) removeChildAssociationsByName(message *protogen.Message, fi
 }
 
 func (b *ORMBuilder) generatePatchHandler(message *protogen.Message, g *protogen.GeneratedFile) {
-	var isMultiAccount bool
+	var isMultiAccount, isMultiCompartment bool
 
 	typeName := string(message.Desc.Name())
 	ormable := b.getOrmable(typeName)
@@ -2370,8 +2461,17 @@ func (b *ORMBuilder) generatePatchHandler(message *protogen.Message, g *protogen
 		isMultiAccount = true
 	}
 
+	if getMessageOptions(message).GetMultiCompartment() {
+		isMultiCompartment = true
+	}
+
 	if isMultiAccount && !b.hasIDField(message) {
 		g.P(fmt.Sprintf("// Cannot autogen DefaultPatch%s: this is a multi-account table without an \"id\" field in the message.\n", typeName))
+		return
+	}
+
+	if isMultiCompartment && !b.hasIDField(message) {
+		g.P(fmt.Sprintf("// Cannot autogen DefaultPatch%s: this is a multi-compartment table without an \"id\" field in the message.\n", typeName))
 		return
 	}
 
@@ -2480,15 +2580,23 @@ func (b *ORMBuilder) generateAfterPatchHookDef(orm *OrmableType, suffix string, 
 }
 
 func (b *ORMBuilder) generatePatchSetHandler(message *protogen.Message, g *protogen.GeneratedFile) {
-	var isMultiAccount bool
+	var isMultiAccount, isMultiCompartment bool
 
 	typeName := string(message.Desc.Name())
 	if getMessageOptions(message).GetMultiAccount() {
 		isMultiAccount = true
 	}
+	if getMessageOptions(message).GetMultiCompartment() {
+		isMultiCompartment = true
+	}
 
 	if isMultiAccount && !b.hasIDField(message) {
 		g.P(fmt.Sprintf("// Cannot autogen DefaultPatchSet%s: this is a multi-account table without an \"id\" field in the message.\n", typeName))
+		return
+	}
+
+	if isMultiCompartment && !b.hasIDField(message) {
+		g.P(fmt.Sprintf("// Cannot autogen DefaultPatchSet%s: this is a multi-compartment table without an \"id\" field in the message.\n", typeName))
 		return
 	}
 

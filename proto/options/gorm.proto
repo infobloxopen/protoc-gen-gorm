@@ -28,6 +28,7 @@ message GormMessageOptions {
   repeated ExtraField include = 2;
   string table = 3;
   bool multi_account = 4;
+  bool multi_compartment = 5;
 }
 
 message ExtraField {
