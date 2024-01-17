@@ -353,6 +353,7 @@ func DefaultDeleteIntPointSet(ctx context.Context, in []*IntPoint, db *gorm.DB) 
 		}
 	}
 	err = db.Where("id in (?)", keys).Delete(&IntPointORM{}).Error
+	err = db.Where("id in (?)", keys).Delete(&IntPointORM{}).Error
 	if err != nil {
 		return err
 	}
