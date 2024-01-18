@@ -5,7 +5,7 @@ import "options/gorm.proto";
 import "atlas/query/v1/collection_operators.proto";
 import "feature_demo/demo_multi_file.proto";
 
-option go_package = "github.com/infobloxopen/protoc-gen-gorm/example/feature_demo;example";
+option go_package = "github.com/sbhagate-infoblox/protoc-gen-gorm/example/feature_demo;example";
 
 message ReadAccountRequest {
     // For a read request, the id field is the only to be specified

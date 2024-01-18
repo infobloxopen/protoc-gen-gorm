@@ -3,11 +3,11 @@ package user
 import (
 	context "context"
 	fmt "fmt"
-	auth "github.com/infobloxopen/atlas-app-toolkit/auth"
-	gateway "github.com/infobloxopen/atlas-app-toolkit/gateway"
-	gorm1 "github.com/infobloxopen/atlas-app-toolkit/gorm"
-	resource "github.com/infobloxopen/atlas-app-toolkit/gorm/resource"
-	errors "github.com/infobloxopen/protoc-gen-gorm/errors"
+	auth "github.com/sbhagate-infoblox/atlas-app-toolkit-1.4.0/auth"
+	gateway "github.com/sbhagate-infoblox/atlas-app-toolkit-1.4.0/gateway"
+	gorm1 "github.com/sbhagate-infoblox/atlas-app-toolkit-1.4.0/gorm"
+	resource "github.com/sbhagate-infoblox/atlas-app-toolkit-1.4.0/gorm/resource"
+	errors "github.com/sbhagate-infoblox/protoc-gen-gorm/errors"
 	field_mask "google.golang.org/genproto/protobuf/field_mask"
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	gorm "gorm.io/gorm"
@@ -1073,17 +1073,24 @@ func DefaultDeleteUserSet(ctx context.Context, in []*User, db *gorm.DB) error {
 			return err
 		}
 	}
-	acctId, err := auth.GetAccountID(ctx, nil)
+	accountId, err := auth.GetAccountID(ctx, nil)
 	if err != nil {
 		return err
 	}
-	comtId, err := auth.GetCompartmentID(ctx, nil)
+	compartmentId, err := auth.GetCompartmentID(ctx, nil)
 	if err != nil {
 		return err
 	}
-	err = db.Where("account_id = ? AND compartment_id = ? AND id in (?)", acctId, comtId, keys).Delete(&UserORM{}).Error
-	if err != nil {
-		return err
+	if compartmentId != "" {
+		err = db.Where("account_id = ? AND compartment_id = ? AND id in (?)", accountId, compartmentId, keys).Delete(&UserORM{}).Error
+		if err != nil {
+			return err
+		}
+	} else {
+		err = db.Where("account_id = ? AND id in (?)", accountId, keys).Delete(&UserORM{}).Error
+		if err != nil {
+			return err
+		}
 	}
 	if hook, ok := (interface{}(&UserORM{})).(UserORMWithAfterDeleteSet); ok {
 		err = hook.AfterDeleteSet(ctx, in, db)
@@ -1111,12 +1118,15 @@ func DefaultStrictUpdateUser(ctx context.Context, in *User, db *gorm.DB) (*User,
 	if err != nil {
 		return nil, err
 	}
-	db = db.Where(map[string]interface{}{"account_id": accountID})
 	compartmentID, err := auth.GetCompartmentID(ctx, nil)
 	if err != nil {
 		return nil, err
 	}
-	db = db.Where(map[string]interface{}{"compartment_id": compartmentID})
+	if compartmentID != "" {
+		db = db.Where(map[string]interface{}{"account_id": accountID, "compartment_id": compartmentID})
+	} else {
+		db = db.Where(map[string]interface{}{"account_id": accountID})
+	}
 	var count int64
 	lockedRow := &UserORM{}
 	count = db.Model(&ormObj).Set("gorm:query_option", "FOR UPDATE").Where("id=?", ormObj.Id).First(lockedRow).RowsAffected
@@ -1667,17 +1677,24 @@ func DefaultDeleteEmailSet(ctx context.Context, in []*Email, db *gorm.DB) error 
 			return err
 		}
 	}
-	acctId, err := auth.GetAccountID(ctx, nil)
+	accountId, err := auth.GetAccountID(ctx, nil)
 	if err != nil {
 		return err
 	}
-	comtId, err := auth.GetCompartmentID(ctx, nil)
+	compartmentId, err := auth.GetCompartmentID(ctx, nil)
 	if err != nil {
 		return err
 	}
-	err = db.Where("account_id = ? AND compartment_id = ? AND id in (?)", acctId, comtId, keys).Delete(&EmailORM{}).Error
-	if err != nil {
-		return err
+	if compartmentId != "" {
+		err = db.Where("account_id = ? AND compartment_id = ? AND id in (?)", accountId, compartmentId, keys).Delete(&EmailORM{}).Error
+		if err != nil {
+			return err
+		}
+	} else {
+		err = db.Where("account_id = ? AND id in (?)", accountId, keys).Delete(&EmailORM{}).Error
+		if err != nil {
+			return err
+		}
 	}
 	if hook, ok := (interface{}(&EmailORM{})).(EmailORMWithAfterDeleteSet); ok {
 		err = hook.AfterDeleteSet(ctx, in, db)
@@ -1705,12 +1722,15 @@ func DefaultStrictUpdateEmail(ctx context.Context, in *Email, db *gorm.DB) (*Ema
 	if err != nil {
 		return nil, err
 	}
-	db = db.Where(map[string]interface{}{"account_id": accountID})
 	compartmentID, err := auth.GetCompartmentID(ctx, nil)
 	if err != nil {
 		return nil, err
 	}
-	db = db.Where(map[string]interface{}{"compartment_id": compartmentID})
+	if compartmentID != "" {
+		db = db.Where(map[string]interface{}{"account_id": accountID, "compartment_id": compartmentID})
+	} else {
+		db = db.Where(map[string]interface{}{"account_id": accountID})
+	}
 	var count int64
 	lockedRow := &EmailORM{}
 	count = db.Model(&ormObj).Set("gorm:query_option", "FOR UPDATE").Where("id=?", ormObj.Id).First(lockedRow).RowsAffected
@@ -2042,17 +2062,24 @@ func DefaultDeleteAddressSet(ctx context.Context, in []*Address, db *gorm.DB) er
 			return err
 		}
 	}
-	acctId, err := auth.GetAccountID(ctx, nil)
+	accountId, err := auth.GetAccountID(ctx, nil)
 	if err != nil {
 		return err
 	}
-	comtId, err := auth.GetCompartmentID(ctx, nil)
+	compartmentId, err := auth.GetCompartmentID(ctx, nil)
 	if err != nil {
 		return err
 	}
-	err = db.Where("account_id = ? AND compartment_id = ? AND id in (?)", acctId, comtId, keys).Delete(&AddressORM{}).Error
-	if err != nil {
-		return err
+	if compartmentId != "" {
+		err = db.Where("account_id = ? AND compartment_id = ? AND id in (?)", accountId, compartmentId, keys).Delete(&AddressORM{}).Error
+		if err != nil {
+			return err
+		}
+	} else {
+		err = db.Where("account_id = ? AND id in (?)", accountId, keys).Delete(&AddressORM{}).Error
+		if err != nil {
+			return err
+		}
 	}
 	if hook, ok := (interface{}(&AddressORM{})).(AddressORMWithAfterDeleteSet); ok {
 		err = hook.AfterDeleteSet(ctx, in, db)
@@ -2080,12 +2107,15 @@ func DefaultStrictUpdateAddress(ctx context.Context, in *Address, db *gorm.DB) (
 	if err != nil {
 		return nil, err
 	}
-	db = db.Where(map[string]interface{}{"account_id": accountID})
 	compartmentID, err := auth.GetCompartmentID(ctx, nil)
 	if err != nil {
 		return nil, err
 	}
-	db = db.Where(map[string]interface{}{"compartment_id": compartmentID})
+	if compartmentID != "" {
+		db = db.Where(map[string]interface{}{"account_id": accountID, "compartment_id": compartmentID})
+	} else {
+		db = db.Where(map[string]interface{}{"account_id": accountID})
+	}
 	var count int64
 	lockedRow := &AddressORM{}
 	count = db.Model(&ormObj).Set("gorm:query_option", "FOR UPDATE").Where("id=?", ormObj.Id).First(lockedRow).RowsAffected
@@ -2421,17 +2451,24 @@ func DefaultDeleteLanguageSet(ctx context.Context, in []*Language, db *gorm.DB) 
 			return err
 		}
 	}
-	acctId, err := auth.GetAccountID(ctx, nil)
+	accountId, err := auth.GetAccountID(ctx, nil)
 	if err != nil {
 		return err
 	}
-	comtId, err := auth.GetCompartmentID(ctx, nil)
+	compartmentId, err := auth.GetCompartmentID(ctx, nil)
 	if err != nil {
 		return err
 	}
-	err = db.Where("account_id = ? AND compartment_id = ? AND id in (?)", acctId, comtId, keys).Delete(&LanguageORM{}).Error
-	if err != nil {
-		return err
+	if compartmentId != "" {
+		err = db.Where("account_id = ? AND compartment_id = ? AND id in (?)", accountId, compartmentId, keys).Delete(&LanguageORM{}).Error
+		if err != nil {
+			return err
+		}
+	} else {
+		err = db.Where("account_id = ? AND id in (?)", accountId, keys).Delete(&LanguageORM{}).Error
+		if err != nil {
+			return err
+		}
 	}
 	if hook, ok := (interface{}(&LanguageORM{})).(LanguageORMWithAfterDeleteSet); ok {
 		err = hook.AfterDeleteSet(ctx, in, db)
@@ -2459,12 +2496,15 @@ func DefaultStrictUpdateLanguage(ctx context.Context, in *Language, db *gorm.DB)
 	if err != nil {
 		return nil, err
 	}
-	db = db.Where(map[string]interface{}{"account_id": accountID})
 	compartmentID, err := auth.GetCompartmentID(ctx, nil)
 	if err != nil {
 		return nil, err
 	}
-	db = db.Where(map[string]interface{}{"compartment_id": compartmentID})
+	if compartmentID != "" {
+		db = db.Where(map[string]interface{}{"account_id": accountID, "compartment_id": compartmentID})
+	} else {
+		db = db.Where(map[string]interface{}{"account_id": accountID})
+	}
 	var count int64
 	lockedRow := &LanguageORM{}
 	count = db.Model(&ormObj).Set("gorm:query_option", "FOR UPDATE").Where("id=?", ormObj.Id).First(lockedRow).RowsAffected
@@ -2792,17 +2832,24 @@ func DefaultDeleteCreditCardSet(ctx context.Context, in []*CreditCard, db *gorm.
 			return err
 		}
 	}
-	acctId, err := auth.GetAccountID(ctx, nil)
+	accountId, err := auth.GetAccountID(ctx, nil)
 	if err != nil {
 		return err
 	}
-	comtId, err := auth.GetCompartmentID(ctx, nil)
+	compartmentId, err := auth.GetCompartmentID(ctx, nil)
 	if err != nil {
 		return err
 	}
-	err = db.Where("account_id = ? AND compartment_id = ? AND id in (?)", acctId, comtId, keys).Delete(&CreditCardORM{}).Error
-	if err != nil {
-		return err
+	if compartmentId != "" {
+		err = db.Where("account_id = ? AND compartment_id = ? AND id in (?)", accountId, compartmentId, keys).Delete(&CreditCardORM{}).Error
+		if err != nil {
+			return err
+		}
+	} else {
+		err = db.Where("account_id = ? AND id in (?)", accountId, keys).Delete(&CreditCardORM{}).Error
+		if err != nil {
+			return err
+		}
 	}
 	if hook, ok := (interface{}(&CreditCardORM{})).(CreditCardORMWithAfterDeleteSet); ok {
 		err = hook.AfterDeleteSet(ctx, in, db)
@@ -2830,12 +2877,15 @@ func DefaultStrictUpdateCreditCard(ctx context.Context, in *CreditCard, db *gorm
 	if err != nil {
 		return nil, err
 	}
-	db = db.Where(map[string]interface{}{"account_id": accountID})
 	compartmentID, err := auth.GetCompartmentID(ctx, nil)
 	if err != nil {
 		return nil, err
 	}
-	db = db.Where(map[string]interface{}{"compartment_id": compartmentID})
+	if compartmentID != "" {
+		db = db.Where(map[string]interface{}{"account_id": accountID, "compartment_id": compartmentID})
+	} else {
+		db = db.Where(map[string]interface{}{"account_id": accountID})
+	}
 	var count int64
 	lockedRow := &CreditCardORM{}
 	count = db.Model(&ormObj).Set("gorm:query_option", "FOR UPDATE").Where("id=?", ormObj.Id).First(lockedRow).RowsAffected
@@ -3207,17 +3257,24 @@ func DefaultDeleteTaskSet(ctx context.Context, in []*Task, db *gorm.DB) error {
 			return err
 		}
 	}
-	acctId, err := auth.GetAccountID(ctx, nil)
+	accountId, err := auth.GetAccountID(ctx, nil)
 	if err != nil {
 		return err
 	}
-	comtId, err := auth.GetCompartmentID(ctx, nil)
+	compartmentId, err := auth.GetCompartmentID(ctx, nil)
 	if err != nil {
 		return err
 	}
-	err = db.Where("account_id = ? AND compartment_id = ? AND id in (?)", acctId, comtId, keys).Delete(&TaskORM{}).Error
-	if err != nil {
-		return err
+	if compartmentId != "" {
+		err = db.Where("account_id = ? AND compartment_id = ? AND id in (?)", accountId, compartmentId, keys).Delete(&TaskORM{}).Error
+		if err != nil {
+			return err
+		}
+	} else {
+		err = db.Where("account_id = ? AND id in (?)", accountId, keys).Delete(&TaskORM{}).Error
+		if err != nil {
+			return err
+		}
 	}
 	if hook, ok := (interface{}(&TaskORM{})).(TaskORMWithAfterDeleteSet); ok {
 		err = hook.AfterDeleteSet(ctx, in, db)
@@ -3245,12 +3302,15 @@ func DefaultStrictUpdateTask(ctx context.Context, in *Task, db *gorm.DB) (*Task,
 	if err != nil {
 		return nil, err
 	}
-	db = db.Where(map[string]interface{}{"account_id": accountID})
 	compartmentID, err := auth.GetCompartmentID(ctx, nil)
 	if err != nil {
 		return nil, err
 	}
-	db = db.Where(map[string]interface{}{"compartment_id": compartmentID})
+	if compartmentID != "" {
+		db = db.Where(map[string]interface{}{"account_id": accountID, "compartment_id": compartmentID})
+	} else {
+		db = db.Where(map[string]interface{}{"account_id": accountID})
+	}
 	var count int64
 	lockedRow := &TaskORM{}
 	count = db.Model(&ormObj).Set("gorm:query_option", "FOR UPDATE").Where("id=?", ormObj.Id).First(lockedRow).RowsAffected

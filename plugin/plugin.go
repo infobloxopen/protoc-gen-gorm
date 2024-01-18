@@ -8,8 +8,8 @@ import (
 	"strconv"
 	"strings"
 
-	gormopts "github.com/infobloxopen/protoc-gen-gorm/options"
 	"github.com/jinzhu/inflection"
+	gormopts "github.com/sbhagate-infoblox/protoc-gen-gorm/options"
 	"google.golang.org/protobuf/compiler/protogen"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
@@ -34,16 +34,16 @@ var (
 
 var (
 	gormImport         = "gorm.io/gorm"
-	tkgormImport       = "github.com/infobloxopen/atlas-app-toolkit/gorm"
+	tkgormImport       = "github.com/sbhagate-infoblox/atlas-app-toolkit-1.4.0/gorm"
 	uuidImport         = "github.com/satori/go.uuid"
-	authImport         = "github.com/infobloxopen/atlas-app-toolkit/auth"
-	gtypesImport       = "github.com/infobloxopen/protoc-gen-gorm/types"
-	resourceImport     = "github.com/infobloxopen/atlas-app-toolkit/gorm/resource"
-	queryImport        = "github.com/infobloxopen/atlas-app-toolkit/query"
+	authImport         = "github.com/sbhagate-infoblox/atlas-app-toolkit-1.4.0/auth"
+	gtypesImport       = "github.com/sbhagate-infoblox/protoc-gen-gorm/types"
+	resourceImport     = "github.com/sbhagate-infoblox/atlas-app-toolkit-1.4.0/gorm/resource"
+	queryImport        = "github.com/sbhagate-infoblox/atlas-app-toolkit-1.4.0/query"
 	ocTraceImport      = "go.opencensus.io/trace"
-	gatewayImport      = "github.com/infobloxopen/atlas-app-toolkit/gateway"
+	gatewayImport      = "github.com/sbhagate-infoblox/atlas-app-toolkit-1.4.0/gateway"
 	pqImport           = "github.com/lib/pq"
-	gerrorsImport      = "github.com/infobloxopen/protoc-gen-gorm/errors"
+	gerrorsImport      = "github.com/sbhagate-infoblox/protoc-gen-gorm/errors"
 	timestampImport    = "google.golang.org/protobuf/types/known/timestamppb"
 	durationImport     = "google.golang.org/protobuf/types/known/durationpb"
 	wktImport          = "google.golang.org/protobuf/types/known/wrapperspb"
@@ -2114,26 +2114,61 @@ func (b *ORMBuilder) generateDeleteSetHandler(message *protogen.Message, g *prot
 	b.generateBeforeDeleteSetHookCall(ormable, g)
 
 	if getMessageOptions(message).GetMultiAccount() {
-		g.P(`acctId, err := `, generateImport("GetAccountID", authImport, g), `(ctx, nil)`)
+		g.P(`accountId, err := `, generateImport("GetAccountID", authImport, g), `(ctx, nil)`)
 		g.P(`if err != nil {`)
 		g.P(`return err`)
 		g.P(`}`)
 
 		if getMessageOptions(message).GetMultiCompartment() {
-			g.P(`comtId, err := `, generateImport("GetCompartmentID", authImport, g), `(ctx, nil)`)
+			g.P(`compartmentId, err := `, generateImport("GetCompartmentID", authImport, g), `(ctx, nil)`)
 			g.P(`if err != nil {`)
 			g.P(`return err`)
 			g.P(`}`)
-			g.P(`err = db.Where("account_id = ? AND compartment_id = ? AND `, ns.TableName(pkName), ` in (?)", acctId, comtId, keys).Delete(&`, ormable.Name, `{}).Error`)
+			g.P(`if compartmentId != "" {`)
+			g.P(`err = db.Where("account_id = ? AND compartment_id = ? AND `, ns.TableName(pkName), ` in (?)", accountId, compartmentId, keys).Delete(&`, ormable.Name, `{}).Error`)
+			g.P(`if err != nil {`)
+			g.P(`return err`)
+			g.P(`}`)
+			g.P(`} else {`)
+			g.P(`err = db.Where("account_id = ? AND `, ns.TableName(pkName), ` in (?)", accountId, keys).Delete(&`, ormable.Name, `{}).Error`)
+			g.P(`if err != nil {`)
+			g.P(`return err`)
+			g.P(`}`)
+			g.P(`}`)
 		} else {
-			g.P(`err = db.Where("account_id = ? AND `, ns.TableName(pkName), ` in (?)", acctId, keys).Delete(&`, ormable.Name, `{}).Error`)
+			g.P(`err = db.Where("account_id = ? AND `, ns.TableName(pkName), ` in (?)", accountId, keys).Delete(&`, ormable.Name, `{}).Error`)
+			g.P(`if err != nil {`)
+			g.P(`return err`)
+			g.P(`}`)
 		}
 	} else {
 		g.P(`err = db.Where("`, ns.TableName(pkName), ` in (?)", keys).Delete(&`, ormable.Name, `{}).Error`)
+		g.P(`if err != nil {`)
+		g.P(`return err`)
+		g.P(`}`)
 	}
-	g.P(`if err != nil {`)
-	g.P(`return err`)
-	g.P(`}`)
+
+	// if getMessageOptions(message).GetMultiAccount() {
+	// 	g.P(`acctId, err := `, generateImport("GetAccountID", authImport, g), `(ctx, nil)`)
+	// 	g.P(`if err != nil {`)
+	// 	g.P(`return err`)
+	// 	g.P(`}`)
+
+	// 	if getMessageOptions(message).GetMultiCompartment() {
+	// 		g.P(`comtId, err := `, generateImport("GetCompartmentID", authImport, g), `(ctx, nil)`)
+	// 		g.P(`if err != nil {`)
+	// 		g.P(`return err`)
+	// 		g.P(`}`)
+	// 		g.P(`err = db.Where("account_id = ? AND compartment_id = ? AND `, ns.TableName(pkName), ` in (?)", acctId, comtId, keys).Delete(&`, ormable.Name, `{}).Error`)
+	// 	} else {
+	// 		g.P(`err = db.Where("account_id = ? AND `, ns.TableName(pkName), ` in (?)", acctId, keys).Delete(&`, ormable.Name, `{}).Error`)
+	// 	}
+	// } else {
+	// 	g.P(`err = db.Where("`, ns.TableName(pkName), ` in (?)", keys).Delete(&`, ormable.Name, `{}).Error`)
+	// }
+	// g.P(`if err != nil {`)
+	// g.P(`return err`)
+	// g.P(`}`)
 
 	// if getMessageOptions(message).GetMultiAccount() && getMessageOptions(message).GetMultiCompartment() {
 	// 	g.P(`acctId, err := `, generateImport("GetAccountID", authImport, g), `(ctx, nil)`)
@@ -2227,11 +2262,11 @@ func (b *ORMBuilder) generateStrictUpdateHandler(message *protogen.Message, g *p
 	g.P(`}`)
 
 	if getMessageOptions(message).GetMultiAccount() {
-		b.generateAccountIdWhereClause(g)
-	}
-
-	if getMessageOptions(message).GetMultiCompartment() {
-		b.generateCompartmentIdWhereClause(g)
+		if getMessageOptions(message).GetMultiCompartment() {
+			b.generateAccountIdAndCompartmentIdWhereClause(g)
+		} else {
+			b.generateAccountIdWhereClause(g)
+		}
 	}
 
 	ormable := b.getOrmable(typeName)
@@ -2318,12 +2353,20 @@ func (b *ORMBuilder) generateAccountIdWhereClause(g *protogen.GeneratedFile) {
 	g.P(`db = db.Where(map[string]interface{}{"account_id": accountID})`)
 }
 
-func (b *ORMBuilder) generateCompartmentIdWhereClause(g *protogen.GeneratedFile) {
+func (b *ORMBuilder) generateAccountIdAndCompartmentIdWhereClause(g *protogen.GeneratedFile) {
+	g.P(`accountID, err := `, generateImport("GetAccountID", authImport, g), `(ctx, nil)`)
+	g.P(`if err != nil {`)
+	g.P(`return nil, err`)
+	g.P(`}`)
 	g.P(`compartmentID, err := `, generateImport("GetCompartmentID", authImport, g), `(ctx, nil)`)
 	g.P(`if err != nil {`)
 	g.P(`return nil, err`)
 	g.P(`}`)
-	g.P(`db = db.Where(map[string]interface{}{"compartment_id": compartmentID})`)
+	g.P(`if compartmentID != "" {`)
+	g.P(`db = db.Where(map[string]interface{}{"account_id": accountID, "compartment_id": compartmentID})`)
+	g.P(`} else {`)
+	g.P(`db = db.Where(map[string]interface{}{"account_id": accountID})`)
+	g.P(`}`)
 }
 
 func (b *ORMBuilder) handleChildAssociations(message *protogen.Message, g *protogen.GeneratedFile) {
@@ -2465,13 +2508,13 @@ func (b *ORMBuilder) generatePatchHandler(message *protogen.Message, g *protogen
 		isMultiCompartment = true
 	}
 
-	if isMultiAccount && !b.hasIDField(message) {
-		g.P(fmt.Sprintf("// Cannot autogen DefaultPatch%s: this is a multi-account table without an \"id\" field in the message.\n", typeName))
+	if isMultiAccount && isMultiCompartment && !b.hasIDField(message) {
+		g.P(fmt.Sprintf("// Cannot autogen DefaultPatch%s: this is a multi-account multi-compartment table without an \"id\" field in the message.\n", typeName))
 		return
 	}
 
-	if isMultiCompartment && !b.hasIDField(message) {
-		g.P(fmt.Sprintf("// Cannot autogen DefaultPatch%s: this is a multi-compartment table without an \"id\" field in the message.\n", typeName))
+	if isMultiAccount && !isMultiCompartment && !b.hasIDField(message) {
+		g.P(fmt.Sprintf("// Cannot autogen DefaultPatch%s: this is a multi-account table without an \"id\" field in the message.\n", typeName))
 		return
 	}
 
@@ -2524,7 +2567,6 @@ func (b *ORMBuilder) generatePatchHandler(message *protogen.Message, g *protogen
 	b.generateBeforePatchHookDef(ormable, "ApplyFieldMask", g)
 	b.generateBeforePatchHookDef(ormable, "Save", g)
 	b.generateAfterPatchHookDef(ormable, "Save", g)
-
 }
 
 func (b *ORMBuilder) hasIDField(message *protogen.Message) bool {
@@ -2590,13 +2632,13 @@ func (b *ORMBuilder) generatePatchSetHandler(message *protogen.Message, g *proto
 		isMultiCompartment = true
 	}
 
-	if isMultiAccount && !b.hasIDField(message) {
-		g.P(fmt.Sprintf("// Cannot autogen DefaultPatchSet%s: this is a multi-account table without an \"id\" field in the message.\n", typeName))
+	if isMultiAccount && isMultiCompartment && !b.hasIDField(message) {
+		g.P(fmt.Sprintf("// Cannot autogen DefaultPatchSet%s: this is a multi-account multi-compartment table without an \"id\" field in the message.\n", typeName))
 		return
 	}
 
-	if isMultiCompartment && !b.hasIDField(message) {
-		g.P(fmt.Sprintf("// Cannot autogen DefaultPatchSet%s: this is a multi-compartment table without an \"id\" field in the message.\n", typeName))
+	if isMultiAccount && !isMultiCompartment && !b.hasIDField(message) {
+		g.P(fmt.Sprintf("// Cannot autogen DefaultPatchSet%s: this is a multi-account table without an \"id\" field in the message.\n", typeName))
 		return
 	}
 
@@ -2620,7 +2662,6 @@ func (b *ORMBuilder) generatePatchSetHandler(message *protogen.Message, g *proto
 	g.P(``)
 	g.P(`return results, nil`)
 	g.P(`}`)
-
 }
 
 func (b *ORMBuilder) generateApplyFieldMask(message *protogen.Message, g *protogen.GeneratedFile) {

@@ -97,8 +97,8 @@ build-user-local:
 	-I./proto/ \
 	-I./third_party/proto/ \
 	example/user/user.proto --gorm_out="engine=postgres,enums=string,gateway:./example/user" \
-	--go_out=./example/user --go_opt=module=github.com/infobloxopen/protoc-gen-gorm/example/user \
-	--gorm_opt=module=github.com/infobloxopen/protoc-gen-gorm/example/user
+	--go_out=./example/user --go_opt=module=github.com/sbhagate-infoblox/protoc-gen-gorm/example/user \
+	--gorm_opt=module=github.com/sbhagate-infoblox/protoc-gen-gorm/example/user
 
 build-person-local:
 	go install
@@ -106,8 +106,8 @@ build-person-local:
 	-I./proto/ \
 	-I./third_party/proto/ \
 	example/person/person.proto --gorm_out="engine=postgres,enums=string,gateway:./example/person" \
-	--go_out=./example/person --go_opt=module=github.com/infobloxopen/protoc-gen-gorm/example/person \
-	--gorm_opt=module=github.com/infobloxopen/protoc-gen-gorm/example/person
+	--go_out=./example/person --go_opt=module=github.com/sbhagate-infoblox/protoc-gen-gorm/example/person \
+	--gorm_opt=module=github.com/sbhagate-infoblox/protoc-gen-gorm/example/person
 
 build-postgres-local:
 	rm -rf example/postgres_arrays/github.com/

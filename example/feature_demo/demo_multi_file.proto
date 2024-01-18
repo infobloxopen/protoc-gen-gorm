@@ -3,7 +3,7 @@ syntax = "proto3";
 package example;
 import "options/gorm.proto";
 
-option go_package = "github.com/infobloxopen/protoc-gen-gorm/example/feature_demo;example";
+option go_package = "github.com/sbhagate-infoblox/protoc-gen-gorm/example/feature_demo;example";
 
  message ExternalChild {
    option (gorm.opts) = {

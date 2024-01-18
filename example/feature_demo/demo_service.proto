@@ -6,7 +6,7 @@ import "options/gorm.proto";
 import "google/protobuf/field_mask.proto";
 import "atlas/query/v1/collection_operators.proto";
 
-option go_package = "github.com/infobloxopen/protoc-gen-gorm/example/feature_demo;example";
+option go_package = "github.com/sbhagate-infoblox/protoc-gen-gorm/example/feature_demo;example";
 
 // IntPoint is a basic message type representing a single cartesian point
 // that we want to store in a database

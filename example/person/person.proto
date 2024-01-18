@@ -5,7 +5,7 @@ package person;
 import "atlas/resource/v1/resource.proto";
 import "options/gorm.proto";
 
-option go_package = "github.com/infobloxopen/protoc-gen-gorm/example/person;person";
+option go_package = "github.com/sbhagate-infoblox/protoc-gen-gorm/example/person;person";
 
 message Person {
     option (gorm.opts) = {

@@ -1,6 +1,6 @@
-module github.com/infobloxopen/protoc-gen-gorm
+module github.com/sbhagate-infoblox/protoc-gen-gorm
 
-replace github.com/infobloxopen/atlas-app-toolkit => /home/suhas/gocode/atlas-app-toolkit-1.4.0
+replace github.com/sbhagate-infoblox/atlas-app-toolkit-1.4.0 => /home/suhas/gocode/atlas-app-toolkit-1.4.0
 
 require (
 	github.com/golang/protobuf v1.5.2

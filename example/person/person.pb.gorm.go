@@ -2,8 +2,8 @@ package person
 
 import (
 	context "context"
-	auth "github.com/infobloxopen/atlas-app-toolkit/auth"
-	errors "github.com/infobloxopen/protoc-gen-gorm/errors"
+	auth "github.com/sbhagate-infoblox/atlas-app-toolkit-1.4.0/auth"
+	errors "github.com/sbhagate-infoblox/protoc-gen-gorm/errors"
 	field_mask "google.golang.org/genproto/protobuf/field_mask"
 	gorm "gorm.io/gorm"
 )
