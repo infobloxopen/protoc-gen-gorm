@@ -85,8 +85,8 @@ build-local:
 	-I./third_party/proto/ \
 	-I=. example/feature_demo/demo_multi_file.proto \
 	example/feature_demo/demo_service.proto --gorm_out="engine=postgres,enums=string,gateway:./example/feature_demo" \
-	--go_out=./example/feature_demo --go_opt=module=github.com/infobloxopen/protoc-gen-gorm/example/feature_demo \
-	--gorm_opt=module=github.com/infobloxopen/protoc-gen-gorm/example/feature_demo
+	--go_out=./example/feature_demo --go_opt=module=github.com/sbhagate-infoblox/protoc-gen-gorm/example/feature_demo \
+	--gorm_opt=module=github.com/sbhagate-infoblox/protoc-gen-gorm/example/feature_demo
 
 
 build-user-local:
