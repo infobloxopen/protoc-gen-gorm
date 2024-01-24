@@ -13,7 +13,6 @@ require (
 	github.com/lib/pq v1.10.2
 	github.com/mattn/go-sqlite3 v1.14.12 // indirect
 	github.com/satori/go.uuid v1.2.0
-	github.com/sbhagate-infoblox/atlas-app-toolkit-1.4.0 v0.0.0-20240118084703-ac20424126a0
 	go.opencensus.io v0.22.4
 	golang.org/x/crypto v0.0.0-20220214200702-86341886e292 // indirect
 	golang.org/x/net v0.0.0-20220114011407-0dd24b26b47d // indirect

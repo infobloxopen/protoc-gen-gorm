@@ -2422,7 +2422,7 @@ func (b *ORMBuilder) removeChildAssociationsByName(message *protogen.Message, fi
 }
 
 func (b *ORMBuilder) generatePatchHandler(message *protogen.Message, g *protogen.GeneratedFile) {
-	var isMultiAccount, isMultiCompartment bool
+	var isMultiAccount bool
 
 	typeName := string(message.Desc.Name())
 	ormable := b.getOrmable(typeName)
@@ -2431,16 +2431,7 @@ func (b *ORMBuilder) generatePatchHandler(message *protogen.Message, g *protogen
 		isMultiAccount = true
 	}
 
-	if getMessageOptions(message).GetMultiCompartment() {
-		isMultiCompartment = true
-	}
-
-	if isMultiAccount && isMultiCompartment && !b.hasIDField(message) {
-		g.P(fmt.Sprintf("// Cannot autogen DefaultPatch%s: this is a multi-account multi-compartment table without an \"id\" field in the message.\n", typeName))
-		return
-	}
-
-	if isMultiAccount && !isMultiCompartment && !b.hasIDField(message) {
+	if isMultiAccount && !b.hasIDField(message) {
 		g.P(fmt.Sprintf("// Cannot autogen DefaultPatch%s: this is a multi-account table without an \"id\" field in the message.\n", typeName))
 		return
 	}
@@ -2549,22 +2540,14 @@ func (b *ORMBuilder) generateAfterPatchHookDef(orm *OrmableType, suffix string, 
 }
 
 func (b *ORMBuilder) generatePatchSetHandler(message *protogen.Message, g *protogen.GeneratedFile) {
-	var isMultiAccount, isMultiCompartment bool
+	var isMultiAccount bool
 
 	typeName := string(message.Desc.Name())
 	if getMessageOptions(message).GetMultiAccount() {
 		isMultiAccount = true
 	}
-	if getMessageOptions(message).GetMultiCompartment() {
-		isMultiCompartment = true
-	}
 
-	if isMultiAccount && isMultiCompartment && !b.hasIDField(message) {
-		g.P(fmt.Sprintf("// Cannot autogen DefaultPatchSet%s: this is a multi-account multi-compartment table without an \"id\" field in the message.\n", typeName))
-		return
-	}
-
-	if isMultiAccount && !isMultiCompartment && !b.hasIDField(message) {
+	if isMultiAccount && !b.hasIDField(message) {
 		g.P(fmt.Sprintf("// Cannot autogen DefaultPatchSet%s: this is a multi-account table without an \"id\" field in the message.\n", typeName))
 		return
 	}
