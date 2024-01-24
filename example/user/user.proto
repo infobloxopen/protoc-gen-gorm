@@ -8,7 +8,7 @@ import "google/protobuf/timestamp.proto";
 import "atlas/resource/v1/resource.proto";
 import "options/gorm.proto";
 
-option go_package = "github.com/sbhagate-infoblox/protoc-gen-gorm/example/user;user";
+option go_package = "github.com/infobloxopen/protoc-gen-gorm/example/user;user";
 
 message User {
     option (gorm.opts) = {

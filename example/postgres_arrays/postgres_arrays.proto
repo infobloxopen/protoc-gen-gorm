@@ -4,7 +4,7 @@ package postgres.arrays;
 
 import "options/gorm.proto";
 
-option go_package = "github.com/sbhagate-infoblox/protoc-gen-gorm/example/postgres_arrays;postgres_arrays";
+option go_package = "github.com/infobloxopen/protoc-gen-gorm/example/postgres_arrays;postgres_arrays";
 
 message Example {
     option (gorm.opts) = {ormable: true};

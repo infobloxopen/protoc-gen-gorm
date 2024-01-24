@@ -85,8 +85,8 @@ build-local:
 	-I./third_party/proto/ \
 	-I=. example/feature_demo/demo_multi_file.proto \
 	example/feature_demo/demo_service.proto --gorm_out="engine=postgres,enums=string,gateway:./example/feature_demo" \
-	--go_out=./example/feature_demo --go_opt=module=github.com/sbhagate-infoblox/protoc-gen-gorm/example/feature_demo \
-	--gorm_opt=module=github.com/sbhagate-infoblox/protoc-gen-gorm/example/feature_demo
+	--go_out=./example/feature_demo --go_opt=module=github.com/infobloxopen/protoc-gen-gorm/example/feature_demo \
+	--gorm_opt=module=github.com/infobloxopen/protoc-gen-gorm/example/feature_demo
 
 
 build-user-local:
@@ -97,17 +97,8 @@ build-user-local:
 	-I./proto/ \
 	-I./third_party/proto/ \
 	example/user/user.proto --gorm_out="engine=postgres,enums=string,gateway:./example/user" \
-	--go_out=./example/user --go_opt=module=github.com/sbhagate-infoblox/protoc-gen-gorm/example/user \
-	--gorm_opt=module=github.com/sbhagate-infoblox/protoc-gen-gorm/example/user
-
-build-person-local:
-	go install
-	protoc --proto_path . \
-	-I./proto/ \
-	-I./third_party/proto/ \
-	example/person/person.proto --gorm_out="engine=postgres,enums=string,gateway:./example/person" \
-	--go_out=./example/person --go_opt=module=github.com/sbhagate-infoblox/protoc-gen-gorm/example/person \
-	--gorm_opt=module=github.com/sbhagate-infoblox/protoc-gen-gorm/example/person
+	--go_out=./example/user --go_opt=module=github.com/infobloxopen/protoc-gen-gorm/example/user \
+	--gorm_opt=module=github.com/infobloxopen/protoc-gen-gorm/example/user
 
 build-postgres-local:
 	rm -rf example/postgres_arrays/github.com/
@@ -116,4 +107,6 @@ build-postgres-local:
 	protoc --proto_path . \
 	-I./proto/ \
 	-I./third_party/proto/ \
-	example/postgres_arrays/postgres_arrays.proto --gorm_out="engine=postgres,enums=string,gateway:./example/postgres_arrays" --go_out=./example/postgres_arrays
+	example/postgres_arrays/postgres_arrays.proto --gorm_out="engine=postgres,enums=string,gateway:./example/postgres_arrays" \
+	--go_out=./example/postgres_arrays --go_opt=module=github.com/infobloxopen/protoc-gen-gorm/example/postgres_arrays \
+	--gorm_opt=module=github.com/infobloxopen/protoc-gen-gorm/example/postgres_arrays
