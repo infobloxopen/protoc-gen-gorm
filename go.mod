@@ -1,7 +1,5 @@
 module github.com/infobloxopen/protoc-gen-gorm
 
-//replace github.com/sbhagate-infoblox/atlas-app-toolkit-1.4.0 => /home/suhas/gocode/atlas-app-toolkit-1.4.0
-
 require (
 	github.com/denisenkom/go-mssqldb v0.12.0 // indirect
 	github.com/go-sql-driver/mysql v1.6.0 // indirect
