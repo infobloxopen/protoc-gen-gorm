@@ -36,7 +36,7 @@ var (
 	gormImport         = "gorm.io/gorm"
 	tkgormImport       = "github.com/infobloxopen/atlas-app-toolkit/gorm"
 	uuidImport         = "github.com/satori/go.uuid"
-	authImport         = "github.com/infobloxopen/atlas-app-toolkit/auth"
+	authImport         = "github.com/infobloxopen/protoc-gen-gorm/auth"
 	gtypesImport       = "github.com/infobloxopen/protoc-gen-gorm/types"
 	resourceImport     = "github.com/infobloxopen/atlas-app-toolkit/gorm/resource"
 	queryImport        = "github.com/infobloxopen/atlas-app-toolkit/query"
