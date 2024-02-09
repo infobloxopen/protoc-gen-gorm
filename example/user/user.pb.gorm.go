@@ -3,10 +3,10 @@ package user
 import (
 	context "context"
 	fmt "fmt"
+	auth "github.com/infobloxopen/atlas-app-toolkit/auth"
 	gateway "github.com/infobloxopen/atlas-app-toolkit/gateway"
 	gorm1 "github.com/infobloxopen/atlas-app-toolkit/gorm"
 	resource "github.com/infobloxopen/atlas-app-toolkit/gorm/resource"
-	auth "github.com/infobloxopen/protoc-gen-gorm/auth"
 	errors "github.com/infobloxopen/protoc-gen-gorm/errors"
 	field_mask "google.golang.org/genproto/protobuf/field_mask"
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
@@ -20,7 +20,6 @@ type UserORM struct {
 	BillingAddress    *AddressORM `gorm:"foreignKey:BillingAddressId;references:Id"`
 	BillingAddressId  *int64
 	Birthday          *time.Time
-	CompartmentID     string
 	CreatedAt         *time.Time
 	CreditCard        *CreditCardORM `gorm:"foreignKey:UserId;references:Id"`
 	Department        *DepartmentORM `gorm:"foreignKey:UserId;references:Id"`
@@ -161,11 +160,6 @@ func (m *User) ToORM(ctx context.Context) (UserORM, error) {
 		return to, err
 	}
 	to.AccountID = accountID
-	compartmentID, err := auth.GetCompartmentID(ctx, nil)
-	if err != nil {
-		return to, err
-	}
-	to.CompartmentID = compartmentID
 	for i, e := range to.Tasks {
 		e.Priority = int64(i)
 	}
@@ -1043,24 +1037,13 @@ func DefaultDeleteUserSet(ctx context.Context, in []*User, db *gorm.DB) error {
 			return err
 		}
 	}
-	accountId, err := auth.GetAccountID(ctx, nil)
+	acctId, err := auth.GetAccountID(ctx, nil)
 	if err != nil {
 		return err
 	}
-	compartmentId, err := auth.GetCompartmentID(ctx, nil)
+	err = db.Where("account_id = ? AND id in (?)", acctId, keys).Delete(&UserORM{}).Error
 	if err != nil {
 		return err
-	}
-	if compartmentId != "" {
-		err = db.Where("account_id = ? AND compartment_id like ?% AND id in (?)", accountId, compartmentId, keys).Delete(&UserORM{}).Error
-		if err != nil {
-			return err
-		}
-	} else {
-		err = db.Where("account_id = ? AND id in (?)", accountId, keys).Delete(&UserORM{}).Error
-		if err != nil {
-			return err
-		}
 	}
 	if hook, ok := (interface{}(&UserORM{})).(UserORMWithAfterDeleteSet); ok {
 		err = hook.AfterDeleteSet(ctx, in, db)
@@ -1088,15 +1071,7 @@ func DefaultStrictUpdateUser(ctx context.Context, in *User, db *gorm.DB) (*User,
 	if err != nil {
 		return nil, err
 	}
-	compartmentID, err := auth.GetCompartmentID(ctx, nil)
-	if err != nil {
-		return nil, err
-	}
-	if compartmentID != "" {
-		db = db.Where(map[string]interface{}{"account_id": accountID, "compartment_id": compartmentID})
-	} else {
-		db = db.Where(map[string]interface{}{"account_id": accountID})
-	}
+	db = db.Where(map[string]interface{}{"account_id": accountID})
 	var count int64
 	lockedRow := &UserORM{}
 	count = db.Model(&ormObj).Set("gorm:query_option", "FOR UPDATE").Where("id=?", ormObj.Id).First(lockedRow).RowsAffected
@@ -1647,11 +1622,11 @@ func DefaultDeleteEmailSet(ctx context.Context, in []*Email, db *gorm.DB) error 
 			return err
 		}
 	}
-	accountId, err := auth.GetAccountID(ctx, nil)
+	acctId, err := auth.GetAccountID(ctx, nil)
 	if err != nil {
 		return err
 	}
-	err = db.Where("account_id = ? AND id in (?)", accountId, keys).Delete(&EmailORM{}).Error
+	err = db.Where("account_id = ? AND id in (?)", acctId, keys).Delete(&EmailORM{}).Error
 	if err != nil {
 		return err
 	}
@@ -2013,11 +1988,11 @@ func DefaultDeleteAddressSet(ctx context.Context, in []*Address, db *gorm.DB) er
 			return err
 		}
 	}
-	accountId, err := auth.GetAccountID(ctx, nil)
+	acctId, err := auth.GetAccountID(ctx, nil)
 	if err != nil {
 		return err
 	}
-	err = db.Where("account_id = ? AND id in (?)", accountId, keys).Delete(&AddressORM{}).Error
+	err = db.Where("account_id = ? AND id in (?)", acctId, keys).Delete(&AddressORM{}).Error
 	if err != nil {
 		return err
 	}
@@ -2383,11 +2358,11 @@ func DefaultDeleteLanguageSet(ctx context.Context, in []*Language, db *gorm.DB) 
 			return err
 		}
 	}
-	accountId, err := auth.GetAccountID(ctx, nil)
+	acctId, err := auth.GetAccountID(ctx, nil)
 	if err != nil {
 		return err
 	}
-	err = db.Where("account_id = ? AND id in (?)", accountId, keys).Delete(&LanguageORM{}).Error
+	err = db.Where("account_id = ? AND id in (?)", acctId, keys).Delete(&LanguageORM{}).Error
 	if err != nil {
 		return err
 	}
@@ -2745,11 +2720,11 @@ func DefaultDeleteCreditCardSet(ctx context.Context, in []*CreditCard, db *gorm.
 			return err
 		}
 	}
-	accountId, err := auth.GetAccountID(ctx, nil)
+	acctId, err := auth.GetAccountID(ctx, nil)
 	if err != nil {
 		return err
 	}
-	err = db.Where("account_id = ? AND id in (?)", accountId, keys).Delete(&CreditCardORM{}).Error
+	err = db.Where("account_id = ? AND id in (?)", acctId, keys).Delete(&CreditCardORM{}).Error
 	if err != nil {
 		return err
 	}
@@ -3151,11 +3126,11 @@ func DefaultDeleteTaskSet(ctx context.Context, in []*Task, db *gorm.DB) error {
 			return err
 		}
 	}
-	accountId, err := auth.GetAccountID(ctx, nil)
+	acctId, err := auth.GetAccountID(ctx, nil)
 	if err != nil {
 		return err
 	}
-	err = db.Where("account_id = ? AND id in (?)", accountId, keys).Delete(&TaskORM{}).Error
+	err = db.Where("account_id = ? AND id in (?)", acctId, keys).Delete(&TaskORM{}).Error
 	if err != nil {
 		return err
 	}

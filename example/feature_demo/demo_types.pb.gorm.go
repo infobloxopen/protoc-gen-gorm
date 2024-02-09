@@ -3,9 +3,9 @@ package example
 import (
 	context "context"
 	fmt "fmt"
+	auth "github.com/infobloxopen/atlas-app-toolkit/auth"
 	gateway "github.com/infobloxopen/atlas-app-toolkit/gateway"
 	gorm1 "github.com/infobloxopen/atlas-app-toolkit/gorm"
-	auth "github.com/infobloxopen/protoc-gen-gorm/auth"
 	errors "github.com/infobloxopen/protoc-gen-gorm/errors"
 	user "github.com/infobloxopen/protoc-gen-gorm/example/user"
 	types "github.com/infobloxopen/protoc-gen-gorm/types"
@@ -2189,11 +2189,11 @@ func DefaultDeleteMultiaccountTypeWithIDSet(ctx context.Context, in []*Multiacco
 			return err
 		}
 	}
-	accountId, err := auth.GetAccountID(ctx, nil)
+	acctId, err := auth.GetAccountID(ctx, nil)
 	if err != nil {
 		return err
 	}
-	err = db.Where("account_id = ? AND id in (?)", accountId, keys).Delete(&MultiaccountTypeWithIDORM{}).Error
+	err = db.Where("account_id = ? AND id in (?)", acctId, keys).Delete(&MultiaccountTypeWithIDORM{}).Error
 	if err != nil {
 		return err
 	}

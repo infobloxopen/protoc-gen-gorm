@@ -14,7 +14,6 @@ message User {
     option (gorm.opts) = {
         ormable: true,
         multi_account: true
-        multi_compartment: true
     };
     atlas.rpc.Identifier id = 1 [(gorm.field).tag = {type: "uuid" primary_key: true}];
     google.protobuf.Timestamp created_at = 2;
