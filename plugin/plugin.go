@@ -2125,7 +2125,7 @@ func (b *ORMBuilder) generateDeleteSetHandler(message *protogen.Message, g *prot
 			g.P(`return err`)
 			g.P(`}`)
 			g.P(`if compartmentId != "" {`)
-			g.P(`err = db.Where("account_id = ? AND compartment_id = ? AND `, ns.TableName(pkName), ` in (?)", accountId, compartmentId, keys).Delete(&`, ormable.Name, `{}).Error`)
+			g.P(`err = db.Where("account_id = ? AND compartment_id like ?% AND `, ns.TableName(pkName), ` in (?)", accountId, compartmentId, keys).Delete(&`, ormable.Name, `{}).Error`)
 			g.P(`if err != nil {`)
 			g.P(`return err`)
 			g.P(`}`)

@@ -1052,7 +1052,7 @@ func DefaultDeleteUserSet(ctx context.Context, in []*User, db *gorm.DB) error {
 		return err
 	}
 	if compartmentId != "" {
-		err = db.Where("account_id = ? AND compartment_id = ? AND id in (?)", accountId, compartmentId, keys).Delete(&UserORM{}).Error
+		err = db.Where("account_id = ? AND compartment_id like ?% AND id in (?)", accountId, compartmentId, keys).Delete(&UserORM{}).Error
 		if err != nil {
 			return err
 		}
