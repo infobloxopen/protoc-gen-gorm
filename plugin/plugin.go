@@ -37,7 +37,7 @@ var (
 	tkgormImport       = "github.com/infobloxopen/atlas-app-toolkit/gorm"
 	uuidImport         = "github.com/satori/go.uuid"
 	authImport         = "github.com/infobloxopen/atlas-app-toolkit/auth"
-	gtypesImport       = "github.com/DRJ-Technologies/go-monorepo/proto"
+	gtypesImport       = "github.com/DRJ-Technologies/go-monorepo/proto/gen/go/third_party/types/v1"
 	resourceImport     = "github.com/infobloxopen/atlas-app-toolkit/gorm/resource"
 	queryImport        = "github.com/infobloxopen/atlas-app-toolkit/query"
 	ocTraceImport      = "go.opencensus.io/trace"
