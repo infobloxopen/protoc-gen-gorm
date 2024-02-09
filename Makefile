@@ -56,7 +56,7 @@ generate-gentool: DOCKER_RUNNER        := docker run --rm
 generate-gentool: DOCKER_RUNNER        += -v $(SRCROOT_ON_HOST):$(SRCROOT_IN_CONTAINER)
 generate-gentool: DOCKER_GENERATOR     := infoblox/atlas-gentool:dev-gengorm
 generate-gentool: GENERATOR            := $(DOCKER_RUNNER) $(DOCKER_GENERATOR)
-generate-gentool: #gentool
+generate-gentool: gentool
 	$(DOCKER_RUNNER) \
 		$(GENTOOL_IMAGE) \
 		--go_out="plugins=grpc:$(DOCKERPATH)" \
