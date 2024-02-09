@@ -23,10 +23,13 @@ ENTRYPOINT ["protoc", "-I.", \
     "-Igithub.com/mwitkow/go-proto-validators", \
     # required import paths for protoc-gen-gorm plugin, Should add /proto path once updated
     "-Igithub.com/infobloxopen/protoc-gen-gorm", \
+    "-Igithub.com/infobloxopen/protoc-gen-gorm/proto", \
     # required import paths for protoc-gen-atlas-query-validate plugin
     "-Igithub.com/infobloxopen/protoc-gen-atlas-query-validate", \
     # required import paths for protoc-gen-preprocess plugin
     "-Igithub.com/infobloxopen/protoc-gen-preprocess", \
+    "-Igithub.com/infobloxopen/protoc-gen-gorm/example", \
+    "-Igithub.com/infobloxopen/protoc-gen-gorm/third_party/proto", \
     # required import paths for protoc-gen-atlas-validate plugin
     "-Igithub.com/infobloxopen/protoc-gen-atlas-validate" \
 ]

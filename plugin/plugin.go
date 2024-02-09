@@ -3070,8 +3070,10 @@ func (b *ORMBuilder) followsUpdateConventions(inType *protogen.Message, outType 
 			}
 		}
 
-		// Check that type of field is a FieldMask
-		if string(field.Desc.Message().FullName()) == "google.protobuf.FieldMask" {
+		if field.Desc.Message() == nil {
+			fmt.Fprintf(os.Stderr, "field message is nil: %s.\n", field.Desc.FullName())
+			// Check that type of field is a FieldMask
+		} else if string(field.Desc.Message().FullName()) == "google.protobuf.FieldMask" {
 			// More than one mask in request is not allowed.
 			if updateMask != "" {
 				return false, "", ""
@@ -3185,7 +3187,7 @@ func (b *ORMBuilder) followsListConventions(inType *protogen.Message, outType *p
 		}
 	}
 	if !typeOrmable {
-		fmt.Fprintf(os.Stderr, `stub will be generated for %s since %s incoming message doesn't have "results" field of ormable type`, methodName, outType.Desc.Name())
+		fmt.Fprintf(os.Stderr, `stub will be generated for %s since %s incoming message doesn't have "results" field of ormable type.`, methodName, outType.Desc.Name())
 		return false, ""
 	}
 
