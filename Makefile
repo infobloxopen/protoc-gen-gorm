@@ -93,9 +93,7 @@ build-user-local:
 	protoc --proto_path . \
 	-I./proto/ \
 	-I./third_party/proto/ \
-	example/user/user.proto --gorm_out="engine=postgres,enums=string,gateway:./example/user" \
-	--go_out=./example/user --go_opt=module=github.com/infobloxopen/protoc-gen-gorm/example/user \
-	--gorm_opt=module=github.com/infobloxopen/protoc-gen-gorm/example/user
+	example/user/user.proto --gorm_out="engine=postgres,enums=string,gateway:./example/user" --go_out=./example/user
 
 build-postgres-local:
 	rm -rf example/postgres_arrays/github.com/
@@ -104,6 +102,21 @@ build-postgres-local:
 	protoc --proto_path . \
 	-I./proto/ \
 	-I./third_party/proto/ \
-	example/postgres_arrays/postgres_arrays.proto --gorm_out="engine=postgres,enums=string,gateway:./example/postgres_arrays" \
-	--go_out=./example/postgres_arrays --go_opt=module=github.com/infobloxopen/protoc-gen-gorm/example/postgres_arrays \
-	--gorm_opt=module=github.com/infobloxopen/protoc-gen-gorm/example/postgres_arrays
+	example/postgres_arrays/postgres_arrays.proto --gorm_out="engine=postgres,enums=string,gateway:./example/postgres_arrays" --go_out=./example/postgres_arrays
+
+test-gen:
+	go install
+	protoc --proto_path . \
+	-I./proto/ \
+	-I./third_party/proto/ \
+	testdata/test.proto --gorm_out="engine=postgres,enums=string,gateway:./testdata" \
+	--go_out=./testdata --go_opt=module=github.com/infobloxopen/protoc-gen-gorm/testdata \
+	--gorm_opt=module=github.com/infobloxopen/protoc-gen-gorm/testdata
+
+test-check:
+	test -e testdata/test.pb.go
+	test -e testdata/test.pb.gorm.go
+	go test ./testdata
+
+test-clean:
+	find testdata -type f -name '*pb*.go' -delete
