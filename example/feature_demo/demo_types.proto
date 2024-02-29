@@ -125,6 +125,7 @@ message MultiaccountTypeWithID {
   option (gorm.opts) = {
     ormable: true,
     multi_account: true
+    multi_compartment: true
   };
   uint64 id = 1;
   string some_field = 2;
@@ -137,6 +138,7 @@ message MultiaccountTypeWithoutID {
   option (gorm.opts) = {
     ormable: true,
     multi_account: true
+    multi_compartment: true
   };
   string some_field = 1;
 }
