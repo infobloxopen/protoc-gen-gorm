@@ -3248,7 +3248,7 @@ func (b *ORMBuilder) followsListConventions(inType *protogen.Message, outType *p
 		}
 	}
 	if !typeOrmable {
-		fmt.Fprintf(os.Stderr, `stub will be generated for %s since %s incoming message doesn't have "results" field of ormable type.`, methodName, outType.Desc.Name())
+		fmt.Fprintf(os.Stderr, `stub will be generated for %s since %s incoming message doesn't have "results" field of ormable type`, methodName, outType.Desc.Name())
 		return false, ""
 	}
 
