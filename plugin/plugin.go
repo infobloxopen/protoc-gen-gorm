@@ -36,7 +36,7 @@ var (
 	gormImport         = "gorm.io/gorm"
 	tkgormImport       = "github.com/infobloxopen/atlas-app-toolkit/gorm"
 	uuidImport         = "github.com/satori/go.uuid"
-	authImport         = "github.com/infobloxopen/atlas-app-toolkit/auth"
+	authImport         = "github.com/infobloxopen/protoc-gen-gorm/auth"
 	gtypesImport       = "github.com/infobloxopen/protoc-gen-gorm/types"
 	resourceImport     = "github.com/infobloxopen/atlas-app-toolkit/gorm/resource"
 	queryImport        = "github.com/infobloxopen/atlas-app-toolkit/query"
@@ -389,6 +389,15 @@ func (b *ORMBuilder) generateConvertFunctions(g *protogen.GeneratedFile, message
 		g.P("}")
 		g.P("to.AccountID = accountID")
 	}
+
+	if getMessageOptions(message).GetMultiCompartment() {
+		g.P("compartmentID, err := ", generateImport("GetCompartmentID", authImport, g), "(ctx, nil)")
+		g.P("if err != nil {")
+		g.P("return to, err")
+		g.P("}")
+		g.P("to.CompartmentID = compartmentID")
+	}
+
 	b.setupOrderedHasMany(message, g)
 	g.P(`if posthook, ok := interface{}(m).(`, typeName, `WithAfterToORM); ok {`)
 	g.P(`err = posthook.AfterToORM(ctx, &to)`)
@@ -1032,6 +1041,14 @@ func (b *ORMBuilder) parseBasicFields(msg *protogen.Message, g *protogen.Generat
 			ormable.Fields["AccountID"] = &Field{TypeName: "string"}
 		} else if accID.TypeName != "string" {
 			panic("cannot include AccountID field")
+		}
+	}
+
+	if gormMsgOptions.GetMultiCompartment() {
+		if comID, ok := ormable.Fields["CompartmentID"]; !ok {
+			ormable.Fields["CompartmentID"] = &Field{TypeName: "string"}
+		} else if comID.TypeName != "string" {
+			panic("cannot include CompartmentID field")
 		}
 	}
 
@@ -2095,18 +2112,42 @@ func (b *ORMBuilder) generateDeleteSetHandler(message *protogen.Message, g *prot
 	g.P(`keys = append(keys, ormObj.`, pkName, `)`)
 	g.P(`}`)
 	b.generateBeforeDeleteSetHookCall(ormable, g)
+
 	if getMessageOptions(message).GetMultiAccount() {
-		g.P(`acctId, err := `, generateImport("GetAccountID", authImport, g), `(ctx, nil)`)
+		g.P(`accountId, err := `, generateImport("GetAccountID", authImport, g), `(ctx, nil)`)
 		g.P(`if err != nil {`)
 		g.P(`return err`)
 		g.P(`}`)
-		g.P(`err = db.Where("account_id = ? AND `, ns.TableName(pkName), ` in (?)", acctId, keys).Delete(&`, ormable.Name, `{}).Error`)
+
+		if getMessageOptions(message).GetMultiCompartment() {
+			g.P(`compartmentId, err := `, generateImport("GetCompartmentID", authImport, g), `(ctx, nil)`)
+			g.P(`if err != nil {`)
+			g.P(`return err`)
+			g.P(`}`)
+			g.P(`if compartmentId != "" {`)
+			g.P(`err = db.Where("account_id = ? AND compartment_id like ?% AND `, ns.TableName(pkName), ` in (?)", accountId, compartmentId, keys).Delete(&`, ormable.Name, `{}).Error`)
+			g.P(`if err != nil {`)
+			g.P(`return err`)
+			g.P(`}`)
+			g.P(`} else {`)
+			g.P(`err = db.Where("account_id = ? AND `, ns.TableName(pkName), ` in (?)", accountId, keys).Delete(&`, ormable.Name, `{}).Error`)
+			g.P(`if err != nil {`)
+			g.P(`return err`)
+			g.P(`}`)
+			g.P(`}`)
+		} else {
+			g.P(`err = db.Where("account_id = ? AND `, ns.TableName(pkName), ` in (?)", accountId, keys).Delete(&`, ormable.Name, `{}).Error`)
+			g.P(`if err != nil {`)
+			g.P(`return err`)
+			g.P(`}`)
+		}
 	} else {
 		g.P(`err = db.Where("`, ns.TableName(pkName), ` in (?)", keys).Delete(&`, ormable.Name, `{}).Error`)
+		g.P(`if err != nil {`)
+		g.P(`return err`)
+		g.P(`}`)
 	}
-	g.P(`if err != nil {`)
-	g.P(`return err`)
-	g.P(`}`)
+
 	b.generateAfterDeleteSetHookCall(ormable, g)
 	g.P(`return err`)
 	g.P(`}`)
@@ -2148,7 +2189,11 @@ func (b *ORMBuilder) generateStrictUpdateHandler(message *protogen.Message, g *p
 	g.P(`}`)
 
 	if getMessageOptions(message).GetMultiAccount() {
-		b.generateAccountIdWhereClause(g)
+		if getMessageOptions(message).GetMultiCompartment() {
+			b.generateAccountIdAndCompartmentIdWhereClause(g)
+		} else {
+			b.generateAccountIdWhereClause(g)
+		}
 	}
 
 	ormable := b.getOrmable(typeName)
@@ -2233,6 +2278,22 @@ func (b *ORMBuilder) generateAccountIdWhereClause(g *protogen.GeneratedFile) {
 	g.P(`return nil, err`)
 	g.P(`}`)
 	g.P(`db = db.Where(map[string]interface{}{"account_id": accountID})`)
+}
+
+func (b *ORMBuilder) generateAccountIdAndCompartmentIdWhereClause(g *protogen.GeneratedFile) {
+	g.P(`accountID, err := `, generateImport("GetAccountID", authImport, g), `(ctx, nil)`)
+	g.P(`if err != nil {`)
+	g.P(`return nil, err`)
+	g.P(`}`)
+	g.P(`compartmentID, err := `, generateImport("GetCompartmentID", authImport, g), `(ctx, nil)`)
+	g.P(`if err != nil {`)
+	g.P(`return nil, err`)
+	g.P(`}`)
+	g.P(`if compartmentID != "" {`)
+	g.P(`db = db.Where(map[string]interface{}{"account_id": accountID, "compartment_id": compartmentID})`)
+	g.P(`} else {`)
+	g.P(`db = db.Where(map[string]interface{}{"account_id": accountID})`)
+	g.P(`}`)
 }
 
 func (b *ORMBuilder) handleChildAssociations(message *protogen.Message, g *protogen.GeneratedFile) {
