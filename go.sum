@@ -177,8 +177,12 @@ github.com/hashicorp/golang-lru v0.5.1/go.mod h1:/m3WP610KZHVQ1SGc6re/UDhFvYD7pJ
 github.com/ianlancetaylor/demangle v0.0.0-20181102032728-5e5cf60278f6/go.mod h1:aSSvb/t6k1mPoxDqO4vJh6VOCGPwU4O0C2/Eqndh1Sc=
 github.com/infobloxopen/atlas-app-toolkit v1.2.2-0.20220721202134-28480c4993fc h1:Sir8ZR77/02ywn0YDXGAyVy+twe6mj0QaG6gZXt9i0E=
 github.com/infobloxopen/atlas-app-toolkit v1.2.2-0.20220721202134-28480c4993fc/go.mod h1:6ZgfYrG6OzL7s9/tBHBvusulRk5rI1Zxss7qGQqSj3g=
+github.com/infobloxopen/atlas-app-toolkit v1.4.0 h1:cAaSeFd94/LonbiukVipbnKGmQehlJ2JbScBf1ZR87k=
+github.com/infobloxopen/atlas-app-toolkit v1.4.0/go.mod h1:CzJ6ssNawJ9D/IPgEyEsErksyNOh9zx8Tjq7tJq3pYQ=
 github.com/infobloxopen/atlas-app-toolkit/v2 v2.2.0 h1:leZj4OfotKarTaR+ZEGUe5PtGiZtZlYv1QOm1j8/Z0s=
 github.com/infobloxopen/atlas-app-toolkit/v2 v2.2.0/go.mod h1:lTpHy+QaWu2sLoV1Tx1ei9SAuj0xzecMlGjWkYRvGiY=
+github.com/infobloxopen/atlas-app-toolkit/v2 v2.2.1-0.20240313220428-5449c0c2a27f h1:wihVgOApK0G0//Lk7ePFum4caPRR2nzz4AJARImBolk=
+github.com/infobloxopen/atlas-app-toolkit/v2 v2.2.1-0.20240313220428-5449c0c2a27f/go.mod h1:U/LzhwTjWhM1wNLVYgGEeRlYjhrQphQDItkJKQQlB+Y=
 github.com/jackc/chunkreader v1.0.0 h1:4s39bBR8ByfqH+DKm8rQA3E1LHZWB9XWcrz8fqaZbe0=
 github.com/jackc/chunkreader v1.0.0/go.mod h1:RT6O25fNZIuasFJRyZ4R/Y2BbhasbmZXF9QQ7T3kePo=
 github.com/jackc/chunkreader/v2 v2.0.0/go.mod h1:odVSm741yZoC3dpHEUXIqA9tQRhFrgOHwnPIn9lDKlk=
