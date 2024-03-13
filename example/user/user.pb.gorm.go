@@ -3,9 +3,9 @@ package user
 import (
 	context "context"
 	fmt "fmt"
-	gateway "github.com/infobloxopen/atlas-app-toolkit/gateway"
-	gorm1 "github.com/infobloxopen/atlas-app-toolkit/gorm"
-	resource "github.com/infobloxopen/atlas-app-toolkit/gorm/resource"
+	gateway "github.com/infobloxopen/atlas-app-toolkit/v2/gateway"
+	gorm1 "github.com/infobloxopen/atlas-app-toolkit/v2/gorm"
+	resource "github.com/infobloxopen/atlas-app-toolkit/v2/gorm/resource"
 	auth "github.com/infobloxopen/protoc-gen-gorm/auth"
 	errors "github.com/infobloxopen/protoc-gen-gorm/errors"
 	field_mask "google.golang.org/genproto/protobuf/field_mask"

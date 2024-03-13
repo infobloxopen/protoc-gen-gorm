@@ -7,7 +7,7 @@
 package example
 
 import (
-	query "github.com/infobloxopen/atlas-app-toolkit/query"
+	query "github.com/infobloxopen/atlas-app-toolkit/v2/query"
 	_ "github.com/infobloxopen/protoc-gen-gorm/options"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
