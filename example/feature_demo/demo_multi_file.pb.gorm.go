@@ -3,7 +3,7 @@ package example
 import (
 	context "context"
 	fmt "fmt"
-	gateway "github.com/infobloxopen/atlas-app-toolkit/gateway"
+	gateway "github.com/infobloxopen/atlas-app-toolkit/v2/gateway"
 	errors "github.com/infobloxopen/protoc-gen-gorm/errors"
 	go_uuid "github.com/satori/go.uuid"
 	field_mask "google.golang.org/genproto/protobuf/field_mask"
