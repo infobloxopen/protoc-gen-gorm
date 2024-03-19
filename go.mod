@@ -7,6 +7,7 @@ require (
 	github.com/grpc-ecosystem/go-grpc-middleware v1.4.0
 	github.com/infobloxopen/atlas-app-toolkit/v2 v2.2.1-0.20240313220428-5449c0c2a27f
 	github.com/jinzhu/inflection v1.0.0
+	github.com/jinzhu/gorm v1.9.16
 	github.com/lib/pq v1.10.2
 	github.com/satori/go.uuid v1.2.0
 	go.opencensus.io v0.23.0

@@ -1,6 +1,6 @@
 include Makefile.buf
 
-GENTOOL_IMAGE := infoblox/atlas-gentool:dev-gengorm
+GENTOOL_IMAGE := infoblox/atlas-gentool:v21.13.2
 
 GOPATH ?= $(HOME)/go
 SRCPATH := $(patsubst %/,%,$(GOPATH))/src

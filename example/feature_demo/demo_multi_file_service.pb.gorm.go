@@ -2,7 +2,7 @@ package example
 
 import (
 	context "context"
-	gorm "gorm.io/gorm"
+	gorm "github.com/jinzhu/gorm"
 )
 
 type BlogPostServiceDefaultServer struct {

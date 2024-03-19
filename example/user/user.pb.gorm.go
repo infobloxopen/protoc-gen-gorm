@@ -8,9 +8,9 @@ import (
 	resource "github.com/infobloxopen/atlas-app-toolkit/v2/gorm/resource"
 	auth "github.com/infobloxopen/protoc-gen-gorm/auth"
 	errors "github.com/infobloxopen/protoc-gen-gorm/errors"
+	gorm "github.com/jinzhu/gorm"
 	field_mask "google.golang.org/genproto/protobuf/field_mask"
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
-	gorm "gorm.io/gorm"
 	strings "strings"
 	time "time"
 )

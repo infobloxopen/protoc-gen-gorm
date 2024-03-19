@@ -5,9 +5,9 @@ import (
 	fmt "fmt"
 	gateway "github.com/infobloxopen/atlas-app-toolkit/v2/gateway"
 	errors "github.com/infobloxopen/protoc-gen-gorm/errors"
+	gorm "github.com/jinzhu/gorm"
 	go_uuid "github.com/satori/go.uuid"
 	field_mask "google.golang.org/genproto/protobuf/field_mask"
-	gorm "gorm.io/gorm"
 )
 
 type ExternalChildORM struct {

@@ -5,9 +5,9 @@ import (
 	fmt "fmt"
 	gateway "github.com/infobloxopen/atlas-app-toolkit/v2/gateway"
 	errors "github.com/infobloxopen/protoc-gen-gorm/errors"
+	gorm "github.com/jinzhu/gorm"
 	pq "github.com/lib/pq"
 	field_mask "google.golang.org/genproto/protobuf/field_mask"
-	gorm "gorm.io/gorm"
 )
 
 type ExampleORM struct {

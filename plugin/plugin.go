@@ -33,7 +33,7 @@ var (
 )
 
 var (
-	gormImport         = "gorm.io/gorm"
+	gormImport         = "github.com/jinzhu/gorm"
 	tkgormImport       = "github.com/infobloxopen/atlas-app-toolkit/v2/gorm"
 	uuidImport         = "github.com/satori/go.uuid"
 	authImport         = "github.com/infobloxopen/protoc-gen-gorm/auth"
