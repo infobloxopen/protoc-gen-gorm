@@ -5,12 +5,12 @@ import "options/gorm.proto";
 
 option go_package = "github.com/infobloxopen/protoc-gen-gorm/example/feature_demo;example";
 
- message ExternalChild {
-   option (gorm.opts) = {
-     ormable: true,
-   };
-   string id = 1;
- }
+message ExternalChild {
+  option (gorm.opts) = {
+    ormable: true,
+  };
+  string id = 1;
+}
 
 message BlogPost {
   option (gorm.opts) = {

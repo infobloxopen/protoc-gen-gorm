@@ -1,0 +1,8 @@
+version: v2
+
+managed:
+  enabled: true
+
+inputs:
+  - directory: proto/
+  - directory: third_party/proto/
