@@ -14,6 +14,7 @@ func TestMultipleCrud(t *testing.T) {
 		methods := []string{"Create", "Read", "Update", "List", "Delete", "DeleteSet"}
 		repeated := []string{"A", "B"}
 
+		t.Log("TestMultipleCrud")
 		for idx := 0; idx < len(methods); idx++ {
 			for i := 0; i < len(repeated); i++ {
 				methodName := fmt.Sprintf("%s%s", methods[idx], repeated[i])
