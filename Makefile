@@ -57,6 +57,7 @@ example: default
 		--go_out="plugins=grpc:$(SRCPATH)" --gorm_out="$(SRCPATH)" \
 		example/user/user.proto
 
+#to check run-tests
 .PHONY: run-tests
 run-tests:
 	go test -v ./...
