@@ -28,6 +28,12 @@ func (p *OrmPlugin) generateDefaultHandlers(file *generator.FileDescriptor) {
 
 			p.generateApplyFieldMask(message)
 			p.generateListHandler(message)
+
+			typeName := p.TypeName(message)
+			ormable := p.getOrmable(typeName)
+			if p.listHasPagination(ormable) {
+				p.generateListCountHandler(message)
+			}
 		}
 	}
 }
@@ -630,6 +636,98 @@ func (p *OrmPlugin) generateListHandler(message *generator.Descriptor) {
 	p.generateBeforeListHookDef(ormable, "ApplyQuery")
 	p.generateBeforeListHookDef(ormable, "Find")
 	p.generateAfterListHookDef(ormable)
+}
+
+func (p *OrmPlugin) generateListCountHandler(message *generator.Descriptor) {
+	typeName := p.TypeName(message)
+	ormable := p.getOrmable(typeName)
+
+	p.P(`// DefaultListCount`, typeName, ` executes a gorm list call with total record count`)
+	listSign := fmt.Sprint(`func DefaultListCount`, typeName, `(ctx context.Context, db *`, p.Import(gormImport), `.DB`)
+	var f, s, pg, fs string
+	if p.listHasFiltering(ormable) {
+		listSign += fmt.Sprint(`, f `, `*`, p.Import(queryImport), `.Filtering`)
+		f = "f"
+	} else {
+		f = "nil"
+	}
+	if p.listHasSorting(ormable) {
+		listSign += fmt.Sprint(`, s `, `*`, p.Import(queryImport), `.Sorting`)
+		s = "s"
+	} else {
+		s = "nil"
+	}
+	if p.listHasPagination(ormable) {
+		listSign += fmt.Sprint(`, p `, `*`, p.Import(queryImport), `.Pagination`)
+		pg = "p"
+	} else {
+		pg = "nil"
+	}
+	if p.listHasFieldSelection(ormable) {
+		listSign += fmt.Sprint(`, fs `, `*`, p.Import(queryImport), `.FieldSelection`)
+		fs = "fs"
+	} else {
+		fs = "nil"
+	}
+
+	if pg != "nil" {
+		listSign += fmt.Sprint(`) (*`, typeName, `ListResponse`, `, error) {`)
+	} else {
+		listSign += fmt.Sprint(`) ([]*`, typeName, `, error) {`)
+	}
+	p.P(listSign)
+	p.P(`in := `, typeName, `{}`)
+	p.P(`ormObj, err := in.ToORM(ctx)`)
+	p.P(`if err != nil {`)
+	p.P(`return nil, err`)
+	p.P(`}`)
+	p.generateBeforeListHookCall(ormable, "ApplyQuery")
+	p.P(`db, err = `, p.Import(tkgormImport), `.ApplyCollectionOperators(ctx, db, &`, ormable.Name, `{}, &`, typeName, `{}, `, f, `,`, s, `,`, pg, `,`, fs, `)`)
+	p.P(`if err != nil {`)
+	p.P(`return nil, err`)
+	p.P(`}`)
+	p.generateBeforeListHookCall(ormable, "Find")
+	p.P(`db = db.Where(&ormObj)`)
+	p.P(`var total int64`)
+	p.P(`db.Model(&ormObj).Count(&total)`)
+
+	// add default ordering by primary key
+	if p.hasPrimaryKey(ormable) {
+		pkName, pk := p.findPrimaryKey(ormable)
+		column := pk.GetTag().GetColumn()
+		if len(column) == 0 {
+			column = jgorm.ToDBName(pkName)
+		}
+		p.P(`db = db.Order("`, column, `")`)
+	}
+
+	p.P(`ormResponse := []`, ormable.Name, `{}`)
+	p.P(`if err := db.Find(&ormResponse).Error; err != nil {`)
+	p.P(`return nil, err`)
+	p.P(`}`)
+	p.generateAfterListHookCall(ormable)
+	p.P(`pbResponse := []*`, typeName, `{}`)
+	p.P(`for _, responseEntry := range ormResponse {`)
+	p.P(`temp, err := responseEntry.ToPB(ctx)`)
+	p.P(`if err != nil {`)
+	p.P(`return nil, err`)
+	p.P(`}`)
+	p.P(`pbResponse = append(pbResponse, &temp)`)
+	p.P(`}`)
+	p.P(`pi := &query1.PageInfo{TotalSize: total}`)
+	p.P(`pbPgResponse := &`, typeName, `ListResponse {pbResponse,pi}`)
+	p.P(`return pbPgResponse, nil`)
+	p.P(`}`)
+
+	p.generateListResponseDef(message)
+}
+
+func (p *OrmPlugin) generateListResponseDef(message *generator.Descriptor) {
+	typeName := p.TypeName(message)
+	p.P(`type `, typeName, `ListResponse `, ` struct {`)
+	p.P(`results `, `[]*`, typeName)
+	p.P(`page `, `*query1.PageInfo `)
+	p.P(`}`)
 }
 
 func (p *OrmPlugin) generateBeforeListHookDef(orm *OrmableType, suffix string) {

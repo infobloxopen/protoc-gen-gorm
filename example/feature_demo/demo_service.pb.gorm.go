@@ -585,6 +585,58 @@ type IntPointORMWithAfterListFind interface {
 	AfterListFind(context.Context, *gorm1.DB, *[]IntPointORM, *query1.Filtering, *query1.Sorting, *query1.Pagination, *query1.FieldSelection) error
 }
 
+// DefaultListCountIntPoint executes a gorm list call with total record count
+func DefaultListCountIntPoint(ctx context.Context, db *gorm1.DB, f *query1.Filtering, s *query1.Sorting, p *query1.Pagination, fs *query1.FieldSelection) (*IntPointListResponse, error) {
+	in := IntPoint{}
+	ormObj, err := in.ToORM(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if hook, ok := interface{}(&ormObj).(IntPointORMWithBeforeListApplyQuery); ok {
+		if db, err = hook.BeforeListApplyQuery(ctx, db, f, s, p, fs); err != nil {
+			return nil, err
+		}
+	}
+	db, err = gorm2.ApplyCollectionOperators(ctx, db, &IntPointORM{}, &IntPoint{}, f, s, p, fs)
+	if err != nil {
+		return nil, err
+	}
+	if hook, ok := interface{}(&ormObj).(IntPointORMWithBeforeListFind); ok {
+		if db, err = hook.BeforeListFind(ctx, db, f, s, p, fs); err != nil {
+			return nil, err
+		}
+	}
+	db = db.Where(&ormObj)
+	var total int64
+	db.Model(&ormObj).Count(&total)
+	db = db.Order("id")
+	ormResponse := []IntPointORM{}
+	if err := db.Find(&ormResponse).Error; err != nil {
+		return nil, err
+	}
+	if hook, ok := interface{}(&ormObj).(IntPointORMWithAfterListFind); ok {
+		if err = hook.AfterListFind(ctx, db, &ormResponse, f, s, p, fs); err != nil {
+			return nil, err
+		}
+	}
+	pbResponse := []*IntPoint{}
+	for _, responseEntry := range ormResponse {
+		temp, err := responseEntry.ToPB(ctx)
+		if err != nil {
+			return nil, err
+		}
+		pbResponse = append(pbResponse, &temp)
+	}
+	pi := &query1.PageInfo{TotalSize: total}
+	pbPgResponse := &IntPointListResponse{pbResponse, pi}
+	return pbPgResponse, nil
+}
+
+type IntPointListResponse struct {
+	results []*IntPoint
+	page    *query1.PageInfo
+}
+
 // DefaultCreateSomething executes a basic gorm create call
 func DefaultCreateSomething(ctx context.Context, in *Something, db *gorm1.DB) (*Something, error) {
 	if in == nil {
