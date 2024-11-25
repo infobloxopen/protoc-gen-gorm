@@ -642,8 +642,8 @@ func (p *OrmPlugin) generateListCountHandler(message *generator.Descriptor) {
 	typeName := p.TypeName(message)
 	ormable := p.getOrmable(typeName)
 
-	p.P(`// DefaultListCount`, typeName, ` executes a gorm list call with total record count`)
-	listSign := fmt.Sprint(`func DefaultListCount`, typeName, `(ctx context.Context, db *`, p.Import(gormImport), `.DB`)
+	p.P(`// DefaultListWithCount`, typeName, ` executes a gorm list call with total record count`)
+	listSign := fmt.Sprint(`func DefaultListWithCount`, typeName, `(ctx context.Context, db *`, p.Import(gormImport), `.DB`)
 	var f, s, pg, fs string
 	if p.listHasFiltering(ormable) {
 		listSign += fmt.Sprint(`, f `, `*`, p.Import(queryImport), `.Filtering`)

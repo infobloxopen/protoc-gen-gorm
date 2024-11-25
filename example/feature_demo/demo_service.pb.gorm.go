@@ -585,8 +585,8 @@ type IntPointORMWithAfterListFind interface {
 	AfterListFind(context.Context, *gorm1.DB, *[]IntPointORM, *query1.Filtering, *query1.Sorting, *query1.Pagination, *query1.FieldSelection) error
 }
 
-// DefaultListCountIntPoint executes a gorm list call with total record count
-func DefaultListCountIntPoint(ctx context.Context, db *gorm1.DB, f *query1.Filtering, s *query1.Sorting, p *query1.Pagination, fs *query1.FieldSelection) (*IntPointListResponse, error) {
+// DefaultListWithCountIntPoint executes a gorm list call with total record count
+func DefaultListWithCountIntPoint(ctx context.Context, db *gorm1.DB, f *query1.Filtering, s *query1.Sorting, p *query1.Pagination, fs *query1.FieldSelection) (*IntPointListResponse, error) {
 	in := IntPoint{}
 	ormObj, err := in.ToORM(ctx)
 	if err != nil {
