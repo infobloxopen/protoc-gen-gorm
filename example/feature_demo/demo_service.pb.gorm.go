@@ -608,7 +608,7 @@ func DefaultListCountIntPoint(ctx context.Context, db *gorm1.DB, f *query1.Filte
 	}
 	db = db.Where(&ormObj)
 	var total int64
-	db.Model(&ormObj).Count(&total)
+	db = db.Model(&ormObj).Count(&total)
 	db = db.Order("id")
 	ormResponse := []IntPointORM{}
 	if err := db.Find(&ormResponse).Error; err != nil {

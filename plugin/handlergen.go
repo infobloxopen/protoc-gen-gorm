@@ -689,7 +689,7 @@ func (p *OrmPlugin) generateListCountHandler(message *generator.Descriptor) {
 	p.generateBeforeListHookCall(ormable, "Find")
 	p.P(`db = db.Where(&ormObj)`)
 	p.P(`var total int64`)
-	p.P(`db.Model(&ormObj).Count(&total)`)
+	p.P(`db = db.Model(&ormObj).Count(&total)`)
 
 	// add default ordering by primary key
 	if p.hasPrimaryKey(ormable) {
