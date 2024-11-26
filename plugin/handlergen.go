@@ -671,7 +671,7 @@ func (p *OrmPlugin) generateListCountHandler(message *generator.Descriptor) {
 	}
 
 	if pg != "nil" {
-		listSign += fmt.Sprint(`) (*`, typeName, `ListResponse`, `, error) {`)
+		listSign += fmt.Sprint(`) (*`, typeName, `PageInfoListResponse`, `, error) {`)
 	} else {
 		listSign += fmt.Sprint(`) ([]*`, typeName, `, error) {`)
 	}
@@ -715,7 +715,7 @@ func (p *OrmPlugin) generateListCountHandler(message *generator.Descriptor) {
 	p.P(`pbResponse = append(pbResponse, &temp)`)
 	p.P(`}`)
 	p.P(`pi := &query1.PageInfo{TotalSize: total}`)
-	p.P(`pbPgResponse := &`, typeName, `ListResponse {pbResponse,pi}`)
+	p.P(`pbPgResponse := &`, typeName, `PageInfoListResponse {pbResponse,pi}`)
 	p.P(`return pbPgResponse, nil`)
 	p.P(`}`)
 
@@ -724,7 +724,7 @@ func (p *OrmPlugin) generateListCountHandler(message *generator.Descriptor) {
 
 func (p *OrmPlugin) generateListResponseDef(message *generator.Descriptor) {
 	typeName := p.TypeName(message)
-	p.P(`type `, typeName, `ListResponse `, ` struct {`)
+	p.P(`type `, typeName, `PageInfoListResponse `, ` struct {`)
 	p.P(`results `, `[]*`, typeName)
 	p.P(`page `, `*query1.PageInfo `)
 	p.P(`}`)

@@ -586,7 +586,7 @@ type IntPointORMWithAfterListFind interface {
 }
 
 // DefaultListWithCountIntPoint executes a gorm list call with total record count
-func DefaultListWithCountIntPoint(ctx context.Context, db *gorm1.DB, f *query1.Filtering, s *query1.Sorting, p *query1.Pagination, fs *query1.FieldSelection) (*IntPointListResponse, error) {
+func DefaultListWithCountIntPoint(ctx context.Context, db *gorm1.DB, f *query1.Filtering, s *query1.Sorting, p *query1.Pagination, fs *query1.FieldSelection) (*IntPointPageInfoListResponse, error) {
 	in := IntPoint{}
 	ormObj, err := in.ToORM(ctx)
 	if err != nil {
@@ -628,11 +628,11 @@ func DefaultListWithCountIntPoint(ctx context.Context, db *gorm1.DB, f *query1.F
 		pbResponse = append(pbResponse, &temp)
 	}
 	pi := &query1.PageInfo{TotalSize: total}
-	pbPgResponse := &IntPointListResponse{pbResponse, pi}
+	pbPgResponse := &IntPointPageInfoListResponse{pbResponse, pi}
 	return pbPgResponse, nil
 }
 
-type IntPointListResponse struct {
+type IntPointPageInfoListResponse struct {
 	results []*IntPoint
 	page    *query1.PageInfo
 }
