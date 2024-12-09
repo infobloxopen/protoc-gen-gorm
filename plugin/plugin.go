@@ -1459,12 +1459,16 @@ func (b *ORMBuilder) generateFieldConversion(message *protogen.Message, field *p
 		if toORM {
 			if b.stringEnums {
 				g.P(`to.`, fieldName, ` = `, fieldType, `_name[int32(m.`, fieldName, `)]`)
+			} else if field.Desc.HasOptionalKeyword() {
+				g.P(`to.`, fieldName, ` = (*int32)(m.`, fieldName, `)`)
 			} else {
 				g.P(`to.`, fieldName, ` = int32(m.`, fieldName, `)`)
 			}
 		} else {
 			if b.stringEnums {
 				g.P(`to.`, fieldName, ` = `, fieldType, `(`, fieldType, `_value[m.`, fieldName, `])`)
+			} else if field.Desc.HasOptionalKeyword() {
+				g.P(`to.`, fieldName, ` = (*`, fieldType, `)(m.`, fieldName, `)`)
 			} else {
 				g.P(`to.`, fieldName, ` = `, fieldType, `(m.`, fieldName, `)`)
 			}
