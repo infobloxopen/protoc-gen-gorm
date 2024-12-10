@@ -28,6 +28,12 @@ func (p *OrmPlugin) generateDefaultHandlers(file *generator.FileDescriptor) {
 
 			p.generateApplyFieldMask(message)
 			p.generateListHandler(message)
+
+			typeName := p.TypeName(message)
+			ormable := p.getOrmable(typeName)
+			if p.listHasPagination(ormable) {
+				p.generateListCountHandler(message)
+			}
 		}
 	}
 }
@@ -632,6 +638,54 @@ func (p *OrmPlugin) generateListHandler(message *generator.Descriptor) {
 	p.generateAfterListHookDef(ormable)
 }
 
+func (p *OrmPlugin) generateListCountHandler(message *generator.Descriptor) {
+	typeName := p.TypeName(message)
+	ormable := p.getOrmable(typeName)
+
+	p.P(`// DefaultCount`, typeName, ` executes a gorm total record count call`)
+	listSign := fmt.Sprint(`func DefaultCount`, typeName, `(ctx context.Context, db *`, p.Import(gormImport), `.DB`)
+	var f string
+	if p.listHasFiltering(ormable) {
+		listSign += fmt.Sprint(`, f `, `*`, p.Import(queryImport), `.Filtering`)
+		f = "f"
+	} else {
+		f = "nil"
+	}
+	listSign += fmt.Sprint(`) (int64`, `, error) {`)
+	p.P(listSign)
+	p.P(`in := `, typeName, `{}`)
+	p.P(`ormObj, err := in.ToORM(ctx)`)
+	p.P(`if err != nil {`)
+	p.P(`return 0, err`)
+	p.P(`}`)
+	p.generateBeforeCountHookCall(ormable, "ApplyQuery")
+	p.P(`db, err = `, p.Import(tkgormImport), `.ApplyCollectionOperators(ctx, db, &`, ormable.Name, `{}, &`, typeName, `{}, `, f, `,nil,nil,nil`, `)`)
+	p.P(`if err != nil {`)
+	p.P(`return 0, err`)
+	p.P(`}`)
+	p.generateBeforeCountHookCall(ormable, "Find")
+	p.P(`db = db.Where(&ormObj)`)
+	p.P(`var total int64`)
+	p.P(`if err = db.Count(&total).Error; err != nil {`)
+	p.P(`return 0, err`)
+	p.P(`}`)
+	p.P(`return total, nil`)
+	p.P(`}`)
+	p.generateBeforeCountHookDef(ormable, "ApplyQuery")
+	p.generateBeforeCountHookDef(ormable, "Find")
+}
+
+func (p *OrmPlugin) generateBeforeCountHookDef(orm *OrmableType, suffix string) {
+	p.P(`type `, orm.Name, `WithBeforeCount`, suffix, ` interface {`)
+	hookSign := fmt.Sprint(`BeforeCount`, suffix, `(context.Context, *`, p.Import(gormImport), `.DB`)
+	if p.listHasFiltering(orm) {
+		hookSign += fmt.Sprint(`, *`, p.Import(queryImport), `.Filtering`)
+	}
+	hookSign += fmt.Sprint(`) (*`, p.Import(gormImport), `.DB, error)`)
+	p.P(hookSign)
+	p.P(`}`)
+}
+
 func (p *OrmPlugin) generateBeforeListHookDef(orm *OrmableType, suffix string) {
 	p.P(`type `, orm.Name, `WithBeforeList`, suffix, ` interface {`)
 	hookSign := fmt.Sprint(`BeforeList`, suffix, `(context.Context, *`, p.Import(gormImport), `.DB`)
@@ -690,6 +744,19 @@ func (p *OrmPlugin) generateBeforeListHookCall(orm *OrmableType, suffix string) 
 	hookCall += `); err != nil {`
 	p.P(hookCall)
 	p.P(`return nil, err`)
+	p.P(`}`)
+	p.P(`}`)
+}
+
+func (p *OrmPlugin) generateBeforeCountHookCall(orm *OrmableType, suffix string) {
+	p.P(`if hook, ok := interface{}(&ormObj).(`, orm.Name, `WithBeforeCount`, suffix, `); ok {`)
+	hookCall := fmt.Sprint(`if db, err = hook.BeforeCount`, suffix, `(ctx, db`)
+	if p.listHasFiltering(orm) {
+		hookCall += `,f`
+	}
+	hookCall += `); err != nil {`
+	p.P(hookCall)
+	p.P(`return 0, err`)
 	p.P(`}`)
 	p.P(`}`)
 }
