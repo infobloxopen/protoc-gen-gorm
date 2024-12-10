@@ -585,6 +585,42 @@ type IntPointORMWithAfterListFind interface {
 	AfterListFind(context.Context, *gorm1.DB, *[]IntPointORM, *query1.Filtering, *query1.Sorting, *query1.Pagination, *query1.FieldSelection) error
 }
 
+// DefaultCountIntPoint executes a gorm total record count call
+func DefaultCountIntPoint(ctx context.Context, db *gorm1.DB, f *query1.Filtering) (int64, error) {
+	in := IntPoint{}
+	ormObj, err := in.ToORM(ctx)
+	if err != nil {
+		return 0, err
+	}
+	if hook, ok := interface{}(&ormObj).(IntPointORMWithBeforeCountApplyQuery); ok {
+		if db, err = hook.BeforeCountApplyQuery(ctx, db, f); err != nil {
+			return 0, err
+		}
+	}
+	db, err = gorm2.ApplyCollectionOperators(ctx, db, &IntPointORM{}, &IntPoint{}, f, nil, nil, nil)
+	if err != nil {
+		return 0, err
+	}
+	if hook, ok := interface{}(&ormObj).(IntPointORMWithAfterCountApplyQuery); ok {
+		if db, err = hook.AfterCountApplyQuery(ctx, db, f); err != nil {
+			return 0, err
+		}
+	}
+	db = db.Where(&ormObj)
+	var total int64
+	if err = db.Model(&ormObj).Count(&total).Error; err != nil {
+		return 0, err
+	}
+	return total, nil
+}
+
+type IntPointORMWithBeforeCountApplyQuery interface {
+	BeforeCountApplyQuery(context.Context, *gorm1.DB, *query1.Filtering) (*gorm1.DB, error)
+}
+type IntPointORMWithAfterCountApplyQuery interface {
+	AfterCountApplyQuery(context.Context, *gorm1.DB, *query1.Filtering) (*gorm1.DB, error)
+}
+
 // DefaultCreateSomething executes a basic gorm create call
 func DefaultCreateSomething(ctx context.Context, in *Something, db *gorm1.DB) (*Something, error) {
 	if in == nil {
