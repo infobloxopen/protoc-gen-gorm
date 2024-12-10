@@ -663,21 +663,32 @@ func (p *OrmPlugin) generateListCountHandler(message *generator.Descriptor) {
 	p.P(`if err != nil {`)
 	p.P(`return 0, err`)
 	p.P(`}`)
-	p.generateBeforeCountHookCall(ormable, "Find")
+	p.generateAfterCountHookCall(ormable, "ApplyQuery")
 	p.P(`db = db.Where(&ormObj)`)
 	p.P(`var total int64`)
-	p.P(`if err = db.Count(&total).Error; err != nil {`)
+	p.P(`if err = db.Model(&ormObj).Count(&total).Error; err != nil {`)
 	p.P(`return 0, err`)
 	p.P(`}`)
 	p.P(`return total, nil`)
 	p.P(`}`)
 	p.generateBeforeCountHookDef(ormable, "ApplyQuery")
-	p.generateBeforeCountHookDef(ormable, "Find")
+	p.generateAfterCountHookDef(ormable, "ApplyQuery")
 }
 
 func (p *OrmPlugin) generateBeforeCountHookDef(orm *OrmableType, suffix string) {
 	p.P(`type `, orm.Name, `WithBeforeCount`, suffix, ` interface {`)
 	hookSign := fmt.Sprint(`BeforeCount`, suffix, `(context.Context, *`, p.Import(gormImport), `.DB`)
+	if p.listHasFiltering(orm) {
+		hookSign += fmt.Sprint(`, *`, p.Import(queryImport), `.Filtering`)
+	}
+	hookSign += fmt.Sprint(`) (*`, p.Import(gormImport), `.DB, error)`)
+	p.P(hookSign)
+	p.P(`}`)
+}
+
+func (p *OrmPlugin) generateAfterCountHookDef(orm *OrmableType, suffix string) {
+	p.P(`type `, orm.Name, `WithAfterCount`, suffix, ` interface {`)
+	hookSign := fmt.Sprint(`AfterCount`, suffix, `(context.Context, *`, p.Import(gormImport), `.DB`)
 	if p.listHasFiltering(orm) {
 		hookSign += fmt.Sprint(`, *`, p.Import(queryImport), `.Filtering`)
 	}
@@ -751,6 +762,19 @@ func (p *OrmPlugin) generateBeforeListHookCall(orm *OrmableType, suffix string) 
 func (p *OrmPlugin) generateBeforeCountHookCall(orm *OrmableType, suffix string) {
 	p.P(`if hook, ok := interface{}(&ormObj).(`, orm.Name, `WithBeforeCount`, suffix, `); ok {`)
 	hookCall := fmt.Sprint(`if db, err = hook.BeforeCount`, suffix, `(ctx, db`)
+	if p.listHasFiltering(orm) {
+		hookCall += `,f`
+	}
+	hookCall += `); err != nil {`
+	p.P(hookCall)
+	p.P(`return 0, err`)
+	p.P(`}`)
+	p.P(`}`)
+}
+
+func (p *OrmPlugin) generateAfterCountHookCall(orm *OrmableType, suffix string) {
+	p.P(`if hook, ok := interface{}(&ormObj).(`, orm.Name, `WithAfterCount`, suffix, `); ok {`)
+	hookCall := fmt.Sprint(`if db, err = hook.AfterCount`, suffix, `(ctx, db`)
 	if p.listHasFiltering(orm) {
 		hookCall += `,f`
 	}
