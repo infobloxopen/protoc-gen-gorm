@@ -106,7 +106,5 @@ build-postgres-local:
 
 .PHONY: mod
 mod:
-	cd types && go mod tidy
-	cd example && go mod tidy
-	go mod tidy
+	find . -name go.mod -execdir sh -c 'go mod tidy; go mod download' \;
 	go work sync
