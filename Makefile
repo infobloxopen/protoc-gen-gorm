@@ -103,3 +103,8 @@ build-postgres-local:
 	-I./proto/ \
 	-I./third_party/proto/ \
 	example/postgres_arrays/postgres_arrays.proto --gorm_out="engine=postgres,enums=string,gateway:./example/postgres_arrays" --go_out=./example/postgres_arrays
+
+.PHONY: mod
+mod:
+	find . -name go.mod -execdir sh -c 'go mod tidy; go mod download' \;
+	go work sync
