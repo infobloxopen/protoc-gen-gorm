@@ -24,5 +24,7 @@ jobs:
           key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
           restore-keys: |
             ${{ runner.os }}-go-
+      - name: Go mod tidy && download
+        run: make mod
       - name: Unit Tests
         run: make test
