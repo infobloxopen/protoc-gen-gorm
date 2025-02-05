@@ -4,8 +4,6 @@ import (
 	"net"
 	"reflect"
 	"testing"
-
-	_ "github.com/lib/pq"
 )
 
 func TestInetParse(t *testing.T) {

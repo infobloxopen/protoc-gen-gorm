@@ -14,7 +14,7 @@ build: $(BUF)
 	buf build
 
 test: lint build
-	go test -v ./...
+	find . -name go.mod -execdir sh -c 'go test -v ./...' \;
 
 generate: options/gorm.pb.go example/user/*.pb.go example/postgres_arrays/*.pb.go example/feature_demo/*.pb.go
 
@@ -54,3 +54,7 @@ generate-gentool: #gentool
 			feature_demo/demo_types.proto \
 			feature_demo/demo_service.proto \
 			feature_demo/demo_multi_file_service.proto
+
+.PHONY: mod
+mod:
+	find . -name go.mod -execdir sh -c 'go mod tidy; go mod download' \;
