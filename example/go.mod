@@ -8,7 +8,7 @@ replace (
 )
 
 require (
-	github.com/golang/protobuf v1.5.3
+	github.com/golang/protobuf v1.5.4
 	github.com/google/go-cmp v0.5.9
 	github.com/infobloxopen/atlas-app-toolkit/v2 v2.2.1-0.20240313220428-5449c0c2a27f
 	github.com/infobloxopen/protoc-gen-gorm v0.0.0-00010101000000-000000000000
