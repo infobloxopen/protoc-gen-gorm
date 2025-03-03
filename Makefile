@@ -106,5 +106,4 @@ build-postgres-local:
 
 .PHONY: mod
 mod:
-	find . -name go.mod -execdir sh -c 'go mod tidy; go mod download' \;
-	go work sync
+	find . -name go.mod -execdir sh -c 'go mod tidy -compat=1.17; go mod download' \;
