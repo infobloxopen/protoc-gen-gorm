@@ -18,6 +18,9 @@ test: build
 
 regenerate: clean-gen generate
 
+clean:
+	rm -rf .gentool
+
 clean-gen:
 	cd example/postgres_arrays && rm -f *.pb.gorm.go && rm -f *.pb.go
 	cd example/user && rm -f *.pb.gorm.go && rm -f *.pb.go
@@ -45,9 +48,12 @@ example/postgres_arrays/*.pb.go: example/postgres_arrays/*.proto
 install:
 	go install -v .
 
-gentool:
+gentool: .gentool
+
+.gentool:
 	docker build -f docker/Dockerfile -t $(GENTOOL_IMAGE) .
 	docker image prune -f --filter label=stage=server-intermediate
+	touch $@
 
 generate-gentool: SRCROOT_ON_HOST      := $(shell dirname $(abspath $(lastword $(MAKEFILE_LIST))))
 generate-gentool: SRCROOT_IN_CONTAINER := /go/src/$(PROJECT_ROOT)
@@ -56,23 +62,31 @@ generate-gentool: DOCKER_RUNNER        := docker run --rm
 generate-gentool: DOCKER_RUNNER        += -v $(SRCROOT_ON_HOST):$(SRCROOT_IN_CONTAINER)
 generate-gentool: DOCKER_GENERATOR     := infoblox/atlas-gentool:dev-gengorm
 generate-gentool: GENERATOR            := $(DOCKER_RUNNER) $(DOCKER_GENERATOR)
-generate-gentool: #gentool
+generate-gentool: gentool
 	$(DOCKER_RUNNER) \
 		$(GENTOOL_IMAGE) \
-		--go_out="plugins=grpc:$(DOCKERPATH)" \
+		--go_out="$(DOCKERPATH)" \
+		--go-grpc_out="$(DOCKERPATH)" \
+		--validate_out="lang=go:$(DOCKERPATH)" \
 		--gorm_out="engine=postgres,enums=string,gateway:$(DOCKERPATH)" \
-			feature_demo/demo_multi_file.proto \
-			feature_demo/demo_multi_file_service.proto \
-			feature_demo/demo_service.proto \
-			feature_demo/demo_types.proto
+                       feature_demo/demo_multi_file.proto \
+                       feature_demo/demo_multi_file_service.proto \
+                       feature_demo/demo_service.proto \
+                       feature_demo/demo_types.proto
+
 	$(DOCKER_RUNNER) \
 		$(GENTOOL_IMAGE) \
-		--go_out="plugins=grpc:$(DOCKERPATH)" \
+		--go_out="$(DOCKERPATH)" \
+		--go-grpc_out="$(DOCKERPATH)" \
+		--validate_out="lang=go:$(DOCKERPATH)" \
 		--gorm_out="engine=postgres,enums=string,gateway:$(DOCKERPATH)" \
 			user/user.proto
+
 	$(DOCKER_RUNNER) \
 		$(GENTOOL_IMAGE) \
-		--go_out="plugins=grpc:$(DOCKERPATH)" \
+		--go_out="$(DOCKERPATH)" \
+		--go-grpc_out="$(DOCKERPATH)" \
+		--validate_out="lang=go:$(DOCKERPATH)" \
 		--gorm_out="engine=postgres,enums=string,gateway:$(DOCKERPATH)" \
 			postgres_arrays/postgres_arrays.proto
 
@@ -83,8 +97,11 @@ build-local:
 	protoc --proto_path . \
 	-I./proto/ \
 	-I./third_party/proto/ \
-	-I=. example/feature_demo/demo_multi_file.proto \
-	example/feature_demo/demo_service.proto --gorm_out="engine=postgres,enums=string,gateway:./example/feature_demo" --go_out=./example/feature_demo
+	-I=. \
+		example/feature_demo/demo_multi_file.proto \
+		example/feature_demo/demo_service.proto \
+		--gorm_out="engine=postgres,enums=string,gateway:./example/feature_demo" \
+		--go_out=./example/feature_demo
 
 build-user-local:
 	rm -rf example/user/github.com/
