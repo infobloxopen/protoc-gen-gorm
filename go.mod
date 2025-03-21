@@ -1,7 +1,7 @@
 module github.com/infobloxopen/protoc-gen-gorm
 
 require (
-	github.com/golang-jwt/jwt/v4 v4.5.0
+	github.com/golang-jwt/jwt/v4 v4.5.2
 	github.com/grpc-ecosystem/go-grpc-middleware v1.4.0
 	github.com/jinzhu/inflection v1.0.0
 	google.golang.org/protobuf v1.33.0
