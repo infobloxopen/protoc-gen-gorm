@@ -4,7 +4,7 @@ import (
 	context "context"
 	fmt "fmt"
 	gateway "github.com/infobloxopen/atlas-app-toolkit/gateway"
-	errors "github.com/infobloxopen/protoc-gen-gorm/errors"
+	errors "github.com/DRJ-Technologies/go-monorepo/submodules/protoc-gen-gorm/errors"
 	go_uuid "github.com/satori/go.uuid"
 	field_mask "google.golang.org/genproto/protobuf/field_mask"
 	gorm "gorm.io/gorm"

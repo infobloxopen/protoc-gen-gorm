@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"strings"
 
-	gormopts "github.com/infobloxopen/protoc-gen-gorm/options"
+	gormopts "github.com/DRJ-Technologies/go-monorepo/submodules/protoc-gen-gorm/options"
 	"github.com/jinzhu/inflection"
 	"google.golang.org/protobuf/compiler/protogen"
 	"google.golang.org/protobuf/proto"
@@ -43,7 +43,7 @@ var (
 	ocTraceImport      = "go.opencensus.io/trace"
 	gatewayImport      = "github.com/infobloxopen/atlas-app-toolkit/gateway"
 	pqImport           = "github.com/lib/pq"
-	gerrorsImport      = "github.com/infobloxopen/protoc-gen-gorm/errors"
+	gerrorsImport      = "github.com/DRJ-Technologies/go-monorepo/submodules/protoc-gen-gorm/errors"
 	timestampImport    = "google.golang.org/protobuf/types/known/timestamppb"
 	durationImport     = "google.golang.org/protobuf/types/known/durationpb"
 	wktImport          = "google.golang.org/protobuf/types/known/wrapperspb"

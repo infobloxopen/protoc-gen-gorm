@@ -7,10 +7,10 @@
 package example
 
 import (
-	_ "github.com/infobloxopen/protoc-gen-gorm/example/postgres_arrays"
-	user "github.com/infobloxopen/protoc-gen-gorm/example/user"
-	_ "github.com/infobloxopen/protoc-gen-gorm/options"
-	types "github.com/infobloxopen/protoc-gen-gorm/types"
+	_ "github.com/DRJ-Technologies/go-monorepo/submodules/protoc-gen-gorm/example/postgres_arrays"
+	user "github.com/DRJ-Technologies/go-monorepo/submodules/protoc-gen-gorm/example/user"
+	_ "github.com/DRJ-Technologies/go-monorepo/submodules/protoc-gen-gorm/options"
+	types "github.com/DRJ-Technologies/go-monorepo/submodules/protoc-gen-gorm/types"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	durationpb "google.golang.org/protobuf/types/known/durationpb"
