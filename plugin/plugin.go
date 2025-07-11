@@ -947,8 +947,16 @@ func (b *ORMBuilder) parseBasicFields(msg *protogen.Message, g *protogen.Generat
 					gormOptions.Tag = tagWithType(tag, "uuid")
 				}
 			} else if rawType == protoTypeTimestamp {
-				typePackage = stdTimeImport
-				fieldType = "*" + generateImport("Time", stdTimeImport, g)
+				tag := getFieldOptions(field.Desc.Options().(*descriptorpb.FieldOptions)).GetTag()
+				if tag != nil && tag.GetType() == "deleted_at" {
+					// This is a soft delete field - map to gorm.DeletedAt at ORM level
+					typePackage = gormImport
+					fieldType = "*" + generateImport("DeletedAt", gormImport, g)
+				} else {
+					// Regular timestamp field
+					typePackage = stdTimeImport
+					fieldType = "*" + generateImport("Time", stdTimeImport, g)
+				}
 			} else if rawType == protoTypeDuration {
 				typePackage = stdTimeImport
 				fieldType = "*" + generateImport("Duration", stdTimeImport, g)
@@ -1531,15 +1539,38 @@ func (b *ORMBuilder) generateFieldConversion(message *protogen.Message, field *p
 				g.P(`to.`, fieldName, ` = &`, generateImport("UUID", gtypesImport, g), `{Value: m.`, fieldName, `.String()}`)
 			}
 		} else if fieldType == protoTypeTimestamp { // Singular WKT Timestamp ---
-			if toORM {
-				g.P(`if m.`, fieldName, ` != nil {`)
-				g.P(`t := m.`, fieldName, `.AsTime()`)
-				g.P(`to.`, fieldName, ` = &t`)
-				g.P(`}`)
+			// Check if this is a soft delete field
+			options := field.Desc.Options().(*descriptorpb.FieldOptions)
+			fieldOptions := getFieldOptions(options)
+			if fieldOptions != nil && fieldOptions.GetTag() != nil && fieldOptions.GetTag().GetType() == "deleted_at" {
+				// Handle soft delete conversion
+				if toORM {
+					g.P(`if m.`, fieldName, ` != nil {`)
+					g.P(`to.`, fieldName, ` = &`, generateImport("DeletedAt", gormImport, g), `{`)
+					g.P(`Time: m.`, fieldName, `.AsTime(),`)
+					g.P(`Valid: true,`)
+					g.P(`}`)
+					g.P(`} else {`)
+					g.P(`to.`, fieldName, ` = &`, generateImport("DeletedAt", gormImport, g), `{`)
+					g.P(`Valid: false,`)
+					g.P(`}`)
+					g.P(`}`)
+				} else {
+					g.P(`if m.`, fieldName, `.Valid {`)
+					g.P(`to.`, fieldName, ` = `, generateImport("New", timestampImport, g), `(m.`, fieldName, `.Time)`)
+					g.P(`}`)
+				}
 			} else {
-				g.P(`if m.`, fieldName, ` != nil {`)
-				g.P(`to.`, fieldName, ` = `, generateImport("New", timestampImport, g), `(*m.`, fieldName, `)`)
-				g.P(`}`)
+				if toORM {
+					g.P(`if m.`, fieldName, ` != nil {`)
+					g.P(`t := m.`, fieldName, `.AsTime()`)
+					g.P(`to.`, fieldName, ` = &t`)
+					g.P(`}`)
+				} else {
+					g.P(`if m.`, fieldName, ` != nil {`)
+					g.P(`to.`, fieldName, ` = `, generateImport("New", timestampImport, g), `(*m.`, fieldName, `)`)
+					g.P(`}`)
+				}
 			}
 		} else if fieldType == protoTypeDuration {
 			if toORM {
