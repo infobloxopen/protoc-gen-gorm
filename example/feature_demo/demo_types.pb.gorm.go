@@ -154,7 +154,7 @@ func (m *TestTypesORM) ToPB(ctx context.Context) (TestTypes, error) {
 	}
 	to.Bigint = &types.BigInt{Value: m.Bigint.String()}
 	// Repeated type JSONValue is not an ORMable message type
-	if m.CustomDeletedAt.Valid {
+	if m.CustomDeletedAt != nil && m.CustomDeletedAt.Valid {
 		to.CustomDeletedAt = timestamppb.New(m.CustomDeletedAt.Time)
 	}
 	if posthook, ok := interface{}(m).(TestTypesWithAfterToPB); ok {

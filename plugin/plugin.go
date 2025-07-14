@@ -1552,7 +1552,7 @@ func (b *ORMBuilder) generateFieldConversion(message *protogen.Message, field *p
 					g.P(`}`)
 					g.P(`}`)
 				} else {
-					g.P(`if m.`, fieldName, `.Valid {`)
+					g.P(`if m.`, fieldName, ` != nil && m.`, fieldName, `.Valid {`)
 					g.P(`to.`, fieldName, ` = `, generateImport("New", timestampImport, g), `(m.`, fieldName, `.Time)`)
 					g.P(`}`)
 				}
