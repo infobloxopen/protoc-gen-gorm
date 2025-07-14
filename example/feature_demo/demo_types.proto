@@ -74,6 +74,8 @@ message TestTypes {
   // Repeated non-ormable objects are currently treated as single entity for
   // purposes of an object's field masking
   repeated gorm.types.JSONValue several_values = 14;
+  // Uses the built-in deleted at support of gorm, to exclude fields from postgres if this field is populated
+  google.protobuf.Timestamp custom_deleted_at = 15 [(gorm.field) = {tag: {type: "deleted_at"}}];
 }
 
 // TypeWithID demonstrates some basic association behavior

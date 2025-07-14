@@ -29,6 +29,7 @@ type TestTypesORM struct {
 	BecomesInt                string
 	Bigint                    *big.Int `gorm:"type:numeric"`
 	CreatedAt                 *time.Time
+	CustomDeletedAt           *gorm.DeletedAt `gorm:"type:deleted_at"`
 	Duration                  *time.Duration
 	JsonField                 *types.Jsonb  `gorm:"type:jsonb"`
 	NullableUuid              *go_uuid.UUID `gorm:"type:uuid"`
@@ -101,6 +102,16 @@ func (m *TestTypes) ToORM(ctx context.Context) (TestTypesORM, error) {
 		}
 	}
 	// Repeated type JSONValue is not an ORMable message type
+	if m.CustomDeletedAt != nil {
+		to.CustomDeletedAt = &gorm.DeletedAt{
+			Time:  m.CustomDeletedAt.AsTime(),
+			Valid: true,
+		}
+	} else {
+		to.CustomDeletedAt = &gorm.DeletedAt{
+			Valid: false,
+		}
+	}
 	if posthook, ok := interface{}(m).(TestTypesWithAfterToORM); ok {
 		err = posthook.AfterToORM(ctx, &to)
 	}
@@ -143,6 +154,9 @@ func (m *TestTypesORM) ToPB(ctx context.Context) (TestTypes, error) {
 	}
 	to.Bigint = &types.BigInt{Value: m.Bigint.String()}
 	// Repeated type JSONValue is not an ORMable message type
+	if m.CustomDeletedAt.Valid {
+		to.CustomDeletedAt = timestamppb.New(m.CustomDeletedAt.Time)
+	}
 	if posthook, ok := interface{}(m).(TestTypesWithAfterToPB); ok {
 		err = posthook.AfterToPB(ctx, &to)
 	}
@@ -1328,6 +1342,7 @@ func DefaultApplyFieldMaskTestTypes(ctx context.Context, patchee *TestTypes, pat
 	var updatedCreatedAt bool
 	var updatedDuration bool
 	var updatedJsonField bool
+	var updatedCustomDeletedAt bool
 	for i, f := range updateMask.Paths {
 		if f == prefix+"ApiOnlyString" {
 			patchee.ApiOnlyString = patcher.ApiOnlyString
@@ -1460,6 +1475,29 @@ func DefaultApplyFieldMaskTestTypes(ctx context.Context, patchee *TestTypes, pat
 		}
 		if f == prefix+"SeveralValues" {
 			patchee.SeveralValues = patcher.SeveralValues
+			continue
+		}
+		if !updatedCustomDeletedAt && strings.HasPrefix(f, prefix+"CustomDeletedAt.") {
+			if patcher.CustomDeletedAt == nil {
+				patchee.CustomDeletedAt = nil
+				continue
+			}
+			if patchee.CustomDeletedAt == nil {
+				patchee.CustomDeletedAt = &timestamppb.Timestamp{}
+			}
+			childMask := &field_mask.FieldMask{}
+			for j := i; j < len(updateMask.Paths); j++ {
+				if trimPath := strings.TrimPrefix(updateMask.Paths[j], prefix+"CustomDeletedAt."); trimPath != updateMask.Paths[j] {
+					childMask.Paths = append(childMask.Paths, trimPath)
+				}
+			}
+			if err := gorm1.MergeWithMask(patcher.CustomDeletedAt, patchee.CustomDeletedAt, childMask); err != nil {
+				return nil, nil
+			}
+		}
+		if f == prefix+"CustomDeletedAt" {
+			updatedCustomDeletedAt = true
+			patchee.CustomDeletedAt = patcher.CustomDeletedAt
 			continue
 		}
 	}
