@@ -42,6 +42,9 @@ example/user/*.pb.go: example/user/*.proto
 example/postgres_arrays/*.pb.go: example/postgres_arrays/*.proto
 	buf generate --template example/postgres_arrays/buf.gen.yaml --path example/postgres_arrays
 
+example/clickhouse_arrays/*.pb.go: example/clickhouse_arrays/*.proto
+	buf generate --template example/clickhouse_arrays/buf.gen.yaml --path example/clickhouse_arrays
+
 install:
 	go install -v .
 
