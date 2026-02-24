@@ -3105,7 +3105,8 @@ func (b *ORMBuilder) followsUpdateSetConventions(inType *protogen.Message, outTy
 			inEntity = field
 		}
 
-		if string(field.Desc.Message().FullName()) == "google.protobuf.FieldMask" {
+		// Add nil check to prevent panic when field is not a message type
+		if field.Desc.Message() != nil && string(field.Desc.Message().FullName()) == "google.protobuf.FieldMask" {
 			if inFieldMask != nil {
 				fmt.Fprintf(os.Stderr, "message must not contains double field mask, prev on field name %s, after on field %s.\n", inFieldMask.GoName, field.GoName)
 				return false, "", ""
@@ -3167,7 +3168,8 @@ func (b *ORMBuilder) followsUpdateConventions(inType *protogen.Message, outType 
 		}
 
 		// Check that type of field is a FieldMask
-		if string(field.Desc.Message().FullName()) == "google.protobuf.FieldMask" {
+		// Add nil check to prevent panic when field is not a message type
+		if field.Desc.Message() != nil && string(field.Desc.Message().FullName()) == "google.protobuf.FieldMask" {
 			// More than one mask in request is not allowed.
 			if updateMask != "" {
 				return false, "", ""
@@ -3183,7 +3185,7 @@ func (b *ORMBuilder) followsUpdateConventions(inType *protogen.Message, outType 
 
 	var outTypeName string
 	for _, field := range outType.Fields {
-		if string(field.Desc.Name()) == "result" {
+		if string(field.Desc.Name()) == "result" && field.Desc.Message() != nil {
 			gType := string(field.Desc.Message().Name())
 			outTypeName = strings.TrimPrefix(gType, "*")
 		}

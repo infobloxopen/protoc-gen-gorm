@@ -104,6 +104,48 @@ The generated code can also integrate with the grpc server gorm transaction midd
 in the [atlas-app-toolkit](https://github.com/infobloxopen/atlas-app-toolkit#middlewares)
 using the service level option `option (gorm.server).txn_middleware = true`.
 
+### Proto Import Paths
+
+The proto definition files are located in the `proto/` directory:
+- `proto/options/gorm.proto` - GORM options for messages, fields, and services
+- `proto/types/types.proto` - Custom wrapper types (UUID, JSON, Inet, etc.)
+
+#### Using with Buf
+
+If you're using [buf](https://buf.build/), you can use short import paths:
+
+```protobuf
+import "options/gorm.proto";
+import "types/types.proto";
+```
+
+Configure your `buf.work.yaml` to include the protoc-gen-gorm proto directory, or add it as a dependency in your `buf.yaml`.
+
+#### Using with protoc
+
+When using `protoc` directly, use the full import paths and add the proto directory to your include path:
+
+```protobuf
+import "github.com/infobloxopen/protoc-gen-gorm/proto/options/gorm.proto";
+import "github.com/infobloxopen/protoc-gen-gorm/proto/types/types.proto";
+```
+
+Then include the path when running protoc:
+```bash
+protoc -I. -I$GOPATH/src/github.com/infobloxopen/protoc-gen-gorm/proto ...
+```
+
+#### Migration from Legacy Import Paths
+
+If you are upgrading from an older version of protoc-gen-gorm that used the following import paths:
+
+| Old Path | New Path |
+|----------|----------|
+| `github.com/infobloxopen/protoc-gen-gorm/options/gorm.proto` | `github.com/infobloxopen/protoc-gen-gorm/proto/options/gorm.proto` |
+| `github.com/infobloxopen/protoc-gen-gorm/types/types.proto` | `github.com/infobloxopen/protoc-gen-gorm/proto/types/types.proto` |
+
+**Backward Compatibility:** Symlinks have been added at the old paths (`options/gorm.proto` and `types/types.proto`) that point to the new locations, so existing proto files using the old import paths will continue to work.
+
 ### Examples
 
 Example .proto files and generated .pb.gorm.go files are included in the
