@@ -27,11 +27,13 @@ clean-gen:
 
 generate: build options/gorm.pb.go types/types.pb.go install example/user/*.pb.go example/postgres_arrays/*.pb.go example/feature_demo/*.pb.go
 
-options/gorm.pb.go: proto/options/gorm.proto
-	buf generate --template proto/options/buf.gen.yaml --path proto/options
+generate-options-types: build options/gorm.pb.go types/types.pb.go
 
-types/types.pb.go: proto/types/types.proto
-	buf generate --template proto/types/buf.gen.yaml --path proto/types
+options/gorm.pb.go: options/gorm.proto
+	buf generate --template proto/options/buf.gen.yaml --path options
+
+types/types.pb.go: types/types.proto
+	buf generate --template proto/types/buf.gen.yaml --path types
 
 example/feature_demo/*.pb.go: example/feature_demo/*.proto
 	buf generate --template example/feature_demo/buf.gen.yaml --path example/feature_demo

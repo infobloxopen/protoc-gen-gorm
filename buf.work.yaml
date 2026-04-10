@@ -1,5 +1,0 @@
-version: v1
-directories:
-  - proto
-  - example
-  - third_party/proto
